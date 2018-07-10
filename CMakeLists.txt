@@ -15,28 +15,31 @@ webos_component(1 0 0)
 
 include(FindPkgConfig)
 
-pkg_check_modules(JSONC REQUIRED json-c)
-webos_add_compiler_flags(ALL ${JSONC_CFLAGS})
 
 include_directories(inc)
 pkg_check_modules(GLIB2 REQUIRED glib-2.0)
 include_directories(${GLIB2_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${GLIB2_CFLAGS_OTHER})
 
-pkg_check_modules(ALSA REQUIRED alsa)
-webos_add_compiler_flags(ALL ${ALSA_CFLAGS})
-
 pkg_check_modules(LUNASERVICE2 REQUIRED luna-service2)
 include_directories(${LUNASERVICE2_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${LUNASERVICE2_CFLAGS_OTHER})
 
-pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
-include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS_OTHER})
-
 pkg_check_modules(PMLOGLIB REQUIRED PmLogLib)
 include_directories(${PMLOGLIB_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PMLOGLIB_CFLAGS_OTHER})
+
+pkg_check_modules(JSONC REQUIRED json-c)
+include_directories(${JSONC_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${JSONC_CFLAGS})
+
+pkg_check_modules(UDEV REQUIRED libudev)
+include_directories(${UDEV_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${UDEV_CFLAGS})
+
+pkg_check_modules(ALSA REQUIRED alsa)
+include_directories(${ALSA_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${ALSA_CFLAGS})
 
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
@@ -45,9 +48,7 @@ webos_add_compiler_flags(ALL -Wall -rdynamic)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 
 include_directories(${CMAKE_SOURCE_DIR})
-include_directories(${PMLOG_INCLUDE_DIRS})
 
-set(LIBS ${GLIB2_LDFLAGS} ${LUNASERVICE2_LDFLAGS} ${PBNJSON_CPP_LDFLAGS} )
 
 #hal
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
@@ -79,21 +80,16 @@ set(PROJECT_NAME_SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/command_service_util.cpp
     )
 
-# set libs list
-set(LIB_LIST
-    pthread
-    udev
-    )
-
 add_executable(${PROJECT_NAME} ${PROJECT_NAME_SRC_LIST})
 
 target_link_libraries(${PROJECT_NAME}
-    ${LIBS}
     ${PMLOGLIB_LDFLAGS}
-    ${LIB_LIST}
     ${JSONC_LDFLAGS}
     ${ALSA_LDFLAGS}
-    ${PMLOG_LDFLAGS})
+    ${GLIB2_LDFLAGS}
+    ${LUNASERVICE2_LDFLAGS}
+    ${UDEV_LDFLAGS}
+    pthread)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
