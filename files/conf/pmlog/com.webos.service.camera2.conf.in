@@ -1,7 +1,7 @@
 {
     "contexts" : [
         {
-            "name": "CRM",
+            "name": "camera2",
             "level": "debug",
             "logProcessIds" : true,
             "logThreadIds": true,
@@ -9,7 +9,7 @@
             "rules": [
                 {
                     "filter": "*.*",
-                    "output": "com.webos.service.camera-log"
+                    "output": "com.webos.service.camera2-log"
                 }
             ]
         }
@@ -17,8 +17,8 @@
 
     "outputs" : [
         {
-            "name": "com.webos.service.camera-log",
-            "file": "@WEBOS_INSTALL_LOGDIR@/crm.log",
+            "name": "com.webos.service.camera2-log",
+            "file": "@WEBOS_INSTALL_LOGDIR@/camera2.log",
             "maxSize": 10000,
             "rotations": 5
         }

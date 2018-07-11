@@ -1990,7 +1990,7 @@ int main(int argc, char *argv[])
     g_Mainloop = g_main_loop_new(NULL, FALSE);
     g_mainLoop = g_main_loop_new(NULL, FALSE);
 
-    if (!LSRegister("com.webos.service.camera", &_gpstLsHandle, &lserror))
+    if (!LSRegister("com.webos.service.camera2", &_gpstLsHandle, &lserror))
     {
         g_print("Unable to register to luna-bus\n");
         LSErrorPrint(&lserror, stdout);

@@ -33,7 +33,7 @@ extern "C"
 
 #define CONST_SERVICE_URI_NAME                      "camera"
 
-#define CONST_SERVICE_NAME_CAMERA "com.webos.service.camera"
+#define CONST_SERVICE_NAME_CAMERA "com.webos.service.camera2"
 #define CONST_LS_SERVICE_NAME_PDM                           "luna://com.webos.service.pdm"
 #define CONST_LS_SERVICE_FUNCTION_NAME_GET_ATTACHED_NONSTORAGE_DEVICE_LIST      "getAttachedNonStorageDeviceList"
 

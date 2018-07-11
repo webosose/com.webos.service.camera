@@ -5,7 +5,7 @@
 # LICENSE@@@
 
 cmake_minimum_required(VERSION 2.8.7)
-project(com.webos.service.camera CXX)
+project(com.webos.service.camera2 CXX)
 set(CMAKE_BUILD_TYPE Debug)
 
 include(webOS/webOS)

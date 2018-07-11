@@ -1,5 +1,5 @@
 {
-    "com.webos.service.camera": [
+    "com.webos.service.camera2": [
         "devices",
         "services",
         "applications.query",
