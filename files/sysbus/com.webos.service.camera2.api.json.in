@@ -1,6 +1,6 @@
 {
         "camera": [
-                "com.webos.service.camera2/captureNimage",
+                "com.webos.service.camera2/captureImage",
                 "com.webos.service.camera2/close",
                 "com.webos.service.camera2/getInfo",
                 "com.webos.service.camera2/getList",

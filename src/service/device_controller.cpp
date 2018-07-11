@@ -42,7 +42,7 @@ DEVICE_RETURN_CODE_T DeviceControl::open(DEVICE_HANDLE devHandle, DEVICE_TYPE de
     }
     else
     {
-        //ret = hal_mic_open(deviceID);
+        //ret = hal_mic_open(deviceID,samplingRate,codec);
     }
     if (ret != DEVICE_OK)
     {
@@ -80,12 +80,13 @@ DEVICE_RETURN_CODE_T DeviceControl::close(DEVICE_HANDLE devHandle, DEVICE_TYPE d
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::startPreview(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
-        int pKey)
+        int *pKey)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
     int deviceID = 1;
+
     if (devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
 
@@ -97,18 +98,17 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(DEVICE_HANDLE devHandle, DEVICE
         sFormat.nWidth = CONST_DEFAULT_WIDTH;
         sFormat.nHeight = CONST_DEFAULT_HEIGHT;
         ret = hal_cam_set_format(devHandle, sFormat);
-        ret = hal_cam_start(devHandle, &pKey);
+        ret = hal_cam_start(devHandle, pKey);
     }
     else
     {
-        ret = hal_mic_start(deviceID, &pKey);
+        ret = hal_mic_start(deviceID, pKey);
     }
     if (ret != DEVICE_OK)
     {
         PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_start failed\n!!");
         return ret;
     }
-
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
 }
@@ -229,10 +229,9 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceList(DEVICE_LIST_T *pList, int *pCa
     *pMicSupport = 0;
     for (int i = 0; i < devCount; i++)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "device type %s\n", pList[i].strDeviceType);
         if (strcmp(pList[i].strDeviceType, "CAM") == 0)
         {
-            *pCamDev += 1;
+            pCamDev[i] = i+1;
             pCamSupport[i] = 1;
         }
         else if (strcmp(pList[i].strDeviceType, "MIC") == 0)
@@ -254,7 +253,7 @@ bool DeviceControl::isUpdatedCameraList()
 
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
+DEVICE_RETURN_CODE_T DeviceControl::getdeviceinfo(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
         CAMERA_INFO_T *pInfo)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
@@ -273,9 +272,9 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(DEVICE_HANDLE devHandle, DEVIC
         MIC_INFO_T sMicInfo;
         ret = hal_mic_get_info(deviceID, &sMicInfo);
     }
-    if (ret != DEVICE_SESSION_OK)
+    if (ret != DEVICE_OK)
     {
-        PMLOG_ERROR(CONST_MODULE_DC, "Failed to close the seesion\n!!");
+        PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
         return ret;
     }
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
@@ -438,4 +437,29 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(DEVICE_HANDLE devHandle,
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
 }
+
+
+DEVICE_RETURN_CODE_T DeviceControl::setformat(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
+        FORMAT sFormat)
+{
+    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
+    if (devType == DEVICE_DEVICE_UNDEFINED)
+        return DEVICE_ERROR_WRONG_PARAM;
+    if (DEVICE_CAMERA == devType)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "sFormat %d %d %d\n",sFormat.nHeight,sFormat.nWidth,sFormat.eFormat);
+        ret = hal_cam_set_format(devHandle, sFormat);
+    }
+    if (ret != DEVICE_OK)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_set_format failed \n!!");
+        return ret;
+    }
+
+    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+    return ret;
+}
+
 

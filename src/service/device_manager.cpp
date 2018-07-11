@@ -124,7 +124,6 @@ DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCa
     int devCount = gdevCount;
     DEVICE_LIST_T *pList;
     int nCamDev, nMicDev, nCamSupport, nMicSupport;
-
     if (gdevCount)
     {
         for (int i = 0; i < gdevCount; i++)
@@ -149,7 +148,6 @@ DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCa
     *pMicDev = nMicDev;
     *pCamSupport = nCamSupport;
     *pMicSupport = nMicSupport;
-    PMLOG_INFO(CONST_MODULE_DM, "Success at device_getlist\n");
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
 
@@ -167,7 +165,8 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     gdevCount = nDevCount;
     for (int i = 0; i < gdevCount; i++)
     {
-        gdev_status[i].stList = *pList;
+        gdev_status[i].stList = pList[i];
+        //gdev_status[i].stList = &pList[i];
         gdev_status[i].nDevCount = nDevCount;
     }
     ret = dCtl->getDeviceList(pList, &nCamDev, &nMicDev, &nCamSupport, &nMicSupport, nDevCount);

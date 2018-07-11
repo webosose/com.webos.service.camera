@@ -55,6 +55,8 @@ extern "C"
 #define CONST_DEVICE_NAME_CAMERA "camera"
 #define CONST_DEVICE_NAME_MIC "mic"
 #define CONST_DEVICE_HANDLE "handle"
+#define CONST_DEVICE_SHMKEY "shmkey"
+
 
 
 #define CONST_VARIABLE_INITIALIZE -999

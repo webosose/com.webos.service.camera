@@ -46,12 +46,12 @@ public:
     }
     ;
     //Open the Device and return the handle
-    DEVICE_RETURN_CODE_T open(int deviceID, DEVICE_TYPE_T devType);
+    DEVICE_RETURN_CODE_T open(int deviceID, DEVICE_TYPE_T devType,int *devhandle);
     //Close the device
     DEVICE_RETURN_CODE_T close(int deviceID, DEVICE_TYPE_T devType);
     // Returns/Notify the devices upluged in/out
     DEVICE_RETURN_CODE_T getDeviceStatus();
-    DEVICE_RETURN_CODE_T getDeviceInfo(int deviceID, DEVICE_TYPE_T devType, CAMERA_INFO_T *pInfo);
+    DEVICE_RETURN_CODE_T getdeviceinfo(int deviceID, DEVICE_TYPE_T devType, CAMERA_INFO_T *pInfo);
     DEVICE_RETURN_CODE_T getDeviceList(int *pCamDev, int *pMicDev, int *pCamSupport,
             int *pMicSupport);
     DEVICE_RETURN_CODE_T createHandle(int deviceID, DEVICE_TYPE_T devType, int *devhandle);
@@ -63,7 +63,9 @@ public:
             CAMERA_PROPERTIES_T *devproperty);
     DEVICE_RETURN_CODE_T setProperty(int deviceID, DEVICE_TYPE_T devType,
             CAMERA_PROPERTIES_T *oInfo);
-    DEVICE_RETURN_CODE_T startPreview(int deviceID, DEVICE_TYPE_T devType, int pKey);
+    DEVICE_RETURN_CODE_T setformat(int deviceID, DEVICE_TYPE_T devType,
+            FORMAT oFormat);
+    DEVICE_RETURN_CODE_T startPreview(int deviceID, DEVICE_TYPE_T devType, int *pKey);
     //Stop Capture
     DEVICE_RETURN_CODE_T stopPreview(int deviceID, DEVICE_TYPE_T devType);
     DEVICE_RETURN_CODE_T startCapture(int deviceID, DEVICE_TYPE_T devType, FORMAT sFormat);

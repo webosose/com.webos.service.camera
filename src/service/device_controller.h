@@ -54,7 +54,7 @@ class DeviceControl
         //Close the device
         DEVICE_RETURN_CODE_T close(DEVICE_HANDLE devHandle,DEVICE_TYPE devType);
         //Start Capture
-        DEVICE_RETURN_CODE_T startPreview(DEVICE_HANDLE devHandle,DEVICE_TYPE devType,int pKey);
+        DEVICE_RETURN_CODE_T startPreview(DEVICE_HANDLE devHandle,DEVICE_TYPE devType,int *pKey);
         //Stop Capture
         DEVICE_RETURN_CODE_T stopPreview(DEVICE_HANDLE devHandle,DEVICE_TYPE devType);
         DEVICE_RETURN_CODE_T startCapture(DEVICE_HANDLE devHandle,DEVICE_TYPE devType,FORMAT sFormat);
@@ -65,10 +65,11 @@ class DeviceControl
 
         DEVICE_RETURN_CODE_T createHandle(DEVICE_LIST_T sDeviceInfo,DEVICE_HANDLE *sDevHandle);
 
-        DEVICE_RETURN_CODE_T getDeviceInfo(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_INFO_T *pInfo);
+        DEVICE_RETURN_CODE_T getdeviceinfo(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_INFO_T *pInfo);
         DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *pList,int *pCamDev, int *pMicDev, int *pCamSupport, int *pMicSupport,int devCount);
         DEVICE_RETURN_CODE_T getDeviceProperty(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_PROPERTIES_T *oParams);
         DEVICE_RETURN_CODE_T setDeviceProperty(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_PROPERTIES_T *oParams);
+        DEVICE_RETURN_CODE_T setformat(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, FORMAT oFormat);
   };
 
 #ifdef __cplusplus

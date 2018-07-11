@@ -42,16 +42,14 @@ public:
     static bool getStatus(LSHandle *sh, LSMessage *message, void *ctx);
     static bool getInfo(LSHandle *sh, LSMessage *message, void *ctx);
     static bool getList(LSHandle *sh, LSMessage *message, void *ctx);
-    static bool createHandle(LSHandle *sh, LSMessage *message, void *ctx);
     static bool getProperties(LSHandle *sh, LSMessage *message, void *ctx);
     static bool setProperties(LSHandle *sh, LSMessage *message, void *ctx);
+    static bool setFormat(LSHandle *sh, LSMessage *message, void *ctx);
     static bool startPreview(LSHandle *sh, LSMessage *message, void *ctx);
     static bool stopPreview(LSHandle *sh, LSMessage *message, void *ctx);
     static bool startCapture(LSHandle *sh, LSMessage *message, void *ctx);
     static bool stopCapture(LSHandle *sh, LSMessage *message, void *ctx);
     static bool captureImage(LSHandle *sh, LSMessage *message, void *ctx);
-    static bool captureStreamShot(LSHandle *sh, LSMessage *message, void *ctx);
-    static bool loadPlugin(LSHandle *sh, LSMessage *message, void *ctx);
 };
 
 LSHandle* camera_ls2_getHandle(void);
