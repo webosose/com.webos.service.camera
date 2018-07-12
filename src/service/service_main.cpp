@@ -45,15 +45,14 @@ LSMethod camera_methods[] =
 { "open", CameraService::open },
 { "close", CameraService::close },
 { "getInfo", CameraService::getInfo },
-{ "getList", CameraService::getList },
+{ "getCameralist", CameraService::getCameralist },
 { "getProperties", CameraService::getProperties },
 { "setProperties", CameraService::setProperties },
 { "setFormat", CameraService::setFormat },
 { "startCapture", CameraService::startCapture },
 { "stopCapture", CameraService::stopCapture },
 { "startPreview", CameraService::startPreview },
-{ "stopPreview", CameraService::stopPreview },
-{ "captureImage", CameraService::captureImage },};
+{ "stopPreview", CameraService::stopPreview },};
 
 LSHandle *_gpstLsHandle = NULL;
 
@@ -114,6 +113,17 @@ int parse_parameter(char *pID, char *pDevice, DEVICE_TYPE *pDevType, int *pDevID
     return DEVICE_OK;
 }
 
+int get_id(char *pID,int *pnID)
+{
+    static int nID = 0;
+    if(pID == NULL)
+        return DEVICE_ERROR_WRONG_PARAM;
+    nID += 1;
+    *pnID = nID;
+    return DEVICE_OK;
+}
+
+
 bool CameraService::open(LSHandle *sh, LSMessage *message, void *ctx)
 {
 
@@ -147,7 +157,7 @@ bool CameraService::open(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         char *pSamplingRate = NULL;
         char *pCodec = NULL;
         int DevHandle;
@@ -158,24 +168,6 @@ bool CameraService::open(LSHandle *sh, LSMessage *message, void *ctx)
             devID = (char *) json_object_get_string(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-        if(strncmp(devType, CONST_PARAM_NAME_MICROPHONE, 10) == 0)
-        {
-            if(nParamCheck && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_SAMPLINGRATE, &pInJsonChild2))
-                pSamplingRate = (char *)json_object_get_string(pInJsonChild2);
-            else
-                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-            if(nParamCheck && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_CODEC, &pInJsonChild2))
-                pCodec = (char *)json_object_get_string(pInJsonChild2);
-            else
-                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-        }
 
         if (!nParamCheck)
         {
@@ -190,7 +182,7 @@ bool CameraService::open(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter %s %s\n", devID, devType);
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
+            ret = get_id(devID,&DevID);
             PMLOG_INFO(CONST_MODULE_LUNA, "DevID %d nId %d\n", DevID, Id);
             nErrID = devCmd->open(DevID, DevType,&DevHandle);
 
@@ -268,17 +260,11 @@ bool CameraService::close(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
@@ -295,7 +281,7 @@ bool CameraService::close(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
+
             nErrID = devCmd->close(DevID, DevType);
             if ((nErrID != DEVICE_OK))
             {
@@ -340,7 +326,7 @@ bool CameraService::startPreview(LSHandle *sh, LSMessage *message, void *ctx)
     LSError lserror;
     int ret;
     const char *payload;
-    struct json_object *pInJson = NULL, *pInJsonChild1 = NULL;
+    struct json_object *pInJson = NULL, *pInJsonChild1 = NULL, *pInJsonChild2 = NULL;
     struct json_object *pOutJson = NULL;
     DEVICE_RETURN_CODE nErrID;
     // json parsing
@@ -362,26 +348,44 @@ bool CameraService::startPreview(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
+        char *type = NULL;
+        char *source = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         int pKey = 0;
 
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
+
         if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_PARAMS, &pInJsonChild1))
+        {
+            if(nParamCheck
+                && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_TYPE,
+                &pInJsonChild2))
+                type = (char *)json_object_get_string(pInJsonChild2);
+            else
+                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+
+        if(nParamCheck
+            && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_SOURCE,
+            &pInJsonChild2))
+            source = (char *) json_object_get_string(pInJsonChild2);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+        }
+        else
+        {
+            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+        }
+
         if (!nParamCheck)
         {
             nErrID = DEVICE_ERROR_PARAM_IS_MISSING;
@@ -395,7 +399,7 @@ bool CameraService::startPreview(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
+
             nErrID = devCmd->startPreview(DevID, DevType, &pKey); //enable
 
             if ((nErrID != DEVICE_OK))
@@ -411,7 +415,7 @@ bool CameraService::startPreview(LSHandle *sh, LSMessage *message, void *ctx)
             {
                 json_object_object_add(pOutJson, CONST_PARAM_NAME_RETURNVALUE,
                         json_object_new_boolean(CONST_PARAM_VALUE_TRUE));
-                json_object_object_add(pOutJson, CONST_DEVICE_SHMKEY,
+                json_object_object_add(pOutJson, CONST_DEVICE_KEY,
                         json_object_new_int(pKey));
             }
         }
@@ -470,17 +474,11 @@ bool CameraService::stopPreview(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
@@ -497,7 +495,6 @@ bool CameraService::stopPreview(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
             nErrID = devCmd->stopPreview(DevID, DevType); //enable
 
             if ((nErrID != DEVICE_OK))
@@ -569,11 +566,12 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
         char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         int nWidth = 0;
         int nHeight = 0;
         char *pFormat = NULL;
-        char *pCodec = NULL;
+        char *pMode = NULL;
+        int nNImage = 0;
         char *pSamplingRate = NULL;
         CAMERA_DATA_FORMAT nformat;
         FORMAT sFormat; // for camera
@@ -581,59 +579,62 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
 
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
         if (nParamCheck
                 && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_PARAMS, &pInJsonChild1))
         {
-            if (strncmp(devType, CONST_PARAM_NAME_CAMERA, 6) == 0)
+
+            if (nParamCheck
+                    && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_WIDTH,
+                            &pInJsonChild2))
+                nWidth = json_object_get_int(pInJsonChild2);
+            else
+                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+
+            if (nParamCheck
+                    && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_HEIGHT,
+                            &pInJsonChild2))
+                nHeight = json_object_get_int(pInJsonChild2);
+            else
+                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+
+            if (nParamCheck
+                    && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_FORMAT,
+                            &pInJsonChild2))
+                pFormat = (char *) json_object_get_string(pInJsonChild2);
+            else
+                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+
+            if (nParamCheck
+                    && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_MODE,
+                            &pInJsonChild2))
             {
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_WIDTH,
-                                &pInJsonChild2))
-                    nWidth = json_object_get_int(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+                    pMode = (char *) json_object_get_string(pInJsonChild2);
 
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_HEIGHT,
-                                &pInJsonChild2))
-                    nHeight = json_object_get_int(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_FORMAT,
-                                &pInJsonChild2))
-                    pFormat = (char *) json_object_get_string(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+                if(strcmp(pMode,"MODE_BRUST")==0)
+                {
+                    PMLOG_INFO(CONST_MODULE_LUNA,"Brust mode\n");
+                    if (nParamCheck
+                            && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_NIMAGE,
+                                    &pInJsonChild2))
+                        nNImage = json_object_get_int(pInJsonChild2);
+                    else
+                        nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+                }
+                else if(strcmp(pMode,"MODE_ONESHOT")==0)
+                {
+                    PMLOG_INFO(CONST_MODULE_LUNA,"oneshot mode\n");
+                    nNImage = 1;
+                }
+                PMLOG_INFO(CONST_MODULE_LUNA,"Image number %d\n",nNImage);
             }
-            else if (strncmp(devType, CONST_PARAM_NAME_MICROPHONE, 10) == 0)
-            {
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_SAMPLINGRATE,
-                                &pInJsonChild2))
-                    pSamplingRate = (char *) json_object_get_string(pInJsonChild2);
-                else
+            else
                     nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_CODEC,
-                                &pInJsonChild2))
-                    pCodec = (char *) json_object_get_string(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-            }
         }
         else
         {
@@ -653,15 +654,16 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
             if (DEVICE_CAMERA == DevType)
             {
                 _ConvertFormatToCode(pFormat, &nformat);
                 sFormat.eFormat = nformat;
                 sFormat.nHeight = nHeight;
                 sFormat.nWidth = nWidth;
-
-                nErrID = devCmd->startCapture(DevID, DevType, sFormat); //enable
+                if(nNImage)
+                    nErrID = devCmd->captureImage(DevID, DevType, nNImage, sFormat);
+                else
+                    nErrID = devCmd->startCapture(DevID, DevType, sFormat);
 
                 if ((nErrID != DEVICE_OK))
                 {
@@ -734,17 +736,11 @@ bool CameraService::stopCapture(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
@@ -763,153 +759,6 @@ bool CameraService::stopCapture(LSHandle *sh, LSMessage *message, void *ctx)
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
             ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
             nErrID = devCmd->stopCapture(DevID, DevType); //enable
-
-            if ((nErrID != DEVICE_OK))
-            {
-                json_object_object_add(pOutJson, CONST_PARAM_NAME_RETURNVALUE,
-                        json_object_new_boolean(CONST_PARAM_VALUE_FALSE));
-                json_object_object_add(pOutJson, CONST_PARAM_NAME_ERROR_CODE,
-                        json_object_new_int(nErrID));
-                json_object_object_add(pOutJson, CONST_PARAM_NAME_ERROR_TEXT,
-                        json_object_new_string(_GetErrorString(nErrID)));
-            }
-            else
-            {
-                json_object_object_add(pOutJson, CONST_PARAM_NAME_RETURNVALUE,
-                        json_object_new_boolean(CONST_PARAM_VALUE_TRUE));
-            }
-        }
-    }
-
-    PMLOG_INFO(CONST_MODULE_LUNA, "API: stop, Return: %s", json_object_to_json_string(pOutJson));
-    LSErrorInit(&lserror);
-
-    ret = LSMessageReply(sh, message, json_object_to_json_string(pOutJson), &lserror);
-    if (!ret)
-    {
-        LSErrorPrint(&lserror, stderr);
-        LSErrorFree(&lserror);
-    }
-    PMLOG_INFO(CONST_MODULE_LUNA, "stop success\n");
-    LSMessageUnref(message);
-
-    H_SERVICE_JSON_PUT(pInJson);
-    H_SERVICE_JSON_PUT(pOutJson);
-
-    return TRUE;
-}
-
-bool CameraService::captureImage(LSHandle *sh, LSMessage *message, void *ctx)
-{
-
-    LSError lserror;
-    int ret;
-    DEVICE_RETURN_CODE nErrID;
-    const char *payload;
-    struct json_object *pInJson = NULL, *pInJsonChild1 = NULL, *pInJsonChild2 = NULL;
-    struct json_object *pOutJson = NULL;
-
-    // json parsing
-    LSErrorInit(&lserror);
-    LSMessageRef(message);
-    payload = LSMessageGetPayload(message);
-    pInJson = json_tokener_parse(payload);
-
-    if (!(pInJson))
-    {
-        pOutJson = json_object_new_object();
-
-        nErrID = DEVICE_ERROR_JSON_PARSING;
-        json_object_object_add(pOutJson, CONST_PARAM_NAME_RETURNVALUE,
-                json_object_new_boolean(CONST_PARAM_VALUE_FALSE));
-        json_object_object_add(pOutJson, CONST_PARAM_NAME_ERROR_CODE, json_object_new_int(nErrID));
-        json_object_object_add(pOutJson, CONST_PARAM_NAME_ERROR_TEXT,
-                json_object_new_string(_GetErrorString(nErrID)));
-    }
-    else
-    {
-        char *devID = NULL;
-        char *devType = NULL;
-        int nParamCheck = CONST_PARAM_VALUE_TRUE;
-        int DevID;
-        int Id;
-        DEVICE_TYPE DevType;
-        int nCount;
-        FORMAT sFormat;
-        int nWidth = 0;
-        int nHeight = 0;
-        char *pFormat = NULL;
-        CAMERA_DATA_FORMAT nformat;
-
-        pOutJson = json_object_new_object();
-
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEFAULT_NIMAGE, &pInJsonChild1))
-            nCount = json_object_get_int(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_PARAMS, &pInJsonChild1))
-        {
-            if (strncmp(devType, CONST_PARAM_NAME_CAMERA, 6) == 0)
-            {
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_WIDTH,
-                                &pInJsonChild2))
-                    nWidth = json_object_get_int(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_HEIGHT,
-                                &pInJsonChild2))
-                    nHeight = json_object_get_int(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_FORMAT,
-                                &pInJsonChild2))
-                    pFormat = (char *) json_object_get_string(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-            }
-        }
-        else
-        {
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-        }
-
-        if (!nParamCheck)
-        {
-            nErrID = DEVICE_ERROR_PARAM_IS_MISSING;
-            json_object_object_add(pOutJson, CONST_PARAM_NAME_RETURNVALUE,
-                    json_object_new_boolean(CONST_PARAM_VALUE_FALSE));
-            json_object_object_add(pOutJson, CONST_PARAM_NAME_ERROR_CODE,
-                    json_object_new_int(nErrID));
-            json_object_object_add(pOutJson, CONST_PARAM_NAME_ERROR_TEXT,
-                    json_object_new_string(_GetErrorString(nErrID)));
-        }
-        else
-        {
-            PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
-            _ConvertFormatToCode(pFormat, &nformat);
-            sFormat.eFormat = nformat;
-            sFormat.nHeight = nHeight;
-            sFormat.nWidth = nWidth;
-            nErrID = devCmd->captureImage(DevID, DevType, nCount, sFormat); //enable
 
             if ((nErrID != DEVICE_OK))
             {
@@ -980,20 +829,14 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         CAMERA_INFO_T oInfo;
         char strFormat[CONST_MAX_STRING_LENGTH];
 
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
@@ -1044,19 +887,22 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
                             json_object_new_int(oInfo.nMaxVideoWidth));
                     json_object_object_add(pOutJsonChild3, CONST_PARAM_NAME_MAXHEIGHT,
                             json_object_new_int(oInfo.nMaxVideoHeight));
-                    json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_VIDEO, pOutJsonChild3);
+                    json_object_object_add(pOutJsonChild3, CONST_PARAM_NAME_FRAMERATE,
+                            json_object_new_int(30/*oInfo.nFrameRate*/));//to do
+                    _GetFormatString(oInfo.nFormat, strFormat);
+                    json_object_object_add(pOutJsonChild3, CONST_PARAM_NAME_FORMAT,
+                            json_object_new_string(strFormat));
+                    json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_VIDEO,pOutJsonChild3);
 
                     pOutJsonChild3 = json_object_new_object();
                     json_object_object_add(pOutJsonChild3, CONST_PARAM_NAME_MAXWIDTH,
                             json_object_new_int(oInfo.nMaxPictureWidth));
                     json_object_object_add(pOutJsonChild3, CONST_PARAM_NAME_MAXHEIGHT,
                             json_object_new_int(oInfo.nMaxPictureHeight));
+                    json_object_object_add(pOutJsonChild3, CONST_PARAM_NAME_FORMAT,
+                            json_object_new_string(strFormat));
                     json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_PICTURE,
                             pOutJsonChild3);
-
-                    _GetFormatString(oInfo.nFormat, strFormat);
-                    json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_FORMAT,
-                            json_object_new_string(strFormat));
                 }
                 else if (oInfo.nType == DEVICE_MICROPHONE)
                 {
@@ -1089,7 +935,7 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
     return TRUE;
 }
 
-bool CameraService::getList(LSHandle *sh, LSMessage *message, void *ctx)
+bool CameraService::getCameralist(LSHandle *sh, LSMessage *message, void *ctx)
 {
 
     LSError lserror;
@@ -1157,9 +1003,8 @@ bool CameraService::getList(LSHandle *sh, LSMessage *message, void *ctx)
                 if (arrCamDev[i] == CONST_VARIABLE_INITIALIZE)
                     break;
 
-                snprintf(arrList[nCamCount], CONST_MAX_STRING_LENGTH, "%s://%s/%s%d",
-                        CONST_SERVICE_URI_NAME, CONST_SERVICE_NAME_CAMERA, CONST_DEVICE_NAME_CAMERA,
-                        arrCamDev[i]);
+                snprintf(arrList[nCamCount], CONST_MAX_STRING_LENGTH, "%s%d",
+                        CONST_DEVICE_NAME_CAMERA,arrCamDev[i]);
                 supportList[nCamCount] = arrCamSupport[i];
                 nCamCount++;
             }
@@ -1182,32 +1027,15 @@ bool CameraService::getList(LSHandle *sh, LSMessage *message, void *ctx)
             for (i = 0; i < nCamCount; i++)
             {
                 pOutJsonChild2 = json_object_new_object();
-                json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_URI,
+                json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_ID,
                         json_object_new_string(arrList[i]));
-                json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_TYPE,
-                        json_object_new_string(_GetTypeString(DEVICE_CAMERA)));
-                json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_SUPPORT,
-                        json_object_new_boolean(supportList[i]));
                 json_object_array_add(pOutJsonChild1, pOutJsonChild2);
             }
-
-            for (i = nCamCount; i < nCamCount + nMicCount; i++)
-            {
-                pOutJsonChild2 = json_object_new_object();
-                json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_URI,
-                        json_object_new_string(arrList[i]));
-                json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_TYPE,
-                        json_object_new_string(_GetTypeString(DEVICE_MICROPHONE)));
-                json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_SUPPORT,
-                        json_object_new_boolean(supportList[i]));
-                json_object_array_add(pOutJsonChild1, pOutJsonChild2);
-            }
-
-            json_object_object_add(pOutJson, CONST_PARAM_NAME_URILIST, pOutJsonChild1);
+            json_object_object_add(pOutJson, CONST_PARAM_NAME_DEVICE_LIST, pOutJsonChild1);
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "API: getList, Return: %s", json_object_to_json_string(pOutJson));
+    PMLOG_INFO(CONST_MODULE_LUNA, "API: getCameralist, Return: %s", json_object_to_json_string(pOutJson));
     LSErrorInit(&lserror);
 
     ret = LSMessageReply(sh, message, json_object_to_json_string(pOutJson), &lserror);
@@ -1217,7 +1045,7 @@ bool CameraService::getList(LSHandle *sh, LSMessage *message, void *ctx)
         LSErrorFree(&lserror);
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "getList success\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "getCameralist success\n");
 
     LSMessageUnref(message);
 
@@ -1260,18 +1088,12 @@ bool CameraService::getProperties(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
 
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
@@ -1483,7 +1305,7 @@ bool CameraService::setProperties(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         CAMERA_PROPERTIES_T oParams;
         int nParamCount;
 
@@ -1520,14 +1342,8 @@ bool CameraService::setProperties(LSHandle *sh, LSMessage *message, void *ctx)
 
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
@@ -1809,7 +1625,7 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         int Id;
-        DEVICE_TYPE DevType;
+        DEVICE_TYPE DevType = DEVICE_CAMERA;
         FORMAT sFormat;
         char *pformat = NULL;
         int nParamCount;
@@ -1822,47 +1638,41 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
 
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
-            devID = (char *) json_object_get_string(pInJsonChild1);
-        else
-            nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-        if (nParamCheck
-                && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_TYPE, &pInJsonChild1))
-            devType = (char *) json_object_get_string(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
+            DevID = json_object_get_int(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
         if (nParamCheck
                 && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_PARAMS, &pInJsonChild1))
         {
-            if (strncmp(devType, CONST_PARAM_NAME_CAMERA, 6) == 0)
+
+
+            if (nParamCheck
+                    && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_WIDTH,
+                            &pInJsonChild2))
+                sFormat.nWidth = json_object_get_int(pInJsonChild2);
+            else
+                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+
+            if (nParamCheck
+                    && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_HEIGHT,
+                            &pInJsonChild2))
+                sFormat.nHeight = json_object_get_int(pInJsonChild2);
+            else
+                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+
+            if (nParamCheck
+                    && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_FORMAT,
+                            &pInJsonChild2))
             {
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_WIDTH,
-                                &pInJsonChild2))
-                    sFormat.nWidth = json_object_get_int(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_HEIGHT,
-                                &pInJsonChild2))
-                    sFormat.nHeight = json_object_get_int(pInJsonChild2);
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
-
-                if (nParamCheck
-                        && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_FORMAT,
-                                &pInJsonChild2))
-                {
-                    pformat = (char *) json_object_get_string(pInJsonChild2);
-                    _ConvertFormatToCode(pformat, &nformat);
-                    sFormat.eFormat = nformat;
-                }
-                else
-                    nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+                pformat = (char *) json_object_get_string(pInJsonChild2);
+                _ConvertFormatToCode(pformat, &nformat);
+                sFormat.eFormat = nformat;
             }
+            else
+                nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
+
         }
         if (!nParamCheck)
         {
@@ -1877,7 +1687,6 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
             nErrID = devCmd->setformat(DevID, DevType,sFormat);
 
             if ((nErrID != DEVICE_OK))
@@ -1959,18 +1768,14 @@ int main(int argc, char *argv[])
     _gMainLoopThread = g_thread_new("camera_LS_service", _ls2_handleloop, NULL);
 
     _sender_get_nonstorage_device_list();
-    //g_main_loop_run(g_mainLoop);
     g_main_loop_run(g_Mainloop);
-     //_sender_get_nonstorage_device_list();
     if (!LSUnregister(_gpstLsHandle, &lserror))
     {
         g_print("Unable to unregister service\n");
         LSErrorPrint(&lserror, stdout);
         return false;
     }
-
     g_thread_join(_gMainLoopThread);
-
     g_main_loop_unref(g_mainLoop);
     g_main_loop_unref(g_Mainloop);
     g_mainLoop = NULL;

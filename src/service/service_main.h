@@ -39,9 +39,8 @@ public:
 public:
     static bool open(LSHandle *sh, LSMessage *message, void *ctx);
     static bool close(LSHandle *sh, LSMessage *message, void *ctx);
-    static bool getStatus(LSHandle *sh, LSMessage *message, void *ctx);
     static bool getInfo(LSHandle *sh, LSMessage *message, void *ctx);
-    static bool getList(LSHandle *sh, LSMessage *message, void *ctx);
+    static bool getCameralist(LSHandle *sh, LSMessage *message, void *ctx);
     static bool getProperties(LSHandle *sh, LSMessage *message, void *ctx);
     static bool setProperties(LSHandle *sh, LSMessage *message, void *ctx);
     static bool setFormat(LSHandle *sh, LSMessage *message, void *ctx);
@@ -49,7 +48,6 @@ public:
     static bool stopPreview(LSHandle *sh, LSMessage *message, void *ctx);
     static bool startCapture(LSHandle *sh, LSMessage *message, void *ctx);
     static bool stopCapture(LSHandle *sh, LSMessage *message, void *ctx);
-    static bool captureImage(LSHandle *sh, LSMessage *message, void *ctx);
 };
 
 LSHandle* camera_ls2_getHandle(void);

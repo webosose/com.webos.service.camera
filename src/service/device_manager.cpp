@@ -60,14 +60,13 @@ int find_devnum(int ndeviceID)
     int nDeviceID = 0;
     for (i = 0; i < gdevCount; i++)
     {
-        if (gdev_status[i].nDeviceID = ndeviceID)
+        if (gdev_status[i].nDeviceID == ndeviceID)
         {
+            nDeviceID = i;
             PMLOG_INFO(CONST_MODULE_DM, "dev_num is :%d\n", i);
         }
     }
-    nDeviceID = i;
     return nDeviceID;
-
 }
 
 bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool status)
@@ -113,7 +112,11 @@ bool DeviceManager::isDeviceOpen(DEVICE_TYPE_T devType, int deviceID)
 
 bool DeviceManager::isDeviceValid(DEVICE_TYPE_T devType, int deviceID)
 {
-    return CONST_PARAM_VALUE_TRUE;
+    int dev_num = find_devnum(deviceID);
+    if (deviceID == gdev_status[dev_num].nDeviceID)
+        return CONST_PARAM_VALUE_TRUE;
+    else
+        return CONST_PARAM_VALUE_FALSE;
 }
 
 DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
@@ -162,11 +165,11 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     int nMicDev = 0;
     int nCamSupport = 0;
     int nMicSupport = 0;
+    static int nid = 0;
     gdevCount = nDevCount;
     for (int i = 0; i < gdevCount; i++)
     {
         gdev_status[i].stList = pList[i];
-        //gdev_status[i].stList = &pList[i];
         gdev_status[i].nDevCount = nDevCount;
     }
     ret = dCtl->getDeviceList(pList, &nCamDev, &nMicDev, &nCamSupport, &nMicSupport, nDevCount);
