@@ -44,18 +44,16 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceID, DEVICE_TYPE_T devType,in
 
     DEVICE_RETURN_CODE_T ret;
     DEVICE_HANDLE stDevHandle;
-
-    if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-
-    if (devInfo->isDeviceValid(devType, deviceID))
+    if (devInfo->isDeviceValid(devType, &deviceID))
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device is already open");
-        return DEVICE_ERROR_DEVICE_IS_ALREADY_OPENED;
+        if(INVALID_ID == deviceID)
+            return DEVICE_ERROR_NODEVICE;
+        else
+            return DEVICE_ERROR_DEVICE_IS_ALREADY_OPENED;
     }
     else
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device not open");
+        PMLOG_ERROR(CONST_MODULE_CM, "Device not open devID\n");
         ret = devInfo->createHandle(deviceID, devType, devhandle);
         if (DEVICE_OK != ret)
         {
@@ -67,6 +65,11 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceID, DEVICE_TYPE_T devType,in
         if (ret == DEVICE_OK)
         {
             devInfo->deviceStatus(deviceID, devType, TRUE);
+        }
+        else
+        {
+            PMLOG_ERROR(CONST_MODULE_CM, "Failed to open device\n");
+            return ret;
         }
     }
 
@@ -84,7 +87,7 @@ DEVICE_RETURN_CODE_T CommandManager::close(int deviceID, DEVICE_TYPE_T devType)
     if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
 
-    if (devInfo->isDeviceOpen(devType, deviceID))
+    if (devInfo->isDeviceOpen(devType, &deviceID))
     {
         devInfo->getHandle(deviceID, devType, &stDevHandle);
         ret = devCtl->close(stDevHandle, devType);
@@ -96,7 +99,7 @@ DEVICE_RETURN_CODE_T CommandManager::close(int deviceID, DEVICE_TYPE_T devType)
         }
         else
         {
-            PMLOG_ERROR(CONST_MODULE_DM, "Requested device is not closed %s", deviceID);
+            PMLOG_ERROR(CONST_MODULE_DM, "Requested device is not closed %d", deviceID);
             return DEVICE_ERROR_CAN_NOT_CLOSE;
         }
         return DEVICE_OK;
@@ -214,14 +217,14 @@ DEVICE_RETURN_CODE_T CommandManager::getProperty(int deviceID, DEVICE_TYPE_T dev
     devproperty->bMicMute = CONST_VARIABLE_INITIALIZE;
 
 
-    if (devInfo->isDeviceOpen(devType, deviceID))
+    if (devInfo->isDeviceOpen(devType, &deviceID))
     {
 
         PMLOG_INFO(CONST_MODULE_CM, "Device is open \n");
     }
     else
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device not open %d", deviceID);
+        PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
         CAMERA_PRINT_INFO("%s:%d ended!", __FUNCTION__, __LINE__);
         return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }
@@ -245,7 +248,7 @@ DEVICE_RETURN_CODE_T CommandManager::setProperty(int deviceID, DEVICE_TYPE_T dev
     if (DEVICE_CAMERA == devType)
     {
 
-        if (devInfo->isDeviceOpen(devType, deviceID))
+        if (devInfo->isDeviceOpen(devType, &deviceID))
         {
 
             PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
@@ -256,7 +259,7 @@ DEVICE_RETURN_CODE_T CommandManager::setProperty(int deviceID, DEVICE_TYPE_T dev
         }
         else
         {
-            PMLOG_ERROR(CONST_MODULE_CM, "Device not open %d", deviceID);
+            PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
             CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
             return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
         }
@@ -287,7 +290,7 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int deviceID, DEVICE_TYPE_T devTy
         return DEVICE_ERROR_WRONG_PARAM;
     if (DEVICE_CAMERA == devType)
     {
-        if (devInfo->isDeviceOpen(devType, deviceID))
+        if (devInfo->isDeviceOpen(devType, &deviceID))
         {
 
             PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
@@ -320,18 +323,22 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int deviceID, DEVICE_TYPE_T de
     DEVICE_HANDLE devHandle;
     if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
-    if (devInfo->isDeviceOpen(devType, deviceID))
+    if (devInfo->isDeviceOpen(devType, &deviceID))
     {
 
         PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
-        devInfo->getHandle(deviceID, devType, &devHandle);
-        ret = devCtl->startPreview(devHandle, devType,pKey);
-        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-        return ret;
+        if(devInfo->getHandle(deviceID, devType, &devHandle)== DEVICE_OK)
+        {
+            ret = devCtl->startPreview(devHandle, devType,pKey);
+            CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+            return ret;
+         }
+        else
+            return DEVICE_ERROR_NODEVICE;
     }
     else
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device not open %s", deviceID);
+        PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
         return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }
@@ -348,18 +355,22 @@ DEVICE_RETURN_CODE_T CommandManager::stopPreview(int deviceID, DEVICE_TYPE_T dev
     if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
 
-    if (devInfo->isDeviceOpen(devType, deviceID))
+    if (devInfo->isDeviceOpen(devType, &deviceID))
     {
 
         PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
-        devInfo->getHandle(deviceID, devType, &devHandle);
-        ret = devCtl->stopPreview(devHandle, devType);
-        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-        return ret;
+        if(devInfo->getHandle(deviceID, devType, &devHandle)== DEVICE_OK)
+        {
+            ret = devCtl->stopPreview(devHandle, devType);
+            CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+            return ret;
+        }
+        else
+            return DEVICE_ERROR_NODEVICE;
     }
     else
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device not open %s", deviceID);
+        PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
         return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }
@@ -375,18 +386,22 @@ DEVICE_RETURN_CODE_T CommandManager::startCapture(int deviceID, DEVICE_TYPE_T de
     DEVICE_HANDLE devHandle;
     if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
-
-    if (devInfo->isDeviceOpen(devType, deviceID))
+    PMLOG_INFO(CONST_MODULE_CM, "Device is open check\n");
+    if (devInfo->isDeviceOpen(devType, &deviceID))
     {
         PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
-        devInfo->getHandle(deviceID, devType, &devHandle);
-        ret = devCtl->startCapture(devHandle, devType, sFormat);
-        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-        return ret;
+        if(devInfo->getHandle(deviceID, devType, &devHandle)==DEVICE_OK)
+        {
+            ret = devCtl->startCapture(devHandle, devType, sFormat);
+            CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+            return ret;
+        }
+        else
+            return DEVICE_ERROR_NODEVICE;
     }
     else
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device not open %s", deviceID);
+        PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
         return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }
@@ -401,17 +416,21 @@ DEVICE_RETURN_CODE_T CommandManager::stopCapture(int deviceID, DEVICE_TYPE_T dev
     if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
 
-    if (devInfo->isDeviceOpen(devType, deviceID))
+    if (devInfo->isDeviceOpen(devType, &deviceID))
     {
         PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
-        devInfo->getHandle(deviceID, devType, &devHandle);
-        ret = devCtl->stopCapture(devHandle, devType);
-        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-        return ret;
+        if(devInfo->getHandle(deviceID, devType, &devHandle)== DEVICE_OK)
+        {
+            ret = devCtl->stopCapture(devHandle, devType);
+            CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+            return ret;
+        }
+        else
+            return DEVICE_ERROR_NODEVICE;
     }
     else
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device not open %s", deviceID);
+        PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
         return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }
@@ -426,17 +445,21 @@ DEVICE_RETURN_CODE_T CommandManager::captureImage(int deviceID, DEVICE_TYPE_T de
     DEVICE_HANDLE devHandle;
     if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
-    if (devInfo->isDeviceOpen(devType, deviceID))
+    if (devInfo->isDeviceOpen(devType, &deviceID))
     {
         PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
-        devInfo->getHandle(deviceID, devType, &devHandle);
-        ret = devCtl->captureImage(devHandle, devType, nCount, sFormat);
-        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-        return ret;
+        if(devInfo->getHandle(deviceID, devType, &devHandle)== DEVICE_OK)
+        {
+            ret = devCtl->captureImage(devHandle, devType, nCount, sFormat);
+            CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+            return ret;
+        }
+        else
+            return DEVICE_ERROR_NODEVICE;
     }
     else
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Device not open %s", deviceID);
+        PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
         return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }

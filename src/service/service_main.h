@@ -15,7 +15,6 @@ extern "C"
 #include "libudev.h"
 #include "constants.h"
 #include "camera_types.h"
-
 class CameraService
 {
 private:

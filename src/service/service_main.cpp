@@ -514,7 +514,7 @@ bool CameraService::stopPreview(LSHandle *sh, LSMessage *message, void *ctx)
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "API: stop, Return: %s", json_object_to_json_string(pOutJson));
+    PMLOG_INFO(CONST_MODULE_LUNA, "API: stopPreview, Return: %s", json_object_to_json_string(pOutJson));
     LSErrorInit(&lserror);
 
     ret = LSMessageReply(sh, message, json_object_to_json_string(pOutJson), &lserror);
@@ -523,7 +523,7 @@ bool CameraService::stopPreview(LSHandle *sh, LSMessage *message, void *ctx)
         LSErrorPrint(&lserror, stderr);
         LSErrorFree(&lserror);
     }
-    PMLOG_INFO(CONST_MODULE_LUNA, "stop success\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "stopPreview success\n");
     LSMessageUnref(message);
 
     H_SERVICE_JSON_PUT(pInJson);
@@ -615,9 +615,9 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
             {
                     pMode = (char *) json_object_get_string(pInJsonChild2);
 
-                if(strcmp(pMode,"MODE_BRUST")==0)
+                if(strcmp(pMode,"MODE_BURST")==0)
                 {
-                    PMLOG_INFO(CONST_MODULE_LUNA,"Brust mode\n");
+                    PMLOG_INFO(CONST_MODULE_LUNA,"Burst mode\n");
                     if (nParamCheck
                             && json_object_object_get_ex(pInJsonChild1, CONST_PARAM_NAME_NIMAGE,
                                     &pInJsonChild2))
@@ -666,7 +666,7 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
                     sFormat.eFormat = nformat;
                     sFormat.nHeight = nHeight;
                     sFormat.nWidth = nWidth;
-                    if(nNImage)
+                    if(0 != nNImage)
                         nErrID = devCmd->captureImage(DevID, DevType, nNImage, sFormat);
                     else
                         nErrID = devCmd->startCapture(DevID, DevType, sFormat);
@@ -690,7 +690,7 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "API: startcapture, Return: %s",
+    PMLOG_INFO(CONST_MODULE_LUNA, "API: startCapture, Return: %s",
             json_object_to_json_string(pOutJson));
     LSErrorInit(&lserror);
 
@@ -700,7 +700,7 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
         LSErrorPrint(&lserror, stderr);
         LSErrorFree(&lserror);
     }
-    PMLOG_INFO(CONST_MODULE_LUNA, "startcapture success\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "startCapture success\n");
     LSMessageUnref(message);
 
     H_SERVICE_JSON_PUT(pInJson);
@@ -764,7 +764,6 @@ bool CameraService::stopCapture(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
             nErrID = devCmd->stopCapture(DevID, DevType); //enable
 
             if ((nErrID != DEVICE_OK))

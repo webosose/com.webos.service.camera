@@ -67,12 +67,12 @@ DEVICE_RETURN_CODE_T _v4l2_dequebuffer(CAM_DEVICE_T *pDevice, struct v4l2_buffer
         switch (errno)
         {
         case EAGAIN: // no data in the buffer
-            PMLOG_INFO(CONST_MODULE_DC, "%d: EAGAIN : no data in the buffer (can not recover)!!",
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: EAGAIN : no data in the buffer (can not recover)!!",
                     __LINE__);
             return DEVICE_ERROR_UNKNOWN;
             //case EIO:
         default:
-            PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_DQBUF error (%d) %s !!", __LINE__, errno,
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_DQBUF error (%d) %s !!", __LINE__, errno,
                     strerror(errno));
             return DEVICE_ERROR_UNKNOWN;
         }
@@ -80,7 +80,7 @@ DEVICE_RETURN_CODE_T _v4l2_dequebuffer(CAM_DEVICE_T *pDevice, struct v4l2_buffer
 
     if (pBuf->index >= pDevice->nMMbuffers)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "buf.index >= n_buffers !!", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "buf.index >= n_buffers !!", __LINE__);
         return DEVICE_ERROR_UNKNOWN;
     }
 
@@ -92,7 +92,7 @@ DEVICE_RETURN_CODE_T _v4l2_QueBuffer(CAM_DEVICE_T *pDevice, struct v4l2_buffer *
 {
     if (-1 == xioctl(pDevice->hCamfd, VIDIOC_QBUF, pBuf))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_QBUF error (%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_QBUF error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
         return DEVICE_ERROR_UNKNOWN;
     }
@@ -133,13 +133,13 @@ void *CaptureThread(void *arg)
 
     if (pDevice->CameraStatus == NO_DEVICE)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "Device is unplugged. callback don't work.");
+        PMLOG_INFO(CONST_MODULE_HAL, "Device is unplugged. callback don't work.");
     }
     else
     {
         if (val == DEVICE_ERROR_UNKNOWN)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d: error to get camera data, destroy capture thread!",
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: error to get camera data, destroy capture thread!",
                     __LINE__);
         }
     }
@@ -150,19 +150,19 @@ void *CaptureThread(void *arg)
 
 DEVICE_RETURN_CODE_T _v4l2_streamoff(CAM_DEVICE_T *pDevice)
 {
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Stop.\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Stop.\n", __LINE__);
 
     enum v4l2_buf_type type;
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (-1 == xioctl(pDevice->hCamfd, VIDIOC_STREAMOFF, &type))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_STREAMOFF error (%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_STREAMOFF error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
         return DEVICE_ERROR_CAN_NOT_STOP;
     }
     pDevice->isStreamOn = 0;
 
-    PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_STREAMOFF OK.", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_STREAMOFF OK.", __LINE__);
 
     return DEVICE_OK;
 
@@ -180,23 +180,23 @@ DEVICE_RETURN_CODE_T _v4l2_streamon(CAM_DEVICE_T *pDevice)
 
         if (-1 == xioctl(pDevice->hCamfd, VIDIOC_QUERYBUF, &buf))
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_QUERYBUF error (%d) %s !!", __LINE__, errno,
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_QUERYBUF error (%d) %s !!", __LINE__, errno,
                     strerror(errno));
             return DEVICE_ERROR_CAN_NOT_START;
         }
         if (-1 == xioctl(pDevice->hCamfd, VIDIOC_QBUF, &buf))
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_QBUF error (%d) %s !!", __LINE__, errno,
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_QBUF error (%d) %s !!", __LINE__, errno,
                     strerror(errno));
             return DEVICE_ERROR_CAN_NOT_START;
         }
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_QBUF OK.", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_QBUF OK.", __LINE__);
     }
 
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (-1 == xioctl(pDevice->hCamfd, VIDIOC_STREAMON, &type))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_STREAMON error (%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_STREAMON error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
         return DEVICE_ERROR_CAN_NOT_START;
     }
@@ -204,8 +204,8 @@ DEVICE_RETURN_CODE_T _v4l2_streamon(CAM_DEVICE_T *pDevice)
     pDevice->bCameraStreamDebugOn[0] = pDevice->bCameraStreamDebugOn[1] =
             pDevice->bCameraStreamDebugOn[2] = 1;
 
-    PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_STREAMON OK.\n", __LINE__);
-    PMLOG_INFO(CONST_MODULE_DC, "%d: pDevice->isStreamOn:%d\n", __LINE__, pDevice->isStreamOn);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_STREAMON OK.\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: pDevice->isStreamOn:%d\n", __LINE__, pDevice->isStreamOn);
 
     pDevice->CameraStatus = STREAM_ON;
     return DEVICE_OK;
@@ -223,7 +223,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_stop_capture(char *strDeviceName)
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Capture isn't happening currently for the device\n",
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Capture isn't happening currently for the device\n",
                 __LINE__);
         ret = DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
     }
@@ -238,7 +238,7 @@ void *capturing_thread(void *arg)
         ret = v4l2_cam_capture_image(pDevice->strDeviceName, 1);
         if (ret != DEVICE_OK)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d: start capture failed\n", __LINE__);
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: start capture failed\n", __LINE__);
             break;
         }
     }
@@ -260,7 +260,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_start_capture(char *strDeviceName, CAMERA_FORMAT s
         if ((nThreadErr = pthread_create(&gCameraDeviceList[cameraNum].capture_thread, NULL,
                 capturing_thread, &gCameraDeviceList[cameraNum])) != 0)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d create thread failed\n", __LINE__);
+            PMLOG_INFO(CONST_MODULE_HAL, "%d create thread failed\n", __LINE__);
             ret = DEVICE_ERROR_UNKNOWN;
         }
     }
@@ -282,7 +282,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_format(char *strDeviceName, CAMERA_FORMAT *sFo
 
     if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_FMT, &fmt))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_S_FMT error again.(%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_S_FMT error again.(%d) %s !!", __LINE__, errno,
                 strerror(errno));
         return DEVICE_ERROR_WRONG_PARAM;
     }
@@ -294,7 +294,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_format(char *strDeviceName, CAMERA_FORMAT *sFo
         sFormat->eFormat == CAMERA_FORMAT_H264ES;
     else
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: invalid format\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: invalid format\n", __LINE__);
         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
     }
     sFormat->nWidth = fmt.fmt.pix.width;
@@ -323,13 +323,13 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_format(char *strDeviceName, CAMERA_FORMAT sFor
         fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_H264; //0; //v4l2_fourcc('H','2','6','4'); //V4L2_PIX_FMT_H264;
     else
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: invalid format\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: invalid format\n", __LINE__);
         return DEVICE_ERROR_WRONG_PARAM;
     }
     fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
     if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_FMT, &fmt))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_S_FMT error again.(%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_S_FMT error again.(%d) %s !!", __LINE__, errno,
                 strerror(errno));
         return DEVICE_ERROR_WRONG_PARAM;
     }
@@ -348,7 +348,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_capture_image(char *strDeviceName, int nCount)
     int cameraNum = 0;
 
     cameraNum = _camera_init(strDeviceName);
-    PMLOG_INFO(CONST_MODULE_DC, "%s:%d : cameraNum:%d\n", __FUNCTION__, __LINE__, cameraNum);
+    PMLOG_INFO(CONST_MODULE_HAL, "%s:%d : cameraNum:%d\n", __FUNCTION__, __LINE__, cameraNum);
     CAM_DEVICE_T *pDevice = &gCameraDeviceList[cameraNum];
 
     for (i = 1; i <= nCount; i++)
@@ -367,7 +367,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_capture_image(char *strDeviceName, int nCount)
         {
             sprintf(filename, "/tmp/Picture%d.h264", rand());
         }
-        PMLOG_INFO(CONST_MODULE_DC, "picture will save at this file path:%s\n", filename);
+        PMLOG_INFO(CONST_MODULE_HAL, "picture will save at this file path:%s\n", filename);
         fp = fopen(filename, "a");
 
         fwrite((unsigned char *) (pDevice->hMMbuffers[vidbuf.index].start), 1, vidbuf.bytesused,
@@ -387,7 +387,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_list(int *cameraCount, int cameraType[])
 
     while (stat(buffer, &buf) == 0)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "buffer:%s\n\n", buffer);
+        PMLOG_INFO(CONST_MODULE_HAL, "buffer:%s\n\n", buffer);
         *cameraCount = *cameraCount + 1;
         cameraType[i] = CAMERA_TYPE_V4L2;
         i = i + 1;
@@ -417,7 +417,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -425,7 +425,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -434,7 +434,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_AUTO_WHITE_BALANCE;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -448,7 +448,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -456,7 +456,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -465,7 +465,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_AUTOGAIN;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -479,7 +479,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -487,7 +487,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -496,7 +496,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_BACKLIGHT_COMPENSATION;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -510,7 +510,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -518,7 +518,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -527,7 +527,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_EXPOSURE;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -541,7 +541,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -549,7 +549,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -558,7 +558,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_HFLIP;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -572,7 +572,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -580,7 +580,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -589,7 +589,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_HUE;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -603,7 +603,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -611,7 +611,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -620,7 +620,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_SATURATION;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -634,7 +634,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -642,7 +642,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -651,7 +651,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_PAN_ABSOLUTE;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -665,7 +665,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -673,7 +673,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -682,7 +682,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_GAMMA;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -696,7 +696,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -704,7 +704,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -713,7 +713,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_GAIN;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -727,7 +727,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -735,7 +735,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -744,7 +744,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_POWER_LINE_FREQUENCY;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -758,7 +758,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -766,7 +766,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -775,7 +775,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_WHITE_BALANCE_TEMPERATURE;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -789,7 +789,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -797,7 +797,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -806,7 +806,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_SHARPNESS;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -820,7 +820,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -828,7 +828,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -837,7 +837,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_TILT_ABSOLUTE;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -851,7 +851,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -859,7 +859,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -868,7 +868,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_CONTRAST;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -882,7 +882,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -890,7 +890,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -899,7 +899,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.id = V4L2_CID_BRIGHTNESS;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_G_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 *value = control.value;
@@ -908,7 +908,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
 
         default:
             {
-                PMLOG_INFO(CONST_MODULE_DC, "%d:%s Invalid Property\n", __LINE__, __FUNCTION__);
+                PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Invalid Property\n", __LINE__, __FUNCTION__);
                 ret = DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 break;
             }
@@ -937,7 +937,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -945,7 +945,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -955,7 +955,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -968,7 +968,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -976,7 +976,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -986,7 +986,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -999,7 +999,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1007,7 +1007,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1017,7 +1017,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1030,7 +1030,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1038,7 +1038,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1048,7 +1048,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1061,7 +1061,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1069,7 +1069,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1079,7 +1079,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1092,7 +1092,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1100,7 +1100,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1110,7 +1110,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1123,7 +1123,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1131,7 +1131,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1141,7 +1141,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1154,7 +1154,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1162,7 +1162,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1172,7 +1172,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1185,7 +1185,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1193,7 +1193,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1203,7 +1203,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1216,7 +1216,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1224,7 +1224,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1234,7 +1234,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1247,7 +1247,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1255,7 +1255,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1265,7 +1265,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1278,7 +1278,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1286,7 +1286,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1296,7 +1296,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1309,7 +1309,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1317,7 +1317,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1327,7 +1327,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1340,7 +1340,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1348,7 +1348,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1358,7 +1358,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1379,7 +1379,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1388,7 +1388,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1401,7 +1401,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported is not supported\n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1409,7 +1409,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 }
                 else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s Requested property is not supported\n", __LINE__,
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Requested property is not supported\n", __LINE__,
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
@@ -1419,7 +1419,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 control.value = value;
                 if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_CTRL, &control))
                 {
-                    PMLOG_INFO(CONST_MODULE_DC, "%d:%s set format error\n", __LINE__, __FUNCTION__);
+                    PMLOG_INFO(CONST_MODULE_HAL, "%d:%s set format error\n", __LINE__, __FUNCTION__);
                     ret = DEVICE_ERROR_UNKNOWN;
                 }
                 break;
@@ -1427,7 +1427,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
 
         default:
             {
-                PMLOG_INFO(CONST_MODULE_DC, "%d:%s Invalid Property\n", __LINE__, __FUNCTION__);
+                PMLOG_INFO(CONST_MODULE_HAL, "%d:%s Invalid Property\n", __LINE__, __FUNCTION__);
                 ret = DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 break;
             }
@@ -1466,13 +1466,13 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_info(char *strDeviceName, CAMERA_INFO_T *pInfo
     fd = open(buf, O_RDWR | O_NONBLOCK, 0);
     if (-1 == xioctl(fd, VIDIOC_QUERYCAP, &cap))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Querycap failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Querycap failed\n", __LINE__);
         ret = DEVICE_ERROR_UNKNOWN;
     }
     if (-1 == xioctl(fd, VIDIOC_G_FMT, &fmt))
     {
         ret = DEVICE_ERROR_UNKNOWN;
-        PMLOG_INFO(CONST_MODULE_DC, "%d:VIDIOC_G_FMT failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d:VIDIOC_G_FMT failed\n", __LINE__);
     }
     if (DEVICE_OK == ret)
     {
@@ -1491,23 +1491,23 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_info(char *strDeviceName, CAMERA_INFO_T *pInfo
             {
                 case V4L2_PIX_FMT_YUYV:
                     pixelFmt = pixelFmt | CAMERA_FORMAT_YUV;
-                    PMLOG_INFO(CONST_MODULE_DC, " & format: YuYv\n");
+                    PMLOG_INFO(CONST_MODULE_HAL, " & format: YuYv\n");
                     break;
                 case V4L2_PIX_FMT_MJPEG:
                     pixelFmt = pixelFmt | CAMERA_FORMAT_JPEG;
-                    PMLOG_INFO(CONST_MODULE_DC, " & format: MJPEG\n");
+                    PMLOG_INFO(CONST_MODULE_HAL, " & format: MJPEG\n");
                     break;
                 case V4L2_PIX_FMT_H264:
                     pixelFmt = pixelFmt | CAMERA_FORMAT_H264ES;
-                    PMLOG_INFO(CONST_MODULE_DC, " & format: H264\n");
+                    PMLOG_INFO(CONST_MODULE_HAL, " & format: H264\n");
                     break;
                 case V4L2_PIX_FMT_RGB24:
-                    PMLOG_INFO(CONST_MODULE_DC, " & format: RGB24\n");
+                    PMLOG_INFO(CONST_MODULE_HAL, " & format: RGB24\n");
                     break;
                 default:
-                    PMLOG_INFO(CONST_MODULE_DC, " & format: %u\n", pixelFmt);
+                    PMLOG_INFO(CONST_MODULE_HAL, " & format: %u\n", pixelFmt);
             }
-            PMLOG_INFO(CONST_MODULE_DC, "{ pixelformat =''%c%c%c%c'', description = ''%s'' }/n",
+            PMLOG_INFO(CONST_MODULE_HAL, "{ pixelformat =''%c%c%c%c'', description = ''%s'' }/n",
 
                     format.pixelformat & 0xFF, (format.pixelformat >> 8) & 0xFF,
 
@@ -1534,8 +1534,8 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_info(char *strDeviceName, CAMERA_INFO_T *pInfo
                 }
                 frmsize.index++;
             }
-            PMLOG_INFO(CONST_MODULE_DC, "Camera name:%s\n\n", cap.card);
-            PMLOG_INFO(CONST_MODULE_DC, "pixelFmt value:%d\n\n", pixelFmt);
+            PMLOG_INFO(CONST_MODULE_HAL, "Camera name:%s\n\n", cap.card);
+            PMLOG_INFO(CONST_MODULE_HAL, "pixelFmt value:%d\n\n", pixelFmt);
             pInfo->nFormat = pixelFmt;
             pInfo->nType = DEVICE_CAMERA;
             pInfo->bBuiltin = false;
@@ -1562,13 +1562,13 @@ DEVICE_RETURN_CODE_T v4l2_cam_stop(char *strDeviceName)
     if (gCameraDeviceList[camCnt].isStreamOn == 0)
     {
         //DDI_CAM_ERR_PRINT("Already started.");
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Already started.", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Already started.", __LINE__);
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
     }
     if ((ret = _v4l2_streamoff(&gCameraDeviceList[camCnt])) != DEVICE_OK)
     {
         // start thread
-        PMLOG_INFO(CONST_MODULE_DC, "%d: StreamOn failed: error (%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: StreamOn failed: error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
     }
     ret = _v4l2_memoryunmapping(&gCameraDeviceList[camCnt]);
@@ -1576,10 +1576,10 @@ DEVICE_RETURN_CODE_T v4l2_cam_stop(char *strDeviceName)
     ret = _v4l2_connect(&gCameraDeviceList[camCnt]);
     if ((ret != DEVICE_OK))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Camera connect FAILED !!\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Camera connect FAILED !!\n", __LINE__);
         return ret;
     }
-    PMLOG_INFO(CONST_MODULE_DC, "%d: status at the end of start:%d\n\n",
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: status at the end of start:%d\n\n",
             gCameraDeviceList[camCnt].isStreamOn);
     return ret;
 }
@@ -1593,34 +1593,34 @@ DEVICE_RETURN_CODE_T v4l2_cam_start(char *strDeviceName)
 
     if (gCameraDeviceList[camCnt].isStreamOn == 1)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Already started.", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Already started.", __LINE__);
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STARTED;
     }
     ret = _v4l2_ConnectCapCheck(&gCameraDeviceList[camCnt]);
     if ((ret != DEVICE_OK))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Connect cap check failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Connect cap check failed\n", __LINE__);
         return ret;
     }
     if (ret == DEVICE_OK
             && ((ret = _v4l2_ConnectRequestBuffers(&gCameraDeviceList[camCnt])) != DEVICE_OK))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Connect request buffers failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Connect request buffers failed\n", __LINE__);
         return ret;
     }
     if (ret == DEVICE_OK
             && ((ret = _v4l2_ConnectMemoryMapping(&gCameraDeviceList[camCnt])) != DEVICE_OK))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Connect memory mapping failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Connect memory mapping failed\n", __LINE__);
         return ret;
     }
     if ((ret = _v4l2_streamon(&gCameraDeviceList[camCnt])) != DEVICE_OK)
     {
         // start thread
-        PMLOG_INFO(CONST_MODULE_DC, "%d: StreamOn failed: error (%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: StreamOn failed: error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
     }
-    PMLOG_INFO(CONST_MODULE_DC, "%d: status at the end of start:%d\n\n",
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: status at the end of start:%d\n\n",
             gCameraDeviceList[camCnt].isStreamOn);
     return ret;
 }
@@ -1670,32 +1670,32 @@ int _camera_init(char * strDeviceName)
     strcpy(gCameraDeviceList[i].strDeviceName, strDeviceName);
     //sprintf (gCameraDeviceList[camCnt].strDevice, "/dev/video%d",cameraNum);
     _lockers_init(&gCameraDeviceList[i]);
-    PMLOG_INFO(CONST_MODULE_DC, "\nExisting inititate gracefully\n\n");
+    PMLOG_INFO(CONST_MODULE_HAL, "\nExisting inititate gracefully\n\n");
 
     return i;
 }
 DEVICE_RETURN_CODE_T v4l2_cam_open(char *strDeviceName)
 {
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Start.\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Start.\n", __LINE__);
 
     DEVICE_RETURN_CODE_T ret = DEVICE_OK;
     int camCnt = 0;
     int nThreadErr;
 
     camCnt = _camera_init(strDeviceName);
-    PMLOG_INFO(CONST_MODULE_DC, "\n@@@@@@@@@@@@@@camCnt:%d\n", camCnt);
+    PMLOG_INFO(CONST_MODULE_HAL, "\n@@@@@@@@@@@@@@camCnt:%d\n", camCnt);
 
     ret = _v4l2_connect(&gCameraDeviceList[camCnt]);
     if ((ret != DEVICE_OK))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Camera connect FAILED !!\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Camera connect FAILED !!\n", __LINE__);
         return ret;
     }
-    PMLOG_INFO(CONST_MODULE_DC, "%d: CreateTask : CaptureThread\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: CreateTask : CaptureThread\n", __LINE__);
     if ((nThreadErr = pthread_create(&gCameraDeviceList[camCnt].loop_thread, NULL, CaptureThread,
             &gCameraDeviceList[camCnt])) != 0)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d create thread failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d create thread failed\n", __LINE__);
         ret = DEVICE_ERROR_UNKNOWN;
     }
     gCameraDeviceList[camCnt].isDeviceOpen = true;
@@ -1732,9 +1732,9 @@ DEVICE_RETURN_CODE_T _v4l2_disconnect(CAM_DEVICE_T *pDevice)
         retVal = close(pDevice->hCamfd);
         pDevice->hCamfd = -1;
         if (-1 == retVal)
-            PMLOG_INFO(CONST_MODULE_DC, "Close device failed\n");
+            PMLOG_INFO(CONST_MODULE_HAL, "Close device failed\n");
         else
-            PMLOG_INFO(CONST_MODULE_DC, "%d: close device success\n");
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: close device success\n");
 
     }
     //ret = _v4l2_memoryunmapping(pDevice);
@@ -1743,7 +1743,7 @@ DEVICE_RETURN_CODE_T _v4l2_disconnect(CAM_DEVICE_T *pDevice)
 
 DEVICE_RETURN_CODE_T _v4l2_memoryunmapping(CAM_DEVICE_T *pDevice)
 {
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Memory UnMapping started\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Memory UnMapping started\n", __LINE__);
     unsigned int i;
 
     for (i = 0; i < pDevice->nMMbuffers; i++)
@@ -1752,13 +1752,13 @@ DEVICE_RETURN_CODE_T _v4l2_memoryunmapping(CAM_DEVICE_T *pDevice)
         {
             if (-1 == munmap(pDevice->hMMbuffers[i].start, pDevice->hMMbuffers[i].length))
             {
-                PMLOG_INFO(CONST_MODULE_DC, "%d: munmap error (%d) %s !!", __LINE__, errno,
+                PMLOG_INFO(CONST_MODULE_HAL, "%d: munmap error (%d) %s !!", __LINE__, errno,
                         strerror(errno));
                 return DEVICE_ERROR_UNKNOWN;
             }
             pDevice->hMMbuffers[i].start = NULL;
         }
-        PMLOG_INFO(CONST_MODULE_DC, "%d:Munmap buffers[%d].\n", __LINE__, i);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d:Munmap buffers[%d].\n", __LINE__, i);
     }
 
     return DEVICE_OK;
@@ -1771,11 +1771,11 @@ DEVICE_RETURN_CODE_T _v4l2_connect(CAM_DEVICE_T *pDevice)
     pDevice->hCamfd = open(pDevice->strDeviceName, O_RDWR, 0);
     if (-1 == pDevice->hCamfd)
     {
-        PMLOG_INFO(CONST_MODULE_DC, ":%d: v4l2_connect failed\n\n");
+        PMLOG_INFO(CONST_MODULE_HAL, ":%d: v4l2_connect failed\n\n");
         ret = DEVICE_ERROR_NODEVICE;
     }
     else
-        PMLOG_INFO(CONST_MODULE_DC, "%d: device open success\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: device open success\n");
     return ret;
 }
 
@@ -1798,30 +1798,30 @@ DEVICE_RETURN_CODE_T _v4l2_ConnectCapCheck(CAM_DEVICE_T *pDevice)
     {
         if (EINVAL == errno)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d: %s is no V4L2 device", __LINE__,
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: %s is no V4L2 device", __LINE__,
                     pDevice->strDeviceName);
             return DEVICE_ERROR_UNSUPPORTED_DEVICE;
         }
         else
-            PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_QUERYCAP error (%d) %s !!", __LINE__, errno,
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_QUERYCAP error (%d) %s !!", __LINE__, errno,
                     strerror(errno));
     }
     else
-        PMLOG_INFO(CONST_MODULE_DC, "VIDIOC_QUERYCAP OK.");
+        PMLOG_INFO(CONST_MODULE_HAL, "VIDIOC_QUERYCAP OK.");
 
     if (!(cap.capabilities & V4L2_CAP_VIDEO_CAPTURE))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%s is no video capture device !!", pDevice->strDeviceName);
+        PMLOG_INFO(CONST_MODULE_HAL, "%s is no video capture device !!", pDevice->strDeviceName);
         return DEVICE_ERROR_UNSUPPORTED_DEVICE;
     }
 
     if (!(cap.capabilities & V4L2_CAP_STREAMING))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%s does not support streaming i/o !!", pDevice->strDeviceName);
+        PMLOG_INFO(CONST_MODULE_HAL, "%s does not support streaming i/o !!", pDevice->strDeviceName);
         return DEVICE_ERROR_UNSUPPORTED_DEVICE;
     }
 
-    PMLOG_INFO(CONST_MODULE_DC, "%s's capabilities are OK.", pDevice->strDeviceName);
+    PMLOG_INFO(CONST_MODULE_HAL, "%s's capabilities are OK.", pDevice->strDeviceName);
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     fmt.fmt.pix.width = pDevice->nVideoWidth;
@@ -1845,14 +1845,14 @@ DEVICE_RETURN_CODE_T _v4l2_ConnectCapCheck(CAM_DEVICE_T *pDevice)
 
     if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_FMT, &fmt))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_S_FMT error (%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_S_FMT error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
         if ((fmt.fmt.pix.pixelformat == V4L2_PIX_FMT_H264))
         {
             fmt.fmt.pix.pixelformat = 0;
             if (-1 == xioctl(pDevice->hCamfd, VIDIOC_S_FMT, &fmt))
             {
-                PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_S_FMT error again.(%d) %s !!", __LINE__,
+                PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_S_FMT error again.(%d) %s !!", __LINE__,
                         errno, strerror(errno));
                 return DEVICE_ERROR_WRONG_PARAM;
             }
@@ -1860,12 +1860,12 @@ DEVICE_RETURN_CODE_T _v4l2_ConnectCapCheck(CAM_DEVICE_T *pDevice)
         else
             return DEVICE_ERROR_WRONG_PARAM;
     }
-    PMLOG_INFO(CONST_MODULE_DC, "VIDIOC_S_FMT OK.(format = %d)", pDevice->nVideoMode);
+    PMLOG_INFO(CONST_MODULE_HAL, "VIDIOC_S_FMT OK.(format = %d)", pDevice->nVideoMode);
 
     if (fmt.fmt.pix.width != (unsigned int) pDevice->nVideoWidth
             || fmt.fmt.pix.height != (unsigned int) pDevice->nVideoHeight)
     {
-        PMLOG_INFO(CONST_MODULE_DC,
+        PMLOG_INFO(CONST_MODULE_HAL,
                 "%d: VIDIOC_S_FMT changed width or height: wanted(%d %d), got(%d %d) !!", __LINE__,
                 pDevice->nVideoWidth, pDevice->nVideoHeight, fmt.fmt.pix.width, fmt.fmt.pix.height);
         return DEVICE_ERROR_WRONG_PARAM;
@@ -1887,16 +1887,16 @@ DEVICE_RETURN_CODE_T _v4l2_ConnectRequestBuffers(CAM_DEVICE_T *pDevice)
         //  AIT_PRINT("%s does not support memory mapping\r\n", pDevice->strDevice);
         //else
 
-        PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_REQBUFS error (%d) %s !!", __LINE__, errno,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_REQBUFS error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
         return DEVICE_ERROR_UNKNOWN;
     }
     else
-        PMLOG_INFO(CONST_MODULE_DC, "VIDIOC_REQBUFS OK.");
+        PMLOG_INFO(CONST_MODULE_HAL, "VIDIOC_REQBUFS OK.");
 
     if (req.count < 2)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "%d: Insufficient buffer memory on %s.", __LINE__,
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: Insufficient buffer memory on %s.", __LINE__,
                 pDevice->strDeviceName);
         return DEVICE_ERROR_OUT_OF_MEMORY;
     }
@@ -1912,7 +1912,7 @@ DEVICE_RETURN_CODE_T _v4l2_ConnectMemoryMapping(CAM_DEVICE_T *pDevice)
 
     struct v4l2_buffer buf;
 
-    PMLOG_INFO(CONST_MODULE_DC, "%d: number of buffers requested:%d\n\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: number of buffers requested:%d\n\n", __LINE__,
             pDevice->nMMbuffers);
     for (i = 0; i < pDevice->nMMbuffers; i++)
     {
@@ -1921,7 +1921,7 @@ DEVICE_RETURN_CODE_T _v4l2_ConnectMemoryMapping(CAM_DEVICE_T *pDevice)
         buf.index = i;
         if (-1 == xioctl(pDevice->hCamfd, VIDIOC_QUERYBUF, &buf))
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d: VIDIOC_QUERYBUF error (%d) %s !!", __LINE__, errno,
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: VIDIOC_QUERYBUF error (%d) %s !!", __LINE__, errno,
                     strerror(errno));
             return DEVICE_ERROR_UNKNOWN;
         }
@@ -1930,11 +1930,11 @@ DEVICE_RETURN_CODE_T _v4l2_ConnectMemoryMapping(CAM_DEVICE_T *pDevice)
                 pDevice->hCamfd, buf.m.offset);
         if (MAP_FAILED == pDevice->hMMbuffers[i].start)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "%d: mmap failed (%d) %s !!", __LINE__, errno,
+            PMLOG_INFO(CONST_MODULE_HAL, "%d: mmap failed (%d) %s !!", __LINE__, errno,
                     strerror(errno));
             return DEVICE_ERROR_OUT_OF_MEMORY;
         }
-        PMLOG_INFO(CONST_MODULE_DC, "Mmap buffers[%d] : %d.", i, buf.length);
+        PMLOG_INFO(CONST_MODULE_HAL, "Mmap buffers[%d] : %d.", i, buf.length);
     }
 
     return DEVICE_OK;
