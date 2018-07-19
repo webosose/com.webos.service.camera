@@ -45,7 +45,7 @@ LSMethod camera_methods[] =
 { "open", CameraService::open },
 { "close", CameraService::close },
 { "getInfo", CameraService::getInfo },
-{ "getCameralist", CameraService::getCameralist },
+{ "getCameraList", CameraService::getCameraList },
 { "getProperties", CameraService::getProperties },
 { "setProperties", CameraService::setProperties },
 { "setFormat", CameraService::setFormat },
@@ -777,7 +777,7 @@ bool CameraService::stopCapture(LSHandle *sh, LSMessage *message, void *ctx)
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "API: stop, Return: %s", json_object_to_json_string(pOutJson));
+    PMLOG_INFO(CONST_MODULE_LUNA, "API: stopCapture, Return: %s", json_object_to_json_string(pOutJson));
     LSErrorInit(&lserror);
 
     ret = LSMessageReply(sh, message, json_object_to_json_string(pOutJson), &lserror);
@@ -786,7 +786,7 @@ bool CameraService::stopCapture(LSHandle *sh, LSMessage *message, void *ctx)
         LSErrorPrint(&lserror, stderr);
         LSErrorFree(&lserror);
     }
-    PMLOG_INFO(CONST_MODULE_LUNA, "stop success\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "stopCapture success\n");
     LSMessageUnref(message);
 
     H_SERVICE_JSON_PUT(pInJson);
@@ -936,7 +936,7 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
     return TRUE;
 }
 
-bool CameraService::getCameralist(LSHandle *sh, LSMessage *message, void *ctx)
+bool CameraService::getCameraList(LSHandle *sh, LSMessage *message, void *ctx)
 {
 
     LSError lserror;
@@ -973,7 +973,6 @@ bool CameraService::getCameralist(LSHandle *sh, LSMessage *message, void *ctx)
         pOutJson = json_object_new_object();
 
         PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-
         int nCamCount;
         int nMicCount;
         for (i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
@@ -1036,7 +1035,7 @@ bool CameraService::getCameralist(LSHandle *sh, LSMessage *message, void *ctx)
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "API: getCameralist, Return: %s", json_object_to_json_string(pOutJson));
+    PMLOG_INFO(CONST_MODULE_LUNA, "API: getCameraList, Return: %s", json_object_to_json_string(pOutJson));
     LSErrorInit(&lserror);
 
     ret = LSMessageReply(sh, message, json_object_to_json_string(pOutJson), &lserror);
@@ -1046,7 +1045,7 @@ bool CameraService::getCameralist(LSHandle *sh, LSMessage *message, void *ctx)
         LSErrorFree(&lserror);
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "getCameralist success\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "getCameraList success\n");
 
     LSMessageUnref(message);
 
@@ -1688,7 +1687,7 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            nErrID = devCmd->setformat(DevID, DevType,sFormat);
+            nErrID = devCmd->setFormat(DevID, DevType,sFormat);
 
             if ((nErrID != DEVICE_OK))
             {
@@ -1707,7 +1706,7 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "API: setformat, Return: %s",
+    PMLOG_INFO(CONST_MODULE_LUNA, "API: setFormat, Return: %s",
             json_object_to_json_string(pOutJson));
     LSErrorInit(&lserror);
 
@@ -1718,7 +1717,7 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
         LSErrorFree(&lserror);
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "setProperties success\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "setFormat success\n");
 
     LSMessageUnref(message);
 

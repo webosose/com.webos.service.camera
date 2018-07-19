@@ -426,7 +426,7 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(DEVICE_HANDLE devHandle,
 }
 
 
-DEVICE_RETURN_CODE_T DeviceControl::setformat(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
+DEVICE_RETURN_CODE_T DeviceControl::setFormat(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
         FORMAT sFormat)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);

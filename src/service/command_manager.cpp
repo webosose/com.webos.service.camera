@@ -276,7 +276,7 @@ DEVICE_RETURN_CODE_T CommandManager::setProperty(int deviceID, DEVICE_TYPE_T dev
     }
 }
 
-DEVICE_RETURN_CODE_T CommandManager::setformat(int deviceID, DEVICE_TYPE_T devType,
+DEVICE_RETURN_CODE_T CommandManager::setFormat(int deviceID, DEVICE_TYPE_T devType,
         FORMAT oFormat)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
@@ -292,7 +292,7 @@ DEVICE_RETURN_CODE_T CommandManager::setformat(int deviceID, DEVICE_TYPE_T devTy
 
             PMLOG_INFO(CONST_MODULE_CM, "Device is open\n");
             devInfo->getHandle(deviceID, devType, &devHandle);
-            ret = devCtl->setformat(devHandle, devType, oFormat);
+            ret = devCtl->setFormat(devHandle, devType, oFormat);
             CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
             return ret;
         }

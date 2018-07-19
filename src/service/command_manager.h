@@ -55,13 +55,11 @@ public:
     DEVICE_RETURN_CODE_T createHandle(int deviceID, DEVICE_TYPE_T devType, int *devhandle);
     DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *pList, int nDevCount,
             DEVICE_EVENT_STATE_T *pCamEvent, DEVICE_EVENT_STATE_T *pMicEvent);
-    DEVICE_RETURN_CODE_T joinSession(int deviceID, DEVICE_TYPE_T devType);
-    DEVICE_RETURN_CODE_T leaveSession(int deviceID, DEVICE_TYPE_T devType);
     DEVICE_RETURN_CODE_T getProperty(int deviceID, DEVICE_TYPE_T devType,
             CAMERA_PROPERTIES_T *devproperty);
     DEVICE_RETURN_CODE_T setProperty(int deviceID, DEVICE_TYPE_T devType,
             CAMERA_PROPERTIES_T *oInfo);
-    DEVICE_RETURN_CODE_T setformat(int deviceID, DEVICE_TYPE_T devType,
+    DEVICE_RETURN_CODE_T setFormat(int deviceID, DEVICE_TYPE_T devType,
             FORMAT oFormat);
     DEVICE_RETURN_CODE_T startPreview(int deviceID, DEVICE_TYPE_T devType, int *pKey);
     //Stop Capture

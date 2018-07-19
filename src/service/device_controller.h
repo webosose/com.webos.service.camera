@@ -69,7 +69,7 @@ class DeviceControl
         DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *pList,int *pCamDev, int *pMicDev, int *pCamSupport, int *pMicSupport,int devCount);
         DEVICE_RETURN_CODE_T getDeviceProperty(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_PROPERTIES_T *oParams);
         DEVICE_RETURN_CODE_T setDeviceProperty(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_PROPERTIES_T *oParams);
-        DEVICE_RETURN_CODE_T setformat(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, FORMAT oFormat);
+        DEVICE_RETURN_CODE_T setFormat(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, FORMAT oFormat);
   };
 
 #ifdef __cplusplus
