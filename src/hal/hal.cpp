@@ -94,6 +94,7 @@ static CAMERA_DEVICE gCameraCamList[10];
 static MIC_DEVICE gMicInfo[10];
 
 // Callback from HAL
+static void _device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle);
 static void _cb_michal(int nDeviceID, int stream_type, unsigned int data_length, unsigned char *data,
         unsigned int timestamp);
 static int _camera_find(int nDeviceId);
@@ -234,16 +235,16 @@ DEVICE_RETURN_CODE_T hal_cam_set_property(DEVICE_HANDLE sDevHandle,
     return nRet;
 }
 
-DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_HANDLE sDevHandle, CAMERA_INFO_T *pInfo)
+DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_LIST_T sDeviceInfo, CAMERA_INFO_T *pInfo)
 {
     DEVICE_RETURN_CODE_T nRet = DEVICE_ERROR_UNKNOWN;
+    DEVICE_HANDLE sDevHandle;
     int camNum = 0;
 
-    //Parse device Id and get the camera Num
-    camNum = _camera_find(sDevHandle.nDevId);
+    _device_init(sDeviceInfo, &sDevHandle);
     PMLOG_INFO(CONST_MODULE_DC, "%d: Started!strDeviceName=%s\n", __LINE__,
-            gCameraCamList[camNum].strDeviceName);
-    nRet = v4l2_cam_get_info(gCameraCamList[camNum].strDeviceName, pInfo);
+            sDevHandle.strDeviceNode);
+    nRet = v4l2_cam_get_info(sDevHandle.strDeviceNode, pInfo);
     if (DEVICE_OK != nRet)
         PMLOG_INFO(CONST_MODULE_DC, "%d: query device info failed\n", __LINE__);
     return nRet;
@@ -513,11 +514,10 @@ DEVICE_RETURN_CODE_T hal_mic_open(int nMicNum, int samplingRate, int codec, int 
     gMicInfo[micNum].isDeviceOpen = true;
     gMicInfo[micNum].nState = STATE_OPEN;
     gMicInfo[micNum].nDeviceID = micNum;
-    //strcpy(gMicInfo[micNum].strDeviceName, deviceName);
     return ret;
 }
 
-static void device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle)
+static void _device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle)
 {
     struct udev *camudev;
     struct udev_enumerate *enumerate;
@@ -576,7 +576,7 @@ DEVICE_RETURN_CODE_T hal_cam_create_handle(DEVICE_LIST_T sDeviceInfo, DEVICE_HAN
     int cameraNum = 0;
     int nDeviceId = -1;
 
-    device_init(sDeviceInfo, pDevHandle);
+    _device_init(sDeviceInfo, pDevHandle);
     cameraNum = _camera_find(nDeviceId);
     PMLOG_INFO(CONST_MODULE_DC, "cameraNum:%d\n", cameraNum);
     PMLOG_INFO(CONST_MODULE_DC, "cameraNum->deviceId:%d\n", gCameraCamList[cameraNum].nDeviceID);
