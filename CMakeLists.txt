@@ -61,9 +61,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/hal/utils/)
 #service
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
 include_directories(${CMAKE_SOURCE_DIR}/files/)
-include_directories(${CMAKE_SOURCE_DIR}/files/launch/)
 include_directories(${CMAKE_SOURCE_DIR}/files/sysbus/)
-
 include_directories(${CMAKE_SOURCE_DIR}/files/systemd/)
 
 set(PROJECT_NAME_SRC_LIST
