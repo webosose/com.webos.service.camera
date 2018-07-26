@@ -49,9 +49,7 @@ public:
     DEVICE_RETURN_CODE_T open(int deviceID, DEVICE_TYPE_T devType,int *devhandle);
     //Close the device
     DEVICE_RETURN_CODE_T close(int deviceID, DEVICE_TYPE_T devType);
-    // Returns/Notify the devices upluged in/out
-    DEVICE_RETURN_CODE_T getDeviceStatus();
-    DEVICE_RETURN_CODE_T getdeviceinfo(int deviceID, DEVICE_TYPE_T devType, CAMERA_INFO_T *pInfo);
+    DEVICE_RETURN_CODE_T getDeviceInfo(int deviceID, DEVICE_TYPE_T devType, CAMERA_INFO_T *pInfo);
     DEVICE_RETURN_CODE_T getDeviceList(int *pCamDev, int *pMicDev, int *pCamSupport,
             int *pMicSupport);
     DEVICE_RETURN_CODE_T createHandle(int deviceID, DEVICE_TYPE_T devType, int *devhandle);

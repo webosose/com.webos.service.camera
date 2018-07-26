@@ -115,10 +115,10 @@ int parse_parameter(char *pID, char *pDevice, DEVICE_TYPE *pDevType, int *pDevID
 
 int get_id(char *pID,int *pnID)
 {
-    static int nID = 0;
-    if(pID == NULL)
-        return DEVICE_ERROR_WRONG_PARAM;
-    nID += 1;
+    int nID;
+    char devID[3];
+    strcpy(devID, &pID[strlen(CONST_DEVICE_NAME_CAMERA)]);
+    nID = atoi(devID);
     *pnID = nID;
     return DEVICE_OK;
 }
@@ -835,8 +835,8 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
 
         pOutJson = json_object_new_object();
 
-        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_DEVICE_HANDLE, &pInJsonChild1))
-            DevID = json_object_get_int(pInJsonChild1);
+        if (nParamCheck && json_object_object_get_ex(pInJson, CONST_PARAM_NAME_ID, &pInJsonChild1))
+            devID = (char*)json_object_get_string(pInJsonChild1);
         else
             nParamCheck = nParamCheck & CONST_PARAM_VALUE_FALSE;
 
@@ -853,8 +853,9 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
-            nErrID = devCmd->getdeviceinfo(DevID, DevType, &oInfo);
+            ret = get_id(devID,&DevID);
+            PMLOG_INFO(CONST_MODULE_LUNA, "DevID %d nId %d\n", DevID, Id);
+            nErrID = devCmd->getDeviceInfo(DevID, DevType, &oInfo);
 
             if ((nErrID != DEVICE_OK))
             {

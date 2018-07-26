@@ -253,25 +253,12 @@ bool DeviceControl::isUpdatedCameraList()
 
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getdeviceinfo(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
-        CAMERA_INFO_T *pInfo)
+DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(DEVICE_LIST_T stList,CAMERA_INFO_T *pInfo)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    int deviceID = 1;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-
-    if (DEVICE_CAMERA == devType)
-    {
-        ret = hal_cam_get_info(devHandle, pInfo);
-    }
-    else
-    {
-        MIC_INFO_T sMicInfo;
-        ret = hal_mic_get_info(deviceID, &sMicInfo);
-    }
+    ret = hal_cam_get_info(stList, pInfo);
     if (ret != DEVICE_OK)
     {
         PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");

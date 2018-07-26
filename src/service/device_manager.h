@@ -52,6 +52,7 @@ public:
     bool isUpdatedList();
     DEVICE_RETURN_CODE_T getList(int *pCamDev, int *pMicDev, int *pCamSupport, int *pMicSupport);
     DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *pList, int nDevCount,DEVICE_EVENT_STATE_T *pCamEvent,DEVICE_EVENT_STATE_T *pMicEvent);
+    DEVICE_RETURN_CODE_T getInfo(int ndevID, CAMERA_INFO_T *pInfo);
     DEVICE_RETURN_CODE_T createHandle(int nDeviceID,DEVICE_TYPE_T devType,int *ndevID);
     DEVICE_RETURN_CODE_T getHandle(int nDeviceID,DEVICE_TYPE_T devType,DEVICE_HANDLE *devHandle);
 };

@@ -41,6 +41,7 @@ typedef struct _DEVICE_STATUS
     //Device
     char strDeviceName[256];
     int nDeviceID;
+    int nDevIndex;
     int nDevCount;
     DEVICE_HANDLE sDevHandle;
     bool isDeviceOpen;
@@ -60,7 +61,7 @@ int find_devnum(int ndeviceID)
     int nDeviceID = 0;
     for (i = 0; i < gdevCount; i++)
     {
-        if (gdev_status[i].nDeviceID == ndeviceID)
+        if((gdev_status[i].nDevIndex == ndeviceID)||(gdev_status[i].nDeviceID == ndeviceID))
         {
             nDeviceID = i;
             PMLOG_INFO(CONST_MODULE_DM, "dev_num is :%d\n", i);
@@ -171,12 +172,44 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     {
         gdev_status[i].stList = pList[i];
         gdev_status[i].nDevCount = nDevCount;
+        gdev_status[i].nDevIndex = i+1;
     }
     ret = dCtl->getDeviceList(pList, &nCamDev, &nMicDev, &nCamSupport, &nMicSupport, nDevCount);
     if (DEVICE_OK == ret)
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
 }
+
+
+DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndevID, CAMERA_INFO_T *pInfo)
+{
+    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
+    DEVICE_LIST_T stList;
+    int nCamID = 0;
+    nCamID = find_devnum(ndevID);
+    if (gdev_status[nCamID].nDevIndex == ndevID)
+    {
+        stList = gdev_status[nCamID].stList;
+    }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "Failed to get device number\n");
+        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+        return DEVICE_ERROR_NODEVICE;
+    }
+    ret = dCtl->getDeviceInfo(stList,pInfo);
+    if (DEVICE_OK != ret)
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
+        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+        return ret;
+    }
+    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+    return DEVICE_OK;
+
+}
+
 
 DEVICE_RETURN_CODE_T DeviceManager::createHandle(int nDeviceID, DEVICE_TYPE_T devType, int *ndevID)
 {
