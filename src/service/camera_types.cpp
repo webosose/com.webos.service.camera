@@ -90,7 +90,7 @@ extern PmLogContext GetCameraLunaPmLogContext()
     static PmLogContext usLogContext = 0;
     if (0 == usLogContext)
     {
-        PmLogGetContext("camera.lunaservice", &usLogContext);
+        PmLogGetContext("camera", &usLogContext);
     }
     return usLogContext;
 }
