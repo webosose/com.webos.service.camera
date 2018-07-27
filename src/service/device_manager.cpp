@@ -114,10 +114,14 @@ bool DeviceManager::isDeviceOpen(DEVICE_TYPE_T devType, int deviceID)
 bool DeviceManager::isDeviceValid(DEVICE_TYPE_T devType, int deviceID)
 {
     int dev_num = find_devnum(deviceID);
-    if (deviceID == gdev_status[dev_num].nDeviceID)
-        return CONST_PARAM_VALUE_TRUE;
-    else
-        return CONST_PARAM_VALUE_FALSE;
+    if(gdev_status[dev_num].isDeviceOpen == TRUE)
+    {
+         return CONST_PARAM_VALUE_TRUE;
+    }
+     else
+    {
+         return CONST_PARAM_VALUE_FALSE;
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
