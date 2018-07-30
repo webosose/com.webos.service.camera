@@ -1545,7 +1545,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_info(char *strDeviceName, CAMERA_INFO_T *pInfo
             pInfo->nMaxPictureHeight = height;
             pInfo->nMaxPictureWidth = width;
             pInfo->nMaxVideoHeight = height;
-            pInfo->nMaxVideoWidth = height;
+            pInfo->nMaxVideoWidth = width;
         }
     }
 
