@@ -408,7 +408,6 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_property(char *strDeviceName, CAMERA_PROPERTIE
 
     cameraNum = _camera_init(strDeviceName);
     CAM_DEVICE_T *pDevice = &gCameraDeviceList[cameraNum];
-
     switch (nProperty)
     {
         case CAMERA_PROPERTIES_AUTOWHITEBALANCE:
@@ -1373,7 +1372,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                     if (errno != EINVAL)
                     {
                         PMLOG_INFO(CONST_MODULE_DC,
-                                "%d:%s : Requested property is not supported is not supported\n", __LINE__,
+                                "%d:%s : Requested property is not supported \n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                     }
@@ -1384,7 +1383,6 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                             __FUNCTION__);
                     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
                 }
-
                 memset(&control, 0, sizeof(control));
                 control.id = V4L2_CID_CONTRAST;
                 control.value = value;

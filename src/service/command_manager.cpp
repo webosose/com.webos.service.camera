@@ -217,7 +217,7 @@ DEVICE_RETURN_CODE_T CommandManager::getProperty(int deviceID, DEVICE_TYPE_T dev
     if (devInfo->isDeviceOpen(devType, deviceID))
     {
 
-        PMLOG_INFO(CONST_MODULE_CM, "Device alreadyopen with Valid session id\n");
+        PMLOG_INFO(CONST_MODULE_CM, "Device is open \n");
     }
     else
     {

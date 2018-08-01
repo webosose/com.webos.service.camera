@@ -1110,7 +1110,6 @@ bool CameraService::getProperties(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
             nErrID = devCmd->getProperty(DevID, DevType, &dev_property);
 
             if ((nErrID != DEVICE_OK))
@@ -1550,7 +1549,6 @@ bool CameraService::setProperties(LSHandle *sh, LSMessage *message, void *ctx)
         else
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
-            ret = parse_parameter(devID, devType, &DevType, &DevID, &Id);
             nErrID = devCmd->setProperty(DevID, DevType, &oParams);
 
             if ((nErrID != DEVICE_OK))
