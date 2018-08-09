@@ -92,12 +92,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(DEVICE_HANDLE devHandle, DEVICE
 
     if (DEVICE_CAMERA == devType)
     {
-        FORMAT sFormat;
-        //setting the default format
-        sFormat.eFormat = CONST_DEFAULT_FORMAT;
-        sFormat.nWidth = CONST_DEFAULT_WIDTH;
-        sFormat.nHeight = CONST_DEFAULT_HEIGHT;
-        ret = hal_cam_set_format(devHandle, sFormat);
         ret = hal_cam_start(devHandle, pKey);
     }
     else

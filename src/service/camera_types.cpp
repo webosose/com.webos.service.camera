@@ -101,16 +101,10 @@ DEVICE_RETURN_CODE_T _ConvertFormatToCode(char *pFormat, CAMERA_DATA_FORMAT *pFo
 
     if (strlen(pFormat) == 3 && strncmp(pFormat, "YUV", 3) == 0)
         *pFormatCode = CAMERA_FORMAT_YUV;
-    else if (strlen(pFormat) == 4 && strncmp(pFormat, "SECS", 4) == 0)
-        *pFormatCode = CAMERA_FORMAT_SECS;
-    else if (strlen(pFormat) == 3 && strncmp(pFormat, "MP4", 3) == 0)
-        *pFormatCode = CAMERA_FORMAT_MP4;
     else if (strlen(pFormat) == 6 && strncmp(pFormat, "H264ES", 6) == 0)
         *pFormatCode = CAMERA_FORMAT_H264ES;
     else if (strlen(pFormat) == 4 && strncmp(pFormat, "JPEG", 4) == 0)
         *pFormatCode = CAMERA_FORMAT_JPEG;
-    else if (strlen(pFormat) == 5 && strncmp(pFormat, "SKYPE", 5) == 0)
-        *pFormatCode = CAMERA_FORMAT_SKYPE;
     else
         return DEVICE_ERROR_WRONG_PARAM;
 
@@ -160,24 +154,17 @@ void _GetFormatString(int nFormat, char *pFormats)
     {
         switch (CHECK_BIT(nFormat, i))
         {
-        case CAMERA_FORMAT_YUV:
-            strncat(pFormats, "YUV|", 4);
-            break;
-        case CAMERA_FORMAT_H264ES:
-            strncat(pFormats, "H264ES|", 7);
-            break;
-        case CAMERA_FORMAT_H264TS:
-            strncat(pFormats, "H264TS|", 7);
-            break;
-        case CAMERA_FORMAT_SECS:
-            strncat(pFormats, "SECS|", 5);
-            break;
-        case CAMERA_FORMAT_MP4:
-            strncat(pFormats, "MP4|", 4);
-            break;
-        case CAMERA_FORMAT_SKYPE:
-            strncat(pFormats, "SKYPE|", 5);
-            break;
+            case CAMERA_FORMAT_YUV:
+                strncat(pFormats, "YUV|", 4);
+                break;
+            case CAMERA_FORMAT_H264ES:
+                strncat(pFormats, "H264ES|", 7);
+                break;
+            case CAMERA_FORMAT_JPEG:
+                strncat(pFormats, "JPEG|", 5);
+                break;
+            default:
+                break;
         }
     }
 

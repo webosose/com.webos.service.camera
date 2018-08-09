@@ -657,13 +657,20 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
             if (DEVICE_CAMERA == DevType)
             {
                 _ConvertFormatToCode(pFormat, &nformat);
-                sFormat.eFormat = nformat;
-                sFormat.nHeight = nHeight;
-                sFormat.nWidth = nWidth;
-                if(nNImage)
-                    nErrID = devCmd->captureImage(DevID, DevType, nNImage, sFormat);
+                if((nformat != CAMERA_FORMAT_JPEG)&& (nformat != CAMERA_FORMAT_YUV))
+                {
+                     nErrID = DEVICE_ERROR_UNSUPPORTED_FORMAT;
+                }
                 else
-                    nErrID = devCmd->startCapture(DevID, DevType, sFormat);
+                {
+                    sFormat.eFormat = nformat;
+                    sFormat.nHeight = nHeight;
+                    sFormat.nWidth = nWidth;
+                    if(nNImage)
+                        nErrID = devCmd->captureImage(DevID, DevType, nNImage, sFormat);
+                    else
+                        nErrID = devCmd->startCapture(DevID, DevType, sFormat);
+                }
 
                 if ((nErrID != DEVICE_OK))
                 {
