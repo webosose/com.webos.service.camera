@@ -114,8 +114,11 @@ void *CaptureThread(void *arg)
             if (val == DEVICE_OK)
             {
                 // Deque buffer
-                pDevice->pDataCB(pDevice->cameraNum, ST_YUY2, vidbuf.bytesused,
-                        (unsigned char *) (pDevice->hMMbuffers[vidbuf.index].start), 0);
+                if(pDevice->isCapturing != true)
+                {
+                    pDevice->pDataCB(pDevice->cameraNum, ST_YUY2, vidbuf.bytesused,
+                            (unsigned char *) (pDevice->hMMbuffers[vidbuf.index].start), 0);
+                }
                 val = _v4l2_QueBuffer(pDevice, &vidbuf);
             }
             if ((val == DEVICE_ERROR_UNKNOWN))
@@ -233,9 +236,14 @@ void *capturing_thread(void *arg)
 {
     CAM_DEVICE_T *pDevice = (CAM_DEVICE_T *) arg;
     DEVICE_RETURN_CODE_T ret;
+    CAMERA_FORMAT sCurrentFormat;
+
+    sCurrentFormat.nWidth = pDevice->nVideoWidth;
+    sCurrentFormat.nHeight = pDevice->nVideoHeight;
+    sCurrentFormat.eFormat = pDevice->nVideoMode;
     while (pDevice->isCapturing)
     {
-        ret = v4l2_cam_capture_image(pDevice->strDeviceName, 1);
+        ret = v4l2_cam_capture_image(pDevice->strDeviceName, 1,sCurrentFormat);
         if (ret != DEVICE_OK)
         {
             PMLOG_INFO(CONST_MODULE_HAL, "%d: start capture failed\n", __LINE__);
@@ -339,17 +347,65 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_format(char *strDeviceName, CAMERA_FORMAT sFor
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T v4l2_cam_capture_image(char *strDeviceName, int nCount)
+DEVICE_RETURN_CODE_T v4l2_cam_capture_image(char *strDeviceName, int nCount, CAMERA_FORMAT sFormat)
 {
     FILE *fp;
     char filename[100];
     int i;
     struct v4l2_buffer vidbuf;
     int cameraNum = 0;
+    CAMERA_FORMAT sCurrentFormat;
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+    bool bFormatChanged = false;
 
     cameraNum = _camera_init(strDeviceName);
-    PMLOG_INFO(CONST_MODULE_HAL, "%s:%d : cameraNum:%d\n", __FUNCTION__, __LINE__, cameraNum);
+    PMLOG_DEBUG(CONST_MODULE_HAL, "%s:%d : cameraNum:%d\n", __FUNCTION__, __LINE__, cameraNum);
     CAM_DEVICE_T *pDevice = &gCameraDeviceList[cameraNum];
+    pDevice->isCapturing = true;
+
+    sCurrentFormat.nWidth = pDevice->nVideoWidth;
+    sCurrentFormat.nHeight = pDevice->nVideoHeight;
+    sCurrentFormat.eFormat = pDevice->nVideoMode;
+
+    if((sFormat.nWidth != sCurrentFormat.nWidth) ||
+            (sFormat.nHeight != sCurrentFormat.nHeight) ||
+            (sFormat.eFormat != sCurrentFormat.eFormat))
+    {
+        PMLOG_DEBUG(CONST_MODULE_HAL, "%d:Format change\n",__LINE__);
+        PMLOG_DEBUG(CONST_MODULE_HAL, "%d:strDeviceName:%s\n",__LINE__,strDeviceName);
+        ret = v4l2_cam_stop(strDeviceName);
+        if (ret == DEVICE_OK)
+        {
+            PMLOG_DEBUG(CONST_MODULE_HAL, "v4l2_cam_stop success\n");
+            ret = v4l2_cam_set_format(strDeviceName, sFormat);
+            if (ret == DEVICE_OK)
+            {
+                bFormatChanged = true;
+                PMLOG_DEBUG(CONST_MODULE_HAL, "v4l2_cam_set_format success\n");
+            }
+            else
+            {
+                /*if set format for new resoultion fails then we reset the
+                 * format to the preview format */
+                ret = v4l2_cam_set_format(strDeviceName, sCurrentFormat);
+                if (ret != DEVICE_OK)
+                {
+                    PMLOG_INFO(CONST_MODULE_HAL,"set format failed hence starting with default parameters\n");
+                }
+                bFormatChanged = false;
+            }
+        }
+        ret = v4l2_cam_start(strDeviceName);
+        if (ret == DEVICE_OK)
+        {
+            PMLOG_INFO(CONST_MODULE_HAL, "v4l2_cam_start success\n");
+        }
+        else
+        {
+            pDevice->isCapturing = false;
+            return ret;
+        }
+    }
 
     for (i = 1; i <= nCount; i++)
     {
@@ -376,6 +432,43 @@ DEVICE_RETURN_CODE_T v4l2_cam_capture_image(char *strDeviceName, int nCount)
 
         _v4l2_QueBuffer(pDevice, &vidbuf);
     }
+
+    if(bFormatChanged == true)
+    {
+        PMLOG_DEBUG(CONST_MODULE_HAL, "%dFormat change\n",__LINE__);
+        ret = v4l2_cam_stop(strDeviceName);
+        if (ret == DEVICE_OK)
+        {
+            PMLOG_DEBUG(CONST_MODULE_HAL, "streamoff success\n");
+            ret = v4l2_cam_set_format(strDeviceName, sCurrentFormat);
+            if (ret == DEVICE_OK)
+            {
+                PMLOG_INFO(CONST_MODULE_HAL, "setFormat success\n");
+            }
+            else
+            {
+                PMLOG_INFO(CONST_MODULE_HAL,"set format failed,starting the camera with default format\n");
+            }
+        }
+        else
+        {
+            PMLOG_INFO(CONST_MODULE_HAL,"camera stop failed,starting the camera with default format\n");
+        }
+        ret = v4l2_cam_start(strDeviceName);
+        if (ret == DEVICE_OK)
+        {
+            PMLOG_DEBUG(CONST_MODULE_HAL, "streamon success\n");
+        }
+        else
+        {
+            PMLOG_INFO(CONST_MODULE_HAL,"camera start failed\n");
+            pDevice->isCapturing = false;
+            return ret;
+        }
+        bFormatChanged = false;
+    }
+    pDevice->isCapturing = false;
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T v4l2_cam_get_list(int *cameraCount, int cameraType[])
@@ -1371,7 +1464,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_set_property(char *strDeviceName, CAMERA_PROPERTIE
                 {
                     if (errno != EINVAL)
                     {
-                        PMLOG_INFO(CONST_MODULE_DC,
+                        PMLOG_INFO(CONST_MODULE_HAL,
                                 "%d:%s : Requested property is not supported \n", __LINE__,
                                 __FUNCTION__);
                         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -1522,13 +1615,13 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_info(char *strDeviceName, CAMERA_INFO_T *pInfo
             {
                 if (frmsize.type == V4L2_FRMSIZE_TYPE_DISCRETE)
                 {
-                    printf("%dx%d\n",
+                    PMLOG_INFO(CONST_MODULE_HAL,"%dx%d\n",
                             frmsize.discrete.width,
                             frmsize.discrete.height);
                 }
                 else if (frmsize.type == V4L2_FRMSIZE_TYPE_STEPWISE)
                 {
-                    printf("%dx%d\n",
+                    PMLOG_INFO(CONST_MODULE_HAL,"%dx%d\n",
                             frmsize.stepwise.max_width,
                             frmsize.stepwise.max_height);
                 }
@@ -1563,7 +1656,6 @@ DEVICE_RETURN_CODE_T v4l2_cam_stop(char *strDeviceName)
     {
         //DDI_CAM_ERR_PRINT("Already started.");
         PMLOG_INFO(CONST_MODULE_HAL, "%d: Already started.", __LINE__);
-        return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
     }
     if ((ret = _v4l2_streamoff(&gCameraDeviceList[camCnt])) != DEVICE_OK)
     {
@@ -1636,7 +1728,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_close(char *strDeviceName)
     gCameraDeviceList[camCnt].cameraNum = camCnt;
     gCameraDeviceList[camCnt].nVideoWidth = 0;
     gCameraDeviceList[camCnt].nVideoHeight = 0;
-    gCameraDeviceList[camCnt].nVideoMode = 0;
+    gCameraDeviceList[camCnt].nVideoMode = CAMERA_FORMAT_YUV;
     if (gCameraDeviceList[camCnt].isStreamOn = true)
     {
         gCameraDeviceList[camCnt].isStreamOn = false;

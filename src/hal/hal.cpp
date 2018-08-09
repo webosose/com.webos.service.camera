@@ -38,6 +38,7 @@
  ******************************************************************************/
 
 //#define CONST_MAX_STRING_LENGTH       100
+#define CONST_MAX_DEVICES       10
 const int AUDIO_FRAME_SIZE = 640;    // (2 * 2 * 16000 * 10 / 1000 * 10) ?
 const int AUDIO_FRAME_COUNT = 200;
 
@@ -90,8 +91,8 @@ static int gCamCount = 0;
  ******************************************************************************/
 
 // Global strcuture for mmap buffers
-static CAMERA_DEVICE gCameraCamList[10];
-static MIC_DEVICE gMicInfo[10];
+static CAMERA_DEVICE gCameraCamList[CONST_MAX_DEVICES];
+static MIC_DEVICE gMicInfo[CONST_MAX_DEVICES];
 
 // Callback from HAL
 static void _device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle);
@@ -113,12 +114,12 @@ DEVICE_RETURN_CODE_T hal_cam_capture_image(DEVICE_HANDLE sDevHandle, int nCount,
 
     //Parse device Id and get the camera Num
     camNum = _camera_find(sDevHandle.nDevId);
-    PMLOG_INFO(CONST_MODULE_HAL, "camera Number:%d\n!!", camNum);
-    PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!camera name=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL,"camera Number:%d\n!!", camNum);
+    PMLOG_INFO(CONST_MODULE_HAL,"%d: Started!camera name=%s\n", __LINE__,
             gCameraCamList[camNum].strDeviceName);
-    nRet = v4l2_cam_capture_image(gCameraCamList[camNum].strDeviceName, nCount);
+    nRet = v4l2_cam_capture_image(gCameraCamList[camNum].strDeviceName, nCount, sFormat);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_HAL, "%d: cam capture image failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL,"%d: cam capture image failed\n", __LINE__);
     return nRet;
 }
 
@@ -242,7 +243,7 @@ DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_LIST_T sDeviceInfo, CAMERA_INFO_T *
     int camNum = 0;
 
     _device_init(sDeviceInfo, &sDevHandle);
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Started!strDeviceName=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!strDeviceName=%s\n", __LINE__,
             sDevHandle.strDeviceNode);
     nRet = v4l2_cam_get_info(sDevHandle.strDeviceNode, pInfo);
     if (DEVICE_OK != nRet)
@@ -578,6 +579,11 @@ DEVICE_RETURN_CODE_T hal_cam_create_handle(DEVICE_LIST_T sDeviceInfo, DEVICE_HAN
 
     _device_init(sDeviceInfo, pDevHandle);
     cameraNum = _camera_find(nDeviceId);
+    if (-1 == cameraNum)
+    {
+        PMLOG_INFO(CONST_MODULE_HAL, "Maximum device count reached!!");
+        return DEVICE_ERROR_MAX_LIMIT_REACHED;
+    }
     PMLOG_INFO(CONST_MODULE_HAL, "cameraNum:%d\n", cameraNum);
     PMLOG_INFO(CONST_MODULE_HAL, "cameraNum->deviceId:%d\n", gCameraCamList[cameraNum].nDeviceID);
     pDevHandle->nDevId = gCameraCamList[cameraNum].nDeviceID;
@@ -600,6 +606,11 @@ DEVICE_RETURN_CODE_T hal_cam_open(DEVICE_HANDLE pDevHandle)
     //check for the present camera and assign a new device id to the new camera
 
     cameraNum = _camera_find(pDevHandle.nDevId);
+    if (-1 == cameraNum)
+    {
+        PMLOG_INFO(CONST_MODULE_HAL, "Maximum device count reached!!");
+        return DEVICE_ERROR_MAX_LIMIT_REACHED;
+    }
     PMLOG_INFO(CONST_MODULE_HAL, "634:cameraNum:%d\n", cameraNum);
 
     if ((gCameraCamList[cameraNum].nState == STATE_OPEN)
@@ -686,17 +697,24 @@ static int _camera_find(int nCameraNum)
         }
     }
     PMLOG_INFO(CONST_MODULE_HAL, "In camera allocate:%d\n", i);
-    gCamCount++;
+    if (gCamCount < CONST_MAX_DEVICES)
+    {
+        gCamCount++;
 
-    nDeviceID = i;
-    gCameraCamList[nDeviceID].nDeviceID = i + 1;
-    gCameraCamList[nDeviceID].nState = STATE_CLOSE;
+        nDeviceID = i;
+        gCameraCamList[nDeviceID].nDeviceID = i + 1;
+        gCameraCamList[nDeviceID].nState = STATE_CLOSE;
 
-    gCameraCamList[nDeviceID].nMode = CAMERA_FORMAT_YUV;
+        gCameraCamList[nDeviceID].nMode = CAMERA_FORMAT_YUV;
 
-    gCameraCamList[nDeviceID].hShm = NULL;
-    pthread_mutex_init(&gCameraCamList[nDeviceID].Mutex, NULL);
-    pthread_cond_init(&gCameraCamList[nDeviceID].Cond, NULL);
+        gCameraCamList[nDeviceID].hShm = NULL;
+        pthread_mutex_init(&gCameraCamList[nDeviceID].Mutex, NULL);
+        pthread_cond_init(&gCameraCamList[nDeviceID].Cond, NULL);
+    }
+    else
+    {
+        nDeviceID = -1;
+    }
 
     return nDeviceID;
 
