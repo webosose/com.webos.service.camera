@@ -24,6 +24,7 @@
 
 #include "device_controller.h"
 #include "service_main.h"
+#include <string.h>
 
 /*-----------------------------------------------------------------------------
 
@@ -41,6 +42,7 @@ typedef struct _DEVICE_STATUS
     //Device
     char strDeviceName[256];
     int nDeviceID;
+    int nDevIndex;
     int nDevCount;
     DEVICE_HANDLE sDevHandle;
     bool isDeviceOpen;
@@ -57,10 +59,10 @@ static DEVICE_STATUS gdev_status[MAX_DEVICE];
 int find_devnum(int ndeviceID)
 {
     int i = 0;
-    int nDeviceID = 0;
+    int nDeviceID = INVALID_ID;
     for (i = 0; i < gdevCount; i++)
     {
-        if (gdev_status[i].nDeviceID == ndeviceID)
+        if((gdev_status[i].nDevIndex == ndeviceID)||(gdev_status[i].nDeviceID == ndeviceID))
         {
             nDeviceID = i;
             PMLOG_INFO(CONST_MODULE_DM, "dev_num is :%d\n", i);
@@ -72,6 +74,8 @@ int find_devnum(int ndeviceID)
 bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool status)
 {
     int dev_num = find_devnum(deviceID);
+    if(INVALID_ID == dev_num)
+        return CONST_PARAM_VALUE_FALSE;
     if (status)
     {
         gdev_status[dev_num].devType = devType;
@@ -87,11 +91,16 @@ bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool statu
 
 }
 
-bool DeviceManager::isDeviceOpen(DEVICE_TYPE_T devType, int deviceID)
+bool DeviceManager::isDeviceOpen(DEVICE_TYPE_T devType, int *deviceID)
 {
     CAMERA_PRINT_INFO("%s:%d] Started!", __FUNCTION__, __LINE__);
-    int dev_num = find_devnum(deviceID);
-    if (deviceID == gdev_status[dev_num].nDeviceID)
+    int dev_num = find_devnum(*deviceID);
+    if (INVALID_ID == dev_num)
+    {
+        *deviceID = dev_num;
+        return CONST_PARAM_VALUE_FALSE;
+    }
+    if (*deviceID == gdev_status[dev_num].nDeviceID)
     {
         if (gdev_status[dev_num].isDeviceOpen)
         {
@@ -110,13 +119,22 @@ bool DeviceManager::isDeviceOpen(DEVICE_TYPE_T devType, int deviceID)
         return CONST_PARAM_VALUE_FALSE;
 }
 
-bool DeviceManager::isDeviceValid(DEVICE_TYPE_T devType, int deviceID)
+bool DeviceManager::isDeviceValid(DEVICE_TYPE_T devType, int *deviceID)
 {
-    int dev_num = find_devnum(deviceID);
-    if (deviceID == gdev_status[dev_num].nDeviceID)
+    int dev_num = find_devnum(*deviceID);
+    if (INVALID_ID == dev_num)
+    {
+        *deviceID = dev_num;
         return CONST_PARAM_VALUE_TRUE;
-    else
-        return CONST_PARAM_VALUE_FALSE;
+    }
+    if(gdev_status[dev_num].isDeviceOpen == TRUE)
+    {
+         return CONST_PARAM_VALUE_TRUE;
+    }
+     else
+    {
+         return CONST_PARAM_VALUE_FALSE;
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
@@ -125,32 +143,27 @@ DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCa
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
     int devCount = gdevCount;
-    DEVICE_LIST_T *pList;
-    int nCamDev, nMicDev, nCamSupport, nMicSupport;
+    DEVICE_LIST_T pList[devCount];
     if (gdevCount)
     {
         for (int i = 0; i < gdevCount; i++)
         {
-            pList = &(gdev_status[i].stList);
+            pList[i] = (gdev_status[i].stList);
         }
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_DM, "No device found!!!\n");
+        PMLOG_INFO(CONST_MODULE_DM, "No device detected by PDM!!!\n");
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-        return DEVICE_ERROR_DEVICE_IS_NOT_STARTED;
+        return DEVICE_OK;
     }
-    ret = dCtl->getDeviceList(pList, &nCamDev, &nMicDev, &nCamSupport, &nMicSupport, devCount);
+    ret = dCtl->getDeviceList(pList, pCamDev, pMicDev, pCamSupport, pMicSupport, devCount);
     if (DEVICE_OK != ret)
     {
         PMLOG_INFO(CONST_MODULE_DM, "Failed at control function\n");
         CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
         return ret;
     }
-    *pCamDev = nCamDev;
-    *pMicDev = nMicDev;
-    *pCamSupport = nCamSupport;
-    *pMicSupport = nMicSupport;
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
 
@@ -166,11 +179,25 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     int nCamSupport = 0;
     int nMicSupport = 0;
     static int nid = 0;
+    if(gdevCount < nDevCount)
+        *pCamEvent = DEVICE_EVENT_STATE_PLUGGED;
+    else if(gdevCount > nDevCount)
+        *pCamEvent = DEVICE_EVENT_STATE_UNPLUGGED;
+    else
+        PMLOG_INFO(CONST_MODULE_DM,"No event changed!!\n");
     gdevCount = nDevCount;
     for (int i = 0; i < gdevCount; i++)
     {
-        gdev_status[i].stList = pList[i];
+        strncpy(gdev_status[i].stList.strVendorName,pList[i].strVendorName,(CONST_MAX_STRING_LENGTH - 1));
+        strncpy(gdev_status[i].stList.strProductName,pList[i].strProductName,(CONST_MAX_STRING_LENGTH - 1));
+        strncpy(gdev_status[i].stList.strSerialNumber,pList[i].strSerialNumber,(CONST_MAX_STRING_LENGTH - 1));
+        strncpy(gdev_status[i].stList.strDeviceSubtype,pList[i].strDeviceSubtype,CONST_MAX_STRING_LENGTH - 1);
+        strncpy(gdev_status[i].stList.strDeviceType,pList[i].strDeviceType,(CONST_MAX_STRING_LENGTH - 1));
+        gdev_status[i].stList.nDeviceNum = pList[i].nDeviceNum;
         gdev_status[i].nDevCount = nDevCount;
+        gdev_status[i].nDevIndex = i+1;
+        if(strcmp(pList[i].strDeviceType,"CAM")== 0)
+            gdev_status[i].devType = DEVICE_CAMERA;
     }
     ret = dCtl->getDeviceList(pList, &nCamDev, &nMicDev, &nCamSupport, &nMicSupport, nDevCount);
     if (DEVICE_OK == ret)
@@ -178,27 +205,64 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     return DEVICE_OK;
 }
 
+
+DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndevID, CAMERA_INFO_T *pInfo)
+{
+    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
+    DEVICE_LIST_T stList;
+    int nCamID = 0;
+    nCamID = find_devnum(ndevID);
+    if(INVALID_ID == nCamID)
+        return DEVICE_ERROR_NODEVICE;
+    if (gdev_status[nCamID].nDevIndex == ndevID)
+    {
+        stList = gdev_status[nCamID].stList;
+    }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "Failed to get device number\n");
+        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+        return DEVICE_ERROR_NODEVICE;
+    }
+    ret = dCtl->getDeviceInfo(stList,pInfo);
+    if (DEVICE_OK != ret)
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
+        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+        return ret;
+    }
+    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+    return DEVICE_OK;
+
+}
+
+
 DEVICE_RETURN_CODE_T DeviceManager::createHandle(int nDeviceID, DEVICE_TYPE_T devType, int *ndevID)
 {
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
     int dev_num = find_devnum(nDeviceID);
+    if(INVALID_ID == dev_num)
+        return DEVICE_ERROR_NODEVICE;
     ret = dCtl->createHandle(gdev_status[dev_num].stList, &(gdev_status[dev_num].sDevHandle));
     if (DEVICE_OK == ret)
     {
         *ndevID = rand() % 10000;
         gdev_status[dev_num].nDeviceID = *ndevID;
-
     }
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
 }
+
+
 DEVICE_RETURN_CODE_T DeviceManager::getHandle(int nDeviceID, DEVICE_TYPE_T devType,
         DEVICE_HANDLE *devHandle)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
     int dev_num = find_devnum(nDeviceID);
-
+    if(INVALID_ID == dev_num)
+        return DEVICE_ERROR_NODEVICE;
     if (nDeviceID == gdev_status[dev_num].nDeviceID)
     {
         *devHandle = gdev_status[dev_num].sDevHandle;

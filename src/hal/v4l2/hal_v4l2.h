@@ -41,7 +41,8 @@ void CAMERA_CAM_registerCallback(char *strDeviceName,
                 unsigned int nTimeStamp));
 
 void v4l2_cam_registerCallback(char *strDeviceName, pfpDataCB func);
-DEVICE_RETURN_CODE_T v4l2_cam_capture_image(char *strDeviceName, int nCount);
+DEVICE_RETURN_CODE_T v4l2_cam_capture_image(char *strDeviceName, int nCount,
+        CAMERA_FORMAT sFormat);
 DEVICE_RETURN_CODE_T v4l2_cam_set_format(char *strDeviceName, CAMERA_FORMAT sFormat);
 DEVICE_RETURN_CODE_T v4l2_cam_get_format(char *strDeviceName, CAMERA_FORMAT*sFormat);
 DEVICE_RETURN_CODE_T v4l2_cam_start_capture(char *strDeviceName, CAMERA_FORMAT sFormat);

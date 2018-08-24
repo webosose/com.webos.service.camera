@@ -122,8 +122,7 @@ typedef struct CAM_DEVICE
     pfpDataCB pDataCB;
 
     int nVideoWidth, nVideoHeight, nBitrate, nFramerate, nGOPLength;
-    int nVideoMode;
-
+    CAMERA_FORMAT_T nVideoMode;
     int nProperties[64];
 
     int isStreamOn;

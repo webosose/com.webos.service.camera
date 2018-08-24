@@ -15,7 +15,6 @@ extern "C"
 #include "libudev.h"
 #include "constants.h"
 #include "camera_types.h"
-
 class CameraService
 {
 private:
@@ -40,7 +39,7 @@ public:
     static bool open(LSHandle *sh, LSMessage *message, void *ctx);
     static bool close(LSHandle *sh, LSMessage *message, void *ctx);
     static bool getInfo(LSHandle *sh, LSMessage *message, void *ctx);
-    static bool getCameralist(LSHandle *sh, LSMessage *message, void *ctx);
+    static bool getCameraList(LSHandle *sh, LSMessage *message, void *ctx);
     static bool getProperties(LSHandle *sh, LSMessage *message, void *ctx);
     static bool setProperties(LSHandle *sh, LSMessage *message, void *ctx);
     static bool setFormat(LSHandle *sh, LSMessage *message, void *ctx);

@@ -118,7 +118,7 @@ DEVICE_RETURN_CODE_T hal_cam_open(DEVICE_HANDLE sDeviceHandle);
 DEVICE_RETURN_CODE_T hal_cam_close(DEVICE_HANDLE sDeviceHandle);
 DEVICE_RETURN_CODE_T hal_cam_start(DEVICE_HANDLE sDeviceHandle, int *pKey);
 DEVICE_RETURN_CODE_T hal_cam_stop(DEVICE_HANDLE sDeviceHandle);
-DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_HANDLE sDeviceHandle, CAMERA_INFO_T *pInfo);
+DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_LIST_T sDeviceHandle, CAMERA_INFO_T *pInfo);
 DEVICE_RETURN_CODE_T hal_cam_set_property(DEVICE_HANDLE sDeviceHandle,
         CAMERA_PROPERTIES_INDEX_T nProperty, int value);
 DEVICE_RETURN_CODE_T hal_cam_get_property(DEVICE_HANDLE sDeviceHandle,

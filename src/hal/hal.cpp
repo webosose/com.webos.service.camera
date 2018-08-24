@@ -38,6 +38,7 @@
  ******************************************************************************/
 
 //#define CONST_MAX_STRING_LENGTH       100
+#define CONST_MAX_DEVICES       10
 const int AUDIO_FRAME_SIZE = 640;    // (2 * 2 * 16000 * 10 / 1000 * 10) ?
 const int AUDIO_FRAME_COUNT = 200;
 
@@ -90,10 +91,11 @@ static int gCamCount = 0;
  ******************************************************************************/
 
 // Global strcuture for mmap buffers
-static CAMERA_DEVICE gCameraCamList[10];
-static MIC_DEVICE gMicInfo[10];
+static CAMERA_DEVICE gCameraCamList[CONST_MAX_DEVICES];
+static MIC_DEVICE gMicInfo[CONST_MAX_DEVICES];
 
 // Callback from HAL
+static void _device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle);
 static void _cb_michal(int nDeviceID, int stream_type, unsigned int data_length, unsigned char *data,
         unsigned int timestamp);
 static int _camera_find(int nDeviceId);
@@ -112,12 +114,12 @@ DEVICE_RETURN_CODE_T hal_cam_capture_image(DEVICE_HANDLE sDevHandle, int nCount,
 
     //Parse device Id and get the camera Num
     camNum = _camera_find(sDevHandle.nDevId);
-    PMLOG_INFO(CONST_MODULE_DC, "camera Number:%d\n!!", camNum);
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Started!camera name=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL,"camera Number:%d\n!!", camNum);
+    PMLOG_INFO(CONST_MODULE_HAL,"%d: Started!camera name=%s\n", __LINE__,
             gCameraCamList[camNum].strDeviceName);
-    nRet = v4l2_cam_capture_image(gCameraCamList[camNum].strDeviceName, nCount);
+    nRet = v4l2_cam_capture_image(gCameraCamList[camNum].strDeviceName, nCount, sFormat);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: cam capture image failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL,"%d: cam capture image failed\n", __LINE__);
     return nRet;
 }
 
@@ -130,7 +132,7 @@ DEVICE_RETURN_CODE_T hal_cam_get_format(DEVICE_HANDLE sDevHandle, CAMERA_FORMAT 
     camNum = _camera_find(sDevHandle.nDevId);
     nRet = v4l2_cam_get_format(gCameraCamList[camNum].strDeviceName, sFormat);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: set format failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: set format failed\n", __LINE__);
     return nRet;
 }
 
@@ -143,19 +145,19 @@ DEVICE_RETURN_CODE_T hal_cam_stop_capture(DEVICE_HANDLE sDevHandle)
     camNum = _camera_find(sDevHandle.nDevId);
     if (gCameraCamList[camNum].nState == STATE_STOP)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already stopped\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already stopped\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
     }
     else if (gCameraCamList[camNum].nState == STATE_CLOSE)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already closed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already closed\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
     }
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Stop capture!strDeviceName=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Stop capture!strDeviceName=%s\n", __LINE__,
             gCameraCamList[camNum].strDeviceName);
     nRet = v4l2_cam_stop_capture(gCameraCamList[camNum].strDeviceName);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: stop capture failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: stop capture failed\n", __LINE__);
     return nRet;
 }
 
@@ -166,11 +168,11 @@ DEVICE_RETURN_CODE_T hal_cam_start_capture(DEVICE_HANDLE sDevHandle, CAMERA_FORM
 
     //Parse device Id and get the camera Num
     camNum = _camera_find(sDevHandle.nDevId);
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Started!strDeviceName=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!strDeviceName=%s\n", __LINE__,
             gCameraCamList[camNum].strDeviceName);
     nRet = v4l2_cam_start_capture(gCameraCamList[camNum].strDeviceName, sFormat);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: start capture failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: start capture failed\n", __LINE__);
     return nRet;
 }
 
@@ -179,15 +181,15 @@ DEVICE_RETURN_CODE_T hal_cam_set_format(DEVICE_HANDLE sDevHandle, CAMERA_FORMAT 
     DEVICE_RETURN_CODE_T nRet = DEVICE_ERROR_UNKNOWN;
     int camNum;
 
-    PMLOG_INFO(CONST_MODULE_DC, "sDevHandle.nDevId:%d\n", sDevHandle.nDevId);
+    PMLOG_INFO(CONST_MODULE_HAL, "sDevHandle.nDevId:%d\n", sDevHandle.nDevId);
     //Parse device Id and get the camera Num
     camNum = _camera_find(sDevHandle.nDevId);
-    PMLOG_INFO(CONST_MODULE_DC, "camNum:%d\n", camNum);
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Started!strDeviceName=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL, "camNum:%d\n", camNum);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!strDeviceName=%s\n", __LINE__,
             gCameraCamList[camNum].strDeviceName);
     nRet = v4l2_cam_set_format(gCameraCamList[camNum].strDeviceName, sFormat);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: set format failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: set format failed\n", __LINE__);
     return nRet;
 }
 
@@ -197,12 +199,12 @@ DEVICE_RETURN_CODE_T hal_cam_get_list(int* nCameraCount, int cameraType[])
     int i;
 
     nRet = v4l2_cam_get_list(nCameraCount, cameraType);
-    PMLOG_INFO(CONST_MODULE_DC, "nCameraCount = %d\n", *nCameraCount);
+    PMLOG_INFO(CONST_MODULE_HAL, "nCameraCount = %d\n", *nCameraCount);
     for (i = 0; i < *nCameraCount; i++)
-        PMLOG_INFO(CONST_MODULE_DC, "cameraType:%d\n", cameraType[i]);
+        PMLOG_INFO(CONST_MODULE_HAL, "cameraType:%d\n", cameraType[i]);
 
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: query device list failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: query device list failed\n", __LINE__);
     return nRet;
 }
 
@@ -216,7 +218,7 @@ DEVICE_RETURN_CODE_T hal_cam_get_property(DEVICE_HANDLE sDevHandle,
     camNum = _camera_find(sDevHandle.nDevId);
     nRet = v4l2_cam_get_property(gCameraCamList[camNum].strDeviceName, nProperty, value);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: get property failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: get property failed\n", __LINE__);
     return nRet;
 }
 
@@ -230,22 +232,22 @@ DEVICE_RETURN_CODE_T hal_cam_set_property(DEVICE_HANDLE sDevHandle,
     camNum = _camera_find(sDevHandle.nDevId);
     nRet = v4l2_cam_set_property(gCameraCamList[camNum].strDeviceName, nProperty, value);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: set property failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: set property failed\n", __LINE__);
     return nRet;
 }
 
-DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_HANDLE sDevHandle, CAMERA_INFO_T *pInfo)
+DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_LIST_T sDeviceInfo, CAMERA_INFO_T *pInfo)
 {
     DEVICE_RETURN_CODE_T nRet = DEVICE_ERROR_UNKNOWN;
+    DEVICE_HANDLE sDevHandle;
     int camNum = 0;
 
-    //Parse device Id and get the camera Num
-    camNum = _camera_find(sDevHandle.nDevId);
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Started!strDeviceName=%s\n", __LINE__,
-            gCameraCamList[camNum].strDeviceName);
-    nRet = v4l2_cam_get_info(gCameraCamList[camNum].strDeviceName, pInfo);
+    _device_init(sDeviceInfo, &sDevHandle);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!strDeviceName=%s\n", __LINE__,
+            sDevHandle.strDeviceNode);
+    nRet = v4l2_cam_get_info(sDevHandle.strDeviceNode, pInfo);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: query device info failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: query device info failed\n", __LINE__);
     return nRet;
 }
 
@@ -258,19 +260,19 @@ DEVICE_RETURN_CODE_T hal_cam_stop(DEVICE_HANDLE sDevHandle)
     camNum = _camera_find(sDevHandle.nDevId);
     if (gCameraCamList[camNum].nState == STATE_STOP)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already stopped\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already stopped\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
     }
     else if (gCameraCamList[camNum].nState == STATE_CLOSE)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already closed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already closed\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
     }
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Started!strDeviceName=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!strDeviceName=%s\n", __LINE__,
             gCameraCamList[camNum].strDeviceName);
     nRet = v4l2_cam_stop(gCameraCamList[camNum].strDeviceName);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: cam stop failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: cam stop failed\n", __LINE__);
     else
     {
         gCameraCamList[camNum].nState = STATE_STOP;
@@ -289,23 +291,23 @@ DEVICE_RETURN_CODE_T hal_cam_start(DEVICE_HANDLE sDevHandle, int *pKey)
     camNum = _camera_find(sDevHandle.nDevId);
     if (gCameraCamList[camNum].nState == STATE_START)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already started\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already started\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STARTED;
     }
     else if (gCameraCamList[camNum].nState == STATE_CLOSE)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already closed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already closed\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
     }
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Started!strDeviceName=%s\n", __LINE__,
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!strDeviceName=%s\n", __LINE__,
             gCameraCamList[camNum].strDeviceName);
 
     CreateShmemEx(&gCameraCamList[camNum].hShm, pKey, nMemSize, nMemCount, sizeof(unsigned int));
 
-    PMLOG_INFO(CONST_MODULE_DC, "%d: shared mem key:%d\n", __LINE__, *pKey);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: shared mem key:%d\n", __LINE__, *pKey);
     nRet = v4l2_cam_start(gCameraCamList[camNum].strDeviceName);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: cam start failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: cam start failed\n", __LINE__);
     else
     {
         gCameraCamList[camNum].nState = STATE_START;
@@ -320,27 +322,27 @@ DEVICE_RETURN_CODE_T hal_cam_close(DEVICE_HANDLE sDevHandle)
     int camNum = 0;
     //Parse device Id and get the camera Num
     camNum = _camera_find(sDevHandle.nDevId);
-    PMLOG_INFO(CONST_MODULE_DC, "Closing device!strDeviceName=%s\n",
+    PMLOG_INFO(CONST_MODULE_HAL, "Closing device!strDeviceName=%s\n",
             gCameraCamList[camNum].strDeviceName);
 
     if (gCameraCamList[camNum].nState == STATE_CLOSE)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already closed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already closed\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
     }
     if (gCameraCamList[camNum].nState != STATE_STOP)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is not stopped\nstopping cam before closing\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is not stopped\nstopping cam before closing\n");
         nRet = hal_cam_stop(sDevHandle);
         if (DEVICE_OK != nRet)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "camera stop failed so proceeding with close\n");
+            PMLOG_INFO(CONST_MODULE_HAL, "camera stop failed so proceeding with close\n");
         }
     }
     /*Close shared memory*/
     nRetShmem = CloseShmem(&gCameraCamList[camNum].hShm);
     if (nRetShmem != SHMEM_COMM_OK)
-        PMLOG_INFO(CONST_MODULE_DC, "%d:CloseShmem err : %d", __LINE__, nRetShmem);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d:CloseShmem err : %d", __LINE__, nRetShmem);
 
     gCameraCamList[camNum].nState = STATE_CLOSE;
 
@@ -352,14 +354,14 @@ DEVICE_RETURN_CODE_T hal_cam_close(DEVICE_HANDLE sDevHandle)
 
     nRet = v4l2_cam_close(gCameraCamList[camNum].strDeviceName);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "v4l2 cam close failed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "v4l2 cam close failed\n");
     else
     {
-        PMLOG_INFO(CONST_MODULE_DC, "Camera_close success");
+        PMLOG_INFO(CONST_MODULE_HAL, "Camera_close success");
         gCameraCamList[camNum].isDeviceOpen = false;
     }
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: cam close failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: cam close failed\n", __LINE__);
     return nRet;
 }
 
@@ -368,12 +370,12 @@ DEVICE_RETURN_CODE_T hal_mic_get_property(int nMicNum, MIC_PROPERTIES_INDEX_T nP
 {
     DEVICE_RETURN_CODE_T nRet = DEVICE_OK;
     int micNum;
-    PMLOG_INFO(CONST_MODULE_DC, "set Property\n");
+    PMLOG_INFO(CONST_MODULE_HAL, "set Property\n");
 
     micNum = nMicNum - 1;
     nRet = alsa_mic_get_property(micNum, nProperty, value);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: set property failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: set property failed\n", __LINE__);
     return nRet;
 
 }
@@ -382,12 +384,12 @@ DEVICE_RETURN_CODE_T hal_mic_set_property(int nMicNum, MIC_PROPERTIES_INDEX_T nP
 {
     DEVICE_RETURN_CODE_T nRet = DEVICE_OK;
     int micNum;
-    PMLOG_INFO(CONST_MODULE_DC, "set Property\n");
+    PMLOG_INFO(CONST_MODULE_HAL, "set Property\n");
 
     micNum = nMicNum - 1;
     nRet = alsa_mic_set_property(micNum, nProperty, value);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: set property failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: set property failed\n", __LINE__);
     return nRet;
 
 }
@@ -395,11 +397,11 @@ DEVICE_RETURN_CODE_T hal_mic_set_property(int nMicNum, MIC_PROPERTIES_INDEX_T nP
 DEVICE_RETURN_CODE_T hal_mic_get_list(int *pDevCount)
 {
     DEVICE_RETURN_CODE_T nRet = DEVICE_OK;
-    PMLOG_INFO(CONST_MODULE_DC, "Get list\n");
+    PMLOG_INFO(CONST_MODULE_HAL, "Get list\n");
 
     nRet = alsa_mic_get_list(pDevCount);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: get listfailed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: get listfailed\n", __LINE__);
     return nRet;
 
 }
@@ -408,17 +410,17 @@ DEVICE_RETURN_CODE_T hal_mic_get_info(int nMicNum, MIC_INFO_T *pInfo)
 {
     DEVICE_RETURN_CODE_T nRet = DEVICE_OK;
     int micNum = nMicNum - 1;
-    PMLOG_INFO(CONST_MODULE_DC, "Querying device info!nDeviceID=%d\n", micNum);
+    PMLOG_INFO(CONST_MODULE_HAL, "Querying device info!nDeviceID=%d\n", micNum);
 
     nRet = alsa_mic_get_info(micNum, pInfo);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: query device info failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: query device info failed\n", __LINE__);
     return nRet;
 }
 
 DEVICE_RETURN_CODE_T hal_mic_close(int nMicNum)
 {
-    PMLOG_INFO(CONST_MODULE_DC, "%d: in hal_mic_stop\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: in hal_mic_stop\n", __LINE__);
     DEVICE_RETURN_CODE_T ret = DEVICE_OK;
     MIC_DEVICE *pDev;
     int micNum = 0;
@@ -435,7 +437,7 @@ DEVICE_RETURN_CODE_T hal_mic_close(int nMicNum)
         ret = alsa_mic_close(micNum);
         if (ret != DEVICE_OK)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "mic_open failed\n");
+            PMLOG_INFO(CONST_MODULE_HAL, "mic_open failed\n");
             return ret;
         }
         pDev->nState = STATE_CLOSE;
@@ -455,12 +457,12 @@ DEVICE_RETURN_CODE_T hal_mic_stop(int nMicNum)
     ret = alsa_mic_stop(micNum);
     if (ret != DEVICE_OK)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "mic_stop failed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "mic_stop failed\n");
         return ret;
     }
     nRetShmem = CloseShmem(&gCameraCamList[0].hShm);
     if (nRetShmem != SHMEM_COMM_OK)
-        PMLOG_INFO(CONST_MODULE_DC, "%d:CloseShmem err : %d", __LINE__, nRetShmem);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d:CloseShmem err : %d", __LINE__, nRetShmem);
     pDev->nState = STATE_STOP;
     return ret;
 }
@@ -476,16 +478,16 @@ DEVICE_RETURN_CODE_T hal_mic_start(int nMicNum, int *pKey)
     nMemSize = AUDIO_FRAME_SIZE;
     nMemCount = AUDIO_FRAME_COUNT;
 
-    PMLOG_INFO(CONST_MODULE_DC, "%d: in hal_mic_start\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: in hal_mic_start\n", __LINE__);
     /*Parse the mic Num from device id*/
     pDev = &gMicInfo[micNum];
-    PMLOG_INFO(CONST_MODULE_DC, "%d: in hal_mic_start\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: in hal_mic_start\n", __LINE__);
     CreateShmemEx(&gMicInfo[micNum].hShm, pKey, nMemSize, nMemCount, sizeof(unsigned int));
-    PMLOG_INFO(CONST_MODULE_DC, "%d:shared memopry key is :%d\n", __LINE__, *pKey);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d:shared memopry key is :%d\n", __LINE__, *pKey);
     ret = alsa_mic_start(micNum);
     if (ret != DEVICE_OK)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "mic_open failed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "mic_open failed\n");
         return ret;
     }
     pDev->nState = STATE_START;
@@ -504,20 +506,19 @@ DEVICE_RETURN_CODE_T hal_mic_open(int nMicNum, int samplingRate, int codec, int 
     ret = alsa_mic_open(micNum, samplingRate, codec);
     if (ret != DEVICE_OK)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "mic_open failed\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "mic_open failed\n");
         return ret;
     }
 
     alsa_mic_register_callback(micNum, _cb_michal);
-    PMLOG_INFO(CONST_MODULE_DC, "Ended!\n");
+    PMLOG_INFO(CONST_MODULE_HAL, "Ended!\n");
     gMicInfo[micNum].isDeviceOpen = true;
     gMicInfo[micNum].nState = STATE_OPEN;
     gMicInfo[micNum].nDeviceID = micNum;
-    //strcpy(gMicInfo[micNum].strDeviceName, deviceName);
     return ret;
 }
 
-static void device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle)
+static void _device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle)
 {
     struct udev *camudev;
     struct udev_enumerate *enumerate;
@@ -527,7 +528,7 @@ static void device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle)
     camudev = udev_new();
     if (!camudev)
     {
-        PMLOG_INFO(CONST_MODULE_DC, "FAIL: To create udev for camera\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "FAIL: To create udev for camera\n");
     }
     enumerate = udev_enumerate_new(camudev);
     udev_enumerate_add_match_subsystem(enumerate, "video4linux");
@@ -546,22 +547,22 @@ static void device_init(DEVICE_LIST_T sDeviceInfo, DEVICE_HANDLE *sDevHandle)
         dev = udev_device_new_from_syspath(camudev, path);
 //Information required
         strDeviceNode = udev_device_get_devnode(dev);
-        PMLOG_INFO(CONST_MODULE_DC, "Device Node:%s\n", path);
-        PMLOG_INFO(CONST_MODULE_DC, "Device Node:%s\n", strDeviceNode);
-        PMLOG_INFO(CONST_MODULE_DC, "sDevHandle->strDeviceNode:%s\n", sDevHandle->strDeviceNode);
+        PMLOG_INFO(CONST_MODULE_HAL, "Device Node:%s\n", path);
+        PMLOG_INFO(CONST_MODULE_HAL, "Device Node:%s\n", strDeviceNode);
         subSystemType = udev_device_get_subsystem(dev);
-        PMLOG_INFO(CONST_MODULE_DC, "devsubsystem:%s\n", subSystemType);
+        PMLOG_INFO(CONST_MODULE_HAL, "devsubsystem:%s\n", subSystemType);
 //Information required
 
         dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
         if (!dev)
         {
-            PMLOG_INFO(CONST_MODULE_DC, "Unable to find parent usb device.");
+            PMLOG_INFO(CONST_MODULE_HAL, "Unable to find parent usb device.");
             exit(1);
         }
         devnum = udev_device_get_sysattr_value(dev, "devnum");
         nDeviceNumber = atoi(devnum);
         busnum = udev_device_get_sysattr_value(dev, "busnum");
+        /*PDM support is not there for device number*/
         //if(sDeviceInfo.nDeviceNum == nDeviceNumber)
         {
             strcpy(sDevHandle->strDeviceNode, strDeviceNode);
@@ -576,13 +577,17 @@ DEVICE_RETURN_CODE_T hal_cam_create_handle(DEVICE_LIST_T sDeviceInfo, DEVICE_HAN
     int cameraNum = 0;
     int nDeviceId = -1;
 
-    device_init(sDeviceInfo, pDevHandle);
+    _device_init(sDeviceInfo, pDevHandle);
     cameraNum = _camera_find(nDeviceId);
-    PMLOG_INFO(CONST_MODULE_DC, "cameraNum:%d\n", cameraNum);
-    PMLOG_INFO(CONST_MODULE_DC, "cameraNum->deviceId:%d\n", gCameraCamList[cameraNum].nDeviceID);
+    if (-1 == cameraNum)
+    {
+        PMLOG_INFO(CONST_MODULE_HAL, "Maximum device count reached!!");
+        return DEVICE_ERROR_MAX_LIMIT_REACHED;
+    }
+    PMLOG_INFO(CONST_MODULE_HAL, "cameraNum:%d\n", cameraNum);
+    PMLOG_INFO(CONST_MODULE_HAL, "cameraNum->deviceId:%d\n", gCameraCamList[cameraNum].nDeviceID);
     pDevHandle->nDevId = gCameraCamList[cameraNum].nDeviceID;
     strcpy(gCameraCamList[cameraNum].strDeviceName, pDevHandle->strDeviceNode);
-
     return DEVICE_OK;
 }
 DEVICE_RETURN_CODE_T hal_cam_open(DEVICE_HANDLE pDevHandle)
@@ -601,13 +606,18 @@ DEVICE_RETURN_CODE_T hal_cam_open(DEVICE_HANDLE pDevHandle)
     //check for the present camera and assign a new device id to the new camera
 
     cameraNum = _camera_find(pDevHandle.nDevId);
-    PMLOG_INFO(CONST_MODULE_DC, "634:cameraNum:%d\n", cameraNum);
+    if (-1 == cameraNum)
+    {
+        PMLOG_INFO(CONST_MODULE_HAL, "Maximum device count reached!!");
+        return DEVICE_ERROR_MAX_LIMIT_REACHED;
+    }
+    PMLOG_INFO(CONST_MODULE_HAL, "634:cameraNum:%d\n", cameraNum);
 
     if ((gCameraCamList[cameraNum].nState == STATE_OPEN)
             || (gCameraCamList[cameraNum].nState == STATE_START)
             || (gCameraCamList[cameraNum].nState == STATE_STOP))
     {
-        PMLOG_INFO(CONST_MODULE_DC, "camera is already open\n");
+        PMLOG_INFO(CONST_MODULE_HAL, "camera is already open\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_OPENED;
     }
 
@@ -616,10 +626,10 @@ DEVICE_RETURN_CODE_T hal_cam_open(DEVICE_HANDLE pDevHandle)
 
     nRet = v4l2_cam_open(gCameraCamList[cameraNum].strDeviceName);
     if (DEVICE_OK != nRet)
-        PMLOG_INFO(CONST_MODULE_DC, "%d: v4l2 cam open failed\n", __LINE__);
+        PMLOG_INFO(CONST_MODULE_HAL, "%d: v4l2 cam open failed\n", __LINE__);
     else
     {
-        PMLOG_INFO(CONST_MODULE_DC, "Camera_open success");
+        PMLOG_INFO(CONST_MODULE_HAL, "Camera_open success");
         gCameraCamList[cameraNum].isDeviceOpen = true;
     }
 
@@ -631,7 +641,7 @@ DEVICE_RETURN_CODE_T hal_cam_open(DEVICE_HANDLE pDevHandle)
         gCameraCamList[cameraNum].nState = STATE_OPEN;
     }
 
-    PMLOG_INFO(CONST_MODULE_DC, "%d: Ended!\n", __LINE__);
+    PMLOG_INFO(CONST_MODULE_HAL, "%d: Ended!\n", __LINE__);
     return nRet;
 }
 
@@ -686,18 +696,25 @@ static int _camera_find(int nCameraNum)
             return i;
         }
     }
-    PMLOG_INFO(CONST_MODULE_DC, "In camera allocate:%d\n", i);
-    gCamCount++;
+    PMLOG_INFO(CONST_MODULE_HAL, "In camera allocate:%d\n", i);
+    if (gCamCount < CONST_MAX_DEVICES)
+    {
+        gCamCount++;
 
-    nDeviceID = i;
-    gCameraCamList[nDeviceID].nDeviceID = i + 1;
-    gCameraCamList[nDeviceID].nState = STATE_CLOSE;
+        nDeviceID = i;
+        gCameraCamList[nDeviceID].nDeviceID = i + 1;
+        gCameraCamList[nDeviceID].nState = STATE_CLOSE;
 
-    gCameraCamList[nDeviceID].nMode = CAMERA_FORMAT_YUV;
+        gCameraCamList[nDeviceID].nMode = CAMERA_FORMAT_YUV;
 
-    gCameraCamList[nDeviceID].hShm = NULL;
-    pthread_mutex_init(&gCameraCamList[nDeviceID].Mutex, NULL);
-    pthread_cond_init(&gCameraCamList[nDeviceID].Cond, NULL);
+        gCameraCamList[nDeviceID].hShm = NULL;
+        pthread_mutex_init(&gCameraCamList[nDeviceID].Mutex, NULL);
+        pthread_cond_init(&gCameraCamList[nDeviceID].Cond, NULL);
+    }
+    else
+    {
+        nDeviceID = -1;
+    }
 
     return nDeviceID;
 

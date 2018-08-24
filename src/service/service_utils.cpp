@@ -36,9 +36,8 @@ static void __subscribe_get_list(int *pCamDev, int *pMicDev, int *pCamSupport, i
         if (pCamDev[i] == CONST_VARIABLE_INITIALIZE)
             break;
 
-        snprintf(arrList[nCamCount], CONST_MAX_STRING_LENGTH, "%s://%s/%s%d",
-        CONST_SERVICE_URI_NAME, CONST_SERVICE_NAME_CAMERA,
-        CONST_DEVICE_NAME_CAMERA, pCamDev[i]);
+        snprintf(arrList[nCamCount], CONST_MAX_STRING_LENGTH, "%s%d",
+        CONST_SERVICE_NAME_CAMERA, pCamDev[i]);
         supportList[nCamCount] = pCamSupport[i];
         nCamCount++;
     }
@@ -61,12 +60,8 @@ static void __subscribe_get_list(int *pCamDev, int *pMicDev, int *pCamSupport, i
     for (i = 0; i < nCamCount; i++)
     {
         pOutJsonChild2 = json_object_new_object();
-        json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_URI,
+        json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_ID,
                 json_object_new_string(arrList[i]));
-        json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_TYPE,
-                json_object_new_string(_GetTypeString(DEVICE_CAMERA)));
-        json_object_object_add(pOutJsonChild2, CONST_PARAM_NAME_SUPPORT,
-                json_object_new_boolean(supportList[i]));
         json_object_array_add(pOutJsonChild1, pOutJsonChild2);
     }
 
@@ -332,13 +327,6 @@ static bool __filter_update_device_list(LSHandle *lsHandle, LSMessage *message, 
                         // processing cam event
                         __process_cam_event(nCamEvent, nCamNum, bPowerOnConnect, bBuiltIn, bUpdated,
                                 pPowerStatus);
-
-                        // processing mic event
-                        __process_mic_event(nMicEvent, nMicNum);
-                        if ((!gbServiceReady) && (0 < nCamCount))
-                        {
-                            gbServiceReady = 1;
-                        }
                     }
                     else
                     {

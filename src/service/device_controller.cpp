@@ -92,12 +92,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(DEVICE_HANDLE devHandle, DEVICE
 
     if (DEVICE_CAMERA == devType)
     {
-        FORMAT sFormat;
-        //setting the default format
-        sFormat.eFormat = CONST_DEFAULT_FORMAT;
-        sFormat.nWidth = CONST_DEFAULT_WIDTH;
-        sFormat.nHeight = CONST_DEFAULT_HEIGHT;
-        ret = hal_cam_set_format(devHandle, sFormat);
         ret = hal_cam_start(devHandle, pKey);
     }
     else
@@ -253,25 +247,12 @@ bool DeviceControl::isUpdatedCameraList()
 
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getdeviceinfo(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
-        CAMERA_INFO_T *pInfo)
+DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(DEVICE_LIST_T stList,CAMERA_INFO_T *pInfo)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    int deviceID = 1;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-
-    if (DEVICE_CAMERA == devType)
-    {
-        ret = hal_cam_get_info(devHandle, pInfo);
-    }
-    else
-    {
-        MIC_INFO_T sMicInfo;
-        ret = hal_mic_get_info(deviceID, &sMicInfo);
-    }
+    ret = hal_cam_get_info(stList, pInfo);
     if (ret != DEVICE_OK)
     {
         PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
@@ -287,27 +268,32 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(DEVICE_HANDLE sDevHandle,
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    int deviceID = 1;
     if (devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
     if (DEVICE_CAMERA == devType)
     {
         CAMERA_PROPERTIES_INDEX_T nCamProperty;
-        //ret = hal_cam_get_property(sDevHandle,nCamProperty,oParams);
-    }
-    else
-    {
-        MIC_PROPERTIES_INDEX_T nMicProperty;
-        long value1;
-        ret = hal_mic_get_property(deviceID, nMicProperty, &value1);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "Failed to close the seesion\n!!");
-        return ret;
-    }
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_PAN, &oParams->nPan);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_TILT, &oParams->nTilt);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_CONTRAST, &oParams->nContrast);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_BRIGHTNESS, &oParams->nBrightness);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_SATURATION, &oParams->nSaturation);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_SHARPNESS, &oParams->nSharpness);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_HUE, &oParams->nHue);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_GAIN, &oParams->nGain);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_GAMMA, &oParams->nGamma);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_FREQUENCY, &oParams->nFrequency);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_AUTOWHITEBALANCE, &oParams->bAutoWhiteBalance);
+        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_BACKLIGHT_COMPENSATION, &oParams->bBacklightCompensation);
+     if(oParams->bAutoExposure == 0){
+         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_EXPOSURE, &oParams->nExposure);
+     }
+     if(oParams->bAutoWhiteBalance == 0){
+         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_WHITEBALANCETEMPERATURE, &oParams->nWhiteBalanceTemperature);
+         }
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(DEVICE_HANDLE devHandle,
@@ -317,16 +303,9 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(DEVICE_HANDLE devHandle,
 
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
     int deviceID = 1;
-    DEVICE_HANDLE sDevHandle;
+    DEVICE_HANDLE sDevHandle = devHandle;
     if (devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
-
-    //HAL open call()
-    if (ret != DEVICE_SESSION_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "Failed to close the seesion\n!!");
-        return ret;
-    }
 
     if (DEVICE_CAMERA == devType)
     {
@@ -419,27 +398,12 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(DEVICE_HANDLE devHandle,
                     oParams->bBacklightCompensation);
 
     }
-    else if (DEVICE_MICROPHONE == devType)
-    {
-        if (oParams->nMicMaxGain != CONST_VARIABLE_INITIALIZE)
-            hal_mic_set_property(deviceID, MIC_PROPERTIES_MAXGAIN, oParams->nMicMaxGain);
-
-        if (oParams->nMicMinGain != CONST_VARIABLE_INITIALIZE)
-            hal_mic_set_property(deviceID, MIC_PROPERTIES_MINGAIN, oParams->nMicMinGain);
-
-        if (oParams->nMicGain != CONST_VARIABLE_INITIALIZE)
-            hal_mic_set_property(deviceID, MIC_PROPERTIES_GAIN, oParams->nMicGain);
-
-        if (oParams->bMicMute != CONST_VARIABLE_INITIALIZE)
-            hal_mic_set_property(deviceID, MIC_PROPERTIES_MUTE, oParams->bMicMute);
-
-    }
     CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
     return DEVICE_OK;
 }
 
 
-DEVICE_RETURN_CODE_T DeviceControl::setformat(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
+DEVICE_RETURN_CODE_T DeviceControl::setFormat(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
         FORMAT sFormat)
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
