@@ -130,7 +130,7 @@ bool CameraService::open(LSHandle *sh, LSMessage *message, void *ctx)
     LSError lserror;
     int ret = -1;
     const char *payload;
-    struct json_object *pInJson = NULL, *pInJsonChild1 = NULL,*pInJsonChild2 = NULL;
+    struct json_object *pInJson = NULL, *pInJsonChild1 = NULL;
     struct json_object *pOutJson = NULL;
     DEVICE_RETURN_CODE nErrID;
     // json parsing
@@ -158,8 +158,6 @@ bool CameraService::open(LSHandle *sh, LSMessage *message, void *ctx)
         int DevID;
         int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
-        char *pSamplingRate = NULL;
-        char *pCodec = NULL;
         int DevHandle;
 
         pOutJson = json_object_new_object();
@@ -255,11 +253,8 @@ bool CameraService::close(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
         pOutJson = json_object_new_object();
 
@@ -352,7 +347,6 @@ bool CameraService::startPreview(LSHandle *sh, LSMessage *message, void *ctx)
         char *source = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
         int pKey = 0;
 
@@ -469,11 +463,8 @@ bool CameraService::stopPreview(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
         pOutJson = json_object_new_object();
 
@@ -562,8 +553,6 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
@@ -572,10 +561,8 @@ bool CameraService::startCapture(LSHandle *sh, LSMessage *message, void *ctx)
         char *pFormat = NULL;
         char *pMode = NULL;
         int nNImage = 0;
-        char *pSamplingRate = NULL;
         CAMERA_DATA_FORMAT nformat;
         FORMAT sFormat; // for camera
-        int Id;
 
         pOutJson = json_object_new_object();
 
@@ -738,11 +725,8 @@ bool CameraService::stopCapture(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
         pOutJson = json_object_new_object();
 
@@ -831,10 +815,8 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
     else
     {
         char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
         CAMERA_INFO_T oInfo;
         char strFormat[CONST_MAX_STRING_LENGTH];
@@ -860,7 +842,7 @@ bool CameraService::getInfo(LSHandle *sh, LSMessage *message, void *ctx)
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "Starting parse_parameter\n");
             ret = get_id(devID,&DevID);
-            PMLOG_INFO(CONST_MODULE_LUNA, "DevID %d nId %d\n", DevID, Id);
+            PMLOG_INFO(CONST_MODULE_LUNA, "DevID %d\n", DevID);
             nErrID = devCmd->getDeviceInfo(DevID, DevType, &oInfo);
 
             if ((nErrID != DEVICE_OK))
@@ -1089,11 +1071,8 @@ bool CameraService::getProperties(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
 
         pOutJson = json_object_new_object();
@@ -1305,11 +1284,8 @@ bool CameraService::setProperties(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
         CAMERA_PROPERTIES_T oParams;
         int nParamCount;
@@ -1601,8 +1577,7 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
     LSError lserror;
     bool ret = true;
     const char *payload;
-    struct json_object *pInJson = NULL, *pInJsonChild1 = NULL, *pInJsonChild2 = NULL,
-            *pInJsonChild3 = NULL;
+    struct json_object *pInJson = NULL, *pInJsonChild1 = NULL, *pInJsonChild2 = NULL;
     struct json_object *pOutJson = NULL;
     DEVICE_RETURN_CODE nErrID;
     // json parsing
@@ -1624,11 +1599,8 @@ bool CameraService::setFormat(LSHandle *sh, LSMessage *message, void *ctx)
     }
     else
     {
-        char *devID = NULL;
-        char *devType = NULL;
         int nParamCheck = CONST_PARAM_VALUE_TRUE;
         int DevID;
-        int Id;
         DEVICE_TYPE DevType = DEVICE_CAMERA;
         FORMAT sFormat;
         char *pformat = NULL;

@@ -1544,7 +1544,6 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_info(char *strDeviceName, CAMERA_INFO_T *pInfo
     int cameraNum = 0;
     int i;
     struct v4l2_frmsizeenum frmsize;
-    struct v4l2_frmivalenum frmival;
 
     cameraNum = _camera_init(strDeviceName);
     i = cameraNum;

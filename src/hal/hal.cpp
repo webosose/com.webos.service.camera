@@ -240,7 +240,6 @@ DEVICE_RETURN_CODE_T hal_cam_get_info(DEVICE_LIST_T sDeviceInfo, CAMERA_INFO_T *
 {
     DEVICE_RETURN_CODE_T nRet = DEVICE_ERROR_UNKNOWN;
     DEVICE_HANDLE sDevHandle;
-    int camNum = 0;
 
     _device_init(sDeviceInfo, &sDevHandle);
     PMLOG_INFO(CONST_MODULE_HAL, "%d: Started!strDeviceName=%s\n", __LINE__,
