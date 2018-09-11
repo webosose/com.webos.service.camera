@@ -267,12 +267,10 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(DEVICE_HANDLE sDevHandle,
 {
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
     if (devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;
     if (DEVICE_CAMERA == devType)
     {
-        CAMERA_PROPERTIES_INDEX_T nCamProperty;
         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_PAN, &oParams->nPan);
         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_TILT, &oParams->nTilt);
         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_CONTRAST, &oParams->nContrast);
@@ -285,14 +283,14 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(DEVICE_HANDLE sDevHandle,
         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_FREQUENCY, &oParams->nFrequency);
         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_AUTOWHITEBALANCE, &oParams->bAutoWhiteBalance);
         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_BACKLIGHT_COMPENSATION, &oParams->bBacklightCompensation);
-     if(oParams->bAutoExposure == 0){
-         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_EXPOSURE, &oParams->nExposure);
-     }
-     if(oParams->bAutoWhiteBalance == 0){
-         hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_WHITEBALANCETEMPERATURE, &oParams->nWhiteBalanceTemperature);
-         }
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
+        if(oParams->bAutoExposure == 0){
+            hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_EXPOSURE, &oParams->nExposure);
+        }
+        if(oParams->bAutoWhiteBalance == 0){
+            hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_WHITEBALANCETEMPERATURE, &oParams->nWhiteBalanceTemperature);
+        }
+        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
+        return DEVICE_OK;
     }
 }
 
@@ -302,7 +300,6 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(DEVICE_HANDLE devHandle,
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
     DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    int deviceID = 1;
     DEVICE_HANDLE sDevHandle = devHandle;
     if (devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;

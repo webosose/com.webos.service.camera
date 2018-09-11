@@ -10,7 +10,6 @@
 
 int gbSubscribePDM = 0;
 // for dependency services
-static int gbServiceReady = 0; // systemProperty, PDM service data
 DEVICE_LIST_T arrDevList[MAX_DEVICE];
 
 CommandManager *devcmd = CommandManager::getInstance();
@@ -22,7 +21,6 @@ static void __subscribe_get_list(int *pCamDev, int *pMicDev, int *pCamSupport, i
 
     LSError lserror;
     struct json_object *pOutJson = NULL, *pOutJsonChild1 = NULL, *pOutJsonChild2 = NULL;
-    char strKey[CONST_MAX_STRING_LENGTH];
     char arrList[20][CONST_MAX_STRING_LENGTH];
     int supportList[20];
     int i;

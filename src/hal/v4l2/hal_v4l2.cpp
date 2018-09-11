@@ -220,9 +220,9 @@ DEVICE_RETURN_CODE_T v4l2_cam_stop_capture(char *strDeviceName)
     int cameraNum = 0;
     cameraNum = _camera_init(strDeviceName);
 
-    if (gCameraDeviceList[cameraNum].isCapturing)
+    if (gCameraDeviceList[cameraNum].isContinuousCapture)
     {
-        gCameraDeviceList[cameraNum].isCapturing = false;
+        gCameraDeviceList[cameraNum].isContinuousCapture = false;
     }
     else
     {
@@ -241,7 +241,7 @@ void *capturing_thread(void *arg)
     sCurrentFormat.nWidth = pDevice->nVideoWidth;
     sCurrentFormat.nHeight = pDevice->nVideoHeight;
     sCurrentFormat.eFormat = pDevice->nVideoMode;
-    while (pDevice->isCapturing)
+    while (pDevice->isContinuousCapture)
     {
         ret = v4l2_cam_capture_image(pDevice->strDeviceName, 1,sCurrentFormat);
         if (ret != DEVICE_OK)
@@ -250,7 +250,7 @@ void *capturing_thread(void *arg)
             break;
         }
     }
-    pDevice->isCapturing = false;
+    pDevice->isContinuousCapture = false;
     pthread_detach(pDevice->capture_thread);
 
     return NULL;
@@ -262,9 +262,9 @@ DEVICE_RETURN_CODE_T v4l2_cam_start_capture(char *strDeviceName, CAMERA_FORMAT s
     int cameraNum = 0;
 
     cameraNum = _camera_init(strDeviceName);
-    if (gCameraDeviceList[cameraNum].isCapturing != true)
+    if (gCameraDeviceList[cameraNum].isContinuousCapture != true)
     {
-        gCameraDeviceList[cameraNum].isCapturing = true;
+        gCameraDeviceList[cameraNum].isContinuousCapture = true;
         if ((nThreadErr = pthread_create(&gCameraDeviceList[cameraNum].capture_thread, NULL,
                 capturing_thread, &gCameraDeviceList[cameraNum])) != 0)
         {
@@ -1544,7 +1544,6 @@ DEVICE_RETURN_CODE_T v4l2_cam_get_info(char *strDeviceName, CAMERA_INFO_T *pInfo
     int cameraNum = 0;
     int i;
     struct v4l2_frmsizeenum frmsize;
-    struct v4l2_frmivalenum frmival;
 
     cameraNum = _camera_init(strDeviceName);
     i = cameraNum;
@@ -1712,6 +1711,7 @@ DEVICE_RETURN_CODE_T v4l2_cam_start(char *strDeviceName)
         PMLOG_INFO(CONST_MODULE_HAL, "%d: StreamOn failed: error (%d) %s !!", __LINE__, errno,
                 strerror(errno));
     }
+    gCameraDeviceList[camCnt].isContinuousCapture = false;
     PMLOG_INFO(CONST_MODULE_HAL, "%d: status at the end of start:%d\n\n",
             gCameraDeviceList[camCnt].isStreamOn);
     return ret;

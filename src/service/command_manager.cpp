@@ -116,7 +116,6 @@ DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceID, DEVICE_TYPE_T d
     CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
 
     DEVICE_RETURN_CODE_T ret;
-    DEVICE_HANDLE stDevHandle;
 
     if (deviceID == INVALID_ID || devType == DEVICE_DEVICE_UNDEFINED)
         return DEVICE_ERROR_WRONG_PARAM;

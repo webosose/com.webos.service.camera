@@ -178,7 +178,6 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     int nMicDev = 0;
     int nCamSupport = 0;
     int nMicSupport = 0;
-    static int nid = 0;
     if(gdevCount < nDevCount)
         *pCamEvent = DEVICE_EVENT_STATE_PLUGGED;
     else if(gdevCount > nDevCount)

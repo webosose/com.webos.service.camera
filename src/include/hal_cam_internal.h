@@ -135,6 +135,7 @@ typedef struct CAM_DEVICE
 
     int bCameraStreamDebugOn[3];
     bool isCapturing;
+    bool isContinuousCapture;
 
 } CAM_DEVICE_T;
 
