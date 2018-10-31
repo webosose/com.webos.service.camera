@@ -117,6 +117,19 @@ add_executable (hal_test_app ${SRC_CAMHAL_TEST})
 target_link_libraries (hal_test_app camera_hal)
 install(TARGETS hal_test_app DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
+#libcamera.so
+include_directories(${CMAKE_SOURCE_DIR}/src/sdk)
+set (SRC_SDK ${CMAKE_SOURCE_DIR}/src/sdk/camera.cpp)
+add_library(camera SHARED ${SRC_SDK})
+target_link_libraries (camera camera_hal)
+install(TARGETS camera DESTINATION /usr/lib)
+
+#sdktestapp project exe
+set (SRC_CAMSDK_TEST ${CMAKE_SOURCE_DIR}/src/test/sdk/sdktestapp.cpp)
+add_executable (sdk_test_app ${SRC_CAMSDK_TEST})
+target_link_libraries (sdk_test_app camera)
+install(TARGETS sdk_test_app DESTINATION ${WEBOS_INSTALL_SBINDIR})
+
 set(HAL_GTEST TRUE CACHE BOOL "Set to TRUE to enable gtest compilation for HAL")
 if (HAL_GTEST)
     webos_use_gtest()

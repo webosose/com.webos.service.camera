@@ -87,23 +87,14 @@ int camera_hal_if_deinit(void *h)
 
     DLOG(printf("In camera_hal_if_deinit : camera_handle : %p\n",camera_handle););
 
-    const char *subsystem = (const char *)camera_handle->h_library;
-
-    void *handle = dlopen(subsystem, RTLD_LAZY);
-    if (!handle)
-    {
-        retVal = CAMERA_ERROR_PLUGIN_NOT_FOUND;
-        DLOG(printf("CAMERA_ERROR_PLUGIN_NOT_FOUND\n"););
-        return retVal;
-    }
-
     typedef void (*pfn_destroy_handle)(void *);
-    pfn_destroy_handle pf_destroy_handle  = (pfn_destroy_handle)dlsym(handle, "destroy_handle");
-
+    pfn_destroy_handle pf_destroy_handle  = (pfn_destroy_handle)dlsym(camera_handle->h_plugin, "destroy_handle");
     if (!pf_destroy_handle)
     {
         retVal = CAMERA_ERROR_DESTROY_HANDLE;
-        DLOG(printf("CAMERA_ERROR_DESTROY_HANDLE\n"););
+        char *error;
+        if ((error = dlerror()) != NULL)
+            DLOG(fprintf(stderr, "%s\n", error););
         return retVal;
     }
 
