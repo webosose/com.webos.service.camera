@@ -15,7 +15,6 @@ webos_component(1 0 0)
 
 include(FindPkgConfig)
 
-
 include_directories(inc)
 pkg_check_modules(GLIB2 REQUIRED glib-2.0)
 include_directories(${GLIB2_INCLUDE_DIRS})
@@ -44,14 +43,19 @@ webos_add_compiler_flags(ALL ${ALSA_CFLAGS})
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 
 include_directories(${CMAKE_SOURCE_DIR})
+include_directories(${CMAKE_SOURCE_DIR}/files/)
+include_directories(${CMAKE_SOURCE_DIR}/files/sysbus/)
+include_directories(${CMAKE_SOURCE_DIR}/files/systemd/)
 
-
-#hal
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
+
+set(CAMERA_SERVICE FALSE CACHE BOOL "Set to TRUE to enable existing camera service")
+
+if(CAMERA_SERVICE)
+#hal
 include_directories(${CMAKE_SOURCE_DIR}/src/)
 include_directories(${CMAKE_SOURCE_DIR}/src/hal/)
 include_directories(${CMAKE_SOURCE_DIR}/src/hal/v4l2/)
@@ -60,9 +64,6 @@ include_directories(${CMAKE_SOURCE_DIR}/src/hal/utils/)
 
 #service
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
-include_directories(${CMAKE_SOURCE_DIR}/files/)
-include_directories(${CMAKE_SOURCE_DIR}/files/sysbus/)
-include_directories(${CMAKE_SOURCE_DIR}/files/systemd/)
 
 set(PROJECT_NAME_SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/hal/hal.cpp
@@ -88,6 +89,46 @@ target_link_libraries(${PROJECT_NAME}
     ${LUNASERVICE2_LDFLAGS}
     ${UDEV_LDFLAGS}
     pthread)
+
+else()
+
+#hal2
+include_directories(${CMAKE_SOURCE_DIR}/src/hal2/)
+include_directories(${CMAKE_SOURCE_DIR}/src/hal2/v4l2)
+
+#libcamera_hal.so
+set (SRC_HAL2
+     ${CMAKE_SOURCE_DIR}/src/hal2/camera_base_wrapper.cpp
+     ${CMAKE_SOURCE_DIR}/src/hal2/camera_hal_if.cpp)
+add_library(camera_hal SHARED ${SRC_HAL2})
+
+#v4l2-camera-plugin library
+set (SRC_V4L2 ${CMAKE_SOURCE_DIR}/src/hal2/v4l2/v4l2_camera_plugin.cpp)
+add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
+
+#link libraries camera_hal and v4l2-camera-plugin
+target_link_libraries(camera_hal v4l2-camera-plugin ${CMAKE_DL_LIBS} pthread)
+install(TARGETS v4l2-camera-plugin DESTINATION /usr/lib)
+install(TARGETS camera_hal DESTINATION /usr/lib)
+
+endif()
+
+set(HAL_TEST_APP TRUE CACHE BOOL "Set to TRUE to enable HAL test app")
+if(HAL_TEST_APP)
+#haltestapp project exe
+set (SRC_CAMHAL_TEST ${CMAKE_SOURCE_DIR}/src/test/hal2/camera_hal_tests.cpp)
+add_executable (${PROJECT_NAME} ${SRC_CAMHAL_TEST})
+
+target_link_libraries (${PROJECT_NAME} camera_hal)
+endif()
+
+
+set(HAL_GTEST TRUE CACHE BOOL "Set to TRUE to enable gtest compilation for HAL")
+if (HAL_GTEST)
+    webos_use_gtest()
+    include_directories(${WEBOS_GTEST_INCLUDES})
+    add_subdirectory(src/gtest)
+endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
