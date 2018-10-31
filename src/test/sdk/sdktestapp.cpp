@@ -18,6 +18,7 @@
 #include <iostream>
 #include "camera.h"
 #include <new>
+#include "notifier.h"
 
 const std::string subsystem = "libv4l2-camera-plugin.so";
 const std::string devname = "/dev/video0";
@@ -32,10 +33,22 @@ int Connect()
     DLOG_SDK(std::cout << "Connect" << std::endl;)
 }
 
+void handleDeviceState(camera_info_t *pcam_info)
+{
+    DLOG_SDK(std::cout << "handleDeviceState" << std::endl;)
+}
+
 int main(int argc, char const *argv[])
 {
     int retval = 0;
     Camera *camera = new (std::nothrow) Camera;
+    Notifier *notifier = new (std::nothrow) Notifier;
+
+    if(nullptr != notifier)
+    {
+        notifier->addNotifier(NOTIFIER_CLIENT_PDM);
+        notifier->registerCallback(handleDeviceState);
+    }
 
     if(nullptr != camera)
     {
@@ -47,9 +60,12 @@ int main(int argc, char const *argv[])
         retval = camera->removeCallbacks(CAMERA_MSG_CLOSE);
         retval = camera->close();
         retval = camera->deinit();
-
         delete camera;
     }
+
+    if(nullptr != notifier)
+        delete notifier;
+
     return 0;
 }
 

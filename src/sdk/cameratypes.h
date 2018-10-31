@@ -21,6 +21,8 @@
 
 #define PREVIEW_BUFFER 4
 #define TIMEOUT -1
+#define MAX_DEVICE_COUNT 10
+#define CONST_MAX_STRING_LENGTH 256
 
 #ifndef DEBUG_SDK
 #define DLOG_SDK(x) x
@@ -48,6 +50,19 @@ typedef enum _camera_states
     CAMERA_STATE_CLOSE,
 }camera_states_t;
 
+typedef enum _device_event_state
+{
+    DEVICE_EVENT_NONE = 0,
+    DEVICE_EVENT_STATE_PLUGGED = 1,
+    DEVICE_EVENT_STATE_UNPLUGGED,
+}device_event_state_t;
+
+typedef enum _notifier_client
+{
+    NOTIFIER_CLIENT_PDM = 0,
+    NOTIFIER_CLIENT_UDEV
+}notifier_client_t;
+
 typedef struct _camera_info
 {
     int device_num;
@@ -59,6 +74,7 @@ typedef struct _camera_info
     std::string device_type;
     std::string device_subtype;
     bool cam_status;
+    device_event_state_t cam_state;
 }camera_info_t;
 
 typedef int (*Callback)();
@@ -66,7 +82,8 @@ typedef int (*Callback)();
 typedef struct _camera_message
 {
     camera_msg_types_t msg;
-    union {
+    union
+    {
         int    ndata;
         float    fdata;
         void*    pdata;

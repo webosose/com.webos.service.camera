@@ -119,7 +119,9 @@ install(TARGETS hal_test_app DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
 #libcamera.so
 include_directories(${CMAKE_SOURCE_DIR}/src/sdk)
-set (SRC_SDK ${CMAKE_SOURCE_DIR}/src/sdk/camera.cpp)
+include_directories(${CMAKE_SOURCE_DIR}/src/sdk/notifier)
+set (SRC_SDK ${CMAKE_SOURCE_DIR}/src/sdk/camera.cpp
+             ${CMAKE_SOURCE_DIR}/src/sdk/notifier/notifier.cpp)
 add_library(camera SHARED ${SRC_SDK})
 target_link_libraries (camera camera_hal)
 install(TARGETS camera DESTINATION /usr/lib)

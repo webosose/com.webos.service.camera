@@ -32,7 +32,7 @@ int Camera::init(std::string subsystem)
     }
 
     std::lock_guard<std::mutex> guard(cam_mutex_);
-    if(CAMERA_STATE_UNKNOWN== cam_state_)
+    if(CAMERA_STATE_UNKNOWN == cam_state_)
         cam_state_ = CAMERA_STATE_INIT;
 
     return retval;
@@ -110,7 +110,8 @@ int Camera::startPreview(stream_format_t stformat,int mode)
         return retval;
     }
 
-    struct pollfd poll_set[]{
+    struct pollfd poll_set[]
+    {
         {.fd = ncam_fd_,.events = POLLIN},
     };
     nio_mode_ = mode;

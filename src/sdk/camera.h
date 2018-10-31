@@ -20,7 +20,7 @@
 #include <mutex>
 #include <map>
 
-#include "camera_types.h"
+#include "cameratypes.h"
 #include "camera_hal_if.h"
 
 class Camera
@@ -50,7 +50,7 @@ public:
     int removeCallbacks(camera_msg_types_t);
 
     //getters for gtest
-    camera_states_t getCameraState()
+    camera_states_t getCameraState() const
     {
         return cam_state_;
     }
