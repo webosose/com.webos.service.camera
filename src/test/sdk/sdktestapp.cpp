@@ -39,30 +39,60 @@ void handleDeviceState(camera_info_t *pcam_info)
     DLOG_SDK(std::cout << "handleDeviceState" << std::endl;)
     if(NULL != pcam_info)
     {
-        DLOG_SDK(std::cout << "cam_info cam_state: " << pcam_info->cam_state << std::endl;);
-        DLOG_SDK(std::cout << "cam_info device_type: " << pcam_info->device_type << std::endl;);
-        DLOG_SDK(std::cout << "cam_info device_subtype: " << pcam_info->device_subtype << std::endl;);
-        DLOG_SDK(std::cout << "cam_info device_num: " << pcam_info->device_num << std::endl;);
-        DLOG_SDK(std::cout << "cam_info device_node: " << pcam_info->device_node << std::endl;);
-        DLOG_SDK(std::cout << "cam_info vendor_name: " << pcam_info->vendor_name << std::endl;);
-        DLOG_SDK(std::cout << "cam_info serial_number: " << pcam_info->serial_number << std::endl;);
-        DLOG_SDK(std::cout << "cam_info product_name: " << pcam_info->product_name << std::endl;);
+        for(int i = 0; i < MAX_DEVICE_COUNT ; i++)
+        {
+            DLOG_SDK(std::cout << "cam_info cam_state: " << pcam_info[i].cam_state << std::endl;);
+            DLOG_SDK(std::cout << "cam_info device_type: " << pcam_info[i].device_type << std::endl;);
+            DLOG_SDK(std::cout << "cam_info device_subtype: " << pcam_info[i].device_subtype << std::endl;);
+            DLOG_SDK(std::cout << "cam_info device_num: " << pcam_info[i].device_num << std::endl;);
+            DLOG_SDK(std::cout << "cam_info device_node: " << pcam_info[i].device_node << std::endl;);
+            DLOG_SDK(std::cout << "cam_info vendor_name: " << pcam_info[i].vendor_name << std::endl;);
+            DLOG_SDK(std::cout << "cam_info serial_number: " << pcam_info[i].serial_number << std::endl;);
+            DLOG_SDK(std::cout << "cam_info product_name: " << pcam_info[i].product_name << std::endl;);
+        }
     }
 }
 
-int main(int argc, char const *argv[])
+int main(int argc, char* argv[])
 {
-    int retval = 0;
+    opterr = 0;
+    int c;
+    std::string option;
+
+    while ((c = getopt (argc, argv, "o:")) != -1)
+    {
+        switch (c)
+        {
+        case 'o':
+            if(optarg)
+                option = optarg;
+            break;
+        case '?':
+            if (optopt == 'o')
+                std::cout << "Option -%o requires an argument" << std::endl;
+            else if (isprint (optopt))
+                std::cout << "Unknown option" << std::endl;
+            else
+                std::cout << "Unknown option character" << std::endl;
+            return 0;
+        }
+    }
+
     Camera *camera = new (std::nothrow) Camera;
     Notifier *notifier = new (std::nothrow) Notifier;
+    int retval = 0;
 
-    if(nullptr != notifier)
+    if (nullptr != notifier)
     {
-        notifier->addNotifier(NOTIFIER_CLIENT_UDEV);
+        if ("PDM" == option)
+            retval = notifier->addNotifier(NOTIFIER_CLIENT_PDM);
+        else
+            retval = notifier->addNotifier(NOTIFIER_CLIENT_UDEV);
+
         notifier->registerCallback(handleDeviceState);
     }
 
-    if(nullptr != camera)
+    if (nullptr != camera)
     {
         retval = camera->init(subsystem);
         retval = camera->addCallbacks(CAMERA_MSG_OPEN,Connect);

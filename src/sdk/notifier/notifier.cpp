@@ -27,7 +27,7 @@ int Notifier::addNotifier(notifier_client_t client)
 
     if(client == NOTIFIER_CLIENT_PDM)
     {
-        //points to PDM object
+        p_client_notifier_ = &pdm_;//points to PDM object
     }
     else if(client == NOTIFIER_CLIENT_UDEV)
     {
