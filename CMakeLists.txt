@@ -52,9 +52,6 @@ include_directories(${CMAKE_SOURCE_DIR}/files/systemd/)
 
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
-set(CAMERA_SERVICE FALSE CACHE BOOL "Set to TRUE to enable existing camera service")
-
-if(CAMERA_SERVICE)
 #hal
 include_directories(${CMAKE_SOURCE_DIR}/src/)
 include_directories(${CMAKE_SOURCE_DIR}/src/hal/)
@@ -90,11 +87,14 @@ target_link_libraries(${PROJECT_NAME}
     ${UDEV_LDFLAGS}
     pthread)
 
-else()
-
 #hal2
 include_directories(${CMAKE_SOURCE_DIR}/src/hal2/)
 include_directories(${CMAKE_SOURCE_DIR}/src/hal2/v4l2)
+
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if.h DESTINATION
+/usr/include)
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION
+/usr/include)
 
 #libcamera_hal.so
 set (SRC_HAL2
@@ -111,17 +111,11 @@ target_link_libraries(camera_hal v4l2-camera-plugin ${CMAKE_DL_LIBS} pthread)
 install(TARGETS v4l2-camera-plugin DESTINATION /usr/lib)
 install(TARGETS camera_hal DESTINATION /usr/lib)
 
-endif()
-
-set(HAL_TEST_APP TRUE CACHE BOOL "Set to TRUE to enable HAL test app")
-if(HAL_TEST_APP)
 #haltestapp project exe
 set (SRC_CAMHAL_TEST ${CMAKE_SOURCE_DIR}/src/test/hal2/camera_hal_tests.cpp)
-add_executable (${PROJECT_NAME} ${SRC_CAMHAL_TEST})
-
-target_link_libraries (${PROJECT_NAME} camera_hal)
-endif()
-
+add_executable (hal_test_app ${SRC_CAMHAL_TEST})
+target_link_libraries (hal_test_app camera_hal)
+install(TARGETS hal_test_app DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
 set(HAL_GTEST TRUE CACHE BOOL "Set to TRUE to enable gtest compilation for HAL")
 if (HAL_GTEST)
