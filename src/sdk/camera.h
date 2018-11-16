@@ -36,6 +36,8 @@ private:
     std::map<camera_msg_types_t, Callback> callback_map_;
     std::mutex cam_mutex_;
 
+    void getCallback(camera_msg_types_t);
+
 public:
     int init(std::string);
     int deinit();
@@ -46,6 +48,12 @@ public:
     int stopPreview();
     int addCallbacks(camera_msg_types_t,Callback);
     int removeCallbacks(camera_msg_types_t);
+
+    //getters for gtest
+    camera_states_t getCameraState()
+    {
+        return cam_state_;
+    }
 };
 
 #endif

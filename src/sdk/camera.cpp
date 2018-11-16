@@ -72,16 +72,7 @@ int Camera::open(std::string devicenode)
     if(CAMERA_STATE_INIT == cam_state_)
         cam_state_ = CAMERA_STATE_OPEN;
 
-    //callback function
-    Callback function = callback_map_.find(CAMERA_MSG_OPEN)->second;
-    if (function)
-    {
-        (*function)();
-    }
-    else
-    {
-       DLOG_SDK(std::cout << "No callback registered for Open" << std::endl;);
-    }
+    getCallback(CAMERA_MSG_OPEN);
 
     return retval;
 }
@@ -101,6 +92,8 @@ int Camera::close()
     std::lock_guard<std::mutex> guard(cam_mutex_);
     if(CAMERA_STATE_OPEN == cam_state_)
         cam_state_ = CAMERA_STATE_CLOSE;
+
+    getCallback(CAMERA_MSG_CLOSE);
 
     return retval;
 }
@@ -130,8 +123,8 @@ int Camera::startPreview(stream_format_t stformat,int mode)
     }
 
     if((default_format_.stream_height != stformat.stream_height) ||
-       (default_format_.stream_width!= stformat.stream_width) ||
-       (default_format_.pixel_format!= stformat.pixel_format))
+       (default_format_.stream_width != stformat.stream_width) ||
+       (default_format_.pixel_format != stformat.pixel_format))
     {
         retval = camera_hal_if_set_format(pcam_handle_,stformat);
         if(CAMERA_ERROR_NONE != retval)
@@ -159,7 +152,7 @@ int Camera::startPreview(stream_format_t stformat,int mode)
     if(CAMERA_STATE_OPEN == cam_state_)
         cam_state_ = CAMERA_STATE_PREVIEW;
 
-    while((npollstatus = poll(poll_set, 2, TIMEOUT)) > 0)
+    if((npollstatus = poll(poll_set, 2, TIMEOUT)) > 0)
     {
         retval = camera_hal_if_get_buffer(pcam_handle_,&frame_buffer_);
         if(CAMERA_ERROR_NONE != retval)
@@ -217,3 +210,19 @@ int Camera::removeCallbacks(camera_msg_types_t msg)
     return CAMERA_ERROR_NONE;
 }
 
+void Camera::getCallback(camera_msg_types_t msg)
+{
+    //callback function
+    if (!callback_map_.empty())
+    {
+        Callback function = callback_map_.find(msg)->second;
+        if (function)
+        {
+            (*function)();
+        }
+        else
+        {
+            DLOG_SDK(std::cout << "No callback registered for msg : " << msg << std::endl;);
+        }
+    }
+}

@@ -19,6 +19,9 @@
 #include "camera.h"
 #include <new>
 
+const std::string subsystem = "libv4l2-camera-plugin.so";
+const std::string devname = "/dev/video0";
+
 int Disconnect()
 {
     DLOG_SDK(std::cout << "Disconnect" << std::endl;)
@@ -36,12 +39,15 @@ int main(int argc, char const *argv[])
 
     if(nullptr != camera)
     {
-        retval = camera->init("libv4l2-camera-plugin.so");
+        retval = camera->init(subsystem);
         retval = camera->addCallbacks(CAMERA_MSG_OPEN,Connect);
+        retval = camera->addCallbacks(CAMERA_MSG_CLOSE,Disconnect);
 
-        retval = camera->open("/dev/video0");
+        retval = camera->open(devname);
+        retval = camera->removeCallbacks(CAMERA_MSG_CLOSE);
         retval = camera->close();
         retval = camera->deinit();
+
         delete camera;
     }
     return 0;

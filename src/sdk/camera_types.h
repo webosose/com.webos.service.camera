@@ -33,7 +33,8 @@ typedef enum _camera_msg_types
     //Add the message type
     CAMERA_MSG_AUTOFOCUS =1,
     CAMERA_MSG_BRIGHTNESS,
-    CAMERA_MSG_OPEN
+    CAMERA_MSG_OPEN,
+    CAMERA_MSG_CLOSE
 }camera_msg_types_t;
 
 typedef enum _camera_states
