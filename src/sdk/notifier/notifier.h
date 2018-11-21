@@ -5,6 +5,7 @@
 #include <functional>
 #include "cameratypes.h"
 #include "device_notifier.h"
+#include "udev_client.h"
 
 using namespace std;
 
@@ -14,6 +15,7 @@ private:
     using handler_cb_ = std::function<void(camera_info_t *)>;
     handler_cb_ subscribeToDeviceState;
 
+    UDEVClient udev_;
     int dev_count_;
     camera_info_t st_dev_info_[MAX_DEVICE_COUNT];
 
@@ -23,7 +25,6 @@ public:
     int registerCallback(handler_cb_);
 
     virtual int updateDeviceList(std::string,int,camera_info_t *);
-    virtual int queryDeviceStatus(int,device_event_state_t);
     virtual int getDeviceInfo(int,camera_info_t *);
 };
 

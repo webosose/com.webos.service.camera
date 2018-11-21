@@ -120,10 +120,14 @@ install(TARGETS hal_test_app DESTINATION ${WEBOS_INSTALL_SBINDIR})
 #libcamera.so
 include_directories(${CMAKE_SOURCE_DIR}/src/sdk)
 include_directories(${CMAKE_SOURCE_DIR}/src/sdk/notifier)
+include_directories(${CMAKE_SOURCE_DIR}/src/sdk/notifier/udev)
+
 set (SRC_SDK ${CMAKE_SOURCE_DIR}/src/sdk/camera.cpp
-             ${CMAKE_SOURCE_DIR}/src/sdk/notifier/notifier.cpp)
+             ${CMAKE_SOURCE_DIR}/src/sdk/notifier/notifier.cpp
+             ${CMAKE_SOURCE_DIR}/src/sdk/notifier/udev/udev_client.cpp)
+
 add_library(camera SHARED ${SRC_SDK})
-target_link_libraries (camera camera_hal)
+target_link_libraries (camera camera_hal ${UDEV_LDFLAGS} pthread)
 install(TARGETS camera DESTINATION /usr/lib)
 
 #sdktestapp project exe

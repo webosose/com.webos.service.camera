@@ -16,8 +16,9 @@
 
 #include <string.h>
 #include <iostream>
-#include "camera.h"
 #include <new>
+#include <unistd.h>
+#include "camera.h"
 #include "notifier.h"
 
 const std::string subsystem = "libv4l2-camera-plugin.so";
@@ -36,6 +37,17 @@ int Connect()
 void handleDeviceState(camera_info_t *pcam_info)
 {
     DLOG_SDK(std::cout << "handleDeviceState" << std::endl;)
+    if(NULL != pcam_info)
+    {
+        DLOG_SDK(std::cout << "cam_info cam_state: " << pcam_info->cam_state << std::endl;);
+        DLOG_SDK(std::cout << "cam_info device_type: " << pcam_info->device_type << std::endl;);
+        DLOG_SDK(std::cout << "cam_info device_subtype: " << pcam_info->device_subtype << std::endl;);
+        DLOG_SDK(std::cout << "cam_info device_num: " << pcam_info->device_num << std::endl;);
+        DLOG_SDK(std::cout << "cam_info device_node: " << pcam_info->device_node << std::endl;);
+        DLOG_SDK(std::cout << "cam_info vendor_name: " << pcam_info->vendor_name << std::endl;);
+        DLOG_SDK(std::cout << "cam_info serial_number: " << pcam_info->serial_number << std::endl;);
+        DLOG_SDK(std::cout << "cam_info product_name: " << pcam_info->product_name << std::endl;);
+    }
 }
 
 int main(int argc, char const *argv[])
@@ -46,7 +58,7 @@ int main(int argc, char const *argv[])
 
     if(nullptr != notifier)
     {
-        notifier->addNotifier(NOTIFIER_CLIENT_PDM);
+        notifier->addNotifier(NOTIFIER_CLIENT_UDEV);
         notifier->registerCallback(handleDeviceState);
     }
 
@@ -55,6 +67,8 @@ int main(int argc, char const *argv[])
         retval = camera->init(subsystem);
         retval = camera->addCallbacks(CAMERA_MSG_OPEN,Connect);
         retval = camera->addCallbacks(CAMERA_MSG_CLOSE,Disconnect);
+
+        sleep(10);
 
         retval = camera->open(devname);
         retval = camera->removeCallbacks(CAMERA_MSG_CLOSE);
@@ -68,4 +82,3 @@ int main(int argc, char const *argv[])
 
     return 0;
 }
-

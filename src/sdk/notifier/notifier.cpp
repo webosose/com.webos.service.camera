@@ -27,11 +27,11 @@ int Notifier::addNotifier(notifier_client_t client)
 
     if(client == NOTIFIER_CLIENT_PDM)
     {
-        //pClientNotifier_ points to PDM object
+        //points to PDM object
     }
     else if(client == NOTIFIER_CLIENT_UDEV)
     {
-        //pClientNotifier_ points to UDEV object
+        p_client_notifier_ = &udev_;//points to UDEV object
     }
 
     return CAMERA_ERROR_NONE;
@@ -39,16 +39,19 @@ int Notifier::addNotifier(notifier_client_t client)
 
 int Notifier::registerCallback(handler_cb_ camera_info)
 {
-    if (nullptr != p_client_notifier_)
-        p_client_notifier_->subscribeToClient(camera_info);
+    int retval = CAMERA_ERROR_NONE;
 
-    return CAMERA_ERROR_NONE;
+    if (nullptr != p_client_notifier_)
+        retval = p_client_notifier_->subscribeToClient(camera_info);
+    else
+        retval = CAMERA_ERROR_UNKNOWN;
+
+    return retval;
 }
 
 int Notifier::updateDeviceList(std::string dev_type,int dev_count,camera_info_t *st_dev_list)
 {
-    int retval = CAMERA_ERROR_UNKNOWN;
-    device_event_state_t nstatus;
+    device_event_state_t nstatus = DEVICE_EVENT_NONE;
 
     if(dev_count_ < dev_count)
         nstatus = DEVICE_EVENT_STATE_PLUGGED;
@@ -78,24 +81,8 @@ int Notifier::updateDeviceList(std::string dev_type,int dev_count,camera_info_t 
     return CAMERA_ERROR_NONE;
 }
 
-int Notifier::queryDeviceStatus(int dev_num,device_event_state_t state)
-{
-    int retval = CAMERA_ERROR_UNKNOWN;
-    int count = 0;
-
-    for(count=0;count < dev_count_;count++)
-    {
-        if(dev_num == st_dev_info_[count].device_num)
-            break;
-    }
-    state = st_dev_info_[count].cam_state;
-
-    return CAMERA_ERROR_NONE;
-}
-
 int Notifier::getDeviceInfo(int dev_num,camera_info_t *pst_info)
 {
-    int retval = CAMERA_ERROR_UNKNOWN;
     int count = 0;
 
     for(count=0; count < dev_count_; count++)
