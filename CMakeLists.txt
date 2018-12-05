@@ -24,6 +24,10 @@ pkg_check_modules(LUNASERVICE2 REQUIRED luna-service2)
 include_directories(${LUNASERVICE2_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${LUNASERVICE2_CFLAGS_OTHER})
 
+pkg_check_modules(LS2++ REQUIRED luna-service2++>=3)
+include_directories(${LS2++_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${LS2++_CFLAGS})
+
 pkg_check_modules(PMLOGLIB REQUIRED PmLogLib)
 include_directories(${PMLOGLIB_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PMLOGLIB_CFLAGS_OTHER})
@@ -31,6 +35,10 @@ webos_add_compiler_flags(ALL ${PMLOGLIB_CFLAGS_OTHER})
 pkg_check_modules(JSONC REQUIRED json-c)
 include_directories(${JSONC_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${JSONC_CFLAGS})
+
+pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
+include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
 pkg_check_modules(UDEV REQUIRED libudev)
 include_directories(${UDEV_INCLUDE_DIRS})
@@ -86,6 +94,9 @@ target_link_libraries(${PROJECT_NAME}
     ${LUNASERVICE2_LDFLAGS}
     ${UDEV_LDFLAGS}
     pthread)
+
+#service2
+add_subdirectory(src/service2)
 
 #hal2
 include_directories(${CMAKE_SOURCE_DIR}/src/hal2/)

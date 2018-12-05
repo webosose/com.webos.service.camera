@@ -235,6 +235,7 @@ extern "C"
 #define CONST_PARAM_NAME_YUVMODE "yuvMode"
 #define CONST_PARAM_NAME_ZOOM "zoom"
 #define CONST_PARAM_NAME_FILENAMELIST "fileNameList"
+#define CONST_PARAM_NAME_ILLUMINATION "illumination"
 
 #ifdef __cplusplus
 }
