@@ -52,8 +52,11 @@ private:
     int getV4l2Property(struct v4l2_queryctrl, int *);
 
     int requestMmapBuffers(int);
+    int requestUserptrBuffers(int);
     int releaseMmapBuffers();
+    int releaseUserptrBuffers();
     int captureDataMmapMode();
+    int captureDataUserptrMode();
 
     int requestDmabuffers(int);
     int captureDataDmaMode();

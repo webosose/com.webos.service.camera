@@ -128,6 +128,24 @@ TEST(CameraHAL, SetBufferMMAP)
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
 }
 
+TEST(CameraHAL, SetBufferUSERPTR)
+{
+    void *p_h_camera;
+    int retval = camera_hal_if_init(&p_h_camera,subsystem);
+    retval = camera_hal_if_open_device(p_h_camera,devname);
+    stream_format_t streamformat;
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = 480;
+    streamformat.stream_width = 640;
+    retval = camera_hal_if_set_format(p_h_camera, streamformat);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_set_buffer(p_h_camera,4,IOMODE_USERPTR);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_destroy_buffer(p_h_camera);
+    retval = camera_hal_if_close_device(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+}
+
 TEST(CameraHAL, StartCaptureDMA)
 {
     void *p_h_camera;
@@ -151,6 +169,29 @@ TEST(CameraHAL, StartCaptureDMA)
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
 }
 
+TEST(CameraHAL, StartCaptureUSERPTR)
+{
+    void *p_h_camera;
+    int retval = camera_hal_if_init(&p_h_camera,subsystem);
+    retval = camera_hal_if_open_device(p_h_camera,devname);
+    stream_format_t streamformat;
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = 480;
+    streamformat.stream_width = 640;
+    retval = camera_hal_if_set_format(p_h_camera, streamformat);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_set_buffer(p_h_camera,4,IOMODE_USERPTR);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_start_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_close_device(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_DEVICE_CLOSE, retval);
+    retval = camera_hal_if_stop_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_close_device(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+}
+
 TEST(CameraHAL, StopCaptureDMA)
 {
     void *p_h_camera;
@@ -163,6 +204,27 @@ TEST(CameraHAL, StopCaptureDMA)
     retval = camera_hal_if_set_format(p_h_camera, streamformat);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
     retval = camera_hal_if_set_buffer(p_h_camera,4,IOMODE_DMABUF);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_start_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_stop_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_close_device(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+}
+
+TEST(CameraHAL, StopCaptureUSERPTR)
+{
+    void *p_h_camera;
+    int retval = camera_hal_if_init(&p_h_camera,subsystem);
+    retval = camera_hal_if_open_device(p_h_camera,devname);
+    stream_format_t streamformat;
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = 480;
+    streamformat.stream_width = 640;
+    retval = camera_hal_if_set_format(p_h_camera, streamformat);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    retval = camera_hal_if_set_buffer(p_h_camera,4,IOMODE_USERPTR);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
     retval = camera_hal_if_start_capture(p_h_camera);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);

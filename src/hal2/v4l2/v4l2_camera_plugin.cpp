@@ -98,6 +98,7 @@ int V4l2CameraPlugin::setFormat(stream_format_t stream_format)
     stream_format_.stream_width = stream_format.stream_width;
     stream_format_.stream_height = stream_format.stream_height;
     stream_format_.pixel_format = stream_format.pixel_format;
+    stream_format_.buffer_size = fmt.fmt.pix.sizeimage;
 
     return CAMERA_ERROR_NONE;
 }
@@ -116,6 +117,7 @@ int V4l2CameraPlugin::getFormat(stream_format_t *stream_format)
     stream_format->stream_width = fmt.fmt.pix.width;
     stream_format->stream_height = fmt.fmt.pix.height;
     stream_format->pixel_format = getCameraPixelFormat(fmt.fmt.pix.pixelformat);
+    stream_format->buffer_size = fmt.fmt.pix.sizeimage;
 
     return CAMERA_ERROR_NONE;
 }
@@ -131,6 +133,11 @@ int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode)
         case IOMODE_MMAP :
         {
             retVal = requestMmapBuffers(num_buffer);
+            break;
+        }
+        case IOMODE_USERPTR :
+        {
+            retVal = requestUserptrBuffers(num_buffer);
             break;
         }
         case IOMODE_DMABUF :
@@ -169,6 +176,13 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
             //outbuf->start = buffers_[buf.index].start; //used memcpy for crah issue in lgcamsrc using gst
             memcpy(outbuf->start,buffers_[buf.index].start,buf.length);
             outbuf->length = buf.length;
+            outbuf->index = buf.index;
+            break;
+        }
+        case IOMODE_USERPTR :
+        {
+            outbuf->start = (void *)buf.m.userptr;
+            outbuf->length = buf.bytesused;
             outbuf->index = buf.index;
             break;
         }
@@ -218,6 +232,11 @@ int V4l2CameraPlugin::destroyBuffer()
             retVal = releaseMmapBuffers();
             break;
         }
+        case IOMODE_USERPTR :
+        {
+            retVal = releaseUserptrBuffers();
+            break;
+        }
         default:
         {
             break;
@@ -235,6 +254,11 @@ int V4l2CameraPlugin::startCapture()
         case IOMODE_MMAP :
         {
             retVal = captureDataMmapMode();
+            break;
+        }
+        case IOMODE_USERPTR :
+        {
+            retVal = captureDataUserptrMode();
             break;
         }
         case IOMODE_DMABUF :
@@ -552,6 +576,52 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
     return CAMERA_ERROR_NONE;
 }
 
+int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer)
+{
+    struct v4l2_requestbuffers req;
+    stream_format_t stream_format;
+    int retVal = CAMERA_ERROR_NONE;
+
+    CLEAR(req);
+
+    req.count = num_buffer;
+    req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    req.memory = V4L2_MEMORY_USERPTR;
+
+    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
+    {
+        DLOG(fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\n",errno, strerror(errno)););
+        return CAMERA_ERROR_UNKNOWN;
+    }
+
+    buffers_ = (buffer_t *)calloc(req.count, sizeof(*buffers_));
+    if (!buffers_)
+    {
+        DLOG(fprintf(stderr, "Out of memory\n"););
+        return CAMERA_ERROR_UNKNOWN;
+    }
+    retVal = getFormat(&stream_format);
+    if(CAMERA_ERROR_NONE != retVal)
+    {
+        DLOG(fprintf(stderr, "getFormat error %d, %s\n",errno, strerror(errno)););
+        return retVal;
+    }
+
+    for (n_buffers_ = 0; n_buffers_ < req.count; ++n_buffers_)
+    {
+        buffers_[n_buffers_].length = stream_format.buffer_size;
+        buffers_[n_buffers_].start = malloc(stream_format.buffer_size);
+
+
+        if (NULL == buffers_[n_buffers_].start)
+        {
+            DLOG(fprintf(stderr, "user ptr error %d, %s\n",errno, strerror(errno)););
+            return CAMERA_ERROR_UNKNOWN;
+        }
+    }
+    return CAMERA_ERROR_NONE;
+}
+
 int V4l2CameraPlugin::releaseMmapBuffers()
 {
     for (int i = 0; i < n_buffers_; ++i)
@@ -562,6 +632,17 @@ int V4l2CameraPlugin::releaseMmapBuffers()
             return CAMERA_ERROR_UNKNOWN;
         }
     }
+    free(buffers_);
+    return CAMERA_ERROR_NONE;
+}
+
+int V4l2CameraPlugin::releaseUserptrBuffers()
+{
+    for (int i = 0; i < n_buffers_; ++i)
+    {
+        free(buffers_[i].start);
+    }
+    free(buffers_);
     return CAMERA_ERROR_NONE;
 }
 
@@ -591,6 +672,35 @@ int V4l2CameraPlugin::captureDataMmapMode()
     }
 
     return CAMERA_ERROR_NONE;
+}
+
+int V4l2CameraPlugin::captureDataUserptrMode()
+{
+    enum v4l2_buf_type type;
+    int i = 0;
+
+    for (i = 0; i < n_buffers_; ++i) {
+        struct v4l2_buffer buf;
+
+        CLEAR(buf);
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_USERPTR;
+        buf.index = i;
+        buf.m.userptr = (unsigned long)buffers_[i].start;
+        buf.length = buffers_[i].length;
+
+        if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
+        {
+            DLOG(fprintf(stderr, "VIDIOC_QBUF error %d, %s\n",errno, strerror(errno)););
+            return CAMERA_ERROR_UNKNOWN;
+        }
+    }
+    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    if (-1 == xioctl(fd_, VIDIOC_STREAMON, &type))
+    {
+        DLOG(fprintf(stderr, "VIDIOC_STREAMON error %d, %s\n",errno, strerror(errno)););
+        return CAMERA_ERROR_UNKNOWN;
+    }
 }
 
 int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
