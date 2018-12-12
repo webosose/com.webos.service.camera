@@ -1,0 +1,11 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/sdk_test_app",
+    "type": "regular",
+    "allowedNames": ["com.webos.service.pdmclient"],
+    "permissions": [
+        {
+            "service": "com.webos.service.pdmclient",
+            "outbound": ["com.webos.service.pdm"]
+        }
+    ]
+}
