@@ -101,10 +101,12 @@ set (SRC_HAL2
      ${CMAKE_SOURCE_DIR}/src/hal2/camera_base_wrapper.cpp
      ${CMAKE_SOURCE_DIR}/src/hal2/camera_hal_if.cpp)
 add_library(camera_hal SHARED ${SRC_HAL2})
+set_target_properties (camera_hal PROPERTIES VERSION 1.0 SOVERSION 1)
 
 #v4l2-camera-plugin library
 set (SRC_V4L2 ${CMAKE_SOURCE_DIR}/src/hal2/v4l2/v4l2_camera_plugin.cpp)
 add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
+set_target_properties (v4l2-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
 
 #link libraries camera_hal and v4l2-camera-plugin
 target_link_libraries(camera_hal v4l2-camera-plugin ${CMAKE_DL_LIBS} pthread)
@@ -129,6 +131,7 @@ set (SRC_SDK ${CMAKE_SOURCE_DIR}/src/sdk/camera.cpp
              ${CMAKE_SOURCE_DIR}/src/sdk/notifier/pdm/pdm_client.cpp)
 
 add_library(camera SHARED ${SRC_SDK})
+set_target_properties (camera  PROPERTIES VERSION 1.0 SOVERSION 1)
 target_link_libraries (camera
                        camera_hal
                        ${UDEV_LDFLAGS}
@@ -152,5 +155,4 @@ if (HAL_GTEST)
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
-
 webos_build_system_bus_files()

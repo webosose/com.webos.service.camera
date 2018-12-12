@@ -94,7 +94,7 @@ void* Camera1(void *arg)
     retval = camera_hal_if_get_format(p_h_camera, &streamformat);
     PrintStreamFormat(streamformat);
 
-    retval = camera_hal_if_set_buffer(p_h_camera, 4, IOMODE_DMABUF);
+    retval = camera_hal_if_set_buffer(p_h_camera, 4, IOMODE_USERPTR);
 
     retval = camera_hal_if_start_capture(p_h_camera);
 

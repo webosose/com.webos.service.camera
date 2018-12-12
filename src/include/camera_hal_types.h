@@ -116,6 +116,7 @@ typedef struct
     int stream_rotation;
     int stream_purpose;
     int capture_quality;
+    unsigned int buffer_size;
 } stream_format_t;
 
 typedef struct
