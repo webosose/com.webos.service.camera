@@ -4,16 +4,18 @@
 #include <iostream>
 #include <functional>
 #include "service_types.h"
+#include "camera_types.h"
+
 #include "device_notifier.h"
 #include "pdm_client.h"
 #include "luna-service2/lunaservice.hpp"
 
-static void updateDeviceList(device_info_t *);
+static void updateDeviceList(DEVICE_LIST_T *);
 
 class Notifier
 {
-  private:
-    using handlercb = std::function<void(device_info_t *)>;
+private:
+    using handlercb = std::function<void(DEVICE_LIST_T *)>;
 
     PDMClient pdm_;
     LSHandle *lshandle_;
@@ -25,7 +27,6 @@ class Notifier
     void addNotifier(NotifierClient);
     void registerCallback(handlercb);
     void setLSHandle(LSHandle *);
-    int getDeviceInfo(int, device_info_t *);
 };
 
 #endif /* NOTIFIER_H_ */

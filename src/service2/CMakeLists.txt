@@ -31,12 +31,22 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 include_directories(${CMAKE_SOURCE_DIR}/src/service2/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service2/notifier/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service2/notifier/pdm/)
+include_directories(${CMAKE_SOURCE_DIR}/src/hal/)
 set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service2/camera_service.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/json_parser.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/service_types.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/notifier/pdm/pdm_client.cpp
+    ${CMAKE_SOURCE_DIR}/src/service2/command_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/service2/device_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/service2/device_controller.cpp
+    ${CMAKE_SOURCE_DIR}/src/hal/hal.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/camera_types.h
+    ${CMAKE_SOURCE_DIR}/src/hal/utils/camshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/hal_v4l2.cpp
+    ${CMAKE_SOURCE_DIR}/src/hal/alsa/hal_alsa.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
     )
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
@@ -45,6 +55,9 @@ target_link_libraries(${PROJECT_NAME}
                       ${GLIB2_LDFLAGS}
                       ${PBNJSON_CPP_LDFLAGS}
                       ${LS2++_LDFLAGS}
-                      ${PMLOGLIB_LDFLAGS})
+                      ${PMLOGLIB_LDFLAGS}
+                      ${ALSA_LDFLAGS}
+                      ${UDEV_LDFLAGS}
+                      pthread)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})

@@ -5,10 +5,11 @@
 #include "service_types.h"
 #include "device_notifier.h"
 #include <luna-service2/lunaservice.hpp>
+#include "camera_types.h"
 
 static bool deviceStateCb(LSHandle *, LSMessage *, void *);
 
-using pdmhandlercb = std::function<void(device_info_t *)>;
+using pdmhandlercb = std::function<void(DEVICE_LIST_T *)>;
 
 class PDMClient : public DeviceNotifier
 {

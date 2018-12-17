@@ -22,6 +22,8 @@
 #include <iostream>
 #include <string>
 #include "constants.h"
+#include "camera_types.h"
+
 
 /*constants*/
 
@@ -235,10 +237,9 @@ typedef struct
 
 /*Utility functions*/
 
-std::string getErrorString(DeviceError);
+std::string getErrorString(DEVICE_RETURN_CODE);
 PmLogContext getCameraLunaPmLogContext();
-DeviceError convertFormatToCode(std::string, CameraFormat *);
-void getFormatString(int format, std::string formats);
-std::string getTypeString(DeviceType);
+void convertFormatToCode(std::string, CAMERA_DATA_FORMAT *);
+std::string getTypeString(DEVICE_TYPE_T);
 
 #endif /* SERVICE_TYPES_H_ */

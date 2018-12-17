@@ -22,6 +22,7 @@
 #include <string>
 #include "json_utils.h"
 #include "service_types.h"
+#include "camera_types.h"
 #include "constants.h"
 
 class MethodReply
@@ -149,13 +150,13 @@ class StartCaptureMethod
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() { return n_devicehandle_; }
 
-    void setCameraParams(camera_format_t r_inparams)
+    void setCameraParams(CAMERA_FORMAT r_inparams)
     {
-        r_cameraparams_.n_width = r_inparams.n_width;
-        r_cameraparams_.n_height = r_inparams.n_height;
-        r_cameraparams_.e_format = r_inparams.e_format;
+        r_cameraparams_.nWidth = r_inparams.nWidth;
+        r_cameraparams_.nHeight = r_inparams.nHeight;
+        r_cameraparams_.eFormat = r_inparams.eFormat;
     }
-    camera_format_t rGetParams() { return r_cameraparams_; }
+    CAMERA_FORMAT rGetParams() { return r_cameraparams_; }
 
     void setnImage(int nimage) { n_image_ = nimage; }
     int getnImage() { return n_image_; }
@@ -176,7 +177,7 @@ class StartCaptureMethod
 
   private:
     int n_devicehandle_;
-    camera_format_t r_cameraparams_;
+    CAMERA_FORMAT r_cameraparams_;
     int n_image_;
     std::string str_mode_;
     MethodReply objreply_;
@@ -216,20 +217,20 @@ class GetInfoMethod
     void setDeviceId(std::string devid) { str_deviceid_ = devid; }
     std::string strGetDeviceId() { return str_deviceid_; }
 
-    void setCameraInfo(camera_info_t r_ininfo)
+    void setCameraInfo(CAMERA_INFO_T r_ininfo)
     {
-        ro_info_.str_name = r_ininfo.str_name;
-        ro_info_.b_builtin = r_ininfo.b_builtin;
-        ro_info_.n_codec = r_ininfo.n_codec;
-        ro_info_.n_format = r_ininfo.n_format;
-        ro_info_.e_type = r_ininfo.e_type;
-        ro_info_.n_maxpictureheight = r_ininfo.n_maxpictureheight;
-        ro_info_.n_maxpicturewidth = r_ininfo.n_maxpicturewidth;
-        ro_info_.n_maxvideoheight = r_ininfo.n_maxvideoheight;
-        ro_info_.n_maxvideowidth = r_ininfo.n_maxvideowidth;
-        ro_info_.n_samplingrate = r_ininfo.n_samplingrate;
+        strncpy ( ro_info_.strName, r_ininfo.strName, sizeof(r_ininfo.strName) );
+        ro_info_.bBuiltin = r_ininfo.bBuiltin;
+        ro_info_.nCodec = r_ininfo.nCodec;
+        ro_info_.nFormat = r_ininfo.nFormat;
+        ro_info_.nType = r_ininfo.nType;
+        ro_info_.nMaxPictureHeight = r_ininfo.nMaxPictureHeight;
+        ro_info_.nMaxPictureWidth = r_ininfo.nMaxPictureWidth;
+        ro_info_.nMaxVideoHeight = r_ininfo.nMaxVideoHeight;
+        ro_info_.nMaxVideoWidth = r_ininfo.nMaxVideoWidth;
+        ro_info_.nSamplingRate = r_ininfo.nSamplingRate;
     }
-    camera_info_t rGetCameraInfo() { return ro_info_; }
+    CAMERA_INFO_T rGetCameraInfo() { return ro_info_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -244,7 +245,7 @@ class GetInfoMethod
 
   private:
     std::string str_deviceid_;
-    camera_info_t ro_info_;
+    CAMERA_INFO_T ro_info_;
     MethodReply objreply_;
 };
 
@@ -257,39 +258,39 @@ class GetSetPropertiesMethod
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() { return n_devicehandle_; }
 
-    void setCameraProperties(camera_properties_t rin_info)
+    void setCameraProperties(CAMERA_PROPERTIES_T rin_info)
     {
-        ro_camproperties_.n_zoom = rin_info.n_zoom;
-        ro_camproperties_.n_gridzoom_x = rin_info.n_gridzoom_x;
-        ro_camproperties_.n_gridzoom_y = rin_info.n_gridzoom_y;
-        ro_camproperties_.n_pan = rin_info.n_pan;
-        ro_camproperties_.n_tilt = rin_info.n_tilt;
-        ro_camproperties_.n_contrast = rin_info.n_contrast;
-        ro_camproperties_.n_brightness = rin_info.n_brightness;
-        ro_camproperties_.n_saturation = rin_info.n_saturation;
-        ro_camproperties_.n_sharpness = rin_info.n_sharpness;
-        ro_camproperties_.n_hue = rin_info.n_hue;
-        ro_camproperties_.n_whitebalancetemperature = rin_info.n_whitebalancetemperature;
-        ro_camproperties_.n_gain = rin_info.n_gain;
-        ro_camproperties_.n_gamma = rin_info.n_gamma;
-        ro_camproperties_.n_frequency = rin_info.n_frequency;
-        ro_camproperties_.b_mirror = rin_info.b_mirror;
-        ro_camproperties_.n_exposure = rin_info.n_exposure;
-        ro_camproperties_.b_autoexposure = rin_info.b_autoexposure;
-        ro_camproperties_.b_autowhitebalance = rin_info.b_autowhitebalance;
-        ro_camproperties_.n_bitrate = rin_info.n_bitrate;
-        ro_camproperties_.n_framerate = rin_info.n_framerate;
-        ro_camproperties_.ngop_length = rin_info.ngop_length;
-        ro_camproperties_.b_led = rin_info.b_led;
-        ro_camproperties_.b_yuvmode = rin_info.b_yuvmode;
-        ro_camproperties_.n_illumination = rin_info.n_illumination;
-        ro_camproperties_.b_backlightcompensation = rin_info.b_backlightcompensation;
-        ro_camproperties_.n_mic_maxgain = rin_info.n_mic_maxgain;
-        ro_camproperties_.n_mic_mingain = rin_info.n_mic_mingain;
-        ro_camproperties_.n_micgain = rin_info.n_micgain;
-        ro_camproperties_.b_micmute = rin_info.b_micmute;
+        ro_camproperties_.nZoom = rin_info.nZoom;
+        ro_camproperties_.nGridZoomX = rin_info.nGridZoomX;
+        ro_camproperties_.nGridZoomY = rin_info.nGridZoomY;
+        ro_camproperties_.nPan = rin_info.nPan;
+        ro_camproperties_.nTilt = rin_info.nTilt;
+        ro_camproperties_.nContrast = rin_info.nContrast;
+        ro_camproperties_.nBrightness = rin_info.nBrightness;
+        ro_camproperties_.nSaturation = rin_info.nSaturation;
+        ro_camproperties_.nSharpness = rin_info.nSharpness;
+        ro_camproperties_.nHue = rin_info.nHue;
+        ro_camproperties_.nWhiteBalanceTemperature = rin_info.nWhiteBalanceTemperature;
+        ro_camproperties_.nGain = rin_info.nGain;
+        ro_camproperties_.nGamma = rin_info.nGamma;
+        ro_camproperties_.nFrequency = rin_info.nFrequency;
+        ro_camproperties_.bMirror = rin_info.bMirror;
+        ro_camproperties_.nExposure = rin_info.nExposure;
+        ro_camproperties_.bAutoExposure = rin_info.bAutoExposure;
+        ro_camproperties_.bAutoWhiteBalance = rin_info.bAutoWhiteBalance;
+        ro_camproperties_.nBitrate = rin_info.nBitrate;
+        ro_camproperties_.nFramerate = rin_info.nFramerate;
+        ro_camproperties_.ngopLength = rin_info.ngopLength;
+        ro_camproperties_.bLed = rin_info.bLed;
+        ro_camproperties_.bYuvMode = rin_info.bYuvMode;
+        ro_camproperties_.nIllumination = rin_info.nIllumination;
+        ro_camproperties_.bBacklightCompensation = rin_info.bBacklightCompensation;
+        ro_camproperties_.nMicMaxGain = rin_info.nMicMaxGain;
+        ro_camproperties_.nMicMinGain = rin_info.nMicMinGain;
+        ro_camproperties_.nMicGain = rin_info.nMicGain;
+        ro_camproperties_.bMicMute = rin_info.bMicMute;
     }
-    camera_properties_t rGetCameraProperties() { return ro_camproperties_; }
+    CAMERA_PROPERTIES_T rGetCameraProperties() { return ro_camproperties_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -306,7 +307,7 @@ class GetSetPropertiesMethod
 
   private:
     int n_devicehandle_;
-    camera_properties_t ro_camproperties_;
+    CAMERA_PROPERTIES_T ro_camproperties_;
     MethodReply objreply_;
 };
 
@@ -319,13 +320,13 @@ class SetFormatMethod
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() { return n_devicehandle_; }
 
-    void setCameraFormat(camera_format_t rin_params)
+    void setCameraFormat(CAMERA_FORMAT rin_params)
     {
-        ro_params_.n_width = rin_params.n_width;
-        ro_params_.n_height = rin_params.n_height;
-        ro_params_.e_format = rin_params.e_format;
+        ro_params_.nWidth = rin_params.nWidth;
+        ro_params_.nHeight = rin_params.nHeight;
+        ro_params_.eFormat = rin_params.eFormat;
     }
-    camera_format_t rGetCameraFormat() { return ro_params_; }
+    CAMERA_FORMAT rGetCameraFormat() { return ro_params_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -340,7 +341,7 @@ class SetFormatMethod
 
   private:
     int n_devicehandle_;
-    camera_format_t ro_params_;
+    CAMERA_FORMAT ro_params_;
     MethodReply objreply_;
 };
 

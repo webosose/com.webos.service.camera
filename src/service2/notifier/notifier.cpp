@@ -16,42 +16,36 @@
 
 #include "notifier.h"
 
-device_info_t st_dev_info_[MAX_DEVICE_COUNT];
+DEVICE_LIST_T st_dev_info_[MAX_DEVICE_COUNT];
 
-static void updateDeviceList(device_info_t *st_dev_list)
+static void updateDeviceList(DEVICE_LIST_T *st_dev_list)
 {
     SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList callback received\n");
     for (int i = 0; i < MAX_DEVICE_COUNT; i++)
     {
-        st_dev_info_[i].vendor_name = st_dev_list[i].vendor_name;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList vendor_name[%d] : %s \n", i, st_dev_info_[i].vendor_name);
+        strncpy(st_dev_info_[i].strVendorName, st_dev_list[i].strVendorName,CONST_MAX_STRING_LENGTH - 1);
+        st_dev_info_[i].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-        st_dev_info_[i].product_name = st_dev_list[i].product_name;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList product_name[%d] : %s \n", i, st_dev_info_[i].product_name);
+        strncpy(st_dev_info_[i].strProductName, st_dev_list[i].strProductName,CONST_MAX_STRING_LENGTH - 1);
+        st_dev_info_[i].strProductName[CONST_MAX_STRING_LENGTH - 1] ='\0';
 
-        st_dev_info_[i].serial_number = st_dev_list[i].serial_number;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList serial_number[%d] : %s \n", i, st_dev_info_[i].serial_number);
+        strncpy(st_dev_info_[i].strSerialNumber, st_dev_list[i].strSerialNumber,CONST_MAX_STRING_LENGTH - 1);
+        st_dev_info_[i].strSerialNumber[CONST_MAX_STRING_LENGTH - 1] ='\0';
 
-        st_dev_info_[i].device_subtype = st_dev_list[i].device_subtype;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_subtype[%d] : %s \n", i, st_dev_info_[i].device_subtype);
+        strncpy(st_dev_info_[i].strDeviceType, st_dev_list[i].strDeviceType,CONST_MAX_STRING_LENGTH - 1);
+        st_dev_info_[i].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-        st_dev_info_[i].device_type = st_dev_list[i].device_type;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_type[%d] : %s \n", i, st_dev_info_[i].device_type);
+        strncpy(st_dev_info_[i].strDeviceSubtype, st_dev_list[i].strDeviceSubtype,CONST_MAX_STRING_LENGTH - 1);
+        st_dev_info_[i].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] ='\0';
 
-        st_dev_info_[i].device_node = st_dev_list[i].device_node;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_node[%d] : %s \n", i, st_dev_info_[i].device_node);
+        st_dev_info_[i].nDeviceNum = st_dev_list[i].nDeviceNum;
+        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_num[%d] : %d \n",i,st_dev_info_[i].nDeviceNum);
 
-        st_dev_info_[i].device_num = st_dev_list[i].device_num;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_num[%d] : %d \n", i, st_dev_info_[i].device_num);
+         st_dev_info_[i].nPortNum = st_dev_list[i].nPortNum;
+         SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList port_num[%d] : %d \n",i,st_dev_info_[i].nPortNum);
 
-        st_dev_info_[i].port_num = st_dev_list[i].port_num;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList port_num[%d] : %d \n", i, st_dev_info_[i].port_num);
-
-        st_dev_info_[i].device_state = st_dev_list[i].device_state;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_state[%d] : %d \n", i, (int)st_dev_info_[i].device_state);
-
-        st_dev_info_[i].power_status = st_dev_list[i].power_status;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList power_status[%d] : %d \n", i, st_dev_info_[i].power_status);
+         st_dev_info_[i].isPowerOnConnect = st_dev_list[i].isPowerOnConnect;
+         SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList power_status[%d] : %d \n",i,st_dev_info_[i].isPowerOnConnect);
     }
 }
 
@@ -83,26 +77,4 @@ void Notifier::registerCallback(handlercb deviceinfo)
 void Notifier::setLSHandle(LSHandle *handle)
 {
     lshandle_ = handle;
-}
-
-int Notifier::getDeviceInfo(int dev_num, device_info_t *pst_info)
-{
-    int count = 0;
-
-    for (count = 0; count < MAX_DEVICE_COUNT; count++)
-    {
-        if (dev_num == st_dev_info_[count].device_num)
-            break;
-    }
-    pst_info->vendor_name = st_dev_info_[count].vendor_name;
-    pst_info->product_name = st_dev_info_[count].product_name;
-    pst_info->serial_number = st_dev_info_[count].serial_number;
-    pst_info->device_subtype = st_dev_info_[count].device_subtype;
-    pst_info->device_type = st_dev_info_[count].device_type;
-    pst_info->device_node = st_dev_info_[count].device_node;
-    pst_info->device_num = st_dev_info_[count].device_num;
-    pst_info->port_num = st_dev_info_[count].port_num;
-    pst_info->device_state = st_dev_info_[count].device_state;
-
-    return 0;
 }

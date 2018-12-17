@@ -18,8 +18,9 @@
 #include <pbnjson.hpp>
 #include "pdm_client.h"
 #include "pdm_client_constants.h"
+#include "../../device_manager.h"
 
-device_info_t dev_info_[MAX_DEVICE_COUNT];
+DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
 pdmhandlercb subscribeToDeviceInfoCb_;
 int devicecount = 0;
 
@@ -54,7 +55,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
                 raw_buffer serialnum = jstring_get_fast(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SERIAL_NUMBER)));
                 std::string str_serialnum = serialnum.m_str;
-                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb serialnum : %s \n", serialnum);
+                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb serialnum : %s \n",str_serialnum.c_str());
 
                 bool b_powerstatus = false;
                 jboolean_get(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_IS_POWER_ON_CONNECT)), &b_powerstatus);
@@ -66,39 +67,52 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
                 raw_buffer devsubtype = jstring_get_fast(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_SUBTYPE)));
                 std::string str_devicesubtype = devsubtype.m_str;
-                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicesubtype : %s \n", str_devicesubtype);
+                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicesubtype : %s \n",str_devicesubtype.c_str());
 
                 raw_buffer vendor_name = jstring_get_fast(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_NAME)));
                 std::string str_vendorname = vendor_name.m_str;
-                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_vendorname : %s \n", str_vendorname);
+                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_vendorname : %s \n",str_vendorname.c_str());
 
                 raw_buffer device_type = jstring_get_fast(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE)));
                 std::string str_devicetype = device_type.m_str;
-                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicetype : %s \n", str_devicetype);
+                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicetype : %s \n",str_devicetype.c_str());
 
                 raw_buffer product_name = jstring_get_fast(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_NAME)));
                 std::string str_productname = product_name.m_str;
-                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_productname : %s \n", str_productname);
+                SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_productname : %s \n",str_productname.c_str());
 
                 if (cam == str_devicetype)
                 {
-                    dev_info_[camcount].device_num = devicenum;
-                    dev_info_[camcount].port_num = portnum;
-                    dev_info_[camcount].vendor_name = str_vendorname;
-                    dev_info_[camcount].product_name = str_productname;
-                    dev_info_[camcount].serial_number = str_serialnum;
-                    dev_info_[camcount].device_type = str_devicetype;
-                    dev_info_[camcount].device_subtype = str_devicesubtype;
-                    dev_info_[camcount].device_state = DeviceEvent::DEVICE_EVENT_STATE_PLUGGED;
+                    SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb received cam device\n");
+                    dev_info_[camcount].nDeviceNum = devicenum;
+                    dev_info_[camcount].nPortNum = portnum;
+
+                    strncpy(dev_info_[camcount].strVendorName, str_vendorname.c_str(),CONST_MAX_STRING_LENGTH - 1);
+                    dev_info_[camcount].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+                    strncpy(dev_info_[camcount].strProductName, str_productname.c_str(),CONST_MAX_STRING_LENGTH - 1);
+                    dev_info_[camcount].strProductName[CONST_MAX_STRING_LENGTH - 1] ='\0';
+
+                    strncpy(dev_info_[camcount].strSerialNumber, str_serialnum.c_str(),CONST_MAX_STRING_LENGTH - 1);
+                    dev_info_[camcount].strSerialNumber[CONST_MAX_STRING_LENGTH - 1] ='\0';
+
+                    strncpy(dev_info_[camcount].strDeviceType, str_devicetype.c_str(),CONST_MAX_STRING_LENGTH - 1);
+                    dev_info_[camcount].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+                    strncpy(dev_info_[camcount].strDeviceSubtype, str_devicesubtype.c_str(),CONST_MAX_STRING_LENGTH - 1);
+                    dev_info_[camcount].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] ='\0';
+
+                    dev_info_[camcount].isPowerOnConnect = b_powerstatus;
 
                     camcount++;
-                    devicecount = camcount;
                 }
-                if (camcount >= MAX_DEVICE_COUNT)
-                    break;
             }
-            if (devicecount > camcount)
-                dev_info_[camcount].device_state = DeviceEvent::DEVICE_EVENT_STATE_UNPLUGGED;
+
+            DEVICE_EVENT_STATE nCamEvent = DEVICE_EVENT_NONE;
+            DEVICE_EVENT_STATE nMicEvent = DEVICE_EVENT_NONE;
+            SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb camcount : %d \n",camcount);
+
+            DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
         }
         j_release(&jin_obj);
 
