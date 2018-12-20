@@ -21,26 +21,28 @@
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include <string>
 
 class DeviceManager
 {
 private:
-
 public:
-    static DeviceManager &getInstance()
-    {
-        static DeviceManager obj;
-        return obj;
-    };
-    bool deviceStatus(int ,DEVICE_TYPE_T ,bool );
-    bool isDeviceOpen(DEVICE_TYPE_T , int *);
-    bool isDeviceValid(DEVICE_TYPE_T , int *);
-    bool isUpdatedList();
-    DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *);
-    DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int ,DEVICE_EVENT_STATE_T *,DEVICE_EVENT_STATE_T *);
-    DEVICE_RETURN_CODE_T getInfo(int , CAMERA_INFO_T *);
-    DEVICE_RETURN_CODE_T createHandle(int ,DEVICE_TYPE_T ,int *);
-    DEVICE_RETURN_CODE_T getHandle(int ,DEVICE_TYPE_T ,DEVICE_HANDLE *);
+  static DeviceManager &getInstance()
+  {
+    static DeviceManager obj;
+    return obj;
+  }
+  bool deviceStatus(int, DEVICE_TYPE_T, bool);
+  bool isDeviceOpen(int *);
+  bool isDeviceValid(DEVICE_TYPE_T, int *);
+  void getDeviceNode(int *, std::string &);
+  void getDeviceHandle(int *, void **);
+
+  DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *);
+  DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
+                                  DEVICE_EVENT_STATE_T *);
+  DEVICE_RETURN_CODE_T getInfo(int, CAMERA_INFO_T *);
+  DEVICE_RETURN_CODE_T createHandle(int, int *, std::string);
 };
 
 #endif /*SERVICE_DEVICE_MANAGER_H_*/

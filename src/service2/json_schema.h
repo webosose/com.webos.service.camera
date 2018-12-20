@@ -18,10 +18,10 @@
 #define JSON_SCHEMA_H_
 
 /*
-* Note : The strings are generated online from Json object
-* Any change in string should be taken care else schema validation
-* will fail
-*/
+ * Note : The strings are generated online from Json object
+ * Any change in string should be taken care else schema validation
+ * will fail
+ */
 
 const char *getCameraListSchema = "{ "
                                   "\"type\": \"object\", "

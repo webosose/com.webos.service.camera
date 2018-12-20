@@ -20,61 +20,62 @@ DEVICE_LIST_T st_dev_info_[MAX_DEVICE_COUNT];
 
 static void updateDeviceList(DEVICE_LIST_T *st_dev_list)
 {
-    SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList callback received\n");
-    for (int i = 0; i < MAX_DEVICE_COUNT; i++)
-    {
-        strncpy(st_dev_info_[i].strVendorName, st_dev_list[i].strVendorName,CONST_MAX_STRING_LENGTH - 1);
-        st_dev_info_[i].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
+  SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList callback received\n");
+  for (int i = 0; i < MAX_DEVICE_COUNT; i++)
+  {
+    strncpy(st_dev_info_[i].strVendorName, st_dev_list[i].strVendorName,
+            CONST_MAX_STRING_LENGTH - 1);
+    st_dev_info_[i].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-        strncpy(st_dev_info_[i].strProductName, st_dev_list[i].strProductName,CONST_MAX_STRING_LENGTH - 1);
-        st_dev_info_[i].strProductName[CONST_MAX_STRING_LENGTH - 1] ='\0';
+    strncpy(st_dev_info_[i].strProductName, st_dev_list[i].strProductName,
+            CONST_MAX_STRING_LENGTH - 1);
+    st_dev_info_[i].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-        strncpy(st_dev_info_[i].strSerialNumber, st_dev_list[i].strSerialNumber,CONST_MAX_STRING_LENGTH - 1);
-        st_dev_info_[i].strSerialNumber[CONST_MAX_STRING_LENGTH - 1] ='\0';
+    strncpy(st_dev_info_[i].strSerialNumber, st_dev_list[i].strSerialNumber,
+            CONST_MAX_STRING_LENGTH - 1);
+    st_dev_info_[i].strSerialNumber[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-        strncpy(st_dev_info_[i].strDeviceType, st_dev_list[i].strDeviceType,CONST_MAX_STRING_LENGTH - 1);
-        st_dev_info_[i].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
+    strncpy(st_dev_info_[i].strDeviceType, st_dev_list[i].strDeviceType,
+            CONST_MAX_STRING_LENGTH - 1);
+    st_dev_info_[i].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-        strncpy(st_dev_info_[i].strDeviceSubtype, st_dev_list[i].strDeviceSubtype,CONST_MAX_STRING_LENGTH - 1);
-        st_dev_info_[i].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] ='\0';
+    strncpy(st_dev_info_[i].strDeviceSubtype, st_dev_list[i].strDeviceSubtype,
+            CONST_MAX_STRING_LENGTH - 1);
+    st_dev_info_[i].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-        st_dev_info_[i].nDeviceNum = st_dev_list[i].nDeviceNum;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_num[%d] : %d \n",i,st_dev_info_[i].nDeviceNum);
+    st_dev_info_[i].nDeviceNum = st_dev_list[i].nDeviceNum;
+    SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList device_num[%d] : %d \n", i,
+                 st_dev_info_[i].nDeviceNum);
 
-         st_dev_info_[i].nPortNum = st_dev_list[i].nPortNum;
-         SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList port_num[%d] : %d \n",i,st_dev_info_[i].nPortNum);
+    st_dev_info_[i].nPortNum = st_dev_list[i].nPortNum;
+    SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList port_num[%d] : %d \n", i,
+                 st_dev_info_[i].nPortNum);
 
-         st_dev_info_[i].isPowerOnConnect = st_dev_list[i].isPowerOnConnect;
-         SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList power_status[%d] : %d \n",i,st_dev_info_[i].isPowerOnConnect);
-    }
+    st_dev_info_[i].isPowerOnConnect = st_dev_list[i].isPowerOnConnect;
+    SRV_LOG_INFO(CONST_MODULE_LUNA, "updateDeviceList power_status[%d] : %d \n", i,
+                 st_dev_info_[i].isPowerOnConnect);
+  }
 }
 
 void Notifier::addNotifier(NotifierClient client)
 {
-    SRV_LOG_INFO(CONST_MODULE_LUNA, "addNotifier client : %d\n", (int)client);
+  SRV_LOG_INFO(CONST_MODULE_LUNA, "addNotifier client : %d\n", (int)client);
 
-    if (client == NotifierClient::NOTIFIER_CLIENT_PDM)
+  if (client == NotifierClient::NOTIFIER_CLIENT_PDM)
+  {
+    p_client_notifier_ = &pdm_; // points to PDM object
+    if (nullptr != p_client_notifier_)
     {
-        p_client_notifier_ = &pdm_; //points to PDM object
-        if (nullptr != p_client_notifier_)
-        {
-            p_client_notifier_->setLSHandle(lshandle_);
-            registerCallback(updateDeviceList);
-        }
+      p_client_notifier_->setLSHandle(lshandle_);
+      registerCallback(updateDeviceList);
     }
-    else if (client == NotifierClient::NOTIFIER_CLIENT_UDEV)
-    {
-        //points to UDEV object
-    }
+  }
 }
 
 void Notifier::registerCallback(handlercb deviceinfo)
 {
-    if (nullptr != p_client_notifier_)
-        p_client_notifier_->subscribeToClient(deviceinfo);
+  if (nullptr != p_client_notifier_)
+    p_client_notifier_->subscribeToClient(deviceinfo);
 }
 
-void Notifier::setLSHandle(LSHandle *handle)
-{
-    lshandle_ = handle;
-}
+void Notifier::setLSHandle(LSHandle *handle) { lshandle_ = handle; }

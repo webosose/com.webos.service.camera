@@ -21,32 +21,34 @@
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include <string>
 
 class CommandManager
 {
 private:
+  DEVICE_RETURN_CODE_T createHandle(int, int *, std::string);
 
 public:
-    static CommandManager &getInstance()
-    {
-        static CommandManager obj;
-        return obj;
-    }
+  static CommandManager &getInstance()
+  {
+    static CommandManager obj;
+    return obj;
+  }
 
-    DEVICE_RETURN_CODE_T open(int , DEVICE_TYPE_T ,int *);
-    DEVICE_RETURN_CODE_T close(int , DEVICE_TYPE_T );
-    DEVICE_RETURN_CODE_T getDeviceInfo(int , DEVICE_TYPE_T , CAMERA_INFO_T *);
-    DEVICE_RETURN_CODE_T getDeviceList(int *, int *, int *, int *);
-    DEVICE_RETURN_CODE_T createHandle(int , DEVICE_TYPE_T , int *);
-    DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int ,DEVICE_EVENT_STATE_T *, DEVICE_EVENT_STATE_T *);
-    DEVICE_RETURN_CODE_T getProperty(int , DEVICE_TYPE_T ,CAMERA_PROPERTIES_T *);
-    DEVICE_RETURN_CODE_T setProperty(int , DEVICE_TYPE_T ,CAMERA_PROPERTIES_T *);
-    DEVICE_RETURN_CODE_T setFormat(int , DEVICE_TYPE_T ,FORMAT );
-    DEVICE_RETURN_CODE_T startPreview(int , DEVICE_TYPE_T , int *);
-    DEVICE_RETURN_CODE_T stopPreview(int , DEVICE_TYPE_T );
-    DEVICE_RETURN_CODE_T startCapture(int , DEVICE_TYPE_T , FORMAT );
-    DEVICE_RETURN_CODE_T stopCapture(int , DEVICE_TYPE_T );
-    DEVICE_RETURN_CODE_T captureImage(int , DEVICE_TYPE_T , int , FORMAT );
+  DEVICE_RETURN_CODE_T open(int, int *);
+  DEVICE_RETURN_CODE_T close(int);
+  DEVICE_RETURN_CODE_T getDeviceInfo(int, CAMERA_INFO_T *);
+  DEVICE_RETURN_CODE_T getDeviceList(int *, int *, int *, int *);
+  DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
+                                  DEVICE_EVENT_STATE_T *);
+  DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
+  DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
+  DEVICE_RETURN_CODE_T setFormat(int, FORMAT);
+  DEVICE_RETURN_CODE_T startPreview(int, int *);
+  DEVICE_RETURN_CODE_T stopPreview(int);
+  DEVICE_RETURN_CODE_T startCapture(int, FORMAT);
+  DEVICE_RETURN_CODE_T stopCapture(int);
+  DEVICE_RETURN_CODE_T captureImage(int, int, FORMAT);
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/

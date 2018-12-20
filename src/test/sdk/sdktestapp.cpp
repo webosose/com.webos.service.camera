@@ -23,6 +23,8 @@
 
 const std::string subsystem = "libv4l2-camera-plugin.so";
 const std::string devname = "/dev/video0";
+const int nconnect = 1;
+const int ndisconnect = 2;
 
 int Disconnect()
 {
@@ -36,19 +38,21 @@ int Connect()
 
 void handleDeviceState(camera_info_t *pcam_info)
 {
-    DLOG_SDK(std::cout << "handleDeviceState" << std::endl;)
+    DLOG_SDK(std::cout << "handleDeviceState callback received" << std::endl;)
     if(NULL != pcam_info)
     {
         for(int i = 0; i < MAX_DEVICE_COUNT ; i++)
         {
+          if( (nconnect == pcam_info[i].cam_state) ||
+             (ndisconnect == pcam_info[i].cam_state) )
+          {
             DLOG_SDK(std::cout << "cam_info cam_state: " << pcam_info[i].cam_state << std::endl;);
-            DLOG_SDK(std::cout << "cam_info device_type: " << pcam_info[i].device_type << std::endl;);
             DLOG_SDK(std::cout << "cam_info device_subtype: " << pcam_info[i].device_subtype << std::endl;);
             DLOG_SDK(std::cout << "cam_info device_num: " << pcam_info[i].device_num << std::endl;);
             DLOG_SDK(std::cout << "cam_info device_node: " << pcam_info[i].device_node << std::endl;);
             DLOG_SDK(std::cout << "cam_info vendor_name: " << pcam_info[i].vendor_name << std::endl;);
             DLOG_SDK(std::cout << "cam_info serial_number: " << pcam_info[i].serial_number << std::endl;);
-            DLOG_SDK(std::cout << "cam_info product_name: " << pcam_info[i].product_name << std::endl;);
+          }
         }
     }
 }

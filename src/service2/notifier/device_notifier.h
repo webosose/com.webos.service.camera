@@ -7,10 +7,11 @@
 class DeviceNotifier
 {
 private:
-    using handlercb = std::function<void(DEVICE_LIST_T *)>;
+  using handlercb = std::function<void(DEVICE_LIST_T *)>;
+
 public:
-    virtual void subscribeToClient(handlercb) = 0;
-    virtual void setLSHandle(LSHandle *) = 0;
+  virtual void subscribeToClient(handlercb) = 0;
+  virtual void setLSHandle(LSHandle *) = 0;
 };
 
 #endif /* DEVICE_NOTIFIER_H_ */

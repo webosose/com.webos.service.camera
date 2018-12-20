@@ -17,22 +17,22 @@
 #ifndef V4L2_CAMERA_PLUGIN
 #define V4L2_CAMERA_PLUGIN
 
-#include <linux/videodev2.h>
 #include <camera_base.h>
-#include <string.h>
 #include <iostream>
+#include <linux/videodev2.h>
 #include <map>
+#include <string.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-void *create_handle();
-void destroy_handle(void *);
+  void *create_handle();
+  void destroy_handle(void *);
 
-class V4l2CameraPlugin : public CameraBase
-{
+  class V4l2CameraPlugin : public CameraBase
+  {
   public:
     virtual int openDevice(std::string) override;
     virtual int closeDevice() override;
@@ -46,8 +46,9 @@ class V4l2CameraPlugin : public CameraBase
     virtual int stopCapture() override;
     virtual int setProperties(const camera_properties_t *) override;
     virtual int getProperties(camera_properties_t *) override;
+    virtual int getInfo(camera_device_info_t *, std::string) override;
 
-private:
+  private:
     int setV4l2Property(struct v4l2_queryctrl, int);
     int getV4l2Property(struct v4l2_queryctrl, int *);
 
@@ -61,7 +62,7 @@ private:
     int requestDmabuffers(int);
     int captureDataDmaMode();
 
-    int processImage(const void *,int);
+    int processImage(const void *, int);
     int selectFd();
     int pollFd();
     int readCapturedFrame();
@@ -71,17 +72,17 @@ private:
     unsigned long getFourCCPixelFormat(camera_pixel_format_t);
     camera_pixel_format_t getCameraPixelFormat(int);
 
-    int xioctl(int , int , void *);
+    int xioctl(int, int, void *);
 
-    //member variables
+    // member variables
     stream_format_t stream_format_;
     buffer_t *buffers_;
     unsigned int n_buffers_;
     int fd_;
     int io_mode_;
-    std::map<camera_pixel_format_t,unsigned long> fourcc_format_;
-    std::map<unsigned long,camera_pixel_format_t> camera_format_;
-};
+    std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
+    std::map<unsigned long, camera_pixel_format_t> camera_format_;
+  };
 
 #ifdef __cplusplus
 }

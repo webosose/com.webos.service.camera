@@ -18,405 +18,551 @@
  #include
  (File Inclusions)
  ------------------------------------------------------------------------------*/
-#include "command_manager.h"
 #include "device_controller.h"
-#include "hal.h"
+#include "camera_hal_if.h"
+#include "command_manager.h"
+
+#include <poll.h>
 #include <string.h>
 
-DEVICE_RETURN_CODE_T DeviceControl::open(DEVICE_HANDLE devHandle, DEVICE_TYPE devType)
+DeviceControl::DeviceControl() : b_iscontinuous_capture_(false), b_isstreamon_(false), h_shm_(NULL)
 {
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+}
 
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-    if (DEVICE_CAMERA == devType)
+void DeviceControl::writeImageToFile(const void *p, int size)
+{
+  FILE *fp;
+  char image_name[100];
+
+  // create file to save data based on format
+  if (CAMERA_PIXEL_FORMAT_YUYV == epixelformat_)
+    snprintf(image_name, 100, "/tmp/Picture%d.yuv", rand());
+  else if (CAMERA_PIXEL_FORMAT_JPEG == epixelformat_)
+    snprintf(image_name, 100, "/tmp/Picture%d.jpeg", rand());
+  else if (CAMERA_PIXEL_FORMAT_H264 == epixelformat_)
+    snprintf(image_name, 100, "/tmp/Picture%d.h264", rand());
+
+  if (NULL == (fp = fopen(image_name, "a")))
+  {
+    return;
+  }
+  fwrite((unsigned char *)p, 1, size, fp);
+  fclose(fp);
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, FORMAT sformat)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "checkFormat for device\n");
+
+  // get current saved format for device
+  stream_format_t streamformat;
+  int retval = camera_hal_if_get_format(handle, &streamformat);
+  if (CAMERA_ERROR_NONE != retval)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "checkFormat : camera_hal_if_get_format failed \n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  PMLOG_INFO(CONST_MODULE_DC, "checkFormat stream_format_t pixel_format : %d \n",
+             streamformat.pixel_format);
+
+  // save pixel format for saving captured image
+  epixelformat_ = streamformat.pixel_format;
+
+  DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+  camera_pixel_format_t enewformat = getPixelFormat(sformat.eFormat);
+
+  // check if saved format and format for capture is same or not
+  // if not then stop v4l2 device, set format again and start capture
+  if ((streamformat.stream_height != sformat.nHeight) ||
+      (streamformat.stream_width != sformat.nWidth) || (streamformat.pixel_format != enewformat))
+  {
+    PMLOG_INFO(CONST_MODULE_DC, "checkFormat : Stored format and new format are different\n");
+    // stream off, unmap and destroy previous allocated buffers
+    // close and again open device to set format again
+    ret = stopPreview(handle);
+    ret = close(handle);
+    ret = open(handle, strdevicenode_);
+
+    // set format again
+    stream_format_t newstreamformat;
+    newstreamformat.stream_height = sformat.nHeight;
+    newstreamformat.stream_width = sformat.nWidth;
+    newstreamformat.pixel_format = getPixelFormat(sformat.eFormat);
+    retval = camera_hal_if_set_format(handle, newstreamformat);
+    if (CAMERA_ERROR_NONE != retval)
     {
-        CAMERA_PRINT_INFO("%s : %d calling cam open!", __FUNCTION__, __LINE__);
-        ret = hal_cam_open(devHandle);
+      PMLOG_ERROR(CONST_MODULE_DC, "checkFormat : camera_hal_if_set_format failed \n");
+      // if set format fails then reset format to preview format
+      retval = camera_hal_if_set_format(handle, streamformat);
+      // save pixel format for saving captured image
+      epixelformat_ = streamformat.pixel_format;
     }
     else
-    {
-        //ret = hal_mic_open(deviceID,samplingRate,codec);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_open failed\n!!");
-        return ret;
-    }
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
-}
-//Close the device
-DEVICE_RETURN_CODE_T DeviceControl::close(DEVICE_HANDLE devHandle, DEVICE_TYPE devType)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+      // save pixel format for saving captured image
+      epixelformat_ = newstreamformat.pixel_format;
 
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    int deviceID = 1;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-    if (DEVICE_CAMERA == devType)
+    // allocate buffers and stream on again
+    int key = 0;
+    ret = startPreview(handle, &key);
+  }
+
+  return ret;
+}
+
+int DeviceControl::pollForCapturedImage(void *handle, int ncount)
+{
+  int fd = -1;
+  int npollstatus = EINVAL;
+  int retval = camera_hal_if_get_fd(handle, &fd);
+  PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage camera_hal_if_get_fd fd : %d \n", fd);
+  struct pollfd poll_set[]{
+      {.fd = fd, .events = POLLIN},
+  };
+
+  int timeout = 2000;
+  buffer_t frame_buffer;
+  for (int i = 1; i <= ncount; i++)
+  {
+    if ((npollstatus = poll(poll_set, 2, timeout)) > 0)
     {
-        ret = hal_cam_close(devHandle);
+      frame_buffer.start = malloc(frame_size);
+      retval = camera_hal_if_get_buffer(handle, &frame_buffer);
+      if (CAMERA_ERROR_NONE != retval)
+      {
+        PMLOG_ERROR(CONST_MODULE_DC, "pollForCapturedImage : camera_hal_if_get_buffer failed \n");
+        return DEVICE_ERROR_UNKNOWN;
+      }
+      PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage buffer start : %p \n", frame_buffer.start);
+      PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage buffer length : %d \n",
+                 frame_buffer.length);
+
+      // write captured image to /tmp only if startCapture request is made
+      writeImageToFile(frame_buffer.start, frame_buffer.length);
+
+      free(frame_buffer.start);
+
+      retval = camera_hal_if_release_buffer(handle, frame_buffer);
+      if (CAMERA_ERROR_NONE != retval)
+      {
+        PMLOG_ERROR(CONST_MODULE_DC,
+                    "pollForCapturedImage : camera_hal_if_release_buffer failed \n");
+        return DEVICE_ERROR_UNKNOWN;
+      }
+    }
+  }
+}
+
+camera_pixel_format_t DeviceControl::getPixelFormat(CAMERA_FORMAT_T eformat)
+{
+  // convert CAMERA_FORMAT_T to camera_pixel_format_t
+  if (CAMERA_FORMAT_H264ES == eformat)
+  {
+    return CAMERA_PIXEL_FORMAT_H264;
+  }
+  else if (CAMERA_FORMAT_YUV == eformat)
+  {
+    return CAMERA_PIXEL_FORMAT_YUYV;
+  }
+  else if (CAMERA_FORMAT_JPEG == eformat)
+  {
+    return CAMERA_PIXEL_FORMAT_JPEG;
+  }
+}
+
+void DeviceControl::captureThread()
+{
+  // run capture thread until stopCapture received
+  while (b_iscontinuous_capture_)
+  {
+    DEVICE_RETURN_CODE_T ret = captureImage(cam_handle_, 1, informat_);
+    if (DEVICE_OK != ret)
+    {
+      PMLOG_ERROR(CONST_MODULE_DC, "captureThread : captureImage failed \n");
+      break;
+    }
+  }
+  pthread_detach(tid_capture_);
+  return;
+}
+
+void DeviceControl::previewThread()
+{
+  // poll for data on buffers and save captured image
+  while (b_isstreamon_)
+  {
+    buffer_t frame_buffer;
+    frame_buffer.start = malloc(frame_size);
+    int retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
+    if (CAMERA_ERROR_NONE != retval)
+    {
+      PMLOG_ERROR(CONST_MODULE_DC, "previewThread : camera_hal_if_get_buffer failed \n");
+      free(frame_buffer.start);
+      break;
+    }
+
+    // keep writing data to shared memory
+    unsigned int timestamp = 0;
+    WriteShmemEx(h_shm_, (unsigned char *)frame_buffer.start, frame_buffer.length,
+                 (unsigned char *)&timestamp, sizeof(timestamp));
+
+    free(frame_buffer.start);
+
+    retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
+    if (CAMERA_ERROR_NONE != retval)
+    {
+      PMLOG_ERROR(CONST_MODULE_DC, "previewThread : camera_hal_if_release_buffer failed \n");
+      break;
+    }
+  }
+  pthread_detach(tid_preview_);
+  return;
+}
+
+void *DeviceControl::runCaptureImageThread(void *arg)
+{
+  DeviceControl *ptr = reinterpret_cast<DeviceControl *>(arg);
+  ptr->captureThread();
+  return 0;
+}
+
+void *DeviceControl::runPreviewThread(void *arg)
+{
+  DeviceControl *ptr = reinterpret_cast<DeviceControl *>(arg);
+  ptr->previewThread();
+  return 0;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "open started\n");
+
+  strdevicenode_ = devicenode;
+
+  // open camera device
+  int ret = camera_hal_if_open_device(handle, devicenode.c_str());
+
+  if (CAMERA_ERROR_NONE != ret)
+    return DEVICE_ERROR_CAN_NOT_OPEN;
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "close started \n");
+
+  int retshmem = CloseShmem(&h_shm_);
+  if (SHMEM_COMM_OK != retshmem)
+    PMLOG_ERROR(CONST_MODULE_DC, "CloseShmem error %d \n", retshmem);
+
+  h_shm_ = NULL;
+
+  // close device
+  int ret = camera_hal_if_close_device(handle);
+  if (CAMERA_ERROR_NONE != ret)
+    return DEVICE_ERROR_CAN_NOT_CLOSE;
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, int *pkey)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "startPreview started !\n");
+
+  cam_handle_ = handle;
+
+  CreateShmemEx(&h_shm_, pkey, frame_size, frame_count, sizeof(unsigned int));
+
+  int retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
+  if (CAMERA_ERROR_NONE != retval)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "startPreview : camera_hal_if_set_buffer failed \n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  retval = camera_hal_if_start_capture(handle);
+  if (CAMERA_ERROR_NONE != retval)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "startPreview : camera_hal_if_start_capture failed \n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  b_isstreamon_ = true;
+
+  // create thread that will continuously capture images until stopcapture received
+  if (0 != (pthread_create(&tid_preview_, NULL, runPreviewThread, this)))
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "runPreviewThread failed\n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "stopPreview started !\n");
+
+  b_isstreamon_ = false;
+
+  int retval = camera_hal_if_stop_capture(handle);
+  if (CAMERA_ERROR_NONE != retval)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "stopPreview : camera_hal_if_stop_capture failed \n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  retval = camera_hal_if_destroy_buffer(handle);
+  if (CAMERA_ERROR_NONE != retval)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "stopPreview : camera_hal_if_destroy_buffer failed \n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::startCapture(void *handle, FORMAT sformat)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "startCapture started !\n");
+
+  cam_handle_ = handle;
+  informat_.nHeight = sformat.nHeight;
+  informat_.nWidth = sformat.nWidth;
+  informat_.eFormat = sformat.eFormat;
+  b_iscontinuous_capture_ = true;
+
+  // create thread that will continuously capture images until stopcapture received
+  if (0 != (pthread_create(&tid_capture_, NULL, runCaptureImageThread, this)))
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "runCaptureImageThread failed\n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::stopCapture(void *handle)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "stopCapture started !\n");
+
+  // if capture thread is running, stop capture
+  if (b_iscontinuous_capture_)
+    b_iscontinuous_capture_ = false;
+  else
+    return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::captureImage(void *handle, int ncount, FORMAT sformat)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "captureImage started ncount : %d \n", ncount);
+
+  // validate if saved format and capture image format are same or not
+  if (DEVICE_OK != checkFormat(handle, sformat))
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "captureImage : checkFormat failed \n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  // poll for data on buffers and save captured image
+  int retval = pollForCapturedImage(handle, ncount);
+  if (CAMERA_ERROR_NONE != retval)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "captureImage : pollForCapturedImage failed \n");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string subsystem)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "createHandle started \n");
+
+  void *p_cam_handle;
+  int ret = camera_hal_if_init(&p_cam_handle, subsystem.c_str());
+  if (CAMERA_ERROR_NONE != ret)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "Failed to create handle\n!!");
+    *handle = NULL;
+    return DEVICE_ERROR_UNKNOWN;
+  }
+  PMLOG_INFO(CONST_MODULE_DC, "createHandle : p_cam_handle : %p \n", p_cam_handle);
+  *handle = p_cam_handle;
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::destroyHandle(void *handle)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "destroyHandle started \n");
+
+  int ret = camera_hal_if_deinit(handle);
+  if (CAMERA_ERROR_NONE != ret)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "Failed to destroy handle\n!!");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode, CAMERA_INFO_T *pinfo)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "getDeviceInfo started \n");
+
+  //  DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
+  camera_device_info_t devinfo;
+  int ret = camera_hal_if_get_info(strdevicenode.c_str(), &devinfo);
+  if (CAMERA_ERROR_NONE != ret)
+  {
+    PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
+  pinfo->bBuiltin = devinfo.b_builtin;
+  pinfo->nFormat = devinfo.n_format;
+  pinfo->nMaxPictureHeight = devinfo.n_maxpictureheight;
+  pinfo->nMaxPictureWidth = devinfo.n_maxpicturewidth;
+  pinfo->nMaxVideoHeight = devinfo.n_maxvideoheight;
+  pinfo->nMaxVideoHeight = devinfo.n_maxvideoheight;
+  pinfo->nMaxVideoWidth = devinfo.n_maxvideowidth;
+  strncpy(pinfo->strName, devinfo.str_devicename, 32);
+  pinfo->nType = DEVICE_CAMERA;
+
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::getDeviceList(DEVICE_LIST_T *plist, int *pcamdev, int *pmicdev,
+                                                  int *pcamsupport, int *pmicsupport, int ncount)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "getDeviceList started count : %d \n", ncount);
+
+  *pcamdev = 0;
+  *pmicdev = 0;
+  *pcamsupport = 0;
+  *pmicsupport = 0;
+  for (int i = 0; i < ncount; i++)
+  {
+    if (strncmp(plist[i].strDeviceType, "CAM", 3) == 0)
+    {
+      pcamdev[i] = i + 1;
+      pcamsupport[i] = 1;
+    }
+    else if (strncmp(plist[i].strDeviceType, "MIC", 3) == 0)
+    {
+      *pmicdev += 1;
+      pmicsupport[i] = 1;
     }
     else
-    {
-        ret = hal_mic_close(deviceID);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_close failed\n!!");
-        return ret;
-    }
+      PMLOG_INFO(CONST_MODULE_DC, "Unknown device\n");
+  }
 
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
+  return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::startPreview(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
-        int *pKey)
+DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPERTIES_T *oparams)
 {
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+  PMLOG_INFO(CONST_MODULE_DC, "getDeviceProperty started !\n");
 
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    int deviceID = 1;
+  camera_properties_t out_params;
+  camera_hal_if_get_properties(handle, &out_params);
 
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
+  oparams->nPan = out_params.nPan;
+  oparams->nTilt = out_params.nTilt;
+  oparams->nContrast = out_params.nContrast;
+  oparams->nBrightness = out_params.nBrightness;
+  oparams->nSaturation = out_params.nSaturation;
+  oparams->nSharpness = out_params.nSharpness;
+  oparams->nHue = out_params.nHue;
+  oparams->nGain = out_params.nGain;
+  oparams->nGamma = out_params.nGamma;
+  oparams->nFrequency = out_params.nFrequency;
+  oparams->bAutoWhiteBalance = out_params.nAutoWhiteBalance;
+  oparams->bBacklightCompensation = out_params.nBacklightCompensation;
+  if (oparams->bAutoExposure == 0)
+    oparams->nExposure = out_params.nExposure;
+  if (oparams->bAutoWhiteBalance == 0)
+    oparams->nWhiteBalanceTemperature = out_params.nWhiteBalanceTemperature;
 
-    if (DEVICE_CAMERA == devType)
-    {
-        ret = hal_cam_start(devHandle, pKey);
-    }
-    else
-    {
-        ret = hal_mic_start(deviceID, pKey);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_start failed\n!!");
-        return ret;
-    }
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
+  return DEVICE_OK;
 }
-//Stop Capture
-DEVICE_RETURN_CODE_T DeviceControl::stopPreview(DEVICE_HANDLE devHandle, DEVICE_TYPE devType)
+
+DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPERTIES_T *inparams)
 {
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+  PMLOG_INFO(CONST_MODULE_DC, "setDeviceProperty started!\n");
 
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    int deviceID = 1;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
+  camera_properties_t in_params;
 
-    if (DEVICE_CAMERA == devType)
-    {
-        ret = hal_cam_stop(devHandle);
-    }
-    else
-    {
-        ret = hal_mic_stop(deviceID);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_stop failed\n!!");
-        return ret;
-    }
+  if (inparams->nZoom != CONST_VARIABLE_INITIALIZE)
+    in_params.nZoomAbsolute = inparams->nZoom;
 
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
+  if (inparams->nPan != CONST_VARIABLE_INITIALIZE)
+    in_params.nPan = inparams->nPan;
+
+  if (inparams->nTilt != CONST_VARIABLE_INITIALIZE)
+    in_params.nTilt = inparams->nTilt;
+
+  if (inparams->nContrast != CONST_VARIABLE_INITIALIZE)
+    in_params.nContrast = inparams->nContrast;
+
+  if (inparams->nBrightness != CONST_VARIABLE_INITIALIZE)
+    in_params.nBrightness = inparams->nBrightness;
+
+  if (inparams->nSaturation != CONST_VARIABLE_INITIALIZE)
+    in_params.nSaturation = inparams->nSaturation;
+
+  if (inparams->nSharpness != CONST_VARIABLE_INITIALIZE)
+    in_params.nSharpness = inparams->nSharpness;
+
+  if (inparams->nHue != CONST_VARIABLE_INITIALIZE)
+    in_params.nHue = inparams->nHue;
+
+  if (inparams->bAutoExposure != CONST_VARIABLE_INITIALIZE)
+    in_params.nAutoExposure = inparams->bAutoExposure;
+
+  if (inparams->bAutoWhiteBalance != CONST_VARIABLE_INITIALIZE)
+    in_params.nAutoWhiteBalance = inparams->bAutoWhiteBalance;
+
+  if (inparams->nExposure != CONST_VARIABLE_INITIALIZE)
+    in_params.nExposure = inparams->nExposure;
+
+  if (inparams->nWhiteBalanceTemperature != CONST_VARIABLE_INITIALIZE)
+    in_params.nWhiteBalanceTemperature = inparams->nWhiteBalanceTemperature;
+
+  if (inparams->nGain != CONST_VARIABLE_INITIALIZE)
+    in_params.nGain = inparams->nGain;
+
+  if (inparams->nGamma != CONST_VARIABLE_INITIALIZE)
+    in_params.nGamma = inparams->nGamma;
+
+  if (inparams->nFrequency != CONST_VARIABLE_INITIALIZE)
+    in_params.nFrequency = inparams->nFrequency;
+
+  if (inparams->bBacklightCompensation != CONST_VARIABLE_INITIALIZE)
+    in_params.nBacklightCompensation = inparams->bBacklightCompensation;
+
+  camera_hal_if_set_properties(handle, &in_params);
+
+  return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::startCapture(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
-        FORMAT sFormat)
+DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, FORMAT sformat)
 {
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
+  PMLOG_INFO(CONST_MODULE_DC, "sFormat Height %d Width %d Format %d\n", sformat.nHeight,
+             sformat.nWidth, sformat.eFormat);
 
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-    if (DEVICE_CAMERA == devType)
-    {
-        ret = hal_cam_start_capture(devHandle, sFormat);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_start_capture failed \n!!");
-        return ret;
-    }
+  stream_format_t in_format;
+  in_format.stream_height = sformat.nHeight;
+  in_format.stream_width = sformat.nWidth;
+  in_format.pixel_format = getPixelFormat(sformat.eFormat);
 
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return ret;
+  int ret = camera_hal_if_set_format(handle, in_format);
+  if (CAMERA_ERROR_NONE != ret)
+    return DEVICE_ERROR_UNSUPPORTED_FORMAT;
+
+  return DEVICE_OK;
 }
-
-DEVICE_RETURN_CODE_T DeviceControl::stopCapture(DEVICE_HANDLE devHandle, DEVICE_TYPE devType)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-    if (DEVICE_CAMERA == devType)
-    {
-        ret = hal_cam_stop_capture(devHandle);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_stop_capture failed \n!!");
-        return ret;
-    }
-
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
-}
-
-//Stop Capture
-DEVICE_RETURN_CODE_T DeviceControl::captureImage(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
-        int nCount, FORMAT sFormat)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-    ret = hal_cam_capture_image(devHandle, nCount, sFormat);
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_capture_image failed \n!!");
-        return ret;
-    }
-
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::createHandle(DEVICE_LIST_T sDeviceInfo,
-        DEVICE_HANDLE *sDevHandle)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    ret = hal_cam_create_handle(sDeviceInfo, sDevHandle);
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "Failed at controller_createhandle\n!!");
-        return ret;
-    }
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::getDeviceList(DEVICE_LIST_T *pList, int *pCamDev, int *pMicDev,
-        int *pCamSupport, int *pMicSupport, int devCount)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-    *pCamDev = 0;
-    *pMicDev = 0;
-    *pCamSupport = 0;
-    *pMicSupport = 0;
-    for (int i = 0; i < devCount; i++)
-    {
-        if (strncmp(pList[i].strDeviceType, "CAM",3) == 0)
-        {
-            pCamDev[i] = i+1;
-            pCamSupport[i] = 1;
-        }
-        else if (strncmp(pList[i].strDeviceType, "MIC",3) == 0)
-        {
-            *pMicDev += 1;
-            pMicSupport[i] = 1;
-        }
-        else
-            PMLOG_INFO(CONST_MODULE_DC, "Unknown device\n");
-    }
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
-}
-
-bool DeviceControl::isUpdatedCameraList()
-{
-    //HAL open call()
-    return TRUE;
-
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(DEVICE_LIST_T stList,CAMERA_INFO_T *pInfo)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    ret = hal_cam_get_info(stList, pInfo);
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
-        return ret;
-    }
-
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(DEVICE_HANDLE sDevHandle,
-        DEVICE_TYPE_T devType, CAMERA_PROPERTIES_T *oParams)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-    if (DEVICE_CAMERA == devType)
-    {
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_PAN, &oParams->nPan);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_TILT, &oParams->nTilt);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_CONTRAST, &oParams->nContrast);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_BRIGHTNESS, &oParams->nBrightness);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_SATURATION, &oParams->nSaturation);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_SHARPNESS, &oParams->nSharpness);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_HUE, &oParams->nHue);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_GAIN, &oParams->nGain);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_GAMMA, &oParams->nGamma);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_FREQUENCY, &oParams->nFrequency);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_AUTOWHITEBALANCE, &oParams->bAutoWhiteBalance);
-        hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_BACKLIGHT_COMPENSATION, &oParams->bBacklightCompensation);
-        if(oParams->bAutoExposure == 0){
-            hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_EXPOSURE, &oParams->nExposure);
-        }
-        if(oParams->bAutoWhiteBalance == 0){
-            hal_cam_get_property(sDevHandle, CAMERA_PROPERTIES_WHITEBALANCETEMPERATURE, &oParams->nWhiteBalanceTemperature);
-        }
-        CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-        return DEVICE_OK;
-    }
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(DEVICE_HANDLE devHandle,
-        DEVICE_TYPE_T devType, CAMERA_PROPERTIES_T *oParams)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    DEVICE_HANDLE sDevHandle = devHandle;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-
-    if (DEVICE_CAMERA == devType)
-    {
-
-        if (oParams->nZoom != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_ZOOM, oParams->nZoom);
-
-        if (oParams->nGridZoomX != CONST_VARIABLE_INITIALIZE)
-        {
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_GRIDZOOMX,
-                    oParams->nGridZoomX);
-        }
-        if (oParams->nGridZoomY != CONST_VARIABLE_INITIALIZE)
-        {
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_GRIDZOOMY,
-                    oParams->nGridZoomY);
-        }
-
-        if (oParams->nPan != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_PAN, oParams->nPan);
-
-        if (oParams->nTilt != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_TILT, oParams->nTilt);
-
-        if (oParams->nContrast != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_CONTRAST, oParams->nContrast);
-
-        if (oParams->nBrightness != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_BRIGHTNESS,
-                    oParams->nBrightness);
-
-        if (oParams->nSaturation != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_SATURATION,
-                    oParams->nSaturation);
-
-        if (oParams->nSharpness != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_SHARPNESS,
-                    oParams->nSharpness);
-
-        if (oParams->nHue != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_HUE, oParams->nHue);
-
-        if (oParams->bAutoExposure != CONST_VARIABLE_INITIALIZE) //autoExposure exposure   setting
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_AUTOEXPOSURE,
-                    oParams->bAutoExposure);
-
-        if (oParams->bAutoWhiteBalance != CONST_VARIABLE_INITIALIZE) //autoWhiteBalance whiteBalanceTemperature   setting
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_AUTOWHITEBALANCE,
-                    oParams->bAutoWhiteBalance);
-
-        if (oParams->nExposure != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_EXPOSURE, oParams->nExposure);
-
-        if (oParams->nWhiteBalanceTemperature != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_WHITEBALANCETEMPERATURE,
-                    oParams->nWhiteBalanceTemperature);
-
-        if (oParams->nGain != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_GAIN, oParams->nGain);
-
-        if (oParams->nGamma != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_GAMMA, oParams->nGamma);
-
-        if (oParams->nFrequency != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_FREQUENCY,
-                    oParams->nFrequency);
-
-        if (oParams->bMirror != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_MIRROR, oParams->bMirror);
-
-        if (oParams->nBitrate != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_BITRATE, oParams->nBitrate);
-
-        if (oParams->nFramerate != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_FRAMERATE,
-                    oParams->nFramerate);
-
-        if (oParams->ngopLength != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_GOPLENGTH,
-                    oParams->ngopLength);
-
-        if (oParams->bLed != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_LED, oParams->bLed);
-
-        if (oParams->bYuvMode != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_YUVMODE, oParams->bYuvMode);
-
-        if (oParams->bBacklightCompensation != CONST_VARIABLE_INITIALIZE)
-            ret = hal_cam_set_property(sDevHandle, CAMERA_PROPERTIES_BACKLIGHT_COMPENSATION,
-                    oParams->bBacklightCompensation);
-
-    }
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return DEVICE_OK;
-}
-
-
-DEVICE_RETURN_CODE_T DeviceControl::setFormat(DEVICE_HANDLE devHandle, DEVICE_TYPE devType,
-        FORMAT sFormat)
-{
-    CAMERA_PRINT_INFO("%s : %d started!", __FUNCTION__, __LINE__);
-
-    DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-    if (devType == DEVICE_DEVICE_UNDEFINED)
-        return DEVICE_ERROR_WRONG_PARAM;
-    if (DEVICE_CAMERA == devType)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "sFormat %d %d %d\n",sFormat.nHeight,sFormat.nWidth,sFormat.eFormat);
-        ret = hal_cam_set_format(devHandle, sFormat);
-    }
-    if (ret != DEVICE_OK)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "hal_cam_set_format failed \n!!");
-        return ret;
-    }
-
-    CAMERA_PRINT_INFO("%s:%d] ended!", __FUNCTION__, __LINE__);
-    return ret;
-}
-
-

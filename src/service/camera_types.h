@@ -206,6 +206,7 @@ typedef struct DEVICE_LIST
     char strDeviceType[CONST_MAX_STRING_LENGTH];
     char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
     int isPowerOnConnect;
+    char strDeviceNode[CONST_MAX_STRING_LENGTH];
 } DEVICE_LIST_T;
 
 typedef enum DEVICE_EVENT_STATE
