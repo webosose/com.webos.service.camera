@@ -36,6 +36,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service2/camera_service.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/command_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/device_controller.cpp
+    ${CMAKE_SOURCE_DIR}/src/service2/virtual_device_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/device_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/json_parser.cpp
     ${CMAKE_SOURCE_DIR}/src/service2/notifier/notifier.cpp

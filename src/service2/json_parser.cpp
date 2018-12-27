@@ -79,10 +79,16 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
   {
     raw_buffer str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID)));
     setCameraId(str_id.m_str);
+    str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF("app")));
+    setAppId(str_id.m_str);
+    str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF("priority")));
+    setAppPriority(str_id.m_str);
   }
   else
   {
     setCameraId(invalid_device_id);
+    setAppId("none");
+    setAppPriority("none");
   }
   j_release(&j_obj);
 }
@@ -176,6 +182,8 @@ void StopPreviewCaptureCloseMethod::getObject(const char *input, const char *sch
     int n_devicehandle = n_invalid_id;
     jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &n_devicehandle);
     setDeviceHandle(n_devicehandle);
+    raw_buffer appid = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF("app")));
+    setAppId(appid.m_str);
   }
   else
   {

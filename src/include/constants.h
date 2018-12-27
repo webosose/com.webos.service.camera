@@ -22,20 +22,20 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#define H_SERVICE_JSON_PUT(x)   \
-    do                          \
-    {                           \
-        if (x)                  \
-            json_object_put(x); \
-        x = NULL;               \
-    } while (0)
+#define H_SERVICE_JSON_PUT(x)                                                                      \
+  do                                                                                               \
+  {                                                                                                \
+    if (x)                                                                                         \
+      json_object_put(x);                                                                          \
+    x = NULL;                                                                                      \
+  } while (0)
 
-
-#define CONST_SERVICE_URI_NAME                      "camera"
+#define CONST_SERVICE_URI_NAME "camera"
 
 #define CONST_SERVICE_NAME_CAMERA "com.webos.service.camera2"
-#define CONST_LS_SERVICE_NAME_PDM                           "luna://com.webos.service.pdm"
-#define CONST_LS_SERVICE_FUNCTION_NAME_GET_ATTACHED_NONSTORAGE_DEVICE_LIST      "getAttachedNonStorageDeviceList"
+#define CONST_LS_SERVICE_NAME_PDM "luna://com.webos.service.pdm"
+#define CONST_LS_SERVICE_FUNCTION_NAME_GET_ATTACHED_NONSTORAGE_DEVICE_LIST                         \
+  "getAttachedNonStorageDeviceList"
 
 #define CONST_PARAM_NAME_RETURNVALUE "returnValue"
 #define CONST_PARAM_NAME_ERROR_CODE "errorCode"
@@ -47,6 +47,7 @@ extern "C"
 #define CONST_PARAM_NAME_NAME "name"
 #define CONST_PARAM_NAME_TYPE "type"
 #define CONST_MODULE_DM "DeviceManager"
+#define CONST_MODULE_VDM "VirtualDeviceManager"
 #define CONST_MODULE_CM "CommandHandler"
 #define CONST_MODULE_DC "DeviceController"
 #define CONST_MODULE_SM "SessionManager"
@@ -56,20 +57,16 @@ extern "C"
 #define CONST_DEVICE_NAME_MIC "mic"
 #define CONST_DEVICE_HANDLE "handle"
 #define CONST_DEVICE_KEY "key"
-#define CONST_PARAM_NAME_SOURCE  "source"
-
-
-
+#define CONST_PARAM_NAME_SOURCE "source"
 
 #define CONST_VARIABLE_INITIALIZE -999
-//default cam parameter
+// default cam parameter
 #define CONST_DEFAULT_HEIGHT 480
 #define CONST_DEFAULT_WIDTH 640
 #define CONST_DEFAULT_FORMAT CAMERA_FORMAT_JPEG
 #define CONST_DEFAULT_NIMAGE "nimage"
 
-
-#define CONST_MAX_LONG_STRING_LENGTH        1000
+#define CONST_MAX_LONG_STRING_LENGTH 1000
 
 #define CONST_MAX_STRING_LENGTH 256
 #define CONST_MAX_PATH 256

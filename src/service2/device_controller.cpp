@@ -172,6 +172,8 @@ camera_pixel_format_t DeviceControl::getPixelFormat(CAMERA_FORMAT_T eformat)
 
 void DeviceControl::captureThread()
 {
+  PMLOG_INFO(CONST_MODULE_DC, "captureThread started\n");
+
   // run capture thread until stopCapture received
   while (b_iscontinuous_capture_)
   {
@@ -469,6 +471,20 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   PMLOG_INFO(CONST_MODULE_DC, "getDeviceProperty started !\n");
 
   camera_properties_t out_params;
+  out_params.nPan = CONST_VARIABLE_INITIALIZE;
+  out_params.nTilt = CONST_VARIABLE_INITIALIZE;
+  out_params.nContrast = CONST_VARIABLE_INITIALIZE;
+  out_params.nBrightness = CONST_VARIABLE_INITIALIZE;
+  out_params.nSaturation = CONST_VARIABLE_INITIALIZE;
+  out_params.nSharpness = CONST_VARIABLE_INITIALIZE;
+  out_params.nHue = CONST_VARIABLE_INITIALIZE;
+  out_params.nGain = CONST_VARIABLE_INITIALIZE;
+  out_params.nGamma = CONST_VARIABLE_INITIALIZE;
+  out_params.nFrequency = CONST_VARIABLE_INITIALIZE;
+  out_params.nAutoWhiteBalance = CONST_VARIABLE_INITIALIZE;
+  out_params.nBacklightCompensation = CONST_VARIABLE_INITIALIZE;
+  out_params.nExposure = CONST_VARIABLE_INITIALIZE;
+  out_params.nWhiteBalanceTemperature = CONST_VARIABLE_INITIALIZE;
   camera_hal_if_get_properties(handle, &out_params);
 
   oparams->nPan = out_params.nPan;

@@ -87,6 +87,12 @@ public:
   void setCameraId(std::string devid) { str_devid_ = devid; }
   std::string getCameraId() { return str_devid_; }
 
+  void setAppId(std::string appid) { str_appid_ = appid; }
+  std::string getAppId() { return str_appid_; }
+
+  void setAppPriority(std::string priority) { str_priority_ = priority; }
+  std::string getAppPriority() { return str_priority_; }
+
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
     objreply_.setReturnValue(returnvalue);
@@ -101,6 +107,8 @@ public:
 private:
   int n_devicehandle_;
   std::string str_devid_;
+  std::string str_appid_;
+  std::string str_priority_;
   MethodReply objreply_;
 };
 
@@ -192,6 +200,9 @@ public:
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() { return n_devicehandle_; }
 
+  void setAppId(std::string appid) { str_appid_ = appid; }
+  std::string getAppId() { return str_appid_; }
+
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
     objreply_.setReturnValue(returnvalue);
@@ -205,6 +216,7 @@ public:
 
 private:
   int n_devicehandle_;
+  std::string str_appid_;
   MethodReply objreply_;
 };
 

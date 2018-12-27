@@ -25,16 +25,9 @@
 #include <string.h>
 
 /*-----------------------------------------------------------------------------
-
- (Type Definitions)
- ------------------------------------------------------------------------------*/
-
-/*-----------------------------------------------------------------------------
  Static  Static prototype
  (Static Variables & Function Prototypes Declarations)
  ------------------------------------------------------------------------------*/
-static int gdevCount = 0;
-
 typedef struct _DEVICE_STATUS
 {
   // Device
@@ -52,19 +45,22 @@ typedef struct _DEVICE_STATUS
 
 static DEVICE_STATUS gdev_status[MAX_DEVICE];
 
-int find_devnum(int ndeviceID)
+DeviceManager::DeviceManager() : ndevcount_(0) {}
+
+int DeviceManager::findDevNum(int ndevicehandle)
 {
   int nDeviceID = INVALID_ID;
-  PMLOG_INFO(CONST_MODULE_DM, "find_devnum : gdevcount: %d \n", gdevCount);
+  PMLOG_INFO(CONST_MODULE_DM, "find_devnum : ndevcount_: %d \n", ndevcount_);
 
-  for (int i = 0; i < gdevCount; i++)
+  for (int i = 0; i < ndevcount_; i++)
   {
     PMLOG_INFO(CONST_MODULE_DM, "find_devnum : gdev_status[%d].nDevIndex : %d \n", i,
                gdev_status[i].nDevIndex);
     PMLOG_INFO(CONST_MODULE_DM, "find_devnum : gdev_status[%d].nDeviceID : %d \n", i,
                gdev_status[i].nDeviceID);
-    PMLOG_INFO(CONST_MODULE_DM, "find_devnum : ndeviceID : %d \n", ndeviceID);
-    if ((gdev_status[i].nDevIndex == ndeviceID) || (gdev_status[i].nDeviceID == ndeviceID))
+    PMLOG_INFO(CONST_MODULE_DM, "find_devnum : ndevicehandle : %d \n", ndevicehandle);
+
+    if ((gdev_status[i].nDevIndex == ndevicehandle) || (gdev_status[i].nDeviceID == ndevicehandle))
     {
       nDeviceID = i;
       PMLOG_INFO(CONST_MODULE_DM, "dev_num is :%d\n", i);
@@ -77,7 +73,7 @@ int find_devnum(int ndeviceID)
 bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool status)
 {
   PMLOG_INFO(CONST_MODULE_LUNA, "deviceStatus : deviceID %d status : %d \n!!", deviceID, status);
-  int dev_num = find_devnum(deviceID);
+  int dev_num = findDevNum(deviceID);
   PMLOG_INFO(CONST_MODULE_LUNA, "deviceStatus : dev_num : %d \n!!", dev_num);
 
   if (INVALID_ID == dev_num)
@@ -99,7 +95,7 @@ bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool statu
 bool DeviceManager::isDeviceOpen(int *deviceID)
 {
   PMLOG_INFO(CONST_MODULE_LUNA, "DeviceManager::isDeviceOpen !!\n");
-  int dev_num = find_devnum(*deviceID);
+  int dev_num = findDevNum(*deviceID);
   if (INVALID_ID == dev_num)
   {
     *deviceID = dev_num;
@@ -109,6 +105,7 @@ bool DeviceManager::isDeviceOpen(int *deviceID)
   PMLOG_INFO(CONST_MODULE_LUNA, "isDeviceOpen :  *deviceID : %d\n", *deviceID);
   PMLOG_INFO(CONST_MODULE_LUNA, "isDeviceOpen :  *gdev_status[%d].nDeviceID : %d\n", dev_num,
              gdev_status[dev_num].nDeviceID);
+
   if (*deviceID == gdev_status[dev_num].nDeviceID)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "isDeviceOpen : gdev_status[%d].isDeviceOpen : %d\n", dev_num,
@@ -130,7 +127,7 @@ bool DeviceManager::isDeviceOpen(int *deviceID)
 
 bool DeviceManager::isDeviceValid(DEVICE_TYPE_T devType, int *deviceID)
 {
-  int dev_num = find_devnum(*deviceID);
+  int dev_num = findDevNum(*deviceID);
   if (INVALID_ID == dev_num)
   {
     *deviceID = dev_num;
@@ -149,7 +146,7 @@ bool DeviceManager::isDeviceValid(DEVICE_TYPE_T devType, int *deviceID)
 
 void DeviceManager::getDeviceNode(int *device_id, std::string &strdevicenode)
 {
-  int dev_num = find_devnum(*device_id);
+  int dev_num = findDevNum(*device_id);
   if (INVALID_ID == dev_num)
   {
     *device_id = dev_num;
@@ -161,7 +158,7 @@ void DeviceManager::getDeviceNode(int *device_id, std::string &strdevicenode)
 
 void DeviceManager::getDeviceHandle(int *device_id, void **devicehandle)
 {
-  int dev_num = find_devnum(*device_id);
+  int dev_num = findDevNum(*device_id);
   if (INVALID_ID == dev_num)
   {
     *device_id = dev_num;
@@ -171,18 +168,30 @@ void DeviceManager::getDeviceHandle(int *device_id, void **devicehandle)
   return;
 }
 
+int DeviceManager::getDeviceId(int *device_id)
+{
+  int dev_num = findDevNum(*device_id);
+  if (INVALID_ID == dev_num)
+  {
+    *device_id = dev_num;
+    return 0;
+  }
+
+  return gdev_status[dev_num].nDeviceID;
+}
+
 DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
                                             int *pMicSupport)
 {
   PMLOG_INFO(CONST_MODULE_DM, "DeviceManager::getList!!\n");
 
   DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
-  int devCount = gdevCount;
+  int devCount = ndevcount_;
   DEVICE_LIST_T pList[devCount];
 
-  if (gdevCount)
+  if (ndevcount_)
   {
-    for (int i = 0; i < gdevCount; i++)
+    for (int i = 0; i < ndevcount_; i++)
     {
       pList[i] = (gdev_status[i].stList);
     }
@@ -215,15 +224,15 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
   int nCamSupport = 0;
   int nMicSupport = 0;
 
-  if (gdevCount < nDevCount)
+  if (ndevcount_ < nDevCount)
     *pCamEvent = DEVICE_EVENT_STATE_PLUGGED;
-  else if (gdevCount > nDevCount)
+  else if (ndevcount_ > nDevCount)
     *pCamEvent = DEVICE_EVENT_STATE_UNPLUGGED;
   else
     PMLOG_INFO(CONST_MODULE_DM, "No event changed!!\n");
 
-  gdevCount = nDevCount;
-  for (int i = 0; i < gdevCount; i++)
+  ndevcount_ = nDevCount;
+  for (int i = 0; i < ndevcount_; i++)
   {
     strncpy(gdev_status[i].stList.strVendorName, pList[i].strVendorName,
             (CONST_MAX_STRING_LENGTH - 1));
@@ -271,7 +280,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, CAMERA_INFO_T *p_info)
 {
   PMLOG_INFO(CONST_MODULE_DM, "getInfo started ! ndev_id : %d \n", ndev_id);
 
-  int ncam_id = find_devnum(ndev_id);
+  int ncam_id = findDevNum(ndev_id);
   if (INVALID_ID == ncam_id)
     return DEVICE_ERROR_NODEVICE;
 
@@ -304,7 +313,7 @@ DEVICE_RETURN_CODE_T DeviceManager::createHandle(int deviceid, int *devicehandle
 {
   PMLOG_INFO(CONST_MODULE_DM, "createHandle started! deviceid : %d \n", deviceid);
 
-  int dev_num = find_devnum(deviceid);
+  int dev_num = findDevNum(deviceid);
   if (INVALID_ID == dev_num)
     return DEVICE_ERROR_NODEVICE;
 

@@ -19,6 +19,7 @@
 
 /*
  * Note : The strings are generated online from Json object
+ * https://www.jsonschema.net/
  * Any change in string should be taken care else schema validation
  * will fail
  */
@@ -35,7 +36,6 @@ const char *getInfoSchema = "{ \
   ], \
   \"properties\": { \
     \"id\": { \
-      \"$id\": \"#/properties/id\", \
       \"type\": \"string\", \
       \"title\": \"The Id Schema\", \
       \"pattern\": \"^(.*)$\" \
@@ -51,7 +51,6 @@ const char *getPropertiesSchema = "{ \
     ], \
     \"properties\": { \
       \"handle\": { \
-        \"$id\": \"#/properties/handle\", \
         \"type\": \"integer\", \
         \"title\": \"The Handle Schema\", \
         \"default\": 0 \
@@ -63,13 +62,26 @@ const char *openSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
-    \"id\" \
+    \"id\", \
+    \"app\", \
+    \"priority\" \
   ], \
   \"properties\": { \
     \"id\": { \
-      \"$id\": \"#/properties/id\", \
       \"type\": \"string\", \
       \"title\": \"The Id Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+    }, \
+    \"app\": { \
+      \"type\": \"string\", \
+      \"title\": \"The App Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+    }, \
+    \"priority\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Priority Schema\", \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
     } \
@@ -126,13 +138,11 @@ const char *setPropertiesSchema = "{ \
   ], \
   \"properties\": { \
     \"handle\": { \
-      \"$id\": \"#/properties/handle\", \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
     }, \
     \"params\": { \
-      \"$id\": \"#/properties/params\", \
       \"type\": \"object\", \
       \"title\": \"The Params Schema\" \
     } \
@@ -232,14 +242,19 @@ const char *stopCapturePreviewCloseSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
-    \"handle\" \
+    \"handle\", \
+    \"app\" \
   ], \
   \"properties\": { \
     \"handle\": { \
-      \"$id\": \"#/properties/handle\", \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
-      \"default\": -1 \
+      \"default\": 0 \
+    }, \
+    \"app\": { \
+      \"type\": \"string\", \
+      \"title\": \"The App Schema\", \
+      \"pattern\": \"^(.*)$\" \
     } \
   } \
 }";

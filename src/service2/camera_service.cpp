@@ -53,7 +53,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   // attach to mainloop and run it
   attachToLoop(main_loop_ptr_.get());
 
-  // sunscribe to pdm client
+  // subscribe to pdm client
   Notifier notifier;
   notifier.setLSHandle(this->get());
   notifier.addNotifier(NotifierClient::NOTIFIER_CLIENT_PDM);
@@ -99,10 +99,14 @@ bool CameraService::open(LSMessage &message)
   {
     int ndev_id = getId(open.getCameraId());
     PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
+    std::string app_id = open.getAppId();
+    std::string app_priority = open.getAppPriority();
+    PMLOG_INFO(CONST_MODULE_LUNA, "app_id : %s app_priority : %s \n", app_id.c_str(),
+               app_priority.c_str());
     int ndevice_handle = n_invalid_id;
 
     // open camera device and save fd
-    err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle);
+    err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_id, app_priority);
     if (DEVICE_OK != err_id)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
@@ -136,9 +140,9 @@ bool CameraService::close(LSMessage &message)
 
   DEVICE_RETURN_CODE err_id = DEVICE_OK;
 
-  int ndev_id = obj_close.getDeviceHandle();
+  int ndevhandle = obj_close.getDeviceHandle();
   // camera id validation check
-  if (n_invalid_id == ndev_id)
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -146,9 +150,11 @@ bool CameraService::close(LSMessage &message)
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::close ndev_id : %d\n", ndev_id);
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::close ndevhandle : %d\n", ndevhandle);
+    std::string appid = obj_close.getAppId();
+    PMLOG_INFO(CONST_MODULE_LUNA, "Close requested by app : %s \n", appid.c_str());
     // close device here
-    err_id = CommandManager::getInstance().close(ndev_id);
+    err_id = CommandManager::getInstance().close(ndevhandle, appid);
 
     if (DEVICE_OK != err_id)
     {
@@ -180,8 +186,8 @@ bool CameraService::startPreview(LSMessage &message)
   StartPreviewMethod obj_startpreview;
   obj_startpreview.getStartPreviewObject(payload, startPreviewSchema);
 
-  int ndevice_id = obj_startpreview.getDeviceHandle();
-  if (n_invalid_id == ndevice_id)
+  int ndevhandle = obj_startpreview.getDeviceHandle();
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -189,10 +195,10 @@ bool CameraService::startPreview(LSMessage &message)
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startPreview DevID : %d\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startPreview ndevhandle : %d\n", ndevhandle);
     // start preview here
     int key = 0;
-    err_id = CommandManager::getInstance().startPreview(ndevice_id, &key);
+    err_id = CommandManager::getInstance().startPreview(ndevhandle, &key);
 
     if (DEVICE_OK != err_id)
     {
@@ -225,9 +231,9 @@ bool CameraService::stopPreview(LSMessage &message)
   StopPreviewCaptureCloseMethod obj_stoppreview;
   obj_stoppreview.getObject(payload, stopCapturePreviewCloseSchema);
 
-  int ndevice_id = obj_stoppreview.getDeviceHandle();
+  int ndevhandle = obj_stoppreview.getDeviceHandle();
 
-  if (n_invalid_id == ndevice_id)
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -235,9 +241,9 @@ bool CameraService::stopPreview(LSMessage &message)
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::stopPreview ndevice_id : %d\n", ndevice_id);
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::stopPreview ndevhandle : %d\n", ndevhandle);
     // stop preview here
-    err_id = CommandManager::getInstance().stopPreview(ndevice_id);
+    err_id = CommandManager::getInstance().stopPreview(ndevhandle);
 
     if (DEVICE_OK != err_id)
     {
@@ -269,9 +275,9 @@ bool CameraService::startCapture(LSMessage &message)
   StartCaptureMethod obj_startcapture;
   obj_startcapture.getStartCaptureObject(payload, startCaptureSchema);
 
-  int ndevice_id = obj_startcapture.getDeviceHandle();
+  int ndevhandle = obj_startcapture.getDeviceHandle();
 
-  if (n_invalid_id == ndevice_id)
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -286,17 +292,17 @@ bool CameraService::startCapture(LSMessage &message)
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startCapture ndevice_id : %d\n", ndevice_id);
+      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startCapture ndevhandle : %d\n", ndevhandle);
       PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startCapture nImage : %d\n",
                  obj_startcapture.getnImage());
 
       // capture image here
       if (0 != obj_startcapture.getnImage())
         err_id = CommandManager::getInstance().captureImage(
-            ndevice_id, obj_startcapture.getnImage(), obj_startcapture.rGetParams());
+            ndevhandle, obj_startcapture.getnImage(), obj_startcapture.rGetParams());
       else
         err_id =
-            CommandManager::getInstance().startCapture(ndevice_id, obj_startcapture.rGetParams());
+            CommandManager::getInstance().startCapture(ndevhandle, obj_startcapture.rGetParams());
     }
     if (DEVICE_OK != err_id)
     {
@@ -328,9 +334,9 @@ bool CameraService::stopCapture(LSMessage &message)
   StopPreviewCaptureCloseMethod obj_stopcapture;
   obj_stopcapture.getObject(payload, stopCapturePreviewCloseSchema);
 
-  int ndevice_id = obj_stopcapture.getDeviceHandle();
+  int ndevhandle = obj_stopcapture.getDeviceHandle();
 
-  if (n_invalid_id == ndevice_id)
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -338,9 +344,9 @@ bool CameraService::stopCapture(LSMessage &message)
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::stopPreview ndevice_id : %d\n", ndevice_id);
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::stopPreview ndevhandle : %d\n", ndevhandle);
     // stop capture here
-    err_id = CommandManager::getInstance().stopCapture(ndevice_id);
+    err_id = CommandManager::getInstance().stopCapture(ndevhandle);
 
     if (DEVICE_OK != err_id)
     {
@@ -492,9 +498,9 @@ bool CameraService::getProperties(LSMessage &message)
   GetSetPropertiesMethod obj_getproperties;
   obj_getproperties.getPropertiesObject(payload, getPropertiesSchema);
 
-  int devid = obj_getproperties.getDeviceHandle();
+  int ndevhandle = obj_getproperties.getDeviceHandle();
 
-  if (n_invalid_id == devid)
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -503,9 +509,9 @@ bool CameraService::getProperties(LSMessage &message)
   else
   {
     // get properties here
-    PMLOG_INFO(CONST_MODULE_LUNA, "devid %d\n", devid);
+    PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
     CAMERA_PROPERTIES_T dev_property;
-    err_id = CommandManager::getInstance().getProperty(devid, &dev_property);
+    err_id = CommandManager::getInstance().getProperty(ndevhandle, &dev_property);
 
     if (DEVICE_OK != err_id)
     {
@@ -539,9 +545,9 @@ bool CameraService::setProperties(LSMessage &message)
   GetSetPropertiesMethod objsetproperties;
   objsetproperties.getSetPropertiesObject(payload, setPropertiesSchema);
 
-  int devid = objsetproperties.getDeviceHandle();
+  int ndevhandle = objsetproperties.getDeviceHandle();
 
-  if (n_invalid_id == devid)
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -551,8 +557,8 @@ bool CameraService::setProperties(LSMessage &message)
   {
     // set properties here
     CAMERA_PROPERTIES_T oParams = objsetproperties.rGetCameraProperties();
-    PMLOG_INFO(CONST_MODULE_LUNA, "DevID %d\n", devid);
-    err_id = CommandManager::getInstance().setProperty(devid, &oParams);
+    PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+    err_id = CommandManager::getInstance().setProperty(ndevhandle, &oParams);
     if (DEVICE_OK != err_id)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
@@ -583,9 +589,9 @@ bool CameraService::setFormat(LSMessage &message)
   SetFormatMethod objsetformat;
   objsetformat.getSetFormatObject(payload, setFormatSchema);
 
-  int devid = objsetformat.getDeviceHandle();
+  int ndevhandle = objsetformat.getDeviceHandle();
   // camera id validation check
-  if (n_invalid_id == devid)
+  if (n_invalid_id == ndevhandle)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
     err_id = DEVICE_ERROR_JSON_PARSING;
@@ -594,9 +600,9 @@ bool CameraService::setFormat(LSMessage &message)
   else
   {
     // setformat here
-    PMLOG_INFO(CONST_MODULE_LUNA, "setFormat DevID %d\n", devid);
+    PMLOG_INFO(CONST_MODULE_LUNA, "setFormat ndevhandle %d\n", ndevhandle);
     CAMERA_FORMAT sformat = objsetformat.rGetCameraFormat();
-    err_id = CommandManager::getInstance().setFormat(devid, sformat);
+    err_id = CommandManager::getInstance().setFormat(ndevhandle, sformat);
     if (DEVICE_OK != err_id)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");

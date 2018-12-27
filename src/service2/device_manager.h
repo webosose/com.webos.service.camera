@@ -21,12 +21,18 @@
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include <map>
 #include <string>
 
 class DeviceManager
 {
 private:
+  int ndevcount_;
+
+  int findDevNum(int);
+
 public:
+  DeviceManager();
   static DeviceManager &getInstance()
   {
     static DeviceManager obj;
@@ -37,6 +43,7 @@ public:
   bool isDeviceValid(DEVICE_TYPE_T, int *);
   void getDeviceNode(int *, std::string &);
   void getDeviceHandle(int *, void **);
+  int getDeviceId(int *);
 
   DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *);
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
