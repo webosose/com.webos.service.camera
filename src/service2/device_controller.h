@@ -32,10 +32,10 @@
 class DeviceControl
 {
 private:
-  void writeImageToFile(const void *, int);
+  void writeImageToFile(const void *, int) const;
   DEVICE_RETURN_CODE_T checkFormat(void *, FORMAT);
-  int pollForCapturedImage(void *, int);
-  camera_pixel_format_t getPixelFormat(CAMERA_FORMAT_T);
+  int pollForCapturedImage(void *, int) const;
+  static camera_pixel_format_t getPixelFormat(CAMERA_FORMAT_T);
   void captureThread();
   void previewThread();
   static void *runCaptureImageThread(void *);
@@ -43,11 +43,14 @@ private:
 
   bool b_iscontinuous_capture_;
   bool b_isstreamon_;
+  bool b_isshmwritedone_;
   void *cam_handle_;
   FORMAT informat_;
   camera_pixel_format_t epixelformat_;
   pthread_t tid_capture_;
   pthread_t tid_preview_;
+  pthread_mutex_t mutex_;
+  pthread_cond_t cond_;
   std::string strdevicenode_;
   SHMEM_HANDLE h_shm_;
 

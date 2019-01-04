@@ -19,10 +19,15 @@ private:
 
   PDMClient pdm_;
   LSHandle *lshandle_;
+  DeviceNotifier *p_client_notifier_;
 
 public:
+  Notifier()
+  {
+    lshandle_ = nullptr;
+    p_client_notifier_ = nullptr;
+  }
   virtual ~Notifier() {}
-  DeviceNotifier *p_client_notifier_;
 
   void addNotifier(NotifierClient);
   void registerCallback(handlercb);

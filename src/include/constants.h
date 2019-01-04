@@ -233,6 +233,8 @@ extern "C"
 #define CONST_PARAM_NAME_ZOOM "zoom"
 #define CONST_PARAM_NAME_FILENAMELIST "fileNameList"
 #define CONST_PARAM_NAME_ILLUMINATION "illumination"
+#define CONST_PARAM_NAME_APP_PRIORITY "priority"
+
 
 #ifdef __cplusplus
 }

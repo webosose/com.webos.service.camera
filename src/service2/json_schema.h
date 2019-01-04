@@ -62,20 +62,12 @@ const char *openSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
-    \"id\", \
-    \"app\", \
-    \"priority\" \
+    \"id\" \
   ], \
   \"properties\": { \
     \"id\": { \
       \"type\": \"string\", \
       \"title\": \"The Id Schema\", \
-      \"default\": \"\", \
-      \"pattern\": \"^(.*)$\" \
-    }, \
-    \"app\": { \
-      \"type\": \"string\", \
-      \"title\": \"The App Schema\", \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
     }, \
@@ -242,19 +234,13 @@ const char *stopCapturePreviewCloseSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
-    \"handle\", \
-    \"app\" \
+    \"handle\" \
   ], \
   \"properties\": { \
     \"handle\": { \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
-    }, \
-    \"app\": { \
-      \"type\": \"string\", \
-      \"title\": \"The App Schema\", \
-      \"pattern\": \"^(.*)$\" \
     } \
   } \
 }";

@@ -69,17 +69,8 @@ std::map<DEVICE_RETURN_CODE, std::string> g_error_string = {
     {DEVICE_ERROR_FAIL_TO_CREATE_DIR, "Fail to create directory"},
     {DEVICE_ERROR_LACK_OF_STORAGE, "Lack of storage"},
     {DEVICE_ERROR_ALREADY_EXISTS_FILE, "Already exists file"},
+    {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
     {DEVICE_OK, "No error"}};
-
-extern PmLogContext getCameraLunaPmLogContext()
-{
-  static PmLogContext usLogContext = 0;
-  if (0 == usLogContext)
-  {
-    PmLogGetContext("camera", &usLogContext);
-  }
-  return usLogContext;
-}
 
 std::string getErrorString(DEVICE_RETURN_CODE error_code)
 {
@@ -107,24 +98,4 @@ void convertFormatToCode(std::string format, CAMERA_DATA_FORMAT *pformatcode)
     *pformatcode = CAMERA_FORMAT_JPEG;
   else
     *pformatcode = CAMERA_FORMAT_UNDEFINED;
-}
-
-std::string getTypeString(DEVICE_TYPE_T etype)
-{
-  std::string retstring;
-
-  switch (etype)
-  {
-  case DEVICE_MICROPHONE:
-    retstring = "microphone";
-    break;
-  case DEVICE_CAMERA:
-    retstring = "camera";
-    break;
-  default:
-    retstring = "type is out of range";
-    break;
-  }
-
-  return retstring;
 }

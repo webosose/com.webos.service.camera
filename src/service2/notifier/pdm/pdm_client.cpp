@@ -30,7 +30,6 @@ static void _device_init(int devicenum, char *devicenode)
   struct udev *camudev;
   struct udev_enumerate *enumerate;
   struct udev_list_entry *devices, *dev_list_entry;
-  struct udev_device *dev;
 
   camudev = udev_new();
   if (!camudev)
@@ -47,6 +46,7 @@ static void _device_init(int devicenum, char *devicenode)
     const char *strDeviceNode;
     const char *devnum;
     int nDeviceNumber;
+    struct udev_device *dev;
 
     path = udev_list_entry_get_name(dev_list_entry);
     dev = udev_device_new_from_syspath(camudev, path);
@@ -70,7 +70,7 @@ static void _device_init(int devicenum, char *devicenode)
 
 static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
-  SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb callback received\n");
+  PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb callback received\n");
 
   jerror *error = NULL;
   const char *payload = LSMessageGetPayload(message);
@@ -80,14 +80,14 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
   {
     bool retvalue;
     jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
-    SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb retvalue : %d \n", retvalue);
+    PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb retvalue : %d \n", retvalue);
     if (retvalue)
     {
       jvalue_ref jin_obj_child =
           jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_NON_STORAGE_DEVICE_LIST));
 
       int listcount = jarray_size(jin_obj_child);
-      SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb listcount : %d \n", listcount);
+      PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb listcount : %d \n", listcount);
 
       int camcount = 0;
 
@@ -97,51 +97,51 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
         int portnum = -1;
         jnumber_get_i32(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_USB_PORT_NUM)),
                         &portnum);
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb portnum : %d \n", portnum);
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb portnum : %d \n", portnum);
 
         raw_buffer serialnum = jstring_get_fast(
             jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SERIAL_NUMBER)));
         std::string str_serialnum = serialnum.m_str;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb serialnum : %s \n", str_serialnum.c_str());
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb serialnum : %s \n", str_serialnum.c_str());
 
         bool b_powerstatus = false;
         jboolean_get(
             jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_IS_POWER_ON_CONNECT)),
             &b_powerstatus);
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb b_powerstatus : %d \n", b_powerstatus);
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb b_powerstatus : %d \n", b_powerstatus);
 
         int devicenum = -1;
         jnumber_get_i32(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_NUM)),
                         &devicenum);
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb devicenum : %d \n", devicenum);
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb devicenum : %d \n", devicenum);
 
         raw_buffer devsubtype = jstring_get_fast(
             jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_SUBTYPE)));
         std::string str_devicesubtype = devsubtype.m_str;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicesubtype : %s \n",
-                     str_devicesubtype.c_str());
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicesubtype : %s \n",
+                   str_devicesubtype.c_str());
 
         raw_buffer vendor_name = jstring_get_fast(
             jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_NAME)));
         std::string str_vendorname = vendor_name.m_str;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_vendorname : %s \n",
-                     str_vendorname.c_str());
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_vendorname : %s \n",
+                   str_vendorname.c_str());
 
         raw_buffer device_type = jstring_get_fast(
             jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE)));
         std::string str_devicetype = device_type.m_str;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicetype : %s \n",
-                     str_devicetype.c_str());
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicetype : %s \n",
+                   str_devicetype.c_str());
 
         raw_buffer product_name = jstring_get_fast(
             jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_NAME)));
         std::string str_productname = product_name.m_str;
-        SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_productname : %s \n",
-                     str_productname.c_str());
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_productname : %s \n",
+                   str_productname.c_str());
 
         if (cam == str_devicetype)
         {
-          SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb received cam device\n");
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb received cam device\n");
           dev_info_[camcount].nDeviceNum = devicenum;
           dev_info_[camcount].nPortNum = portnum;
 
@@ -175,7 +175,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
       DEVICE_EVENT_STATE nCamEvent = DEVICE_EVENT_NONE;
       DEVICE_EVENT_STATE nMicEvent = DEVICE_EVENT_NONE;
-      SRV_LOG_INFO(CONST_MODULE_LUNA, "deviceStateCb camcount : %d \n", camcount);
+      PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb camcount : %d \n", camcount);
 
       DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
     }

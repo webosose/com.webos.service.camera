@@ -25,18 +25,22 @@
 
 #include <algorithm>
 
+namespace
+{
+const std::string empty = "";
+} // namespace
+
 VirtualDeviceManager::VirtualDeviceManager()
-    : virtualhandle_map_(), appdetails_map_(), bpreviewinprogress_(false),
+    : virtualhandle_map_(), handlepriority_map_(), bpreviewinprogress_(false),
       bcaptureinprogress_(false), shmkey_(0)
 {
 }
 
-bool VirtualDeviceManager::checkAppIdMap(std::string appid)
+bool VirtualDeviceManager::checkDeviceOpen(int devhandle)
 {
-  std::map<std::string, AppDetails>::iterator it;
-  it = appdetails_map_.find(appid);
+  std::map<int, std::string>::iterator it = handlepriority_map_.find(devhandle);
 
-  if (it == appdetails_map_.end())
+  if (it == handlepriority_map_.end())
     return false;
   else
     return true;
@@ -44,12 +48,11 @@ bool VirtualDeviceManager::checkAppIdMap(std::string appid)
 
 bool VirtualDeviceManager::checkAppPriorityMap()
 {
-  std::map<std::string, AppDetails>::iterator it;
+  std::map<int, std::string>::iterator it;
 
-  for (it = appdetails_map_.begin(); it != appdetails_map_.end(); it++)
+  for (it = handlepriority_map_.begin(); it != handlepriority_map_.end(); ++it)
   {
-    AppDetails obj = it->second;
-    if ("primary" == obj.apppriority)
+    if (primary == it->second)
       return true;
   }
   return false;
@@ -70,21 +73,25 @@ void VirtualDeviceManager::removeDeviceHandle(int devhandle)
 
 std::string VirtualDeviceManager::getAppPriority(int devhandle)
 {
-  std::map<std::string, AppDetails>::iterator it;
-  for (it = appdetails_map_.begin(); it != appdetails_map_.end(); it++)
+  std::map<int, std::string>::iterator it = handlepriority_map_.find(devhandle);
+  if (it != handlepriority_map_.end())
   {
-    AppDetails obj = it->second;
-    if (devhandle == obj.virtualhandle)
-      return obj.apppriority;
+    return it->second;
   }
   return empty;
 }
 
+void VirtualDeviceManager::removeHandlePriorityObj(int devhandle)
+{
+  // remove virtual device handle key value from map
+  handlepriority_map_.erase(devhandle);
+}
+
 DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
-  DEVICE_RETURN_CODE_T ret = DEVICE_OK;
   // create v4l2 handle
-  ret = DeviceManager::getInstance().createHandle(devid, devhandle, "libv4l2-camera-plugin.so");
+  DEVICE_RETURN_CODE_T ret =
+      DeviceManager::getInstance().createHandle(devid, devhandle, "libv4l2-camera-plugin.so");
   if (DEVICE_OK != ret)
   {
     PMLOG_INFO(CONST_MODULE_VDM, "openDevice : Failed to create handle\n");
@@ -113,27 +120,30 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
   return ret;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string appid,
-                                                std::string apppriority)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string apppriority)
 {
   PMLOG_INFO(CONST_MODULE_VDM, "open ! deviceid : %d \n", devid);
 
-  // check if app has already opened device
-  if (true == checkAppIdMap(appid))
+  // check if priortiy is not set by user
+  if (empty == apppriority)
   {
-    // app already opened device
-    PMLOG_INFO(CONST_MODULE_VDM, "open : App has already opened the device\n");
-    return DEVICE_ERROR_DEVICE_IS_ALREADY_OPENED;
+    PMLOG_INFO(CONST_MODULE_VDM, "open ! empty app priority\n");
+    if (true == checkAppPriorityMap())
+    {
+      PMLOG_INFO(CONST_MODULE_VDM, "open : Already an app is registered as primary\n");
+      apppriority = secondary;
+    }
+    else
+      apppriority = primary;
   }
-
   // check if already a primary app is opened and new app should not be opened
   // as a primary device. Connection should be rejected.
-  if ("primary" == apppriority)
+  else if (primary == apppriority)
   {
     if (true == checkAppPriorityMap())
     {
       PMLOG_INFO(CONST_MODULE_VDM, "open : Already an app has registered as primary device\n");
-      return DEVICE_ERROR_DEVICE_IS_ALREADY_OPENED;
+      return DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE;
     }
   }
 
@@ -151,12 +161,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
       // device is already opened, hence return virtual handle for device
       *devhandle = getDeviceHandle(devid);
       PMLOG_INFO(CONST_MODULE_VDM, "open : Device is already opened! Handle : %d \n", *devhandle);
-
-      // add app to map
-      AppDetails obj;
-      obj.apppriority = apppriority;
-      obj.virtualhandle = *devhandle;
-      appdetails_map_[appid] = obj;
+      // add handle with priority to map
+      handlepriority_map_.insert(std::make_pair(*devhandle, apppriority));
 
       return DEVICE_OK;
     }
@@ -167,22 +173,19 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
     DEVICE_RETURN_CODE_T ret = openDevice(devid, devhandle);
     if (DEVICE_OK == ret)
     {
-      // add app to map
-      AppDetails obj;
-      obj.apppriority = apppriority;
-      obj.virtualhandle = *devhandle;
-      appdetails_map_[appid] = obj;
+      // add handle with priority to map
+      handlepriority_map_.insert(std::make_pair(*devhandle, apppriority));
     }
     return ret;
   }
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle, std::string appid)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "close : devhandle : %d appid : %s\n", devhandle, appid.c_str());
+  PMLOG_INFO(CONST_MODULE_VDM, "close : devhandle : %d \n", devhandle);
 
   // check if app has already closed device
-  if (false == checkAppIdMap(appid))
+  if (false == checkDeviceOpen(devhandle))
   {
     // app already closed device
     PMLOG_INFO(CONST_MODULE_VDM, "close : App has already closed the device\n");
@@ -190,7 +193,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle, std::string appi
   }
 
   // get number of elements in map
-  int nelements = appdetails_map_.size();
+  int nelements = handlepriority_map_.size();
   PMLOG_INFO(CONST_MODULE_VDM, "close : nelements : %d \n", nelements);
 
   if (1 <= nelements)
@@ -218,7 +221,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle, std::string appi
           DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
           ret = DeviceControl::getInstance().destroyHandle(handle);
           // since the device is closed, remove the element from map
-          appdetails_map_.erase(appid);
+          removeHandlePriorityObj(devhandle);
         }
         else
           PMLOG_ERROR(CONST_MODULE_VDM, "Failed to close device\n");
@@ -228,13 +231,19 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle, std::string appi
         // remove the virtual device
         removeDeviceHandle(deviceid);
         // remove the app from map
-        appdetails_map_.erase(appid);
+        removeHandlePriorityObj(devhandle);
       }
 
       return ret;
     }
     else
+    {
+      // remove the virtual device
+      removeDeviceHandle(deviceid);
+      // remove the app from map
+      removeHandlePriorityObj(devhandle);
       return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
+    }
   }
   else
     return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;

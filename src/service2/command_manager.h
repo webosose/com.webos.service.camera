@@ -21,11 +21,26 @@
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include <map>
 #include <string>
+
+#include "virtual_device_manager.h"
+
+class Device
+{
+public:
+  VirtualDeviceManager *ptr;
+  int devicehandle;
+};
 
 class CommandManager
 {
 private:
+  std::multimap<std::string, Device> virtualdevmgrobj_map_;
+
+  VirtualDeviceManager *getVirtualDeviceMgrObj(int);
+  void removeVirtualDevMgrObj(int);
+
 public:
   static CommandManager &getInstance()
   {
@@ -33,8 +48,8 @@ public:
     return obj;
   }
 
-  DEVICE_RETURN_CODE_T open(int, int *, std::string, std::string);
-  DEVICE_RETURN_CODE_T close(int, std::string);
+  DEVICE_RETURN_CODE_T open(int, int *, std::string = "");
+  DEVICE_RETURN_CODE_T close(int);
   DEVICE_RETURN_CODE_T getDeviceInfo(int, CAMERA_INFO_T *);
   DEVICE_RETURN_CODE_T getDeviceList(int *, int *, int *, int *);
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,

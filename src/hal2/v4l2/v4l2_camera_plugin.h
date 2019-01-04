@@ -34,6 +34,8 @@ extern "C"
   class V4l2CameraPlugin : public CameraBase
   {
   public:
+    V4l2CameraPlugin();
+
     virtual int openDevice(std::string) override;
     virtual int closeDevice() override;
     virtual int setFormat(stream_format_t) override;
@@ -62,17 +64,12 @@ extern "C"
     int requestDmabuffers(int);
     int captureDataDmaMode();
 
-    int processImage(const void *, int);
-    int selectFd();
-    int pollFd();
-    int readCapturedFrame();
-
     void createFourCCPixelFormatMap();
     void createCameraPixelFormatMap();
     unsigned long getFourCCPixelFormat(camera_pixel_format_t);
     camera_pixel_format_t getCameraPixelFormat(int);
 
-    int xioctl(int, int, void *);
+    static int xioctl(int, int, void *);
 
     // member variables
     stream_format_t stream_format_;

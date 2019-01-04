@@ -30,16 +30,14 @@ const std::string invalid_device_id = "-1";
 const std::string yuv_format = "YUV";
 const std::string h264es_format = "H264ES";
 const std::string jpeg_format = "JPEG";
+const std::string primary = "primary";
+const std::string secondary = "secondary";
+
 const int n_invalid_id = -1;
 const int frame_size = 640 * 480 * 2 + 1024;
 const int frame_count = 8;
 
 /*defines*/
-
-#define SRV_LOG_ERROR(module, args...)                                                             \
-  PmLogMsg(getCameraLunaPmLogContext(), Error, module, 0, ##args)
-#define SRV_LOG_INFO(module, args...) PmLogMsg(getCameraLunaPmLogContext(), Info, module, 0, ##args)
-#define SRV_LOG_DEBUG(args...) PmLogMsg(getCameraLunaPmLogContext(), Debug, NULL, 0, ##args)
 
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
@@ -178,8 +176,6 @@ typedef struct
 /*Utility functions*/
 
 std::string getErrorString(DEVICE_RETURN_CODE);
-PmLogContext getCameraLunaPmLogContext();
 void convertFormatToCode(std::string, CAMERA_DATA_FORMAT *);
-std::string getTypeString(DEVICE_TYPE_T);
 
 #endif /* SERVICE_TYPES_H_ */

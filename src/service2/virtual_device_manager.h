@@ -25,20 +25,11 @@
 #include <string>
 #include <vector>
 
-const std::string empty = "";
-
-class AppDetails
-{
-public:
-  std::string apppriority;
-  int virtualhandle;
-};
-
 class VirtualDeviceManager
 {
 private:
   std::map<int, int> virtualhandle_map_;
-  std::map<std::string, AppDetails> appdetails_map_;
+  std::map<int, std::string> handlepriority_map_;
   bool bpreviewinprogress_;
   bool bcaptureinprogress_;
   int shmkey_;
@@ -46,24 +37,20 @@ private:
   std::vector<int> ncapturehandle_;
   FORMAT sformat_;
 
-  bool checkAppIdMap(std::string);
+  bool checkDeviceOpen(int);
   bool checkAppPriorityMap();
   int getDeviceHandle(int);
   void removeDeviceHandle(int);
   std::string getAppPriority(int);
+  void removeHandlePriorityObj(int);
 
   DEVICE_RETURN_CODE_T openDevice(int, int *);
 
 public:
   VirtualDeviceManager();
-  static VirtualDeviceManager &getInstance()
-  {
-    static VirtualDeviceManager obj;
-    return obj;
-  }
 
-  DEVICE_RETURN_CODE_T open(int, int *, std::string, std::string);
-  DEVICE_RETURN_CODE_T close(int, std::string);
+  DEVICE_RETURN_CODE_T open(int, int *, std::string);
+  DEVICE_RETURN_CODE_T close(int);
   DEVICE_RETURN_CODE_T startPreview(int, int *);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T captureImage(int, int, FORMAT);

@@ -31,14 +31,11 @@
 typedef struct _DEVICE_STATUS
 {
   // Device
-  char strDeviceName[256];
   int nDeviceID;
   int nDevIndex;
   int nDevCount;
   void *pcamhandle;
   bool isDeviceOpen;
-  int nSessionID;
-  bool isSessionOwner;
   DEVICE_TYPE_T devType;
   DEVICE_LIST_T stList;
 } DEVICE_STATUS;

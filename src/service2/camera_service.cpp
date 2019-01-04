@@ -47,7 +47,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   LS_CATEGORY_METHOD(stopCapture)
   LS_CATEGORY_METHOD(startPreview)
   LS_CATEGORY_METHOD(stopPreview)
-  LS_CATEGORY_METHOD(getList)
+  LS_CATEGORY_METHOD(getFormat)
   LS_CATEGORY_END;
 
   // attach to mainloop and run it
@@ -99,14 +99,12 @@ bool CameraService::open(LSMessage &message)
   {
     int ndev_id = getId(open.getCameraId());
     PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
-    std::string app_id = open.getAppId();
     std::string app_priority = open.getAppPriority();
-    PMLOG_INFO(CONST_MODULE_LUNA, "app_id : %s app_priority : %s \n", app_id.c_str(),
-               app_priority.c_str());
+    PMLOG_INFO(CONST_MODULE_LUNA, "priority : %s \n", app_priority.c_str());
     int ndevice_handle = n_invalid_id;
 
     // open camera device and save fd
-    err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_id, app_priority);
+    err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_priority);
     if (DEVICE_OK != err_id)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
@@ -151,10 +149,8 @@ bool CameraService::close(LSMessage &message)
   else
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::close ndevhandle : %d\n", ndevhandle);
-    std::string appid = obj_close.getAppId();
-    PMLOG_INFO(CONST_MODULE_LUNA, "Close requested by app : %s \n", appid.c_str());
     // close device here
-    err_id = CommandManager::getInstance().close(ndevhandle, appid);
+    err_id = CommandManager::getInstance().close(ndevhandle);
 
     if (DEVICE_OK != err_id)
     {
@@ -459,7 +455,6 @@ bool CameraService::getCameraList(LSMessage &message)
       obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
 
       char arrlist[20][CONST_MAX_STRING_LENGTH];
-      int supportlist[20];
       int n_camcount = 0;
 
       for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
@@ -468,7 +463,6 @@ bool CameraService::getCameraList(LSMessage &message)
           break;
         snprintf(arrlist[n_camcount], CONST_MAX_STRING_LENGTH, "%s%d", CONST_DEVICE_NAME_CAMERA,
                  arr_camdev[i]);
-        supportlist[n_camcount] = arr_camsupport[i];
         n_camcount++;
       }
 
@@ -625,7 +619,7 @@ bool CameraService::setFormat(LSMessage &message)
   return true;
 }
 
-bool CameraService::getList(LSMessage &message)
+bool CameraService::getFormat(LSMessage &message)
 {
   LSError lserror;
   LSErrorInit(&lserror);

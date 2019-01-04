@@ -25,14 +25,17 @@
 #include <poll.h>
 #include <string.h>
 
-DeviceControl::DeviceControl() : b_iscontinuous_capture_(false), b_isstreamon_(false), h_shm_(NULL)
+DeviceControl::DeviceControl()
+    : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isshmwritedone_(true),
+      cam_handle_(NULL), mutex_(PTHREAD_MUTEX_INITIALIZER), cond_(PTHREAD_COND_INITIALIZER),
+      h_shm_(NULL)
 {
 }
 
-void DeviceControl::writeImageToFile(const void *p, int size)
+void DeviceControl::writeImageToFile(const void *p, int size) const
 {
   FILE *fp;
-  char image_name[100];
+  char image_name[100] = {};
 
   // create file to save data based on format
   if (CAMERA_PIXEL_FORMAT_YUYV == epixelformat_)
@@ -80,9 +83,9 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, FORMAT sformat)
     PMLOG_INFO(CONST_MODULE_DC, "checkFormat : Stored format and new format are different\n");
     // stream off, unmap and destroy previous allocated buffers
     // close and again open device to set format again
-    ret = stopPreview(handle);
-    ret = close(handle);
-    ret = open(handle, strdevicenode_);
+    stopPreview(handle);
+    close(handle);
+    open(handle, strdevicenode_);
 
     // set format again
     stream_format_t newstreamformat;
@@ -94,7 +97,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, FORMAT sformat)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "checkFormat : camera_hal_if_set_format failed \n");
       // if set format fails then reset format to preview format
-      retval = camera_hal_if_set_format(handle, streamformat);
+      camera_hal_if_set_format(handle, streamformat);
       // save pixel format for saving captured image
       epixelformat_ = streamformat.pixel_format;
     }
@@ -110,10 +113,9 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, FORMAT sformat)
   return ret;
 }
 
-int DeviceControl::pollForCapturedImage(void *handle, int ncount)
+int DeviceControl::pollForCapturedImage(void *handle, int ncount) const
 {
   int fd = -1;
-  int npollstatus = EINVAL;
   int retval = camera_hal_if_get_fd(handle, &fd);
   PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage camera_hal_if_get_fd fd : %d \n", fd);
   struct pollfd poll_set[]{
@@ -124,7 +126,7 @@ int DeviceControl::pollForCapturedImage(void *handle, int ncount)
   buffer_t frame_buffer;
   for (int i = 1; i <= ncount; i++)
   {
-    if ((npollstatus = poll(poll_set, 2, timeout)) > 0)
+    if ((retval = poll(poll_set, 2, timeout)) > 0)
     {
       frame_buffer.start = malloc(frame_size);
       retval = camera_hal_if_get_buffer(handle, &frame_buffer);
@@ -141,6 +143,7 @@ int DeviceControl::pollForCapturedImage(void *handle, int ncount)
       writeImageToFile(frame_buffer.start, frame_buffer.length);
 
       free(frame_buffer.start);
+      frame_buffer.start = nullptr;
 
       retval = camera_hal_if_release_buffer(handle, frame_buffer);
       if (CAMERA_ERROR_NONE != retval)
@@ -190,7 +193,13 @@ void DeviceControl::captureThread()
 
 void DeviceControl::previewThread()
 {
+  pthread_cond_init(&cond_, NULL);
+  pthread_mutex_init(&mutex_, NULL);
+
   // poll for data on buffers and save captured image
+  // lock so that if stop preview is called, first this cycle should complete
+  pthread_mutex_lock(&mutex_);
+  b_isshmwritedone_ = false;
   while (b_isstreamon_)
   {
     buffer_t frame_buffer;
@@ -200,6 +209,7 @@ void DeviceControl::previewThread()
     {
       PMLOG_ERROR(CONST_MODULE_DC, "previewThread : camera_hal_if_get_buffer failed \n");
       free(frame_buffer.start);
+      frame_buffer.start = nullptr;
       break;
     }
 
@@ -209,6 +219,7 @@ void DeviceControl::previewThread()
                  (unsigned char *)&timestamp, sizeof(timestamp));
 
     free(frame_buffer.start);
+    frame_buffer.start = nullptr;
 
     retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
     if (CAMERA_ERROR_NONE != retval)
@@ -217,6 +228,9 @@ void DeviceControl::previewThread()
       break;
     }
   }
+  b_isshmwritedone_ = true;
+  pthread_cond_signal(&cond_);
+  pthread_mutex_unlock(&mutex_);
   pthread_detach(tid_preview_);
   return;
 }
@@ -307,6 +321,15 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle)
   PMLOG_INFO(CONST_MODULE_DC, "stopPreview started !\n");
 
   b_isstreamon_ = false;
+
+  // wait for preview thread to close
+  pthread_mutex_lock(&mutex_);
+  while (!b_isshmwritedone_)
+    pthread_cond_wait(&cond_, &mutex_);
+  pthread_mutex_unlock(&mutex_);
+
+  pthread_cond_destroy(&cond_);
+  pthread_mutex_destroy(&mutex_);
 
   int retval = camera_hal_if_stop_capture(handle);
   if (CAMERA_ERROR_NONE != retval)
@@ -416,7 +439,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode, CAM
 {
   PMLOG_INFO(CONST_MODULE_DC, "getDeviceInfo started \n");
 
-  //  DEVICE_RETURN_CODE_T ret = DEVICE_ERROR_UNKNOWN;
   camera_device_info_t devinfo;
   int ret = camera_hal_if_get_info(strdevicenode.c_str(), &devinfo);
   if (CAMERA_ERROR_NONE != ret)
@@ -429,7 +451,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode, CAM
   pinfo->nFormat = devinfo.n_format;
   pinfo->nMaxPictureHeight = devinfo.n_maxpictureheight;
   pinfo->nMaxPictureWidth = devinfo.n_maxpicturewidth;
-  pinfo->nMaxVideoHeight = devinfo.n_maxvideoheight;
   pinfo->nMaxVideoHeight = devinfo.n_maxvideoheight;
   pinfo->nMaxVideoWidth = devinfo.n_maxvideowidth;
   strncpy(pinfo->strName, devinfo.str_devicename, 32);

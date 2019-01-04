@@ -34,7 +34,7 @@ bool GetCameraListMethod::getCameraListObject(const char *input, const char *sch
   }
 }
 
-std::string GetCameraListMethod::createCameraListObjectJsonString()
+std::string GetCameraListMethod::createCameraListObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   jvalue_ref json_outdevicelistarray = jarray_create(NULL);
@@ -79,21 +79,26 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
   {
     raw_buffer str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID)));
     setCameraId(str_id.m_str);
-    str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF("app")));
-    setAppId(str_id.m_str);
-    str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF("priority")));
-    setAppPriority(str_id.m_str);
+    str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_APP_PRIORITY)));
+    std::string priority = str_id.m_str;
+    // parsing of argumnets to open call. Only empty or primary or secondary are valid
+    if ((0 == priority.length()) || (primary == priority) || (secondary == priority))
+    {
+      setAppPriority(str_id.m_str);
+    }
+    else
+    {
+      setCameraId(invalid_device_id);
+    }
   }
   else
   {
     setCameraId(invalid_device_id);
-    setAppId("none");
-    setAppPriority("none");
   }
   j_release(&j_obj);
 }
 
-std::string OpenMethod::createOpenObjectJsonString()
+std::string OpenMethod::createOpenObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   std::string str_reply;
@@ -148,7 +153,7 @@ void StartPreviewMethod::getStartPreviewObject(const char *input, const char *sc
   j_release(&j_obj);
 }
 
-std::string StartPreviewMethod::createStartPreviewObjectJsonString()
+std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   std::string str_reply;
@@ -182,8 +187,6 @@ void StopPreviewCaptureCloseMethod::getObject(const char *input, const char *sch
     int n_devicehandle = n_invalid_id;
     jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &n_devicehandle);
     setDeviceHandle(n_devicehandle);
-    raw_buffer appid = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF("app")));
-    setAppId(appid.m_str);
   }
   else
   {
@@ -192,7 +195,7 @@ void StopPreviewCaptureCloseMethod::getObject(const char *input, const char *sch
   j_release(&j_obj);
 }
 
-std::string StopPreviewCaptureCloseMethod::createObjectJsonString()
+std::string StopPreviewCaptureCloseMethod::createObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   std::string str_reply;
@@ -271,7 +274,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
   j_release(&j_obj);
 }
 
-std::string StartCaptureMethod::createStartCaptureObjectJsonString()
+std::string StartCaptureMethod::createStartCaptureObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   std::string str_reply;
@@ -311,7 +314,7 @@ void GetInfoMethod::getInfoObject(const char *input, const char *schemapath)
   j_release(&j_obj);
 }
 
-std::string GetInfoMethod::createInfoObjectJsonString()
+std::string GetInfoMethod::createInfoObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   jvalue_ref json_info_obj = jobject_create();
@@ -385,7 +388,7 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
   j_release(&j_obj);
 }
 
-std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString()
+std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   jvalue_ref json_outobjparams = jobject_create();
@@ -583,7 +586,7 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
   j_release(&j_obj);
 }
 
-std::string GetSetPropertiesMethod::createSetPropertiesObjectJsonString()
+std::string GetSetPropertiesMethod::createSetPropertiesObjectJsonString() const
 {
   jvalue_ref json_outbj = jobject_create();
   std::string strreply;
@@ -641,7 +644,7 @@ void SetFormatMethod::getSetFormatObject(const char *input, const char *schemapa
   j_release(&j_obj);
 }
 
-std::string SetFormatMethod::createSetFormatObjectJsonString()
+std::string SetFormatMethod::createSetFormatObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   std::string strreply;

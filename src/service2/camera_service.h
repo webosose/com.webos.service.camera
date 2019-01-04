@@ -34,7 +34,7 @@ public:
   bool stopPreview(LSMessage &);
   bool startCapture(LSMessage &);
   bool stopCapture(LSMessage &);
-  bool getList(LSMessage &);
+  bool getFormat(LSMessage &);
 };
 
 #endif /*CAMERA_SERVICE_H_*/

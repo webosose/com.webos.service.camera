@@ -18,6 +18,7 @@ private:
   LSHandle *lshandle_;
 
 public:
+  PDMClient() { lshandle_ = nullptr; }
   virtual ~PDMClient() {}
   virtual void subscribeToClient(pdmhandlercb) override;
   void setLSHandle(LSHandle *);

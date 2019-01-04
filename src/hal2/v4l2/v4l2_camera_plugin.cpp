@@ -35,7 +35,13 @@ void destroy_handle(void *handle)
 {
   DLOG(printf("destroy_handle : %p \n", handle););
   if (handle)
-    delete (V4l2CameraPlugin *)handle;
+    delete (static_cast<V4l2CameraPlugin *>(handle));
+}
+
+V4l2CameraPlugin::V4l2CameraPlugin()
+    : buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), io_mode_(IOMODE_UNKNOWN),
+      fourcc_format_(), camera_format_()
+{
 }
 
 int V4l2CameraPlugin::openDevice(string devname)
@@ -153,14 +159,12 @@ int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode)
 
 int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
 {
-  int retVal = CAMERA_ERROR_NONE;
-
   struct v4l2_buffer buf;
   CLEAR(buf);
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buf.memory = V4L2_MEMORY_MMAP;
 
-  retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
+  int retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
   if (CAMERA_ERROR_NONE != retVal)
   {
     DLOG(fprintf(stderr, "VIDIOC_DQBUF error %d, %s\n", errno, strerror(errno)););
@@ -407,64 +411,63 @@ int V4l2CameraPlugin::setProperties(const camera_properties_t *cam_in_params)
 
 int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
 {
-  int retVal = CAMERA_ERROR_NONE;
   struct v4l2_queryctrl queryctrl;
 
   queryctrl.id = V4L2_CID_BRIGHTNESS;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nBrightness);
+  getV4l2Property(queryctrl, &cam_out_params->nBrightness);
 
   queryctrl.id = V4L2_CID_CONTRAST;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nContrast);
+  getV4l2Property(queryctrl, &cam_out_params->nContrast);
 
   queryctrl.id = V4L2_CID_SATURATION;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nSaturation);
+  getV4l2Property(queryctrl, &cam_out_params->nSaturation);
 
   queryctrl.id = V4L2_CID_HUE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nHue);
+  getV4l2Property(queryctrl, &cam_out_params->nHue);
 
   queryctrl.id = V4L2_CID_AUTO_WHITE_BALANCE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nAutoWhiteBalance);
+  getV4l2Property(queryctrl, &cam_out_params->nAutoWhiteBalance);
 
   queryctrl.id = V4L2_CID_GAMMA;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nGamma);
+  getV4l2Property(queryctrl, &cam_out_params->nGamma);
 
   queryctrl.id = V4L2_CID_GAIN;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nGain);
+  getV4l2Property(queryctrl, &cam_out_params->nGain);
 
   queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nFrequency);
+  getV4l2Property(queryctrl, &cam_out_params->nFrequency);
 
   queryctrl.id = V4L2_CID_WHITE_BALANCE_TEMPERATURE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nWhiteBalanceTemperature);
+  getV4l2Property(queryctrl, &cam_out_params->nWhiteBalanceTemperature);
 
   queryctrl.id = V4L2_CID_SHARPNESS;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nSharpness);
+  getV4l2Property(queryctrl, &cam_out_params->nSharpness);
 
   queryctrl.id = V4L2_CID_BACKLIGHT_COMPENSATION;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nBacklightCompensation);
+  getV4l2Property(queryctrl, &cam_out_params->nBacklightCompensation);
 
   queryctrl.id = V4L2_CID_EXPOSURE_AUTO;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nAutoExposure);
+  getV4l2Property(queryctrl, &cam_out_params->nAutoExposure);
 
   queryctrl.id = V4L2_CID_EXPOSURE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nExposure);
+  getV4l2Property(queryctrl, &cam_out_params->nExposure);
 
   queryctrl.id = V4L2_CID_PAN_ABSOLUTE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nPan);
+  getV4l2Property(queryctrl, &cam_out_params->nPan);
 
   queryctrl.id = V4L2_CID_TILT_ABSOLUTE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nTilt);
+  getV4l2Property(queryctrl, &cam_out_params->nTilt);
 
   queryctrl.id = V4L2_CID_FOCUS_ABSOLUTE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nFocusAbsolute);
+  getV4l2Property(queryctrl, &cam_out_params->nFocusAbsolute);
 
   queryctrl.id = V4L2_CID_FOCUS_AUTO;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nAutoFocus);
+  getV4l2Property(queryctrl, &cam_out_params->nAutoFocus);
 
   queryctrl.id = V4L2_CID_ZOOM_ABSOLUTE;
-  retVal = getV4l2Property(queryctrl, &cam_out_params->nZoomAbsolute);
+  getV4l2Property(queryctrl, &cam_out_params->nZoomAbsolute);
 
-  return retVal;
+  return CAMERA_ERROR_NONE;
 }
 
 int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string devicenode)
@@ -687,6 +690,7 @@ int V4l2CameraPlugin::releaseMmapBuffers()
     buffers_[i].start = NULL;
   }
   free(buffers_);
+  buffers_ = NULL;
   return CAMERA_ERROR_NONE;
 }
 
@@ -695,8 +699,10 @@ int V4l2CameraPlugin::releaseUserptrBuffers()
   for (int i = 0; i < n_buffers_; ++i)
   {
     free(buffers_[i].start);
+    buffers_[i].start = NULL;
   }
   free(buffers_);
+  buffers_ = NULL;
   return CAMERA_ERROR_NONE;
 }
 
@@ -819,144 +825,6 @@ int V4l2CameraPlugin::captureDataDmaMode()
   return CAMERA_ERROR_NONE;
 }
 
-int V4l2CameraPlugin::processImage(const void *p, int size)
-{
-  FILE *fp;
-  static int num = 0;
-  char image_name[20];
-
-  sprintf(image_name, output_image.c_str(), num++);
-  if ((fp = fopen(image_name, "wb")) == NULL)
-  {
-    DLOG(perror("Fail to fopen"););
-    return CAMERA_ERROR_UNKNOWN;
-  }
-  fwrite(p, size, 1, fp);
-  fclose(fp);
-
-  return CAMERA_ERROR_NONE;
-}
-
-int V4l2CameraPlugin::selectFd()
-{
-  fd_set fds;
-  struct timeval tv;
-  int r = 0;
-
-  for (int i = 0; i < n_buffers_; i++)
-  {
-    do
-    {
-      FD_ZERO(&fds);
-      FD_SET(fd_, &fds);
-
-      /* Timeout. */
-      tv.tv_sec = 2;
-      tv.tv_usec = 0;
-
-      r = select(fd_ + 1, &fds, NULL, NULL, &tv);
-    } while ((r == CAMERA_ERROR_UNKNOWN && (errno = EINTR)));
-    if (r == CAMERA_ERROR_UNKNOWN)
-    {
-      DLOG(fprintf(stderr, "select error %d, %s\n", errno, strerror(errno)););
-      return CAMERA_ERROR_UNKNOWN;
-    }
-
-    if (CAMERA_ERROR_UNKNOWN == readCapturedFrame())
-    {
-      DLOG(printf("readCapturedFrame failed\n"););
-      return CAMERA_ERROR_UNKNOWN;
-    }
-  }
-  return CAMERA_ERROR_NONE;
-}
-
-int V4l2CameraPlugin::pollFd()
-{
-  int ret = CAMERA_ERROR_NONE;
-  struct pollfd fds[] = {
-      {.fd = fd_, .events = POLLIN},
-  };
-  for (int i = 0; i < n_buffers_; i++)
-  {
-    if ((ret = poll(fds, 2, 2000)) > CAMERA_ERROR_NONE)
-    {
-      if (CAMERA_ERROR_UNKNOWN == readCapturedFrame())
-      {
-        DLOG(printf("readCapturedFrame failed\n"););
-        ret = CAMERA_ERROR_UNKNOWN;
-        break;
-      }
-    }
-  }
-  return ret;
-}
-
-int V4l2CameraPlugin::readCapturedFrame()
-{
-  struct v4l2_buffer buf;
-
-  switch (io_mode_)
-  {
-  case IOMODE_MMAP:
-  {
-    CLEAR(buf);
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_DQBUF, &buf))
-    {
-      DLOG(fprintf(stderr, "VIDIOC_DQBUF error %d, %s\n", errno, strerror(errno)););
-      return CAMERA_ERROR_UNKNOWN;
-    }
-
-    if (CAMERA_ERROR_UNKNOWN == processImage(buffers_[buf.index].start, buf.bytesused))
-    {
-      DLOG(printf("processImage failed\n"););
-      return CAMERA_ERROR_UNKNOWN;
-    }
-
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
-    {
-      DLOG(fprintf(stderr, "VIDIOC_QBUF error %d, %s\n", errno, strerror(errno)););
-      return CAMERA_ERROR_UNKNOWN;
-    }
-    break;
-  }
-  case IOMODE_DMABUF:
-  {
-    CLEAR(buf);
-    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    buf.memory = V4L2_MEMORY_MMAP;
-
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_DQBUF, &buf))
-    {
-      DLOG(fprintf(stderr, "VIDIOC_DQBUF error %d, %s\n", errno, strerror(errno)););
-      return CAMERA_ERROR_UNKNOWN;
-    }
-
-    void *map = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, buf.m.offset);
-    if (CAMERA_ERROR_UNKNOWN == processImage(map, buf.length))
-    {
-      DLOG(printf("processImage failed\n"););
-      munmap(map, buf.length);
-      return CAMERA_ERROR_UNKNOWN;
-    }
-    munmap(map, buf.length);
-
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
-    {
-      DLOG(fprintf(stderr, "VIDIOC_QBUF error %d, %s\n", errno, strerror(errno)););
-      return CAMERA_ERROR_UNKNOWN;
-    }
-    break;
-  }
-  default:
-    break;
-  }
-  return CAMERA_ERROR_NONE;
-}
-
 void V4l2CameraPlugin::createFourCCPixelFormatMap()
 {
   fourcc_format_.insert(std::make_pair(CAMERA_PIXEL_FORMAT_NV12, V4L2_PIX_FMT_NV12));
@@ -994,7 +862,7 @@ unsigned long V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camer
       pixel_format = it->second;
       break;
     }
-    it++;
+    ++it;
   }
   return pixel_format;
 }
@@ -1011,7 +879,7 @@ camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(int fourcc_format)
       camera_format = it->second;
       break;
     }
-    it++;
+    ++it;
   }
   return camera_format;
 }

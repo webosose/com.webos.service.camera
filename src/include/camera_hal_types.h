@@ -83,7 +83,8 @@ typedef enum
 
 typedef enum
 {
-  IOMODE_READ,
+  IOMODE_UNKNOWN = -1,
+  IOMODE_READ = 0,
   IOMODE_MMAP,
   IOMODE_USERPTR,
   IOMODE_DMABUF
