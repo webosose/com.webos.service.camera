@@ -14,51 +14,42 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef SRC_SERVICE_DEVICE_MANAGER_H_
-#define SRC_SERVICE_DEVICE_MANAGER_H_
+#ifndef SERVICE_DEVICE_MANAGER_H_
+#define SERVICE_DEVICE_MANAGER_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ------------------------------------------------------------------------------*/
-
-#include "service_main.h"
+#include "camera_types.h"
+#include <map>
+#include <string>
 
 class DeviceManager
 {
 private:
-    static DeviceManager *devInfoinstance;
-    DeviceManager()
-    {}
+  int ndevcount_;
+
+  int findDevNum(int);
 
 public:
-    static DeviceManager *getInstance()
-    {
-        if (devInfoinstance == 0)
-        {
-            devInfoinstance = new DeviceManager();
-        }
-        return devInfoinstance;
-    };
-    int deviceID;
-    int devType;
-    char buf[CONST_MAX_PATH];
-    bool deviceStatus(int deviceID,DEVICE_TYPE_T devType,bool status);
-    bool isDeviceOpen(DEVICE_TYPE_T devType, int *deviceID);
-    bool isDeviceValid(DEVICE_TYPE_T devType, int *deviceID);
-    bool isUpdatedList();
-    DEVICE_RETURN_CODE_T getList(int *pCamDev, int *pMicDev, int *pCamSupport, int *pMicSupport);
-    DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *pList, int nDevCount,DEVICE_EVENT_STATE_T *pCamEvent,DEVICE_EVENT_STATE_T *pMicEvent);
-    DEVICE_RETURN_CODE_T getInfo(int ndevID, CAMERA_INFO_T *pInfo);
-    DEVICE_RETURN_CODE_T createHandle(int nDeviceID,DEVICE_TYPE_T devType,int *ndevID);
-    DEVICE_RETURN_CODE_T getHandle(int nDeviceID,DEVICE_TYPE_T devType,DEVICE_HANDLE *devHandle);
+  DeviceManager();
+  static DeviceManager &getInstance()
+  {
+    static DeviceManager obj;
+    return obj;
+  }
+  bool deviceStatus(int, DEVICE_TYPE_T, bool);
+  bool isDeviceOpen(int *);
+  bool isDeviceValid(DEVICE_TYPE_T, int *);
+  void getDeviceNode(int *, std::string &);
+  void getDeviceHandle(int *, void **);
+  int getDeviceId(int *);
+
+  DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *) const;
+  DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
+                                  DEVICE_EVENT_STATE_T *);
+  DEVICE_RETURN_CODE_T getInfo(int, CAMERA_INFO_T *);
+  DEVICE_RETURN_CODE_T createHandle(int, int *, std::string);
 };
 
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#endif /*SRC_SERVICE_DEVICE_MANAGER_H_*/
+#endif /*SERVICE_DEVICE_MANAGER_H_*/

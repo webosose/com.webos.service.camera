@@ -14,66 +14,67 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef SRC_SERVICE_DEVICE_CONTROLLER_H_
-#define SRC_SERVICE_DEVICE_CONTROLLER_H_
+#ifndef SERVICE_DEVICE_CONTROLLER_H_
+#define SERVICE_DEVICE_CONTROLLER_H_
 
-#ifdef __cplusplus
-extern "C"
-{
-#endif /* __cplusplus */
-
-    /*-----------------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
     (File Inclusions)
 ------------------------------------------------------------------------------*/
-
-#include "service_main.h"
-//#include"ose_commandmanager.h"
+#include "camera_hal_types.h"
 #include "camera_types.h"
+#include "camshm.h"
 #include "constants.h"
+
+#include <pthread.h>
+#include <string>
 
 class DeviceControl
 {
+private:
+  void writeImageToFile(const void *, int) const;
+  DEVICE_RETURN_CODE_T checkFormat(void *, CAMERA_FORMAT);
+  int pollForCapturedImage(void *, int) const;
+  static camera_pixel_format_t getPixelFormat(CAMERA_FORMAT_T);
+  void captureThread();
+  void previewThread();
+  static void *runCaptureImageThread(void *);
+  static void *runPreviewThread(void *);
 
-      private:
-        static DeviceControl *devctlinstance;
-        DeviceControl() {}
+  bool b_iscontinuous_capture_;
+  bool b_isstreamon_;
+  bool b_isshmwritedone_;
+  void *cam_handle_;
+  CAMERA_FORMAT informat_;
+  camera_pixel_format_t epixelformat_;
+  pthread_t tid_capture_;
+  pthread_t tid_preview_;
+  pthread_mutex_t mutex_;
+  pthread_cond_t cond_;
+  std::string strdevicenode_;
+  SHMEM_HANDLE h_shm_;
 
-      public:
-        static DeviceControl *getInstance()
-        {
-            if (devctlinstance == 0)
-            {
-                devctlinstance = new DeviceControl();
-            }
+public:
+  DeviceControl();
+  static DeviceControl &getInstance()
+  {
+    static DeviceControl obj;
+    return obj;
+  }
 
-            return devctlinstance;
-        };
+  DEVICE_RETURN_CODE_T open(void *, std::string);
+  DEVICE_RETURN_CODE_T close(void *);
+  DEVICE_RETURN_CODE_T startPreview(void *, int *);
+  DEVICE_RETURN_CODE_T stopPreview(void *);
+  DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT);
+  DEVICE_RETURN_CODE_T stopCapture(void *);
+  DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT);
+  DEVICE_RETURN_CODE_T createHandle(void **, std::string);
+  DEVICE_RETURN_CODE_T destroyHandle(void *);
+  DEVICE_RETURN_CODE_T getDeviceInfo(std::string, CAMERA_INFO_T *);
+  DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *, int *, int *, int *, int *, int);
+  DEVICE_RETURN_CODE_T getDeviceProperty(void *, CAMERA_PROPERTIES_T *);
+  DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
+  DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
+};
 
-        //Open the Device and return the handle
-        DEVICE_RETURN_CODE_T open(DEVICE_HANDLE devHandle,DEVICE_TYPE devType);
-        //Close the device
-        DEVICE_RETURN_CODE_T close(DEVICE_HANDLE devHandle,DEVICE_TYPE devType);
-        //Start Capture
-        DEVICE_RETURN_CODE_T startPreview(DEVICE_HANDLE devHandle,DEVICE_TYPE devType,int *pKey);
-        //Stop Capture
-        DEVICE_RETURN_CODE_T stopPreview(DEVICE_HANDLE devHandle,DEVICE_TYPE devType);
-        DEVICE_RETURN_CODE_T startCapture(DEVICE_HANDLE devHandle,DEVICE_TYPE devType,FORMAT sFormat);
-        //Stop Capture
-        DEVICE_RETURN_CODE_T stopCapture(DEVICE_HANDLE devHandle,DEVICE_TYPE devType);
-        DEVICE_RETURN_CODE_T captureImage(DEVICE_HANDLE devHandle,DEVICE_TYPE devType,int nCount,FORMAT sFormat);
-        bool isUpdatedCameraList();
-
-        DEVICE_RETURN_CODE_T createHandle(DEVICE_LIST_T sDeviceInfo,DEVICE_HANDLE *sDevHandle);
-
-        DEVICE_RETURN_CODE_T getDeviceInfo(DEVICE_LIST_T stList,CAMERA_INFO_T *pInfo);
-        DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *pList,int *pCamDev, int *pMicDev, int *pCamSupport, int *pMicSupport,int devCount);
-        DEVICE_RETURN_CODE_T getDeviceProperty(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_PROPERTIES_T *oParams);
-        DEVICE_RETURN_CODE_T setDeviceProperty(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, CAMERA_PROPERTIES_T *oParams);
-        DEVICE_RETURN_CODE_T setFormat(DEVICE_HANDLE devHandle,DEVICE_TYPE devType, FORMAT oFormat);
-  };
-
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
-
-#endif /*SRC_SERVICE_DEVICE_CONTROLLER_H_*/
+#endif /*SERVICE_DEVICE_CONTROLLER_H_*/

@@ -15,7 +15,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(UNIT_TEST_SOURCES
-    hal2/test_cam_hal.cpp )
+    hal/test_cam_hal.cpp )
 
 add_executable (test_cam_hal ${UNIT_TEST_SOURCES})
 target_link_libraries (test_cam_hal ${WEBOS_GTEST_LIBRARIES} camera_hal)

@@ -14,8 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef SERVICE_COMMAND_MANAGER_H_
-#define SERVICE_COMMAND_MANAGER_H_
+#ifndef VIRTUAL_DEVICE_MANAGER_H_
+#define VIRTUAL_DEVICE_MANAGER_H_
 
 /*-----------------------------------------------------------------------------
  (File Inclusions)
@@ -23,45 +23,42 @@
 #include "camera_types.h"
 #include <map>
 #include <string>
+#include <vector>
 
-#include "virtual_device_manager.h"
-
-class Device
-{
-public:
-  VirtualDeviceManager *ptr;
-  int devicehandle;
-};
-
-class CommandManager
+class VirtualDeviceManager
 {
 private:
-  std::multimap<std::string, Device> virtualdevmgrobj_map_;
+  std::map<int, int> virtualhandle_map_;
+  std::map<int, std::string> handlepriority_map_;
+  bool bpreviewinprogress_;
+  bool bcaptureinprogress_;
+  int shmkey_;
+  std::vector<int> npreviewhandle_;
+  std::vector<int> ncapturehandle_;
+  CAMERA_FORMAT sformat_;
 
-  VirtualDeviceManager *getVirtualDeviceMgrObj(int);
-  void removeVirtualDevMgrObj(int);
+  bool checkDeviceOpen(int);
+  bool checkAppPriorityMap();
+  int getDeviceHandle(int);
+  void removeDeviceHandle(int);
+  std::string getAppPriority(int);
+  void removeHandlePriorityObj(int);
+
+  DEVICE_RETURN_CODE_T openDevice(int, int *);
 
 public:
-  static CommandManager &getInstance()
-  {
-    static CommandManager obj;
-    return obj;
-  }
+  VirtualDeviceManager();
 
-  DEVICE_RETURN_CODE_T open(int, int *, std::string = "");
+  DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T getDeviceInfo(int, CAMERA_INFO_T *);
-  DEVICE_RETURN_CODE_T getDeviceList(int *, int *, int *, int *);
-  DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
-                                  DEVICE_EVENT_STATE_T *);
+  DEVICE_RETURN_CODE_T startPreview(int, int *);
+  DEVICE_RETURN_CODE_T stopPreview(int);
+  DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT);
+  DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT);
+  DEVICE_RETURN_CODE_T stopCapture(int);
   DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
-  DEVICE_RETURN_CODE_T startPreview(int, int *);
-  DEVICE_RETURN_CODE_T stopPreview(int);
-  DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT);
-  DEVICE_RETURN_CODE_T stopCapture(int);
-  DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT);
 };
 
-#endif /*SERVICE_COMMAND_MANAGER_H_*/
+#endif /*VIRTUAL_DEVICE_MANAGER_H_*/

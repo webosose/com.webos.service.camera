@@ -5,30 +5,30 @@
 #include <pthread.h>
 
 #include "cameratypes.h"
-#include "device_notifier.h"
+#include "dev_notifier.h"
 #include "libudev.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-class UDEVClient : public DeviceNotifier
+class UDEVClient : public DevNotifier
 {
 private:
-    using udevhandler_cb = std::function<void(camera_info_t *)>;
-    udevhandler_cb subscribeToDeviceState_;
+  using udevhandler_cb = std::function<void(camera_details_t *)>;
+  udevhandler_cb subscribeToDeviceState_;
 
-    camera_info_t *cam_info_;
-    struct udev *camudev_;
-    pthread_t tid_;
+  camera_details_t *cam_info_;
+  struct udev *camudev_;
+  pthread_t tid_;
 
-    static void* runMonitorDeviceThread(void *);
-    int udevCreate();
-    void monitorDevice();
-    void getDevice(struct udev_device *,camera_info_t *);
+  static void *runMonitorDeviceThread(void *);
+  int udevCreate();
+  void monitorDevice();
+  void getDevice(struct udev_device *, camera_details_t *);
 
 public:
-    UDEVClient();
-    virtual ~UDEVClient();
-    virtual int subscribeToClient(udevhandler_cb) override;
+  UDEVClient();
+  virtual ~UDEVClient();
+  virtual int subscribeToClient(udevhandler_cb) override;
 };
 
 #endif
