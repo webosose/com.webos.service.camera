@@ -245,4 +245,19 @@ const char *stopCapturePreviewCloseSchema = "{ \
   } \
 }";
 
+const char *getEventNotificationSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"subscribe\" \
+  ], \
+  \"properties\": { \
+    \"subscribe\": { \
+      \"type\": \"boolean\", \
+      \"title\": \"The subscribe Schema\", \
+      \"default\": false \
+    } \
+  } \
+}";
+
 #endif /*SRC_SERVICE_JSON_SCHEMA_H_*/

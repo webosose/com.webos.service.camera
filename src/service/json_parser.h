@@ -356,6 +356,28 @@ private:
   MethodReply objreply_;
 };
 
+class EventNotification
+{
+public:
+  EventNotification()
+  {
+    etype_ = EventType::EVENT_TYPE_NONE;
+    pdata_ = nullptr;
+    b_issubscribed_ = false;
+  }
+  ~EventNotification() {}
+
+  void getEventObject(const char *, const char *);
+  std::string createEventObjectJsonString() const;
+  void setEventType(EventType etype) { etype_ = etype; }
+  void setEventData(void *data) { pdata_ = data; }
+
+private:
+  EventType etype_;
+  void *pdata_;
+  bool b_issubscribed_;
+};
+
 void createJsonStringFailure(MethodReply, jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/

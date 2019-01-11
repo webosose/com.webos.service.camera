@@ -410,10 +410,8 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
 
   if (objreply.bGetReturnValue())
   {
-    json_outobj = jobject_create();
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(objreply.bGetReturnValue()));
-    json_outobjparams = jobject_create();
 
     if (rGetCameraProperties().nZoom != CONST_VARIABLE_INITIALIZE)
       jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM),
@@ -691,4 +689,158 @@ void createJsonStringFailure(MethodReply obj_reply, jvalue_ref &json_outobj)
               jstring_create(obj_reply.strGetErrorText().c_str()));
 
   return;
+}
+
+void EventNotification::getEventObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    jboolean_get(jobject_get(j_obj, J_CSTR_TO_BUF("subscribe")), (bool *)&b_issubscribed_);
+  }
+  else
+  {
+    b_issubscribed_ = false;
+  }
+  j_release(&j_obj);
+}
+
+std::string EventNotification::createEventObjectJsonString() const
+{
+  jvalue_ref json_outobj = jobject_create();
+  std::string strreply;
+
+  // return value
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+              jboolean_create(b_issubscribed_));
+
+  // event type
+  std::string event = getEventNotificationString(etype_);
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EVENT), jstring_create(event.c_str()));
+
+  if (cstr_format == event)
+  {
+    if (nullptr != pdata_)
+    {
+      CAMERA_FORMAT *format = static_cast<CAMERA_FORMAT *>(pdata_);
+      jvalue_ref json_outobjparams = jobject_create();
+
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
+                  jnumber_create_i32(format->nWidth));
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
+                  jnumber_create_i32(format->nHeight));
+
+      std::string strformat = getFormatStringFromCode(format->eFormat);
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
+                  jstring_create(strformat.c_str()));
+
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
+    }
+  }
+  else if (cstr_properties == event)
+  {
+    if (nullptr != pdata_)
+    {
+      CAMERA_PROPERTIES_T *properties = static_cast<CAMERA_PROPERTIES_T *>(pdata_);
+      jvalue_ref json_outobjparams = jobject_create();
+
+      if (properties->nZoom != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM),
+                    jnumber_create_i32(properties->nZoom));
+      if (properties->nGridZoomX != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_COL),
+                    jnumber_create_i32(properties->nGridZoomX));
+      if (properties->nGridZoomY != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ROW),
+                    jnumber_create_i32(properties->nGridZoomY));
+      if (properties->nPan != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN),
+                    jnumber_create_i32(properties->nPan));
+      if (properties->nTilt != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT),
+                    jnumber_create_i32(properties->nTilt));
+      if (properties->nContrast != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST),
+                    jnumber_create_i32(properties->nContrast));
+      if (properties->nBrightness != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS),
+                    jnumber_create_i32(properties->nBrightness));
+      if (properties->nSaturation != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION),
+                    jnumber_create_i32(properties->nSaturation));
+      if (properties->nSharpness != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS),
+                    jnumber_create_i32(properties->nSharpness));
+      if (properties->nHue != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE),
+                    jnumber_create_i32(properties->nHue));
+      if (properties->nWhiteBalanceTemperature != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE),
+                    jnumber_create_i32(properties->nWhiteBalanceTemperature));
+      if (properties->nGain != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN),
+                    jnumber_create_i32(properties->nGain));
+      if (properties->nGamma != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA),
+                    jnumber_create_i32(properties->nGamma));
+      if (properties->nFrequency != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY),
+                    jnumber_create_i32(properties->nFrequency));
+      if (properties->bMirror != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIRROR),
+                    jboolean_create(properties->bMirror));
+      if (properties->nExposure != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE),
+                    jnumber_create_i32(properties->nExposure));
+      if (properties->bAutoExposure != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE),
+                    jboolean_create(properties->bAutoExposure));
+      if (properties->bAutoWhiteBalance != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE),
+                    jboolean_create(properties->bAutoWhiteBalance));
+      if (properties->nBitrate != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BITRATE),
+                    jnumber_create_i32(properties->nBitrate));
+      if (properties->nFramerate != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
+                    jnumber_create_i32(properties->nFramerate));
+      if (properties->ngopLength != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GOPLENGTH),
+                    jnumber_create_i32(properties->ngopLength));
+      if (properties->bLed != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_LED),
+                    jboolean_create(properties->bLed));
+      if (properties->bYuvMode != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_YUVMODE),
+                    jboolean_create(properties->bYuvMode));
+      if (properties->nIllumination != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ILLUMINATION),
+                    jnumber_create_i32(properties->nIllumination));
+      if (properties->bBacklightCompensation != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION),
+                    jboolean_create(properties->bBacklightCompensation));
+      if (properties->nMicMaxGain != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMAXGAIN),
+                    jnumber_create_i32(properties->nMicMaxGain));
+      if (properties->nMicMinGain != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMINGAIN),
+                    jnumber_create_i32(properties->nMicMinGain));
+      if (properties->nMicGain != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICGAIN),
+                    jnumber_create_i32(properties->nMicGain));
+      if (properties->bMicMute != CONST_VARIABLE_INITIALIZE)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMUTE),
+                    jboolean_create(properties->bMicMute));
+
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
+    }
+  }
+
+  strreply = jvalue_stringify(json_outobj);
+  PMLOG_INFO(CONST_MODULE_LUNA, "createEventObjectJsonString strreply %s\n", strreply.c_str());
+  j_release(&json_outobj);
+
+  return strreply;
 }

@@ -4,6 +4,8 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ------------------------------------------------------------------------------*/
+#include "camera_types.h"
+#include "json_parser.h"
 #include "luna-service2/lunaservice.hpp"
 #include <glib.h>
 
@@ -13,7 +15,12 @@ private:
   using mainloop = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
   mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
 
+  EventNotification objevent_;
+
   int getId(std::string);
+  void createEventMessage(EventType, void *);
+  void createPropertiesEventMessage(int, CAMERA_PROPERTIES_T);
+  void createFormatEventMessage(int, CAMERA_FORMAT);
 
 public:
   CameraService();
@@ -34,7 +41,7 @@ public:
   bool stopPreview(LSMessage &);
   bool startCapture(LSMessage &);
   bool stopCapture(LSMessage &);
-  bool getFormat(LSMessage &);
+  bool getEventNotification(LSMessage &);
 };
 
 #endif /*CAMERA_SERVICE_H_*/

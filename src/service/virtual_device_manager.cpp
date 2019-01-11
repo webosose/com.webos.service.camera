@@ -644,3 +644,5 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setFormat(int devhandle, CAMERA_FORMA
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
+
+CAMERA_FORMAT VirtualDeviceManager::getFormat() const { return sformat_; }

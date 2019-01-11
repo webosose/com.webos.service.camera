@@ -20,13 +20,10 @@
  -- ----------------------------------------------------------------------------*/
 #include "camera_service.h"
 #include "camera_hal_types.h"
-#include "camera_types.h"
 #include "command_manager.h"
-#include "json_parser.h"
 #include "json_schema.h"
 #include "notifier.h"
 #include <pbnjson.hpp>
-
 #include <sstream>
 #include <string>
 
@@ -46,7 +43,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   LS_CATEGORY_METHOD(stopCapture)
   LS_CATEGORY_METHOD(startPreview)
   LS_CATEGORY_METHOD(stopPreview)
-  LS_CATEGORY_METHOD(getFormat)
+  LS_CATEGORY_METHOD(getEventNotification)
   LS_CATEGORY_END;
 
   // attach to mainloop and run it
@@ -75,6 +72,75 @@ int CameraService::getId(std::string cameraid)
     }
   }
   return num;
+}
+
+void CameraService::createEventMessage(EventType etype, void *pdata)
+{
+  objevent_.setEventType(etype);
+  objevent_.setEventData(pdata);
+}
+
+void CameraService::createPropertiesEventMessage(int devhandle, CAMERA_PROPERTIES_T saved_property)
+{
+  CAMERA_PROPERTIES_T new_property;
+  CommandManager::getInstance().getProperty(devhandle, &new_property);
+  if ((saved_property.nZoom != new_property.nZoom) ||
+      (saved_property.nGridZoomX != new_property.nGridZoomX) ||
+      (saved_property.nGridZoomY != new_property.nGridZoomY) ||
+      (saved_property.nPan != new_property.nPan) || (saved_property.nTilt != new_property.nTilt) ||
+      (saved_property.nContrast != new_property.nContrast) ||
+      (saved_property.nBrightness != new_property.nBrightness) ||
+      (saved_property.nSaturation != new_property.nSaturation) ||
+      (saved_property.nSharpness != new_property.nSharpness) ||
+      (saved_property.nHue != new_property.nHue) ||
+      (saved_property.nWhiteBalanceTemperature != new_property.nWhiteBalanceTemperature) ||
+      (saved_property.nGain != new_property.nGain) ||
+      (saved_property.nGamma != new_property.nGamma) ||
+      (saved_property.nFrequency != new_property.nFrequency) ||
+      (saved_property.bMirror != new_property.bMirror) ||
+      (saved_property.nExposure != new_property.nExposure) ||
+      (saved_property.bAutoExposure != new_property.bAutoExposure) ||
+      (saved_property.bAutoWhiteBalance != new_property.bAutoWhiteBalance) ||
+      (saved_property.nBitrate != new_property.nBitrate) ||
+      (saved_property.nFramerate != new_property.nFramerate) ||
+      (saved_property.ngopLength != new_property.ngopLength) ||
+      (saved_property.bLed != new_property.bLed) ||
+      (saved_property.bYuvMode != new_property.bYuvMode) ||
+      (saved_property.nIllumination != new_property.nIllumination) ||
+      (saved_property.bBacklightCompensation != new_property.bBacklightCompensation))
+  {
+    void *pdata = (void *)&new_property;
+    createEventMessage(EventType::EVENT_TYPE_PROPERTIES, pdata);
+    std::string output_reply = objevent_.createEventObjectJsonString();
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSSubscriptionReply(this->get(), CONST_EVENT_NOTIFICATION, output_reply.c_str(), &error))
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "createPropertiesEventMessage LSSubscriptionReply failed\n");
+      LSErrorPrint(&error, stderr);
+    }
+    LSErrorFree(&error);
+  }
+}
+
+void CameraService::createFormatEventMessage(int devhandle, CAMERA_FORMAT saved_format)
+{
+  CAMERA_FORMAT newformat = CommandManager::getInstance().getFormat(devhandle);
+  if ((newformat.eFormat != saved_format.eFormat) || (newformat.nHeight != saved_format.nHeight) ||
+      (newformat.nWidth != saved_format.nWidth))
+  {
+    void *pdata = (void *)&newformat;
+    createEventMessage(EventType::EVENT_TYPE_FORMAT, pdata);
+    std::string output_reply = objevent_.createEventObjectJsonString();
+    LSError error;
+    LSErrorInit(&error);
+    if (!LSSubscriptionReply(this->get(), CONST_EVENT_NOTIFICATION, output_reply.c_str(), &error))
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "createFormatEventMessage LSSubscriptionReply failed\n");
+      LSErrorPrint(&error, stderr);
+    }
+    LSErrorFree(&error);
+  }
 }
 
 bool CameraService::open(LSMessage &message)
@@ -548,6 +614,9 @@ bool CameraService::setProperties(LSMessage &message)
   }
   else
   {
+    // get old properties before setting new
+    CAMERA_PROPERTIES_T old_property;
+    CommandManager::getInstance().getProperty(ndevhandle, &old_property);
     // set properties here
     CAMERA_PROPERTIES_T oParams = objsetproperties.rGetCameraProperties();
     PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
@@ -561,6 +630,8 @@ bool CameraService::setProperties(LSMessage &message)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       objsetproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+      // check if new properties are different from saved properties
+      createPropertiesEventMessage(ndevhandle, old_property);
     }
   }
 
@@ -592,6 +663,8 @@ bool CameraService::setFormat(LSMessage &message)
   }
   else
   {
+    // get saved format of the device
+    CAMERA_FORMAT savedformat = CommandManager::getInstance().getFormat(ndevhandle);
     // setformat here
     PMLOG_INFO(CONST_MODULE_LUNA, "setFormat ndevhandle %d\n", ndevhandle);
     CAMERA_FORMAT sformat = objsetformat.rGetCameraFormat();
@@ -605,6 +678,9 @@ bool CameraService::setFormat(LSMessage &message)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       objsetformat.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+      // check if new format settings are different from saved format settings
+      // get saved format of the device
+      createFormatEventMessage(ndevhandle, savedformat);
     }
   }
 
@@ -618,39 +694,32 @@ bool CameraService::setFormat(LSMessage &message)
   return true;
 }
 
-bool CameraService::getFormat(LSMessage &message)
+bool CameraService::getEventNotification(LSMessage &message)
 {
-  LSError lserror;
-  LSErrorInit(&lserror);
-  LS::Message request(&message);
-
   const char *payload = LSMessageGetPayload(&message);
+  LSError error;
+  LSErrorInit(&error);
 
-  const std::string responsesuccess = "{\"returnValue\": true}";
-  const std::string responsefailure = "{\"returnValue\": false}";
-  const std::string responsesubscribed = "{\"returnValue\": true,\"subscribed\": true}";
+  objevent_.getEventObject(payload, getEventNotificationSchema);
 
-  jerror *json_error = NULL;
-  jvalue_ref message_ref = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &json_error);
-  if (jis_valid(message_ref))
+  if (LSMessageIsSubscription(&message))
   {
-    bool subscribe = false;
-    jboolean_get(jobject_get(message_ref, J_CSTR_TO_BUF("subscribe")), &subscribe);
-
-    if (subscribe)
+    PMLOG_INFO(CONST_MODULE_LUNA, "getEventNotification LSMessageIsSubscription success\n");
+    if (!LSSubscriptionAdd(this->get(), CONST_EVENT_NOTIFICATION, &message, &error))
     {
-      request.respond(responsesubscribed.c_str());
-    }
-    else
-    {
-      request.respond(responsesuccess.c_str());
+      PMLOG_INFO(CONST_MODULE_LUNA, "getEventNotification LSSubscriptionAdd failed\n");
+      LSErrorPrint(&error, stderr);
     }
   }
-  else
-  {
-    request.respond(responsefailure.c_str());
-  }
-  j_release(&message_ref);
+
+  // create json string now for reply
+  std::string output_reply = objevent_.createEventObjectJsonString();
+  PMLOG_INFO(CONST_MODULE_LUNA, "getEventNotification output_reply %s\n", output_reply.c_str());
+
+  LS::Message request(&message);
+  request.respond(output_reply.c_str());
+
+  LSErrorFree(&error);
 
   return true;
 }

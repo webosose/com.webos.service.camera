@@ -62,6 +62,7 @@ public:
   DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T stopCapture(int);
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT);
+  CAMERA_FORMAT getFormat(int);
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/

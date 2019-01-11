@@ -95,6 +95,9 @@
 #define CONST_PARAM_NAME_SERIAL_NUMBER "serialNumber"
 #define CONST_PARAM_NAME_DEVICE_TYPE "deviceType"
 #define CONST_PARAM_NAME_DEVICE_SUBTYPE "deviceSubtype"
+#define CONST_PARAM_NAME_EVENT "event"
+
+#define CONST_EVENT_NOTIFICATION "getEventNotification"
 
 const int n_invalid_id = -1;
 const int frame_size = 640 * 480 * 2 + 1024;
@@ -112,5 +115,7 @@ const std::string cstr_h264esformat = "H264ES";
 const std::string cstr_jpegformat = "JPEG";
 const std::string cstr_primary = "primary";
 const std::string cstr_secondary = "secondary";
+const std::string cstr_format = "Format";
+const std::string cstr_properties = "Properties";
 
 #endif /*CAMERA_CONST_H_*/

@@ -315,3 +315,19 @@ DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAM
   else
     return DEVICE_ERROR_UNKNOWN;
 }
+
+CAMERA_FORMAT CommandManager::getFormat(int devhandle)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "getFormat : devhandle : %d\n", devhandle);
+  CAMERA_FORMAT obj;
+
+  if (n_invalid_id == devhandle)
+    return obj;
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+    // get format
+    return ptr->getFormat();
+  else
+    return obj;
+}

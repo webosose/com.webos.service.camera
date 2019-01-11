@@ -75,6 +75,18 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
     {DEVICE_OK, "No error"}};
 
+std::map<EventType, std::string> g_event_string = {
+    {EventType::EVENT_TYPE_FORMAT, "Format"},
+    {EventType::EVENT_TYPE_PROPERTIES, "Properties"},
+    {EventType::EVENT_TYPE_CONNECT, "Device Connect"},
+    {EventType::EVENT_TYPE_DISCONNECT, "Device Disconnect"},
+    {EventType::EVENT_TYPE_NONE, "No event received"}};
+
+std::map<CAMERA_FORMAT_T, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
+                                                          {CAMERA_FORMAT_YUV, "YUV"},
+                                                          {CAMERA_FORMAT_H264ES, "H264ES"},
+                                                          {CAMERA_FORMAT_JPEG, "JPEG"}};
+
 extern PmLogContext getCameraLunaPmLogContext()
 {
   static PmLogContext usLogContext = 0;
@@ -161,4 +173,32 @@ void convertFormatToCode(std::string format, CAMERA_FORMAT_T *pformatcode)
     *pformatcode = CAMERA_FORMAT_JPEG;
   else
     *pformatcode = CAMERA_FORMAT_UNDEFINED;
+}
+
+std::string getEventNotificationString(EventType etype)
+{
+  std::string retstring;
+  std::map<EventType, std::string>::iterator it;
+
+  it = g_event_string.find(etype);
+  if (it != g_event_string.end())
+    retstring = it->second;
+  else
+    retstring = cstr_empty;
+
+  return retstring;
+}
+
+std::string getFormatStringFromCode(CAMERA_FORMAT_T format)
+{
+  std::string retstring;
+  std::map<CAMERA_FORMAT_T, std::string>::iterator it;
+
+  it = g_format_string.find(format);
+  if (it != g_format_string.end())
+    retstring = it->second;
+  else
+    retstring = cstr_empty;
+
+  return retstring;
 }

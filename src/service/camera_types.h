@@ -131,6 +131,15 @@ enum class NotifierClient
   NOTIFIER_CLIENT_UDEV
 };
 
+enum class EventType
+{
+  EVENT_TYPE_NONE = -1,
+  EVENT_TYPE_FORMAT = 0,
+  EVENT_TYPE_PROPERTIES,
+  EVENT_TYPE_CONNECT,
+  EVENT_TYPE_DISCONNECT
+};
+
 /*Structures*/
 typedef struct
 {
@@ -206,10 +215,18 @@ typedef struct
   std::string str_memorysource;
 } camera_memory_source_t;
 
+typedef struct
+{
+  EventType event;
+  void *pdata;
+} event_notification_t;
+
 PmLogContext getCameraLunaPmLogContext();
-void getFormatString(int nFormat, char *pFormats);
-char *getTypeString(DEVICE_TYPE_T nType);
+void getFormatString(int, char *);
+char *getTypeString(DEVICE_TYPE_T);
 std::string getErrorString(DEVICE_RETURN_CODE_T);
 void convertFormatToCode(std::string, CAMERA_FORMAT_T *);
+std::string getEventNotificationString(EventType);
+std::string getFormatStringFromCode(CAMERA_FORMAT_T);
 
 #endif /* CAMERA_TYPES_H_ */
