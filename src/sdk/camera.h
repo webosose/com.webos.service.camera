@@ -17,43 +17,41 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <mutex>
 #include <map>
+#include <mutex>
 
-#include "cameratypes.h"
 #include "camera_hal_if.h"
+#include "cameratypes.h"
 
 class Camera
 {
 private:
-    void *pcam_handle_;
-    int ncam_fd_;
-    buffer_t frame_buffer_;
-    int nio_mode_;
-    camera_info_t stcam_info_;
-    camera_states_t cam_state_;
-    stream_format_t default_format_;
-    std::map<camera_msg_types_t, Callback> callback_map_;
-    std::mutex cam_mutex_;
+  void *pcam_handle_;
+  int ncam_fd_;
+  buffer_t frame_buffer_;
+  int nio_mode_;
+  camera_details_t stcam_info_;
+  camera_states_t cam_state_;
+  stream_format_t default_format_;
+  std::map<camera_msg_types_t, Callback> callback_map_;
+  std::mutex cam_mutex_;
 
-    void getCallback(camera_msg_types_t);
+  void getCallback(camera_msg_types_t);
 
 public:
-    int init(std::string);
-    int deinit();
-    int open(std::string);
-    int close();
-    int setFormat(stream_format_t);
-    int startPreview(stream_format_t ,int);
-    int stopPreview();
-    int addCallbacks(camera_msg_types_t,Callback);
-    int removeCallbacks(camera_msg_types_t);
+  Camera();
+  int init(std::string);
+  int deinit();
+  int open(std::string);
+  int close();
+  int setFormat(stream_format_t);
+  int startPreview(stream_format_t, int);
+  int stopPreview();
+  int addCallbacks(camera_msg_types_t, Callback);
+  int removeCallbacks(camera_msg_types_t);
 
-    //getters for gtest
-    camera_states_t getCameraState() const
-    {
-        return cam_state_;
-    }
+  // getters for gtest
+  camera_states_t getCameraState() const { return cam_state_; }
 };
 
 #endif

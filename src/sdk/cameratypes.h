@@ -17,6 +17,7 @@
 #ifndef CAMERA_TYPES
 #define CAMERA_TYPES
 
+#include <functional>
 #include <iostream>
 
 #define PREVIEW_BUFFER 4
@@ -32,63 +33,62 @@
 
 typedef enum _camera_msg_types
 {
-    //Add the message type
-    CAMERA_MSG_AUTOFOCUS =1,
-    CAMERA_MSG_BRIGHTNESS,
-    CAMERA_MSG_OPEN,
-    CAMERA_MSG_CLOSE
-}camera_msg_types_t;
+  // Add the message type
+  CAMERA_MSG_AUTOFOCUS = 1,
+  CAMERA_MSG_BRIGHTNESS,
+  CAMERA_MSG_OPEN,
+  CAMERA_MSG_CLOSE
+} camera_msg_types_t;
 
 typedef enum _camera_states
 {
-    CAMERA_STATE_UNKNOWN = 0,
-    CAMERA_STATE_INIT,
-    CAMERA_STATE_OPEN,
-    CAMERA_STATE_PREVIEW,
-    CAMERA_STATE_CAPTURE,
-    CAMERA_STATE_RECORD,
-    CAMERA_STATE_CLOSE,
-}camera_states_t;
+  CAMERA_STATE_UNKNOWN = 0,
+  CAMERA_STATE_INIT,
+  CAMERA_STATE_OPEN,
+  CAMERA_STATE_PREVIEW,
+  CAMERA_STATE_CAPTURE,
+  CAMERA_STATE_RECORD,
+  CAMERA_STATE_CLOSE,
+} camera_states_t;
 
-typedef enum _device_event_state
+typedef enum _dev_event_state
 {
-    DEVICE_EVENT_NONE = 0,
-    DEVICE_EVENT_STATE_PLUGGED = 1,
-    DEVICE_EVENT_STATE_UNPLUGGED,
-}device_event_state_t;
+  DEV_EVENT_STATE_NONE = 0,
+  DEV_EVENT_STATE_PLUGGED = 1,
+  DEV_EVENT_STATE_UNPLUGGED,
+} dev_event_state_t;
 
 typedef enum _notifier_client
 {
-    NOTIFIER_CLIENT_PDM = 0,
-    NOTIFIER_CLIENT_UDEV
-}notifier_client_t;
+  NOTIFIER_CLIENT_PDM = 0,
+  NOTIFIER_CLIENT_UDEV
+} notifier_client_t;
 
-typedef struct _camera_info
+typedef struct _camera_details
 {
-    int device_num;
-    int port_num;
-    std::string device_node;
-    std::string vendor_name;
-    std::string product_name;
-    std::string serial_number;
-    std::string device_type;
-    std::string device_subtype;
-    bool cam_status;
-    device_event_state_t cam_state;
-}camera_info_t;
+  int device_num;
+  int port_num;
+  std::string device_node;
+  std::string vendor_name;
+  std::string product_name;
+  std::string serial_number;
+  std::string device_type;
+  std::string device_subtype;
+  bool cam_status;
+  dev_event_state_t cam_state;
+} camera_details_t;
 
 typedef int (*Callback)();
 
 typedef struct _camera_message
 {
-    camera_msg_types_t msg;
-    union
-    {
-        int    ndata;
-        float    fdata;
-        void*    pdata;
-        char*    strdata;
-    };
+  camera_msg_types_t msg;
+  union {
+    int ndata;
+    float fdata;
+    void *pdata;
+    char *strdata;
+  };
 } camera_message_t;
 
 #endif /*CAMERA_TYPES*/
