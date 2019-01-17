@@ -115,7 +115,7 @@ DEVICE_RETURN_CODE_T CommandManager::close(int devhandle)
     return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceid, CAMERA_INFO_T *pinfo)
+DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceid, camera_device_info_t *pinfo)
 {
   PMLOG_INFO(CONST_MODULE_CM, "getDeviceInfo ! deviceid : %d\n", deviceid);
 

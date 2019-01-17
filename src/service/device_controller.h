@@ -34,7 +34,7 @@ private:
   void writeImageToFile(const void *, int) const;
   DEVICE_RETURN_CODE_T checkFormat(void *, CAMERA_FORMAT);
   int pollForCapturedImage(void *, int) const;
-  static camera_pixel_format_t getPixelFormat(CAMERA_FORMAT_T);
+  static camera_pixel_format_t getPixelFormat(camera_format_t);
   void captureThread();
   void previewThread();
   static void *runCaptureImageThread(void *);
@@ -70,7 +70,7 @@ public:
   DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T createHandle(void **, std::string);
   DEVICE_RETURN_CODE_T destroyHandle(void *);
-  DEVICE_RETURN_CODE_T getDeviceInfo(std::string, CAMERA_INFO_T *);
+  DEVICE_RETURN_CODE_T getDeviceInfo(std::string, camera_device_info_t *);
   DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *, int *, int *, int *, int *, int);
   DEVICE_RETURN_CODE_T getDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);

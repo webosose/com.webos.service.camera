@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 
+#include "camera_hal_types.h"
 #include "virtual_device_manager.h"
 
 class Device
@@ -50,7 +51,7 @@ public:
 
   DEVICE_RETURN_CODE_T open(int, int *, std::string = "");
   DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T getDeviceInfo(int, CAMERA_INFO_T *);
+  DEVICE_RETURN_CODE_T getDeviceInfo(int, camera_device_info_t *);
   DEVICE_RETURN_CODE_T getDeviceList(int *, int *, int *, int *);
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
                                   DEVICE_EVENT_STATE_T *);

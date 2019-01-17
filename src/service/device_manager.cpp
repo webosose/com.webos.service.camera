@@ -273,7 +273,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
   return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, CAMERA_INFO_T *p_info)
+DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p_info)
 {
   PMLOG_INFO(CONST_MODULE_DM, "getInfo started ! ndev_id : %d \n", ndev_id);
 

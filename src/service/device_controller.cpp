@@ -156,7 +156,7 @@ int DeviceControl::pollForCapturedImage(void *handle, int ncount) const
   }
 }
 
-camera_pixel_format_t DeviceControl::getPixelFormat(CAMERA_FORMAT_T eformat)
+camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)
 {
   // convert CAMERA_FORMAT_T to camera_pixel_format_t
   if (CAMERA_FORMAT_H264ES == eformat)
@@ -435,26 +435,17 @@ DEVICE_RETURN_CODE_T DeviceControl::destroyHandle(void *handle)
   return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode, CAMERA_INFO_T *pinfo)
+DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode,
+                                                  camera_device_info_t *pinfo)
 {
   PMLOG_INFO(CONST_MODULE_DC, "getDeviceInfo started \n");
 
-  camera_device_info_t devinfo;
-  int ret = camera_hal_if_get_info(strdevicenode.c_str(), &devinfo);
+  int ret = camera_hal_if_get_info(strdevicenode.c_str(), pinfo);
   if (CAMERA_ERROR_NONE != ret)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
     return DEVICE_ERROR_UNKNOWN;
   }
-
-  pinfo->bBuiltin = devinfo.b_builtin;
-  pinfo->nFormat = devinfo.n_format;
-  pinfo->nMaxPictureHeight = devinfo.n_maxpictureheight;
-  pinfo->nMaxPictureWidth = devinfo.n_maxpicturewidth;
-  pinfo->nMaxVideoHeight = devinfo.n_maxvideoheight;
-  pinfo->nMaxVideoWidth = devinfo.n_maxvideowidth;
-  strncpy(pinfo->strName, devinfo.str_devicename, 32);
-  pinfo->nType = DEVICE_CAMERA;
 
   return DEVICE_OK;
 }

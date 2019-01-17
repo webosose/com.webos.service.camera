@@ -82,7 +82,7 @@ std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_DISCONNECT, "Device Disconnect"},
     {EventType::EVENT_TYPE_NONE, "No event received"}};
 
-std::map<CAMERA_FORMAT_T, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
+std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
                                                           {CAMERA_FORMAT_YUV, "YUV"},
                                                           {CAMERA_FORMAT_H264ES, "H264ES"},
                                                           {CAMERA_FORMAT_JPEG, "JPEG"}};
@@ -127,11 +127,11 @@ void getFormatString(int nFormat, char *pFormats)
   return;
 }
 
-char *getTypeString(DEVICE_TYPE_T nType)
+char *getTypeString(device_t etype)
 {
   char *pszRetString = NULL;
 
-  switch (nType)
+  switch (etype)
   {
   case DEVICE_MICROPHONE:
     pszRetString = "microphone";
@@ -161,7 +161,7 @@ std::string getErrorString(DEVICE_RETURN_CODE_T error_code)
   return retstring;
 }
 
-void convertFormatToCode(std::string format, CAMERA_FORMAT_T *pformatcode)
+void convertFormatToCode(std::string format, camera_format_t *pformatcode)
 {
   *pformatcode = CAMERA_FORMAT_UNDEFINED;
 
@@ -189,10 +189,10 @@ std::string getEventNotificationString(EventType etype)
   return retstring;
 }
 
-std::string getFormatStringFromCode(CAMERA_FORMAT_T format)
+std::string getFormatStringFromCode(camera_format_t format)
 {
   std::string retstring;
-  std::map<CAMERA_FORMAT_T, std::string>::iterator it;
+  std::map<camera_format_t, std::string>::iterator it;
 
   it = g_format_string.find(format);
   if (it != g_format_string.end())
@@ -201,4 +201,24 @@ std::string getFormatStringFromCode(CAMERA_FORMAT_T format)
     retstring = cstr_empty;
 
   return retstring;
+}
+
+std::string getResolutionString(camera_format_t eformat)
+{
+  std::string str_resolution;
+  switch (eformat)
+  {
+  case CAMERA_FORMAT_YUV:
+    str_resolution = cstr_yuvformat;
+    break;
+  case CAMERA_FORMAT_JPEG:
+    str_resolution = cstr_jpegformat;
+    break;
+  case CAMERA_FORMAT_H264ES:
+    str_resolution = cstr_h264esformat;
+    break;
+  default:
+    break;
+  }
+  return str_resolution;
 }

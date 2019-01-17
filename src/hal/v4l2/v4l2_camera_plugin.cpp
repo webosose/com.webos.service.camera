@@ -27,8 +27,6 @@
 
 using namespace std;
 
-std::string output_image = "outimage%d.yuv";
-
 void *create_handle() { return new V4l2CameraPlugin; }
 
 void destroy_handle(void *handle)
@@ -500,6 +498,9 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
     struct v4l2_fmtdesc format;
     format.index = 0;
     format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    int nformatindex = 0;
+    struct v4l2_frmsizeenum frmsize;
+    int ncount = 0;
 
     while ((-1 != xioctl(fd, VIDIOC_ENUM_FMT, &format)))
     {
@@ -508,16 +509,42 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
       {
       case V4L2_PIX_FMT_YUYV:
         pixelfmt = pixelfmt | 1;
+        cam_info->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_YUV;
         break;
       case V4L2_PIX_FMT_MJPEG:
         pixelfmt = pixelfmt | 4;
+        cam_info->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_JPEG;
         break;
       case V4L2_PIX_FMT_H264:
         pixelfmt = pixelfmt | 2;
+        cam_info->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_H264ES;
         break;
       default:
         DLOG(printf("pixelfmt : %d \n", pixelfmt););
       }
+      nformatindex++;
+      frmsize.pixel_format = format.pixelformat;
+      frmsize.index = 0;
+
+      while (ioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize) >= 0)
+      {
+        if (V4L2_FRMSIZE_TYPE_DISCRETE == frmsize.type)
+        {
+          cam_info->st_resolution.n_height[ncount][frmsize.index] = frmsize.discrete.height;
+          cam_info->st_resolution.n_width[ncount][frmsize.index] = frmsize.discrete.width;
+          snprintf(cam_info->st_resolution.c_res[frmsize.index], 10, "%dx%d",
+                   frmsize.discrete.width, frmsize.discrete.height);
+          cam_info->st_resolution.n_frameindex[ncount] = frmsize.index;
+        }
+        else if (V4L2_FRMSIZE_TYPE_STEPWISE == frmsize.type)
+        {
+          snprintf(cam_info->st_resolution.c_res[frmsize.index], 10, "%dx%d",
+                   frmsize.stepwise.max_width, frmsize.stepwise.max_height);
+        }
+        frmsize.index++;
+      }
+      ncount++;
+
       cam_info->n_format = pixelfmt;
       cam_info->n_devicetype = DEVICE_TYPE_CAMERA;
       cam_info->b_builtin = false;
@@ -526,6 +553,7 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
       cam_info->n_maxpicturewidth = width;
       cam_info->n_maxvideoheight = height;
       cam_info->n_maxvideowidth = width;
+      cam_info->st_resolution.n_formatindex = nformatindex;
     }
   }
   close(fd);

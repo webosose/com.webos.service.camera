@@ -448,7 +448,7 @@ bool CameraService::getInfo(LSMessage &message)
   else
   {
     // get info here
-    CAMERA_INFO_T o_camerainfo;
+    camera_device_info_t o_camerainfo;
 
     int ndev_id = getId(obj_getinfo.strGetDeviceId());
     PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
