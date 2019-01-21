@@ -20,13 +20,10 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#ifndef DEBUG
-#define DLOG(x) x
-#else
-#define DLOG(x)
-#endif
+#include "PmLogLib.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
+#define CONST_MODULE_HAL "HAL"
 
 const int variable_initialize = -999;
 const int max_index = 30;
@@ -196,5 +193,17 @@ typedef struct
   int n_codec;
   camera_resolution_t st_resolution;
 } camera_device_info_t;
+
+static PmLogContext getHALLunaPmLogContext()
+{
+  static PmLogContext usLogContext = 0;
+  if (0 == usLogContext)
+  {
+    PmLogGetContext("HAL", &usLogContext);
+  }
+  return usLogContext;
+}
+
+#define HAL_LOG_INFO(module, args...) PmLogMsg(getHALLunaPmLogContext(), Info, module, 0, ##args)
 
 #endif

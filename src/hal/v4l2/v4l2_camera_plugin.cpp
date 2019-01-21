@@ -31,7 +31,7 @@ void *create_handle() { return new V4l2CameraPlugin; }
 
 void destroy_handle(void *handle)
 {
-  DLOG(printf("destroy_handle : %p \n", handle););
+  HAL_LOG_INFO(CONST_MODULE_HAL, "destroy_handle : handle %p \n", handle);
   if (handle)
     delete (static_cast<V4l2CameraPlugin *>(handle));
 }
@@ -47,7 +47,8 @@ int V4l2CameraPlugin::openDevice(string devname)
   fd_ = open(devname.c_str(), O_RDWR);
   if (CAMERA_ERROR_UNKNOWN == fd_)
   {
-    DLOG(fprintf(stderr, "Cannot open %s : %d, %s\n", devname.c_str(), errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "openDevice : cannot open : %s , %d, %s\n", devname.c_str(),
+                 errno, strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
   createFourCCPixelFormatMap();
@@ -60,7 +61,8 @@ int V4l2CameraPlugin::closeDevice()
 {
   if (CAMERA_ERROR_UNKNOWN == close(fd_))
   {
-    DLOG(fprintf(stderr, "Cannot close fd %d : %d, %s\n", fd_, errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "closeDevice : cannot close fd: %d , %d, %s\n", fd_, errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
 
@@ -80,20 +82,22 @@ int V4l2CameraPlugin::setFormat(stream_format_t stream_format)
 
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_FMT, &fmt))
   {
-    DLOG(printf("VIDIOC_S_FMT failed\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "setFormat : VIDIOC_S_FMT failed\n");
     return CAMERA_ERROR_UNKNOWN;
   }
 
   if (fmt.fmt.pix.pixelformat != getFourCCPixelFormat(stream_format.pixel_format))
   {
-    DLOG(printf("Libv4l didn't accept requested format. Can't proceed.\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL,
+                 "setFormat : Libv4l didn't accept requested format. Can't proceed.\n");
     return CAMERA_ERROR_UNKNOWN;
   }
   if ((fmt.fmt.pix.width != stream_format.stream_width) ||
       (fmt.fmt.pix.height != stream_format.stream_height))
   {
-    DLOG(printf("Warning: driver is sending image at : width %d height %d\n", fmt.fmt.pix.width,
-                fmt.fmt.pix.height););
+    HAL_LOG_INFO(CONST_MODULE_HAL,
+                 "setFormat : Warning: driver is sending image at : width %d height %d\n",
+                 fmt.fmt.pix.width, fmt.fmt.pix.height);
     stream_format.stream_width = fmt.fmt.pix.width;
     stream_format.stream_height = fmt.fmt.pix.height;
   }
@@ -113,7 +117,7 @@ int V4l2CameraPlugin::getFormat(stream_format_t *stream_format)
 
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_G_FMT, &fmt))
   {
-    DLOG(printf("VIDIOC_G_FMT failed\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "getFormat : VIDIOC_G_FMT failed\n");
     return CAMERA_ERROR_UNKNOWN;
   }
   stream_format->stream_width = fmt.fmt.pix.width;
@@ -165,7 +169,8 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
   int retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
   if (CAMERA_ERROR_NONE != retVal)
   {
-    DLOG(fprintf(stderr, "VIDIOC_DQBUF error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "getBuffer : VIDIOC_DQBUF failed %d, %s\n", errno,
+                 strerror(errno));
     return retVal;
   }
 
@@ -212,8 +217,14 @@ int V4l2CameraPlugin::releaseBuffer(buffer_t inbuf)
 
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
   {
-    DLOG(fprintf(stderr, "VIDIOC_QBUF error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "releaseBuffer : VIDIOC_QBUF failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
+  }
+
+  if (IOMODE_DMABUF == io_mode_)
+  {
+    munmap(inbuf.start, inbuf.length);
   }
 
   return CAMERA_ERROR_NONE;
@@ -284,7 +295,8 @@ int V4l2CameraPlugin::stopCapture()
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMOFF, &type))
     {
-      DLOG(fprintf(stderr, "VIDIOC_STREAMOFF error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "stopCapture : VIDIOC_STREAMOFF failed %d, %s\n", errno,
+                   strerror(errno));
       retVal = CAMERA_ERROR_UNKNOWN;
     }
     break;
@@ -295,7 +307,8 @@ int V4l2CameraPlugin::stopCapture()
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMOFF, &type))
     {
-      DLOG(fprintf(stderr, "VIDIOC_STREAMOFF error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "stopCapture : VIDIOC_STREAMOFF failed %d, %s\n", errno,
+                   strerror(errno));
       retVal = CAMERA_ERROR_UNKNOWN;
     }
     break;
@@ -479,15 +492,25 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
 
   struct v4l2_capability cap;
   int fd = open(devicenode.c_str(), O_RDWR | O_NONBLOCK, 0);
+  if (CAMERA_ERROR_UNKNOWN == fd)
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "getInfo : cannot open : %s , %d, %s\n", devicenode.c_str(),
+                 errno, strerror(errno));
+    return CAMERA_ERROR_UNKNOWN;
+  }
+
+  HAL_LOG_INFO(CONST_MODULE_HAL,"getInfo : fd : %d \n",fd);
 
   if (CAMERA_ERROR_NONE != xioctl(fd, VIDIOC_QUERYCAP, &cap))
   {
-    DLOG(printf("Requested VIDIOC_QUERYCAP failed\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "getInfo : VIDIOC_QUERYCAP failed %d, %s\n", errno,
+                 strerror(errno));
     ret = CAMERA_ERROR_UNKNOWN;
   }
   if (CAMERA_ERROR_NONE != xioctl(fd, VIDIOC_G_FMT, &fmt))
   {
-    DLOG(printf("Requested VIDIOC_G_FMT failed\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "getInfo : VIDIOC_G_FMT failed %d, %s\n", errno,
+                 strerror(errno));
     ret = CAMERA_ERROR_UNKNOWN;
   }
   if (CAMERA_ERROR_NONE == ret)
@@ -520,7 +543,7 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
         cam_info->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_H264ES;
         break;
       default:
-        DLOG(printf("pixelfmt : %d \n", pixelfmt););
+        HAL_LOG_INFO(CONST_MODULE_HAL, "getInfo : pixelfmt : %d \n", pixelfmt);
       }
       nformatindex++;
       frmsize.pixel_format = format.pixelformat;
@@ -564,12 +587,14 @@ int V4l2CameraPlugin::setV4l2Property(struct v4l2_queryctrl queryctrl, int value
 {
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl))
   {
-    DLOG(printf("Requested VIDIOC_QUERYCTRL is not supported\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "setV4l2Property : VIDIOC_QUERYCTRL failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
   else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
   {
-    DLOG(printf("Requested VIDIOC_QUERYCTRL flags is not supported\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL,
+                 "setV4l2Property : Requested VIDIOC_QUERYCTRL flags is not supported\n");
     return CAMERA_ERROR_UNKNOWN;
   }
 
@@ -579,7 +604,8 @@ int V4l2CameraPlugin::setV4l2Property(struct v4l2_queryctrl queryctrl, int value
   control.value = value;
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_CTRL, &control))
   {
-    DLOG(printf("VIDIOC_S_CTRL failed\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "setV4l2Property : VIDIOC_S_CTRL failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
   return CAMERA_ERROR_NONE;
@@ -589,12 +615,14 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *valu
 {
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl))
   {
-    DLOG(printf("Requested VIDIOC_QUERYCTRL is not supported\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "getV4l2Property : VIDIOC_QUERYCTRL failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
   else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
   {
-    DLOG(printf("Requested VIDIOC_QUERYCTRL flags is not supported\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL,
+                 "getV4l2Property : Requested VIDIOC_QUERYCTRL flags is not supported\n");
     return CAMERA_ERROR_UNKNOWN;
   }
 
@@ -603,7 +631,8 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *valu
   control.id = queryctrl.id;
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_G_CTRL, &control))
   {
-    DLOG(printf("VIDIOC_G_CTRL failed\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "getV4l2Property : VIDIOC_G_CTRL failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
   *value = control.value;
@@ -622,14 +651,15 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
 
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
   {
-    DLOG(fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "requestMmapBuffers : VIDIOC_REQBUFS failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
 
   buffers_ = (buffer_t *)calloc(req.count, sizeof(*buffers_));
   if (!buffers_)
   {
-    DLOG(fprintf(stderr, "Out of memory\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "requestMmapBuffers : Out of memory\n");
     return CAMERA_ERROR_UNKNOWN;
   }
 
@@ -644,7 +674,8 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
 
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYBUF, &buf))
     {
-      DLOG(fprintf(stderr, "VIDIOC_QUERYBUF error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "requestMmapBuffers : VIDIOC_QUERYBUF failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
 
@@ -654,7 +685,8 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
 
     if (MAP_FAILED == buffers_[n_buffers_].start)
     {
-      DLOG(fprintf(stderr, "mmap error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "requestMmapBuffers : mmap failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
   }
@@ -675,20 +707,22 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer)
 
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
   {
-    DLOG(fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "requestUserptrBuffers : VIDIOC_REQBUFS failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
 
   buffers_ = (buffer_t *)calloc(req.count, sizeof(*buffers_));
   if (!buffers_)
   {
-    DLOG(fprintf(stderr, "Out of memory\n"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "requestUserptrBuffers : out of memory\n");
     return CAMERA_ERROR_UNKNOWN;
   }
   retVal = getFormat(&stream_format);
   if (CAMERA_ERROR_NONE != retVal)
   {
-    DLOG(fprintf(stderr, "getFormat error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "requestUserptrBuffers : getFormat failed %d, %s\n", errno,
+                 strerror(errno));
     return retVal;
   }
 
@@ -699,7 +733,8 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer)
 
     if (NULL == buffers_[n_buffers_].start)
     {
-      DLOG(fprintf(stderr, "user ptr error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "requestUserptrBuffers : malloc failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
   }
@@ -712,7 +747,8 @@ int V4l2CameraPlugin::releaseMmapBuffers()
   {
     if (CAMERA_ERROR_UNKNOWN == munmap(buffers_[i].start, buffers_[i].length))
     {
-      DLOG(fprintf(stderr, "munmap error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "releaseMmapBuffers : munmap failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
     buffers_[i].start = NULL;
@@ -746,7 +782,8 @@ int V4l2CameraPlugin::captureDataMmapMode()
     buf.index = i;
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
     {
-      DLOG(fprintf(stderr, "VIDIOC_QBUF error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataMmapMode : VIDIOC_QBUF failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
   }
@@ -755,7 +792,8 @@ int V4l2CameraPlugin::captureDataMmapMode()
   type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMON, &type))
   {
-    DLOG(fprintf(stderr, "VIDIOC_STREAMON error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataMmapMode : VIDIOC_STREAMON failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
 
@@ -780,14 +818,16 @@ int V4l2CameraPlugin::captureDataUserptrMode()
 
     if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
     {
-      DLOG(fprintf(stderr, "VIDIOC_QBUF error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataUserptrMode : VIDIOC_QBUF failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
   }
   type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   if (-1 == xioctl(fd_, VIDIOC_STREAMON, &type))
   {
-    DLOG(fprintf(stderr, "VIDIOC_STREAMON error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataUserptrMode : VIDIOC_STREAMON failed %d, %s\n",
+                 errno, strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
 }
@@ -804,7 +844,8 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
 
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
   {
-    DLOG(fprintf(stderr, "VIDIOC_REQBUFS error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "requestDmabuffers : VIDIOC_REQBUFS failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
   return CAMERA_ERROR_NONE;
@@ -825,7 +866,8 @@ int V4l2CameraPlugin::captureDataDmaMode()
     expbuf.index = i;
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_EXPBUF, &expbuf))
     {
-      DLOG(fprintf(stderr, "VIDIOC_EXPBUF error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataDmaMode : VIDIOC_EXPBUF failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
     dmafd[i] = expbuf.fd;
@@ -838,7 +880,8 @@ int V4l2CameraPlugin::captureDataDmaMode()
 
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
     {
-      DLOG(fprintf(stderr, "VIDIOC_QBUF error %d, %s\n", errno, strerror(errno)););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataDmaMode : VIDIOC_QBUF failed %d, %s\n", errno,
+                   strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
   }
@@ -847,7 +890,8 @@ int V4l2CameraPlugin::captureDataDmaMode()
 
   if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMON, &type))
   {
-    DLOG(fprintf(stderr, "VIDIOC_STREAMON error %d, %s\n", errno, strerror(errno)););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataDmaMode : VIDIOC_STREAMON failed %d, %s\n", errno,
+                 strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
   return CAMERA_ERROR_NONE;

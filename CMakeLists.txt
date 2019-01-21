@@ -99,14 +99,19 @@ add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
 set_target_properties (v4l2-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
 
 #link libraries camera_hal and v4l2-camera-plugin
-target_link_libraries(camera_hal v4l2-camera-plugin ${CMAKE_DL_LIBS} pthread)
+target_link_libraries(camera_hal
+                      v4l2-camera-plugin
+                      ${CMAKE_DL_LIBS}
+                      ${PMLOGLIB_LDFLAGS}
+                      pthread)
 install(TARGETS v4l2-camera-plugin DESTINATION /usr/lib)
 install(TARGETS camera_hal DESTINATION /usr/lib)
 
 #haltestapp project exe
 set (SRC_CAMHAL_TEST ${CMAKE_SOURCE_DIR}/src/test/hal/camera_hal_tests.cpp)
 add_executable (hal_test_app ${SRC_CAMHAL_TEST})
-target_link_libraries (hal_test_app camera_hal)
+target_link_libraries (hal_test_app
+                       camera_hal)
 install(TARGETS hal_test_app DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
 #sdk

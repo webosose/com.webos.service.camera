@@ -18,6 +18,7 @@
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 const char *subsystem = "libv4l2-camera-plugin.so";
 const char *devname = "/dev/video0";
@@ -30,52 +31,51 @@ const char *devname = "/dev/video0";
 
 void PrintStreamFormat(stream_format_t streamformat)
 {
-  DLOG(printf("StreamFormat : \n"););
-  DLOG(printf("    Pixel Format : %d\n", streamformat.pixel_format););
-  DLOG(printf("    Width : %d\n", streamformat.stream_width););
-  DLOG(printf("    Height : %d\n", streamformat.stream_height););
+  HAL_LOG_INFO(CONST_MODULE_HAL, "StreamFormat : \n");
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    Pixel Format : %d\n", streamformat.pixel_format);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    Width : %d\n", streamformat.stream_width);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    Height : %d\n", streamformat.stream_height);
 }
 
 void PrintCameraProperties(camera_properties_t params)
 {
-  DLOG(printf("CAMERA_PROPERTIES_T : \n"););
-  DLOG(printf("    brightness : %d\n", params.nBrightness););
-  DLOG(printf("    contrast : %d\n", params.nContrast););
-  DLOG(printf("    saturation : %d\n", params.nSaturation););
-  DLOG(printf("    hue : %d\n", params.nHue););
-  DLOG(printf("    auto white balance temp : : %d\n", params.nAutoWhiteBalance););
-  DLOG(printf("    gamma : %d\n", params.nGamma););
-  DLOG(printf("    gain : %d\n", params.nGain););
-  DLOG(printf("    frequency : %d\n", params.nFrequency););
-  DLOG(printf("    white balance temp : %d\n", params.nWhiteBalanceTemperature););
-  DLOG(printf("    sharpness : %d\n", params.nSharpness););
-  DLOG(printf("    backlight compensation : %d\n", params.nSharpness););
-  DLOG(printf("    auto exposure : %d\n", params.nAutoExposure););
-  DLOG(printf("    exposure : %d\n", params.nExposure););
-  DLOG(printf("    pan : %d\n", params.nPan););
-  DLOG(printf("    tilt : %d\n", params.nTilt););
-  DLOG(printf("    Absolute focus : %d\n", params.nFocusAbsolute););
-  DLOG(printf("    auto focus : %d\n", params.nAutoFocus););
-  DLOG(printf("    zoom : %d\n", params.nZoomAbsolute););
+  HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_PROPERTIES_T : \n");
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    brightness : %d\n", params.nBrightness);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    contrast : %d\n", params.nContrast);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    saturation : %d\n", params.nSaturation);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    hue : %d\n", params.nHue);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto white balance temp : : %d\n", params.nAutoWhiteBalance);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    gamma : %d\n", params.nGamma);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    gain : %d\n", params.nGain);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.nFrequency);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    white balance temp : %d\n", params.nWhiteBalanceTemperature);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    sharpness : %d\n", params.nSharpness);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n", params.nSharpness);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto exposure : %d\n", params.nAutoExposure);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    exposure : %d\n", params.nExposure);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    pan : %d\n", params.nPan);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    tilt : %d\n", params.nTilt);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    Absolute focus : %d\n", params.nFocusAbsolute);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto focus : %d\n", params.nAutoFocus);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    zoom : %d\n", params.nZoomAbsolute);
 }
 
 void writeImageToFile(const void *p, int size)
 {
   FILE *fp;
-  static int num = 0;
-  char image_name[20];
+  char image_name[100] = {};
 
-  sprintf(image_name, "outimage%d.yuv", num++);
+  snprintf(image_name, 100, "/tmp/Picture%d.yuv", rand());
   if ((fp = fopen(image_name, "wb")) == NULL)
   {
-    DLOG(perror("Fail to fopen"););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "fopen failed\n");
     return;
   }
   fwrite(p, size, 1, fp);
   fclose(fp);
 }
 
-void *Camera1(void *arg)
+int main(int argc, char const *argv[])
 {
   void *p_h_camera;
   int timeout = 2000;
@@ -130,13 +130,6 @@ void *Camera1(void *arg)
 
   camera_hal_if_close_device(p_h_camera);
   camera_hal_if_deinit(p_h_camera);
-}
-
-int main(int argc, char const *argv[])
-{
-  pthread_t tid;
-  pthread_create(&tid, NULL, &Camera1, NULL);
-  pthread_join(tid, NULL);
 
   return 0;
 }
