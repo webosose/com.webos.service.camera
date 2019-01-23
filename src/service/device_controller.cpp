@@ -154,6 +154,7 @@ int DeviceControl::pollForCapturedImage(void *handle, int ncount) const
       }
     }
   }
+  return CAMERA_ERROR_NONE;
 }
 
 camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)

@@ -86,6 +86,11 @@ install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if.h DESTINATION
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION
 /usr/include)
 
+#cameraservice project exe
+set (SRC_CAMSRV_TEST ${CMAKE_SOURCE_DIR}/src/test/cameraservice/camera_service_test.cpp)
+add_executable (camsrv_test_app ${SRC_CAMSRV_TEST})
+install(TARGETS camsrv_test_app DESTINATION ${WEBOS_INSTALL_SBINDIR})
+
 #libcamera_hal.so
 set (SRC_HAL
      ${CMAKE_SOURCE_DIR}/src/hal/camera_base_wrapper.cpp
