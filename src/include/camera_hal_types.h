@@ -26,9 +26,9 @@
 #define CONST_MODULE_HAL "HAL"
 
 const int variable_initialize = -999;
-const int max_index = 30;
-const int max_format = 5;
-const int max_string_length = 256;
+#define max_index 30
+#define max_format 5
+#define max_string_length 256
 
 typedef enum
 {
