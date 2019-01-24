@@ -96,6 +96,7 @@
 #define CONST_PARAM_NAME_DEVICE_TYPE "deviceType"
 #define CONST_PARAM_NAME_DEVICE_SUBTYPE "deviceSubtype"
 #define CONST_PARAM_NAME_EVENT "event"
+#define CONST_PARAM_NAME_RESOLUTION "resolution"
 
 #define CONST_EVENT_NOTIFICATION "getEventNotification"
 

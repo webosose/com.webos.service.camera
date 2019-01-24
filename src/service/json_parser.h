@@ -228,20 +228,35 @@ public:
   void setDeviceId(std::string devid) { str_deviceid_ = devid; }
   std::string strGetDeviceId() const { return str_deviceid_; }
 
-  void setCameraInfo(CAMERA_INFO_T r_ininfo)
+  void setCameraInfo(camera_device_info_t r_ininfo)
   {
-    strncpy(ro_info_.strName, r_ininfo.strName, sizeof(r_ininfo.strName));
-    ro_info_.bBuiltin = r_ininfo.bBuiltin;
-    ro_info_.nCodec = r_ininfo.nCodec;
-    ro_info_.nFormat = r_ininfo.nFormat;
-    ro_info_.nType = r_ininfo.nType;
-    ro_info_.nMaxPictureHeight = r_ininfo.nMaxPictureHeight;
-    ro_info_.nMaxPictureWidth = r_ininfo.nMaxPictureWidth;
-    ro_info_.nMaxVideoHeight = r_ininfo.nMaxVideoHeight;
-    ro_info_.nMaxVideoWidth = r_ininfo.nMaxVideoWidth;
-    ro_info_.nSamplingRate = r_ininfo.nSamplingRate;
+    strncpy(ro_info_.str_devicename, r_ininfo.str_devicename, 32);
+    ro_info_.b_builtin = r_ininfo.b_builtin;
+    ro_info_.n_codec = r_ininfo.n_codec;
+    ro_info_.n_format = r_ininfo.n_format;
+    ro_info_.n_devicetype = r_ininfo.n_devicetype;
+    ro_info_.n_maxpictureheight = r_ininfo.n_maxpictureheight;
+    ro_info_.n_maxpicturewidth = r_ininfo.n_maxpicturewidth;
+    ro_info_.n_maxvideoheight = r_ininfo.n_maxvideoheight;
+    ro_info_.n_maxvideowidth = r_ininfo.n_maxvideowidth;
+    ro_info_.n_samplingrate = r_ininfo.n_samplingrate;
+
+    ro_info_.st_resolution.n_formatindex = r_ininfo.st_resolution.n_formatindex;
+    for (int n = 0; n <= r_ininfo.st_resolution.n_formatindex; n++)
+    {
+      ro_info_.st_resolution.e_format[n] = r_ininfo.st_resolution.e_format[n];
+      ro_info_.st_resolution.n_frameindex[n] = r_ininfo.st_resolution.n_frameindex[n];
+      for (int count = 0; count <= r_ininfo.st_resolution.n_frameindex[n]; count++)
+      {
+        ro_info_.st_resolution.n_height[n][count] = r_ininfo.st_resolution.n_height[n][count];
+        ro_info_.st_resolution.n_width[n][count] = r_ininfo.st_resolution.n_width[n][count];
+        strncpy(ro_info_.st_resolution.c_res[count], r_ininfo.st_resolution.c_res[count],
+                CONST_MAX_STRING_LENGTH);
+      }
+    }
   }
-  CAMERA_INFO_T rGetCameraInfo() const { return ro_info_; }
+
+  camera_device_info_t rGetCameraInfo() const { return ro_info_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
@@ -256,7 +271,7 @@ public:
 
 private:
   std::string str_deviceid_;
-  CAMERA_INFO_T ro_info_;
+  camera_device_info_t ro_info_;
   MethodReply objreply_;
 };
 

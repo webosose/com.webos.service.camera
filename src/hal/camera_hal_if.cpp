@@ -29,17 +29,17 @@ extern "C"
     camera_handle_t *camera_handle = new (std::nothrow) camera_handle_t();
     if (NULL == camera_handle)
     {
-      DLOG(printf("CAMERA_ERROR_CREATE_HANDLE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle is NULL\n");
       return CAMERA_ERROR_CREATE_HANDLE;
     }
-    DLOG(printf("In camera_hal_if_init : camera_handle : %p\n", camera_handle););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle : %p\n", camera_handle);
 
     camera_handle->h_library = (void *)subsystem;
 
     camera_handle->h_plugin = dlopen(subsystem, RTLD_LAZY);
     if (!camera_handle->h_plugin)
     {
-      DLOG(printf("CAMERA_ERROR_PLUGIN_NOT_FOUND : %s\n", subsystem););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : dlopen failed for : %s\n", subsystem);
       return CAMERA_ERROR_PLUGIN_NOT_FOUND;
     }
 
@@ -49,16 +49,17 @@ extern "C"
 
     if (!pf_create_handle)
     {
-      DLOG(printf("CAMERA_ERROR_CREATE_HANDLE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : dlsym failed \n");
       return CAMERA_ERROR_CREATE_HANDLE;
     }
 
     camera_handle->handle = (void *)pf_create_handle();
-    DLOG(printf("In camera_hal_if_init : camera_handle->handle : %p\n", camera_handle->handle););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle->handle : %p \n",
+                 camera_handle->handle);
     camera_handle->current_state = CAMERA_HAL_STATE_INIT;
     if (0 != pthread_mutex_init(&camera_handle->lock, NULL))
     {
-      DLOG(printf("pthread_mutex_init failed for handle : %p \n", camera_handle->handle););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : pthread_mutex_init failed \n");
       int retVal = camera_hal_if_deinit((void *)camera_handle);
       *h = NULL;
       return retVal;
@@ -74,20 +75,18 @@ extern "C"
     camera_handle_t *camera_handle = (camera_handle_t *)h;
     if (NULL == camera_handle)
     {
-      DLOG(printf("CAMERA_ERROR_DESTROY_HANDLE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_deinit : camera_handle is NULL\n");
       return CAMERA_ERROR_DESTROY_HANDLE;
     }
 
-    DLOG(printf("In camera_hal_if_deinit : camera_handle : %p\n", camera_handle););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_deinit : camera_handle : %p \n", camera_handle);
 
     typedef void (*pfn_destroy_handle)(void *);
     pfn_destroy_handle pf_destroy_handle =
         (pfn_destroy_handle)dlsym(camera_handle->h_plugin, "destroy_handle");
     if (!pf_destroy_handle)
     {
-      char *error;
-      if ((error = dlerror()) != NULL)
-        DLOG(fprintf(stderr, "%s\n", error););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_deinit : dlsym failed \n");
       return CAMERA_ERROR_DESTROY_HANDLE;
     }
 
@@ -108,11 +107,12 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
-      DLOG(printf("CAMERA_ERROR_DEVICE_OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle NULL \n");
       return retVal;
     }
 
-    DLOG(printf("In camera_hal_if_open_device : camera_handle : %p\n", camera_handle););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle : %p \n",
+                 camera_handle);
 
     pthread_mutex_lock(&camera_handle->lock);
 
@@ -120,18 +120,18 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
-      DLOG(printf("camera_hal_if_open_device : Camera HAL State not INIT\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : Camera HAL State not INIT \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
     camera_handle->fd = open_device(camera_handle, dev);
-    DLOG(printf("camera_hal_if_open_device fd : %d\n", camera_handle->fd););
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : fd : %d \n", camera_handle->fd);
 
     if (CAMERA_ERROR_UNKNOWN == camera_handle->fd)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
-      DLOG(printf("CAMERA_ERROR_DEVICE_OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : fd invalid \n");
     }
     else
     {
@@ -151,7 +151,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
-      DLOG(printf("CAMERA_ERROR_DEVICE_CLOSE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device : camera_handle NULL \n");
       return retVal;
     }
 
@@ -161,7 +161,7 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
-      DLOG(printf("camera_hal_if_close_device : Camera HAL State not OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device : Camera HAL State not OPEN\n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -169,7 +169,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == close_device(camera_handle))
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
-      DLOG(printf("CAMERA_ERROR_DEVICE_CLOSE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device :close_device failed\n");
     }
     else
     {
@@ -189,7 +189,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
-      DLOG(printf("CAMERA_ERROR_SET_FORMAT\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : camera_handle NULL \n");
       return retVal;
     }
 
@@ -199,7 +199,7 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
-      DLOG(printf("camera_hal_if_set_format : Camera HAL State not OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : Camera HAL State not OPEN\n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -207,7 +207,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == set_format(camera_handle, stream_format))
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
-      DLOG(printf("CAMERA_ERROR_SET_FORMAT\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : set_format failed\n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -223,7 +223,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
-      DLOG(printf("CAMERA_ERROR_GET_FORMAT\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_format : camera_handle NULL \n");
       return retVal;
     }
 
@@ -233,7 +233,8 @@ extern "C"
     if (camera_handle->current_state == CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
-      DLOG(printf("camera_hal_if_get_format : Camera HAL State not OPEN or STREAMING\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL,
+                   "camera_hal_if_get_format : Camera HAL State not OPEN or STREAMING \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -241,7 +242,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == get_format(camera_handle, stream_format))
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
-      DLOG(printf("CAMERA_ERROR_GET_FORMAT\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_format : get_format failed\n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -257,7 +258,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
-      DLOG(printf("CAMERA_ERROR_SET_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : camera_handle NULL \n");
       return retVal;
     }
 
@@ -267,7 +268,7 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
-      DLOG(printf("camera_hal_if_set_buffer : Camera HAL State not OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : Camera HAL State not OPEN \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -275,7 +276,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == set_buffer(camera_handle, NoBuffer, IOMode))
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
-      DLOG(printf("CAMERA_ERROR_SET_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : set_buffer failed \n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -291,7 +292,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
-      DLOG(printf("CAMERA_ERROR_GET_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer : camera_handle NULL \n");
       return retVal;
     }
 
@@ -301,7 +302,8 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
-      DLOG(printf("camera_hal_if_get_buffer : Camera HAL State not STREAMING\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL,
+                   "camera_hal_if_get_buffer : Camera HAL State not STREAMING \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -309,7 +311,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == get_buffer(camera_handle, buf))
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
-      DLOG(printf("CAMERA_ERROR_GET_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer : get_buffer failed\n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -325,7 +327,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
-      DLOG(printf("CAMERA_ERROR_RELEASE_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_release_buffer : camera_handle NULL \n");
       return retVal;
     }
 
@@ -335,7 +337,8 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
-      DLOG(printf("camera_hal_if_release_buffer : Camera HAL State not STREAMING\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL,
+                   "camera_hal_if_release_buffer : Camera HAL State not STREAMING \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -343,7 +346,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == release_buffer(camera_handle, buf))
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
-      DLOG(printf("CAMERA_ERROR_RELEASE_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_release_buffer : release_buffer failed\n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -359,7 +362,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
-      DLOG(printf("CAMERA_ERROR_DESTROY_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : camera_handle NULL \n");
       return retVal;
     }
 
@@ -369,7 +372,7 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
-      DLOG(printf("camera_hal_if_destroy_buffer : Camera HAL State not OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : Camera HAL State not OPEN \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -377,7 +380,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == destroy_buffer(camera_handle))
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
-      DLOG(printf("CAMERA_ERROR_DESTROY_BUFFER\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : destroy_buffer failed\n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -393,7 +396,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
-      DLOG(printf("CAMERA_ERROR_START_CAPTURE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : camera_handle NULL \n");
       return retVal;
     }
 
@@ -403,7 +406,7 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
-      DLOG(printf("camera_hal_if_start_capture : Camera HAL State not OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : Camera HAL State not OPEN \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -411,7 +414,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == start_capture(camera_handle))
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
-      DLOG(printf("CAMERA_ERROR_START_CAPTURE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : start_capture failed\n");
     }
     else
     {
@@ -431,7 +434,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
-      DLOG(printf("CAMERA_ERROR_STOP_CAPTURE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_stop_capture : camera_handle NULL \n");
       return retVal;
     }
 
@@ -441,7 +444,8 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
-      DLOG(printf("camera_hal_if_stop_capture : Camera HAL State not STREAMING\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL,
+                   "camera_hal_if_stop_capture : Camera HAL State not STREAMING \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -449,7 +453,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == stop_capture(camera_handle))
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
-      DLOG(printf("CAMERA_ERROR_STOP_CAPTURE\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_stop_capture : stop_capture failed\n");
     }
     else
     {
@@ -469,7 +473,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
-      DLOG(printf("CAMERA_ERROR_SET_PROPERTIES\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : camera_handle NULL \n");
       return retVal;
     }
 
@@ -479,7 +483,7 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
-      DLOG(printf("camera_hal_if_set_properties : Camera HAL State not OPEN\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : Camera HAL State not OPEN \n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -487,7 +491,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == set_properties(camera_handle, cam_in_params))
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
-      DLOG(printf("CAMERA_ERROR_SET_PROPERTIES\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : set_properties failed\n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -503,7 +507,7 @@ extern "C"
     if (NULL == camera_handle)
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
-      DLOG(printf("CAMERA_ERROR_GET_PROPERTIES\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_properties : camera_handle NULL \n");
       return retVal;
     }
 
@@ -513,7 +517,8 @@ extern "C"
     if (camera_handle->current_state == CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
-      DLOG(printf("camera_hal_if_get_properties : Camera HAL State not OPEN or STREAMING\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL,
+                   "camera_hal_if_get_properties : Camera HAL State not OPEN or STREAMING\n");
       pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
@@ -521,7 +526,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == get_properties(camera_handle, cam_out_params))
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
-      DLOG(printf("CAMERA_ERROR_GET_PROPERTIES\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_properties : get_properties failed\n");
     }
 
     pthread_mutex_unlock(&camera_handle->lock);
@@ -545,11 +550,17 @@ extern "C"
     void *handle;
     int retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so");
     camera_handle_t *camera_handle = (camera_handle_t *)handle;
+    if (NULL == camera_handle)
+    {
+      retVal = CAMERA_ERROR_GET_INFO;
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_info : camera_handle NULL \n");
+      return retVal;
+    }
 
     if (CAMERA_ERROR_UNKNOWN == get_info(camera_handle, caminfo, devicenode))
     {
       retVal = CAMERA_ERROR_GET_INFO;
-      DLOG(printf("CAMERA_ERROR_GET_INFO\n"););
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_info : get_info failed\n");
     }
 
     retVal = camera_hal_if_deinit(handle);

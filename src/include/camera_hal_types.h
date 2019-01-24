@@ -20,15 +20,15 @@
 #include <pthread.h>
 #include <stdio.h>
 
-#ifndef DEBUG
-#define DLOG(x) x
-#else
-#define DLOG(x)
-#endif
+#include "PmLogLib.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
+#define CONST_MODULE_HAL "HAL"
 
 const int variable_initialize = -999;
+const int max_index = 30;
+const int max_format = 5;
+const int max_string_length = 256;
 
 typedef enum
 {
@@ -106,6 +106,16 @@ typedef enum
   DEVICE_TYPE_OTHER
 } device_t;
 
+typedef enum
+{
+  CAMERA_FORMAT_UNDEFINED = -1,
+  CAMERA_FORMAT_YUV = 1,
+  CAMERA_FORMAT_H264ES = 2,
+  CAMERA_FORMAT_JPEG = 4,
+} camera_format_t;
+
+/*Structures*/
+
 typedef struct
 {
   void *h_library;
@@ -161,7 +171,17 @@ typedef struct
 
 typedef struct
 {
-  char str_devicename[256];
+  int n_width[max_format][max_index];
+  int n_height[max_format][max_index];
+  char c_res[max_index][max_string_length];
+  camera_format_t e_format[max_format];
+  int n_frameindex[max_format];
+  int n_formatindex;
+} camera_resolution_t;
+
+typedef struct
+{
+  char str_devicename[max_string_length];
   device_t n_devicetype;
   int b_builtin;
   int n_maxvideowidth;
@@ -171,6 +191,19 @@ typedef struct
   int n_format;
   int n_samplingrate;
   int n_codec;
+  camera_resolution_t st_resolution;
 } camera_device_info_t;
+
+static PmLogContext getHALLunaPmLogContext()
+{
+  static PmLogContext usLogContext = 0;
+  if (0 == usLogContext)
+  {
+    PmLogGetContext("HAL", &usLogContext);
+  }
+  return usLogContext;
+}
+
+#define HAL_LOG_INFO(module, args...) PmLogMsg(getHALLunaPmLogContext(), Info, module, 0, ##args)
 
 #endif

@@ -20,6 +20,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ------------------------------------------------------------------------------*/
+#include "camera_hal_types.h"
 #include "camera_types.h"
 #include <map>
 #include <string>
@@ -48,7 +49,7 @@ public:
   DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *) const;
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
                                   DEVICE_EVENT_STATE_T *);
-  DEVICE_RETURN_CODE_T getInfo(int, CAMERA_INFO_T *);
+  DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
   DEVICE_RETURN_CODE_T createHandle(int, int *, std::string);
 };
 

@@ -248,7 +248,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
         jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FORMAT)));
     std::string format = strformat.m_str;
 
-    CAMERA_FORMAT_T nformat;
+    camera_format_t nformat;
     convertFormatToCode(format, &nformat);
     rcamera_params.eFormat = nformat;
 
@@ -335,33 +335,51 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
   if (objreply.bGetReturnValue())
   {
     char strformat[CONST_MAX_STRING_LENGTH];
-    getFormatString(rGetCameraInfo().nFormat, strformat);
+    getFormatString(rGetCameraInfo().n_format, strformat);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(objreply.bGetReturnValue()));
 
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_NAME),
-                jstring_create(rGetCameraInfo().strName));
+                jstring_create(rGetCameraInfo().str_devicename));
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TYPE),
-                jstring_create(getTypeString(rGetCameraInfo().nType)));
+                jstring_create(getTypeString(rGetCameraInfo().n_devicetype)));
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BUILTIN),
-                jboolean_create((bool *)rGetCameraInfo().bBuiltin));
+                jboolean_create((bool *)rGetCameraInfo().b_builtin));
 
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
-                jnumber_create_i32(rGetCameraInfo().nMaxVideoWidth));
+                jnumber_create_i32(rGetCameraInfo().n_maxvideowidth));
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXHEIGHT),
-                jnumber_create_i32(rGetCameraInfo().nMaxVideoHeight));
+                jnumber_create_i32(rGetCameraInfo().n_maxvideoheight));
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE), jnumber_create_i32(30));
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT), jstring_create(strformat));
 
     jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
-                jnumber_create_i32(rGetCameraInfo().nMaxPictureWidth));
+                jnumber_create_i32(rGetCameraInfo().n_maxpicturewidth));
     jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXHEIGHT),
-                jnumber_create_i32(rGetCameraInfo().nMaxPictureHeight));
+                jnumber_create_i32(rGetCameraInfo().n_maxpictureheight));
     jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
                 jstring_create(strformat));
 
+    // create resolution array
+    jvalue_ref json_formatobj = jobject_create();
+    for (int nformat = 0; nformat < rGetCameraInfo().st_resolution.n_formatindex; nformat++)
+    {
+      jvalue_ref json_resolutionarray = jarray_create(0);
+      for (int count = 0; count <= rGetCameraInfo().st_resolution.n_frameindex[nformat]; count++)
+      {
+        jarray_append(json_resolutionarray,
+                      jstring_create(rGetCameraInfo().st_resolution.c_res[count]));
+      }
+      jobject_put(
+          json_formatobj,
+          jstring_create(
+              getResolutionString(rGetCameraInfo().st_resolution.e_format[nformat]).c_str()),
+          json_resolutionarray);
+    }
+
     jobject_put(json_detailsobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VIDEO), json_video_obj);
     jobject_put(json_detailsobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PICTURE), json_pictureobj);
+    jobject_put(json_detailsobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION), json_formatobj);
 
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DETAILS), json_detailsobj);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_INFO), json_info_obj);
@@ -643,7 +661,7 @@ void SetFormatMethod::getSetFormatObject(const char *input, const char *schemapa
         jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FORMAT)));
     std::string format = strformat.m_str;
 
-    CAMERA_FORMAT_T eformat;
+    camera_format_t eformat;
     convertFormatToCode(format, &eformat);
     rcameraparams.eFormat = eformat;
 

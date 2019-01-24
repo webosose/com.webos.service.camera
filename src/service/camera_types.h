@@ -17,6 +17,7 @@
 #define CAMERA_TYPES_H_
 
 #include "PmLogLib.h"
+#include "camera_hal_types.h"
 #include "constants.h"
 #include "luna-service2/lunaservice.h"
 
@@ -117,14 +118,6 @@ typedef enum
   CAMERA_TYPE_OMX = 2,
 } CAMERA_TYPE_T;
 
-typedef enum
-{
-  CAMERA_FORMAT_UNDEFINED = -1,
-  CAMERA_FORMAT_YUV = 1,
-  CAMERA_FORMAT_H264ES = 2,
-  CAMERA_FORMAT_JPEG = 4,
-} CAMERA_FORMAT_T;
-
 enum class NotifierClient
 {
   NOTIFIER_CLIENT_PDM = 0,
@@ -145,22 +138,8 @@ typedef struct
 {
   int nWidth;
   int nHeight;
-  CAMERA_FORMAT_T eFormat;
+  camera_format_t eFormat;
 } CAMERA_FORMAT;
-
-typedef struct
-{
-  char strName[CONST_MAX_STRING_LENGTH];
-  DEVICE_TYPE_T nType;
-  int bBuiltin;
-  int nMaxVideoWidth;
-  int nMaxVideoHeight;
-  int nMaxPictureWidth;
-  int nMaxPictureHeight;
-  int nFormat;
-  int nSamplingRate;
-  int nCodec;
-} CAMERA_INFO_T;
 
 typedef struct
 {
@@ -223,10 +202,11 @@ typedef struct
 
 PmLogContext getCameraLunaPmLogContext();
 void getFormatString(int, char *);
-char *getTypeString(DEVICE_TYPE_T);
+char *getTypeString(device_t);
 std::string getErrorString(DEVICE_RETURN_CODE_T);
-void convertFormatToCode(std::string, CAMERA_FORMAT_T *);
+void convertFormatToCode(std::string, camera_format_t *);
 std::string getEventNotificationString(EventType);
-std::string getFormatStringFromCode(CAMERA_FORMAT_T);
+std::string getFormatStringFromCode(camera_format_t);
+std::string getResolutionString(camera_format_t);
 
 #endif /* CAMERA_TYPES_H_ */
