@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,7 @@ static void _device_init(int devicenum, char *devicenode)
   if (!camudev)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "FAIL: To create udev for camera\n");
+    return;
   }
   enumerate = udev_enumerate_new(camudev);
   udev_enumerate_add_match_subsystem(enumerate, "video4linux");
@@ -46,18 +47,17 @@ static void _device_init(int devicenum, char *devicenode)
     const char *strDeviceNode;
     const char *devnum;
     int nDeviceNumber;
-    struct udev_device *dev;
+    struct udev_device *dev,*dev1;
 
     path = udev_list_entry_get_name(dev_list_entry);
     dev = udev_device_new_from_syspath(camudev, path);
     strDeviceNode = udev_device_get_devnode(dev);
-    dev = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
-    if (!dev)
+    dev1 = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
+    if (!dev1)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "Unable to find parent usb device.");
-      exit(1);
     }
-    devnum = udev_device_get_sysattr_value(dev, "devnum");
+    devnum = udev_device_get_sysattr_value(dev1, "devnum");
     nDeviceNumber = atoi(devnum);
     if (nDeviceNumber == devicenum)
       strcpy(devicenode, strDeviceNode);

@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -394,5 +394,6 @@ private:
 };
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
+void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/
