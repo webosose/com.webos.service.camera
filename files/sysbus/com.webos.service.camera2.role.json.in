@@ -1,0 +1,11 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/com.webos.service.camera2",
+    "type": "regular",
+    "allowedNames": ["com.webos.service.camera2"],
+    "permissions": [
+        {
+            "service": "com.webos.service.camera2",
+            "outbound": ["com.webos.service.pdm"]
+        }
+    ]
+}

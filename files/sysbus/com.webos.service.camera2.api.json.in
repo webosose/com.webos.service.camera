@@ -1,0 +1,18 @@
+{
+        "camera": [
+                "com.webos.service.camera2/captureImage",
+                "com.webos.service.camera2/close",
+                "com.webos.service.camera2/getInfo",
+                "com.webos.service.camera2/getCameraList",
+                "com.webos.service.camera2/getProperties",
+                "com.webos.service.camera2/open",
+                "com.webos.service.camera2/setFormat",
+                "com.webos.service.camera2/setProperties",
+                "com.webos.service.camera2/startPreview",
+                "com.webos.service.camera2/stopPreview",
+                "com.webos.service.camera2/startCapture",
+                "com.webos.service.camera2/stopCapture",
+                "com.webos.service.camera2/getEventNotification"
+        ]
+}
+

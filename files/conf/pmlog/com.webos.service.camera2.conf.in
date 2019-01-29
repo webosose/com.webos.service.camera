@@ -1,0 +1,26 @@
+{
+    "contexts" : [
+        {
+            "name": "camera2",
+            "level": "debug",
+            "logProcessIds" : true,
+            "logThreadIds": true,
+            "logToConsole": false,
+            "rules": [
+                {
+                    "filter": "*.*",
+                    "output": "com.webos.service.camera2-log"
+                }
+            ]
+        }
+    ],
+
+    "outputs" : [
+        {
+            "name": "com.webos.service.camera2-log",
+            "file": "@WEBOS_INSTALL_LOGDIR@/camera2.log",
+            "maxSize": 10000,
+            "rotations": 5
+        }
+    ]
+}

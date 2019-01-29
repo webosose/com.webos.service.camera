@@ -1,0 +1,15 @@
+{
+    "com.webos.service.camera2": [
+        "devices",
+        "services",
+        "applications.query",
+        "applications.internal",
+        "notifications",
+        "settings",
+        "time",
+        "media",
+        "activities.manage",
+        "activities.query"
+    ]
+}
+
