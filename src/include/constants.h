@@ -101,8 +101,9 @@
 #define CONST_EVENT_NOTIFICATION "getEventNotification"
 
 const int n_invalid_id = -1;
-const int frame_size = 640 * 480 * 2 + 1024;
 const int frame_count = 8;
+const int extra_buffer = 1024;
+const int buffer_count = 2;
 
 const std::string cstr_empty = "";
 const std::string cstr_pdmclient = "com.webos.service.pdmclient";

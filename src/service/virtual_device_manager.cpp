@@ -215,6 +215,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
         {
           DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
           ret = DeviceControl::getInstance().destroyHandle(handle);
+          // remove the virtual device
+          removeDeviceHandle(deviceid);
           // since the device is closed, remove the element from map
           removeHandlePriorityObj(devhandle);
         }
