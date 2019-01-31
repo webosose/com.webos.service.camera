@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,8 +101,9 @@
 #define CONST_EVENT_NOTIFICATION "getEventNotification"
 
 const int n_invalid_id = -1;
-const int frame_size = 640 * 480 * 2 + 1024;
 const int frame_count = 8;
+const int extra_buffer = 1024;
+const int buffer_count = 2;
 
 const std::string cstr_empty = "";
 const std::string cstr_pdmclient = "com.webos.service.pdmclient";

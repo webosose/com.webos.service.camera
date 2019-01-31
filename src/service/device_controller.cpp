@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -122,13 +122,21 @@ int DeviceControl::pollForCapturedImage(void *handle, int ncount) const
       {.fd = fd, .events = POLLIN},
   };
 
+  // get current saved format for device
+  stream_format_t streamformat;
+  camera_hal_if_get_format(handle, &streamformat);
+  PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
+             streamformat.stream_height);
+  int framesize =
+      streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+
   int timeout = 2000;
   buffer_t frame_buffer;
   for (int i = 1; i <= ncount; i++)
   {
     if ((retval = poll(poll_set, 2, timeout)) > 0)
     {
-      frame_buffer.start = malloc(frame_size);
+      frame_buffer.start = malloc(framesize);
       retval = camera_hal_if_get_buffer(handle, &frame_buffer);
       if (CAMERA_ERROR_NONE != retval)
       {
@@ -201,10 +209,19 @@ void DeviceControl::previewThread()
   // lock so that if stop preview is called, first this cycle should complete
   pthread_mutex_lock(&mutex_);
   b_isshmwritedone_ = false;
+
+  // get current saved format for device
+  stream_format_t streamformat;
+  camera_hal_if_get_format(cam_handle_, &streamformat);
+  PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
+             streamformat.stream_height);
+  int framesize =
+      streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+
   while (b_isstreamon_)
   {
     buffer_t frame_buffer;
-    frame_buffer.start = malloc(frame_size);
+    frame_buffer.start = malloc(framesize);
     int retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
     if (CAMERA_ERROR_NONE != retval)
     {
@@ -289,7 +306,16 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, int *pkey)
 
   cam_handle_ = handle;
 
-  CreateShmemEx(&h_shm_, pkey, frame_size, frame_count, sizeof(unsigned int));
+  // get current saved format for device
+  stream_format_t streamformat;
+  camera_hal_if_get_format(handle, &streamformat);
+  PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
+             streamformat.stream_height);
+
+  int size =
+    streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+
+  CreateShmemEx(&h_shm_, pkey, size, frame_count, sizeof(unsigned int));
 
   int retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
   if (CAMERA_ERROR_NONE != retval)

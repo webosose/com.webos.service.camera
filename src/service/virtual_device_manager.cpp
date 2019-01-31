@@ -1,4 +1,4 @@
-// Copyright (c) 2018 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -215,6 +215,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
         {
           DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
           ret = DeviceControl::getInstance().destroyHandle(handle);
+          // remove the virtual device
+          removeDeviceHandle(deviceid);
           // since the device is closed, remove the element from map
           removeHandlePriorityObj(devhandle);
         }
