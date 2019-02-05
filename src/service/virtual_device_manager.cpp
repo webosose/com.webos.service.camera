@@ -20,7 +20,6 @@
  ------------------------------------------------------------------------------*/
 #include "virtual_device_manager.h"
 #include "constants.h"
-#include "device_controller.h"
 #include "device_manager.h"
 
 #include <algorithm>
@@ -85,14 +84,15 @@ void VirtualDeviceManager::removeHandlePriorityObj(int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
   // create v4l2 handle
+  void *p_cam_handle;
   DEVICE_RETURN_CODE_T ret =
-      DeviceManager::getInstance().createHandle(devid, devhandle, "libv4l2-camera-plugin.so");
+      objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin.so");
   if (DEVICE_OK != ret)
   {
     PMLOG_INFO(CONST_MODULE_VDM, "openDevice : Failed to create handle\n");
     return DEVICE_ERROR_CAN_NOT_OPEN;
   }
-
+  DeviceManager::getInstance().updateHandle(devid,p_cam_handle);
   std::string devnode;
   // get the device node of requested camera to be opened
   DeviceManager::getInstance().getDeviceNode(&devid, devnode);
@@ -103,7 +103,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
   PMLOG_INFO(CONST_MODULE_VDM, "openDevice : handle : %p \n", handle);
 
   // open the camera here
-  ret = DeviceControl::getInstance().open(handle, devnode);
+  ret = objdevicecontrol_.open(handle, devnode);
   if (DEVICE_OK != ret)
     PMLOG_INFO(CONST_MODULE_VDM, "openDevice : Failed to open device\n");
   else
@@ -210,11 +210,11 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
       if (1 == nelements)
       {
         // close the actual device
-        ret = DeviceControl::getInstance().close(handle);
+        ret = objdevicecontrol_.close(handle);
         if (DEVICE_OK == ret)
         {
           DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
-          ret = DeviceControl::getInstance().destroyHandle(handle);
+          ret = objdevicecontrol_.destroyHandle(handle);
           // remove the virtual device
           removeDeviceHandle(deviceid);
           // since the device is closed, remove the element from map
@@ -262,7 +262,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, int *pkey
       void *handle;
       DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
       // start preview
-      DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().startPreview(handle, pkey);
+      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startPreview(handle, pkey);
       if (DEVICE_OK == ret)
       {
         bpreviewinprogress_ = true;
@@ -327,7 +327,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
         void *handle;
         DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
         // stop preview
-        DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().stopPreview(handle);
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.stopPreview(handle);
         // reset preview parameters for camera device
         if (DEVICE_OK == ret)
         {
@@ -399,7 +399,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
     void *handle;
     DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
     // capture number of images specified by ncount
-    DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().captureImage(handle, ncount, sformat);
+    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.captureImage(handle, ncount, sformat);
     return ret;
   }
   else
@@ -452,7 +452,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
       void *handle;
       DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
       // start capture
-      DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().startCapture(handle, sformat);
+      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startCapture(handle, sformat);
       if (DEVICE_OK == ret)
       {
         bcaptureinprogress_ = true;
@@ -515,7 +515,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
         void *handle;
         DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
         // stop capture
-        DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().stopCapture(handle);
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.stopCapture(handle);
         // reset capture parameters for camera device
         if (DEVICE_OK == ret)
         {
@@ -558,7 +558,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getProperty(int devhandle,
     void *handle;
     DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
     // get property of device opened
-    DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().getDeviceProperty(handle, devproperty);
+    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getDeviceProperty(handle, devproperty);
     return ret;
   }
   else
@@ -595,7 +595,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setProperty(int devhandle, CAMERA_PRO
     void *handle;
     DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
     // set device properties
-    DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().setDeviceProperty(handle, oInfo);
+    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.setDeviceProperty(handle, oInfo);
     return ret;
   }
   else
@@ -631,7 +631,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setFormat(int devhandle, CAMERA_FORMA
     void *handle;
     DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
     // set format
-    DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().setFormat(handle, oformat);
+    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.setFormat(handle, oformat);
     if (DEVICE_OK == ret)
     {
       sformat_.eFormat = oformat.eFormat;

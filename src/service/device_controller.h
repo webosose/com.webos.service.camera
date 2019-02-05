@@ -55,12 +55,6 @@ private:
 
 public:
   DeviceControl();
-  static DeviceControl &getInstance()
-  {
-    static DeviceControl obj;
-    return obj;
-  }
-
   DEVICE_RETURN_CODE_T open(void *, std::string);
   DEVICE_RETURN_CODE_T close(void *);
   DEVICE_RETURN_CODE_T startPreview(void *, int *);
@@ -70,8 +64,8 @@ public:
   DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T createHandle(void **, std::string);
   DEVICE_RETURN_CODE_T destroyHandle(void *);
-  DEVICE_RETURN_CODE_T getDeviceInfo(std::string, camera_device_info_t *);
-  DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *, int *, int *, int *, int *, int);
+  static DEVICE_RETURN_CODE_T getDeviceInfo(std::string, camera_device_info_t *);
+  static DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *, int *, int *, int *, int *, int);
   DEVICE_RETURN_CODE_T getDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);

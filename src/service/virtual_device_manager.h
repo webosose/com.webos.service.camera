@@ -21,6 +21,7 @@
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include "device_controller.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -36,6 +37,8 @@ private:
   std::vector<int> npreviewhandle_;
   std::vector<int> ncapturehandle_;
   CAMERA_FORMAT sformat_;
+  //for multi obj
+  DeviceControl objdevicecontrol_;
 
   bool checkDeviceOpen(int);
   bool checkAppPriorityMap();
@@ -48,7 +51,6 @@ private:
 
 public:
   VirtualDeviceManager();
-
   DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
   DEVICE_RETURN_CODE_T startPreview(int, int *);

@@ -198,7 +198,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCa
     PMLOG_INFO(CONST_MODULE_DM, "No device detected by PDM!!!\n");
     return DEVICE_OK;
   }
-  ret = DeviceControl::getInstance().getDeviceList(pList, pCamDev, pMicDev, pCamSupport,
+  ret = DeviceControl::getDeviceList(pList, pCamDev, pMicDev, pCamSupport,
                                                    pMicSupport, devCount);
   if (DEVICE_OK != ret)
   {
@@ -266,7 +266,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
                gdev_status[i].stList.strDeviceNode);
   }
 
-  ret = DeviceControl::getInstance().getDeviceList(pList, &nCamDev, &nMicDev, &nCamSupport,
+  ret = DeviceControl::getDeviceList(pList, &nCamDev, &nMicDev, &nCamSupport,
                                                    &nMicSupport, nDevCount);
   if (DEVICE_OK == ret)
     PMLOG_INFO(CONST_MODULE_LUNA, "%s:%d] ended!", __FUNCTION__, __LINE__);
@@ -296,7 +296,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
     return DEVICE_ERROR_NODEVICE;
   }
 
-  ret = DeviceControl::getInstance().getDeviceInfo(strdevicenode, p_info);
+  ret = DeviceControl::getDeviceInfo(strdevicenode, p_info);
   if (DEVICE_OK != ret)
   {
     PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
@@ -305,26 +305,18 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
   return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::createHandle(int deviceid, int *devicehandle,
-                                                 std::string subsystem)
+
+DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid,void *handle)
 {
   PMLOG_INFO(CONST_MODULE_DM, "createHandle started! deviceid : %d \n", deviceid);
 
   int dev_num = findDevNum(deviceid);
   if (n_invalid_id == dev_num)
     return DEVICE_ERROR_NODEVICE;
-
-  void *p_cam_handle;
-  DEVICE_RETURN_CODE_T ret = DeviceControl::getInstance().createHandle(&p_cam_handle, subsystem);
-  if (DEVICE_OK == ret)
-  {
-    *devicehandle = rand() % 10000;
-    gdev_status[dev_num].nDeviceID = *devicehandle;
-    gdev_status[dev_num].pcamhandle = p_cam_handle;
-  }
-  else
-    gdev_status[dev_num].pcamhandle = NULL;
-
+  int devicehandle;
+  devicehandle = rand() % 10000;
+  gdev_status[dev_num].nDeviceID = devicehandle;
+  gdev_status[dev_num].pcamhandle = handle;
   PMLOG_INFO(CONST_MODULE_DM, "createHandle ended \n");
   return DEVICE_OK;
 }
