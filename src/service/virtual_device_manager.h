@@ -26,10 +26,17 @@
 #include <string>
 #include <vector>
 
+class DeviceStateMap
+{
+public:
+  int ndeviceid_;
+  CameraDeviceState ecamstate_;
+};
+
 class VirtualDeviceManager
 {
 private:
-  std::map<int, int> virtualhandle_map_;
+  std::map<int, DeviceStateMap> virtualhandle_map_;
   std::map<int, std::string> handlepriority_map_;
   bool bpreviewinprogress_;
   bool bcaptureinprogress_;
@@ -37,13 +44,13 @@ private:
   std::vector<int> npreviewhandle_;
   std::vector<int> ncapturehandle_;
   CAMERA_FORMAT sformat_;
-  //for multi obj
+  // for multi obj
   DeviceControl objdevicecontrol_;
 
   bool checkDeviceOpen(int);
   bool checkAppPriorityMap();
-  int getDeviceHandle(int);
-  void removeDeviceHandle(int);
+  int getVirtualDeviceHandle(int);
+  void removeVirtualDeviceHandle(int);
   std::string getAppPriority(int);
   void removeHandlePriorityObj(int);
 

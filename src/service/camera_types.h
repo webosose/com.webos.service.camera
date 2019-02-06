@@ -134,6 +134,13 @@ enum class EventType
   EVENT_TYPE_DISCONNECT
 };
 
+enum class CameraDeviceState
+{
+  CAM_DEVICE_STATE_UNKNOWN = 0,
+  CAM_DEVICE_STATE_OPEN,
+  CAM_DEVICE_STATE_PREVIEW
+};
+
 /*Structures*/
 typedef struct
 {

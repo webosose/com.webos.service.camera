@@ -1,4 +1,4 @@
-// Copyright (c) 2014-2019 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -140,35 +140,35 @@ TEST(CameraHAL, SetFormat_Validparameters)
   camera_hal_if_init(&p_h_camera, subsystem);
   camera_hal_if_open_device(p_h_camera, devname);
   stream_format_t streamformat;
-  //yuv format with resolution 640x480
+  // yuv format with resolution 640x480
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   int retval = camera_hal_if_set_format(p_h_camera, streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  //yuv format with resolution 800x600
+  // yuv format with resolution 800x600
   streamformat.stream_height = 600;
   streamformat.stream_width = 800;
   retval = camera_hal_if_set_format(p_h_camera, streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  //yuv format with resolution 1920x1080
+  // yuv format with resolution 1920x1080
   streamformat.stream_height = 1080;
   streamformat.stream_width = 1920;
   retval = camera_hal_if_set_format(p_h_camera, streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  //jpeg format with resolution 640x480
+  // jpeg format with resolution 640x480
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_JPEG;
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
-  //jpeg format with resolution 640x360
+  // jpeg format with resolution 640x360
   streamformat.stream_height = 360;
   streamformat.stream_width = 640;
   retval = camera_hal_if_set_format(p_h_camera, streamformat);
-  //jpeg format with resolution 1920x1080
+  // jpeg format with resolution 1920x1080
   streamformat.stream_height = 1080;
   streamformat.stream_width = 1920;
   retval = camera_hal_if_set_format(p_h_camera, streamformat);
-  //unsupported yuv format with resolution 640x220
+  // unsupported yuv format with resolution 640x220
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = 220;
   streamformat.stream_width = width_640;
@@ -644,7 +644,7 @@ TEST(CameraHAL, StopCaptureUSERPTR_Validparameters)
   int retval = camera_hal_if_stop_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
-  retval = camera_hal_if_close_device(p_h_camera);
+  camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StopCaptureUSERPTR_Multiplerequest)
@@ -717,7 +717,7 @@ TEST(CameraHAL, StopCaptureMMAP_Validparameters)
   int retval = camera_hal_if_stop_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
-  retval = camera_hal_if_close_device(p_h_camera);
+  camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StopCaptureMMAP_Multiplerequest)
