@@ -196,6 +196,8 @@ void DeviceControl::captureThread()
       break;
     }
   }
+  // set continuous capture to false
+  b_iscontinuous_capture_ = false;
   pthread_detach(tid_capture_);
   return;
 }
@@ -246,6 +248,7 @@ void DeviceControl::previewThread()
       break;
     }
   }
+
   b_isshmwritedone_ = true;
   pthread_cond_signal(&cond_);
   pthread_mutex_unlock(&mutex_);
@@ -312,8 +315,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, int *pkey)
   PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
              streamformat.stream_height);
 
-  int size =
-    streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+  int size = streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
   CreateShmemEx(&h_shm_, pkey, size, frame_count, sizeof(unsigned int));
 

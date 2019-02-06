@@ -50,7 +50,7 @@ public:
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
                                   DEVICE_EVENT_STATE_T *);
   DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
-  DEVICE_RETURN_CODE_T createHandle(int, int *, std::string);
+  DEVICE_RETURN_CODE_T updateHandle(int ,void *);
 };
 
 #endif /*SERVICE_DEVICE_MANAGER_H_*/
