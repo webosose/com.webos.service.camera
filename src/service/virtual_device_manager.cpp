@@ -397,7 +397,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncount,
-                                                        CAMERA_FORMAT sformat)
+                                                        CAMERA_FORMAT sformat,
+                                                        const std::string& imagepath)
 {
   PMLOG_INFO(CONST_MODULE_VDM, "captureImage : devhandle : %d ncount : %d \n", devhandle, ncount);
 
@@ -439,7 +440,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
     void *handle;
     DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
     // capture number of images specified by ncount
-    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.captureImage(handle, ncount, sformat);
+    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.captureImage(handle, ncount, sformat, imagepath);
     return ret;
   }
   else
@@ -449,7 +450,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
   }
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FORMAT sformat)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
+                                                        const std::string& imagepath)
 {
   PMLOG_INFO(CONST_MODULE_VDM, "startCapture : devhandle : %d\n", devhandle);
 
@@ -493,7 +495,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
       void *handle;
       DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
       // start capture
-      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startCapture(handle, sformat);
+      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startCapture(handle, sformat, imagepath);
       if (DEVICE_OK == ret)
       {
         bcaptureinprogress_ = true;
@@ -692,4 +694,26 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setFormat(int devhandle, CAMERA_FORMA
   }
 }
 
-CAMERA_FORMAT VirtualDeviceManager::getFormat() const { return sformat_; }
+DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMAT *oformat)
+{
+  PMLOG_INFO(CONST_MODULE_VDM, "getFormat : devhandle : %d\n", devhandle);
+
+  // get device id for virtual device handle
+  DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+  int deviceid = obj_devstate.ndeviceid_;
+  PMLOG_INFO(CONST_MODULE_VDM, "getFormat : deviceid : %d \n", deviceid);
+
+  if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
+  {
+    void *handle;
+    DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
+    // get format of device
+    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getFormat(handle, oformat);
+    return ret;
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_VDM, "getFormat : Device not open\n");
+    return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+  }
+}

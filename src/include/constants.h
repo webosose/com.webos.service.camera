@@ -80,7 +80,7 @@
 #define CONST_PARAM_NAME_SHARPNESS "sharpness"
 #define CONST_PARAM_NAME_TILT "tilt"
 #define CONST_PARAM_NAME_DEVICE_LIST "deviceList"
-#define CONST_PARAM_NAME_APP_PRIORITY "priority"
+#define CONST_PARAM_NAME_APP_PRIORITY "mode"
 #define CONST_PARAM_NAME_WIDTH "width"
 #define CONST_PARAM_NAME_VIDEO "video"
 #define CONST_PARAM_NAME_ZOOM "zoom"
@@ -95,10 +95,13 @@
 #define CONST_PARAM_NAME_SERIAL_NUMBER "serialNumber"
 #define CONST_PARAM_NAME_DEVICE_TYPE "deviceType"
 #define CONST_PARAM_NAME_DEVICE_SUBTYPE "deviceSubtype"
-#define CONST_PARAM_NAME_EVENT "event"
+#define CONST_PARAM_NAME_EVENT "eventType"
 #define CONST_PARAM_NAME_RESOLUTION "resolution"
-
+#define CONST_PARAM_NAME_FORMATINFO "formatInfo"
+#define CONST_PARAM_NAME_PROPERTIESINFO "propertiesInfo"
 #define CONST_EVENT_NOTIFICATION "getEventNotification"
+#define CONST_PARAM_NAME_FPS "fps"
+#define CONST_PARAM_NAME_IMAGE_PATH "path"
 
 const int n_invalid_id = -1;
 const int frame_count = 8;
@@ -117,7 +120,7 @@ const std::string cstr_h264esformat = "H264ES";
 const std::string cstr_jpegformat = "JPEG";
 const std::string cstr_primary = "primary";
 const std::string cstr_secondary = "secondary";
-const std::string cstr_format = "Format";
-const std::string cstr_properties = "Properties";
+const std::string cstr_format = "FORMAT_EVENT";
+const std::string cstr_properties = "PROPERTIES_EVENT";
 
 #endif /*CAMERA_CONST_H_*/

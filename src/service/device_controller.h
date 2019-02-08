@@ -31,10 +31,11 @@
 class DeviceControl
 {
 private:
-  void writeImageToFile(const void *, int) const;
+  DEVICE_RETURN_CODE_T writeImageToFile(const void *, int) const;
   DEVICE_RETURN_CODE_T checkFormat(void *, CAMERA_FORMAT);
-  int pollForCapturedImage(void *, int) const;
+  DEVICE_RETURN_CODE_T pollForCapturedImage(void *, int) const;
   static camera_pixel_format_t getPixelFormat(camera_format_t);
+  static camera_format_t getCameraFormat(camera_pixel_format_t);
   void captureThread();
   void previewThread();
   static void *runCaptureImageThread(void *);
@@ -52,6 +53,7 @@ private:
   pthread_cond_t cond_;
   std::string strdevicenode_;
   SHMEM_HANDLE h_shm_;
+  std::string str_imagepath_;
 
 public:
   DeviceControl();
@@ -59,9 +61,9 @@ public:
   DEVICE_RETURN_CODE_T close(void *);
   DEVICE_RETURN_CODE_T startPreview(void *, int *);
   DEVICE_RETURN_CODE_T stopPreview(void *);
-  DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT);
+  DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(void *);
-  DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT);
+  DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T createHandle(void **, std::string);
   DEVICE_RETURN_CODE_T destroyHandle(void *);
   static DEVICE_RETURN_CODE_T getDeviceInfo(std::string, camera_device_info_t *);
@@ -69,6 +71,7 @@ public:
   DEVICE_RETURN_CODE_T getDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
+  DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

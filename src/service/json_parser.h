@@ -40,7 +40,7 @@ public:
   void setErrorCode(int errorcode) { n_errorcode_ = errorcode; }
   int getErrorCode() const { return n_errorcode_; }
 
-  void setErrorText(std::string errortext) { str_errortext_ = errortext; }
+  void setErrorText(const std::string& errortext) { str_errortext_ = errortext; }
   std::string strGetErrorText() const { return str_errortext_; }
 
 private:
@@ -55,7 +55,7 @@ public:
   GetCameraListMethod() { n_camcount_ = 0; }
   ~GetCameraListMethod() {}
 
-  void setCameraList(std::string str_id, int count) { str_list_[count] = str_id; }
+  void setCameraList(const std::string& str_id, int count) { str_list_[count] = str_id; }
   std::string strGetCameraList(int count) const { return str_list_[count]; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
@@ -87,10 +87,10 @@ public:
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
 
-  void setCameraId(std::string devid) { str_devid_ = devid; }
+  void setCameraId(const std::string& devid) { str_devid_ = devid; }
   std::string getCameraId() const { return str_devid_; }
 
-  void setAppPriority(std::string priority) { str_priority_ = priority; }
+  void setAppPriority(const std::string& priority) { str_priority_ = priority; }
   std::string getAppPriority() const { return str_priority_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
@@ -172,7 +172,10 @@ public:
   void setnImage(int nimage) { n_image_ = nimage; }
   int getnImage() const { return n_image_; }
 
-  void setCaptureMode(std::string capturemode) { str_mode_ = capturemode; }
+  void setImagePath(const std::string& path) { str_path_ = path; }
+  std::string getImagePath() const { return str_path_; }
+
+  void setCaptureMode(const std::string& capturemode) { str_mode_ = capturemode; }
   std::string strGetCaptureMode() const { return str_mode_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
@@ -191,6 +194,7 @@ private:
   CAMERA_FORMAT r_cameraparams_;
   int n_image_;
   std::string str_mode_;
+  std::string str_path_;
   MethodReply objreply_;
 };
 
@@ -225,7 +229,7 @@ public:
   GetInfoMethod();
   ~GetInfoMethod() {}
 
-  void setDeviceId(std::string devid) { str_deviceid_ = devid; }
+  void setDeviceId(const std::string& devid) { str_deviceid_ = devid; }
   std::string strGetDeviceId() const { return str_deviceid_; }
 
   void setCameraInfo(camera_device_info_t r_ininfo)
@@ -240,20 +244,6 @@ public:
     ro_info_.n_maxvideoheight = r_ininfo.n_maxvideoheight;
     ro_info_.n_maxvideowidth = r_ininfo.n_maxvideowidth;
     ro_info_.n_samplingrate = r_ininfo.n_samplingrate;
-
-    ro_info_.st_resolution.n_formatindex = r_ininfo.st_resolution.n_formatindex;
-    for (int n = 0; n <= r_ininfo.st_resolution.n_formatindex; n++)
-    {
-      ro_info_.st_resolution.e_format[n] = r_ininfo.st_resolution.e_format[n];
-      ro_info_.st_resolution.n_frameindex[n] = r_ininfo.st_resolution.n_frameindex[n];
-      for (int count = 0; count <= r_ininfo.st_resolution.n_frameindex[n]; count++)
-      {
-        ro_info_.st_resolution.n_height[n][count] = r_ininfo.st_resolution.n_height[n][count];
-        ro_info_.st_resolution.n_width[n][count] = r_ininfo.st_resolution.n_width[n][count];
-        strncpy(ro_info_.st_resolution.c_res[count], r_ininfo.st_resolution.c_res[count],
-                CONST_MAX_STRING_LENGTH);
-      }
-    }
   }
 
   camera_device_info_t rGetCameraInfo() const { return ro_info_; }
@@ -351,10 +341,11 @@ public:
     ro_params_.nWidth = rin_params.nWidth;
     ro_params_.nHeight = rin_params.nHeight;
     ro_params_.eFormat = rin_params.eFormat;
+    ro_params_.nFps = rin_params.nFps;
   }
   CAMERA_FORMAT rGetCameraFormat() const { return ro_params_; }
 
-  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  void setMethodReply(bool returnvalue, int errorcode, const std::string& errortext)
   {
     objreply_.setReturnValue(returnvalue);
     objreply_.setErrorCode(errorcode);
@@ -383,17 +374,19 @@ public:
   ~EventNotification() {}
 
   void getEventObject(const char *, const char *);
-  std::string createEventObjectJsonString() const;
+  std::string createEventObjectJsonString(void *) const;
   void setEventType(EventType etype) { etype_ = etype; }
   void setEventData(void *data) { pdata_ = data; }
+  void setCameraId(const std::string& camid) { strcamid_ = camid; }
 
 private:
   EventType etype_;
   void *pdata_;
   bool b_issubscribed_;
+  std::string strcamid_;
 };
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
-void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, jvalue_ref &);
+void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, void *, jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/

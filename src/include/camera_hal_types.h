@@ -25,7 +25,7 @@
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define CONST_MODULE_HAL "HAL"
 
-const int variable_initialize = -999;
+#define variable_initialize -999
 #define max_index 30
 #define max_format 5
 #define max_string_length 256
@@ -191,7 +191,6 @@ typedef struct
   int n_format;
   int n_samplingrate;
   int n_codec;
-  camera_resolution_t st_resolution;
 } camera_device_info_t;
 
 static PmLogContext getHALLunaPmLogContext()
