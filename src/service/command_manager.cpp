@@ -84,6 +84,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     {
       PMLOG_INFO(CONST_MODULE_CM, "open ! devicehandle : %d \n", *devicehandle);
       obj.devicehandle = *devicehandle;
+      obj.deviceid = deviceid;
       virtualdevmgrobj_map_.insert(std::make_pair(devicenode, obj));
     }
     return ret;
@@ -172,37 +173,6 @@ DEVICE_RETURN_CODE_T CommandManager::getProperty(int devhandle, CAMERA_PROPERTIE
   if ((n_invalid_id == devhandle) || (NULL == devproperty))
     return DEVICE_ERROR_WRONG_PARAM;
 
-  // initilize the property
-  devproperty->nZoom = CONST_VARIABLE_INITIALIZE;
-  devproperty->nGridZoomX = CONST_VARIABLE_INITIALIZE;
-  devproperty->nGridZoomY = CONST_VARIABLE_INITIALIZE;
-  devproperty->nPan = CONST_VARIABLE_INITIALIZE;
-  devproperty->nTilt = CONST_VARIABLE_INITIALIZE;
-  devproperty->nContrast = CONST_VARIABLE_INITIALIZE;
-  devproperty->nBrightness = CONST_VARIABLE_INITIALIZE;
-  devproperty->nSaturation = CONST_VARIABLE_INITIALIZE;
-  devproperty->nSharpness = CONST_VARIABLE_INITIALIZE;
-  devproperty->nHue = CONST_VARIABLE_INITIALIZE;
-  devproperty->nWhiteBalanceTemperature = CONST_VARIABLE_INITIALIZE;
-  devproperty->nGain = CONST_VARIABLE_INITIALIZE;
-  devproperty->nGamma = CONST_VARIABLE_INITIALIZE;
-  devproperty->nFrequency = CONST_VARIABLE_INITIALIZE;
-  devproperty->bMirror = CONST_VARIABLE_INITIALIZE;
-  devproperty->nExposure = CONST_VARIABLE_INITIALIZE;
-  devproperty->bAutoExposure = CONST_VARIABLE_INITIALIZE;
-  devproperty->bAutoWhiteBalance = CONST_VARIABLE_INITIALIZE;
-  devproperty->nBitrate = CONST_VARIABLE_INITIALIZE;
-  devproperty->nFramerate = CONST_VARIABLE_INITIALIZE;
-  devproperty->ngopLength = CONST_VARIABLE_INITIALIZE;
-  devproperty->bLed = CONST_VARIABLE_INITIALIZE;
-  devproperty->bYuvMode = CONST_VARIABLE_INITIALIZE;
-  devproperty->nIllumination = CONST_VARIABLE_INITIALIZE;
-  devproperty->bBacklightCompensation = CONST_VARIABLE_INITIALIZE;
-  devproperty->nMicMaxGain = CONST_VARIABLE_INITIALIZE;
-  devproperty->nMicMinGain = CONST_VARIABLE_INITIALIZE;
-  devproperty->nMicGain = CONST_VARIABLE_INITIALIZE;
-  devproperty->bMicMute = CONST_VARIABLE_INITIALIZE;
-
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // send request to get property of device
@@ -271,7 +241,8 @@ DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle)
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT sformat)
+DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
+                                                  const std::string& imagepath)
 {
   PMLOG_INFO(CONST_MODULE_CM, "startCapture : devhandle : %d\n", devhandle);
 
@@ -281,7 +252,7 @@ DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT s
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start capture
-    return ptr->startCapture(devhandle, sformat);
+    return ptr->startCapture(devhandle, sformat, imagepath);
   else
     return DEVICE_ERROR_UNKNOWN;
 }
@@ -301,7 +272,8 @@ DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle)
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAMERA_FORMAT sformat)
+DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAMERA_FORMAT sformat,
+                                                  const std::string& imagepath)
 {
   PMLOG_INFO(CONST_MODULE_CM, "captureImage : devhandle : %d\n", devhandle);
 
@@ -311,23 +283,38 @@ DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAM
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // capture image
-    return ptr->captureImage(devhandle, ncount, sformat);
+    return ptr->captureImage(devhandle, ncount, sformat, imagepath);
   else
     return DEVICE_ERROR_UNKNOWN;
 }
 
-CAMERA_FORMAT CommandManager::getFormat(int devhandle)
+DEVICE_RETURN_CODE_T CommandManager::getFormat(int devhandle, CAMERA_FORMAT *oformat)
 {
   PMLOG_INFO(CONST_MODULE_CM, "getFormat : devhandle : %d\n", devhandle);
-  CAMERA_FORMAT obj;
 
   if (n_invalid_id == devhandle)
-    return obj;
+    return DEVICE_ERROR_WRONG_PARAM;
 
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // get format
-    return ptr->getFormat();
+    return ptr->getFormat(devhandle, oformat);
   else
-    return obj;
+    return DEVICE_ERROR_UNKNOWN;
+}
+
+int CommandManager::getCameraId(int devhandle)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "getCameraId : devhandle : %d\n", devhandle);
+  if (n_invalid_id == devhandle)
+    return n_invalid_id;
+
+  std::multimap<std::string, Device>::iterator it;
+  for (it = virtualdevmgrobj_map_.begin(); it != virtualdevmgrobj_map_.end(); ++it)
+  {
+    Device obj = it->second;
+    if (devhandle == obj.devicehandle)
+      return obj.deviceid;
+  }
+  return n_invalid_id;
 }
