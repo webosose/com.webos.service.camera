@@ -503,6 +503,8 @@ int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
   queryctrl.id = V4L2_CID_ZOOM_ABSOLUTE;
   getV4l2Property(queryctrl, &cam_out_params->nZoomAbsolute);
 
+  getResolutionProperty(cam_out_params);
+
   return CAMERA_ERROR_NONE;
 }
 
@@ -632,6 +634,76 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *valu
   }
   *value = control.value;
   return CAMERA_ERROR_NONE;
+}
+
+void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params)
+{
+  int pixelfmt = 0;
+  struct v4l2_fmtdesc format;
+  CLEAR(format);
+
+  format.index = 0;
+  format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  int nformatindex = 0;
+  struct v4l2_frmsizeenum frmsize;
+  CLEAR(frmsize);
+  int ncount = 0;
+  while ((-1 != xioctl(fd_, VIDIOC_ENUM_FMT, &format)))
+  {
+    format.index++;
+    switch (format.pixelformat)
+    {
+    case V4L2_PIX_FMT_YUYV:
+      pixelfmt = pixelfmt | 1;
+      cam_out_params->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_YUV;
+      break;
+    case V4L2_PIX_FMT_MJPEG:
+      pixelfmt = pixelfmt | 4;
+      cam_out_params->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_JPEG;
+      break;
+    case V4L2_PIX_FMT_H264:
+      pixelfmt = pixelfmt | 2;
+      cam_out_params->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_H264ES;
+      break;
+    default:
+      HAL_LOG_INFO(CONST_MODULE_HAL, "getResolutionProperty : pixelfmt : %d \n", pixelfmt);
+    }
+    nformatindex++;
+    frmsize.pixel_format = format.pixelformat;
+    frmsize.index = 0;
+    struct v4l2_frmivalenum fival;
+    CLEAR(fival);
+
+    while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMESIZES, &frmsize)))
+    {
+      if (V4L2_FRMSIZE_TYPE_DISCRETE == frmsize.type)
+      {
+        cam_out_params->st_resolution.n_height[ncount][frmsize.index] = frmsize.discrete.height;
+        cam_out_params->st_resolution.n_width[ncount][frmsize.index] = frmsize.discrete.width;
+        fival.index = 0;
+        fival.pixel_format = frmsize.pixel_format;
+        fival.width = frmsize.discrete.width;
+        fival.height = frmsize.discrete.height;
+        while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMEINTERVALS, &fival)))
+        {
+          snprintf(cam_out_params->st_resolution.c_res[frmsize.index], 20, "%d,%d,%d",
+                   frmsize.discrete.width, frmsize.discrete.height, fival.discrete.denominator);
+          HAL_LOG_INFO(CONST_MODULE_HAL, "getResolutionProperty c_res %s \n",
+                       cam_out_params->st_resolution.c_res[frmsize.index]);
+          cam_out_params->st_resolution.n_frameindex[ncount] = frmsize.index;
+          break;
+        }
+      }
+      else if (V4L2_FRMSIZE_TYPE_STEPWISE == frmsize.type)
+      {
+        snprintf(cam_out_params->st_resolution.c_res[frmsize.index], 10, "%d,%d",
+                 frmsize.stepwise.max_width, frmsize.stepwise.max_height);
+      }
+      frmsize.index++;
+    }
+    ncount++;
+    cam_out_params->st_resolution.n_formatindex = nformatindex;
+  }
 }
 
 int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)

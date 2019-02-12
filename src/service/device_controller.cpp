@@ -576,6 +576,24 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
     oparams->nExposure = out_params.nExposure;
   if (oparams->bAutoWhiteBalance == 0)
     oparams->nWhiteBalanceTemperature = out_params.nWhiteBalanceTemperature;
+  // update resolution structure
+  oparams->st_resolution.n_formatindex = out_params.st_resolution.n_formatindex;
+  for (int n = 0; n < out_params.st_resolution.n_formatindex; n++)
+  {
+    oparams->st_resolution.e_format[n] = out_params.st_resolution.e_format[n];
+    oparams->st_resolution.n_frameindex[n] = out_params.st_resolution.n_frameindex[n];
+    for (int count = 0; count < out_params.st_resolution.n_frameindex[n]; count++)
+    {
+      oparams->st_resolution.n_height[n][count] = out_params.st_resolution.n_height[n][count];
+      oparams->st_resolution.n_width[n][count] = out_params.st_resolution.n_width[n][count];
+      PMLOG_INFO(CONST_MODULE_DC, "out_params.st_resolution.c_res %s\n",
+                 out_params.st_resolution.c_res[count]);
+      memset(oparams->st_resolution.c_res[count], '\0',
+             sizeof(oparams->st_resolution.c_res[count]));
+      strncpy(oparams->st_resolution.c_res[count], out_params.st_resolution.c_res[count],
+              sizeof(oparams->st_resolution.c_res[count]));
+    }
+  }
 
   return DEVICE_OK;
 }
