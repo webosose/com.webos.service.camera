@@ -183,6 +183,7 @@ struct CAMERA_PROPERTIES_T
   int nMicMinGain;
   int nMicGain;
   int bMicMute;
+  camera_resolution_t st_resolution;
   CAMERA_PROPERTIES_T()
       : nZoom(CONST_VARIABLE_INITIALIZE), nGridZoomX(CONST_VARIABLE_INITIALIZE),
         nGridZoomY(CONST_VARIABLE_INITIALIZE), nPan(CONST_VARIABLE_INITIALIZE),
@@ -198,7 +199,7 @@ struct CAMERA_PROPERTIES_T
         bYuvMode(CONST_VARIABLE_INITIALIZE), nIllumination(CONST_VARIABLE_INITIALIZE),
         bBacklightCompensation(CONST_VARIABLE_INITIALIZE), nMicMaxGain(CONST_VARIABLE_INITIALIZE),
         nMicMinGain(CONST_VARIABLE_INITIALIZE), nMicGain(CONST_VARIABLE_INITIALIZE),
-        bMicMute(CONST_VARIABLE_INITIALIZE)
+        bMicMute(CONST_VARIABLE_INITIALIZE), st_resolution()
   {
   }
 };

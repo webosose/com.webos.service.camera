@@ -305,6 +305,24 @@ public:
     ro_camproperties_.nMicMinGain = rin_info.nMicMinGain;
     ro_camproperties_.nMicGain = rin_info.nMicGain;
     ro_camproperties_.bMicMute = rin_info.bMicMute;
+    // update resolution structure
+    ro_camproperties_.st_resolution.n_formatindex = rin_info.st_resolution.n_formatindex;
+    for (int n = 0; n < rin_info.st_resolution.n_formatindex; n++)
+    {
+      ro_camproperties_.st_resolution.e_format[n] = rin_info.st_resolution.e_format[n];
+      ro_camproperties_.st_resolution.n_frameindex[n] = rin_info.st_resolution.n_frameindex[n];
+      for (int count = 0; count <= rin_info.st_resolution.n_frameindex[n]; count++)
+      {
+        ro_camproperties_.st_resolution.n_height[n][count] =
+            rin_info.st_resolution.n_height[n][count];
+        ro_camproperties_.st_resolution.n_width[n][count] =
+            rin_info.st_resolution.n_width[n][count];
+        memset(ro_camproperties_.st_resolution.c_res[count], '\0',
+               sizeof(ro_camproperties_.st_resolution.c_res[count]));
+        strncpy(ro_camproperties_.st_resolution.c_res[count], rin_info.st_resolution.c_res[count],
+                sizeof(ro_camproperties_.st_resolution.c_res[count]));
+      }
+    }
   }
   CAMERA_PROPERTIES_T rGetCameraProperties() const { return ro_camproperties_; }
 

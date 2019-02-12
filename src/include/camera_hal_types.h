@@ -149,6 +149,16 @@ typedef struct
 
 typedef struct
 {
+  int n_width[max_format][max_index];
+  int n_height[max_format][max_index];
+  char c_res[max_index][max_string_length];
+  camera_format_t e_format[max_format];
+  int n_frameindex[max_format];
+  int n_formatindex;
+} camera_resolution_t;
+
+typedef struct
+{
   int nBrightness;
   int nContrast;
   int nSaturation;
@@ -167,17 +177,8 @@ typedef struct
   int nFocusAbsolute;
   int nAutoFocus;
   int nZoomAbsolute;
+  camera_resolution_t st_resolution;
 } camera_properties_t;
-
-typedef struct
-{
-  int n_width[max_format][max_index];
-  int n_height[max_format][max_index];
-  char c_res[max_index][max_string_length];
-  camera_format_t e_format[max_format];
-  int n_frameindex[max_format];
-  int n_formatindex;
-} camera_resolution_t;
 
 typedef struct
 {

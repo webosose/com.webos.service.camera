@@ -421,7 +421,24 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
     CAMERA_PROPERTIES_T default_obj;
     void *data = (void *)&default_obj;
     createGetPropertiesJsonString(&obj, data, json_outobjparams);
-
+    // add resolution structure
+    jvalue_ref json_resolutionobj = jobject_create();
+    for (int nformat = 0; nformat < rGetCameraProperties().st_resolution.n_formatindex; nformat++)
+    {
+      jvalue_ref json_resolutionarray = jarray_create(0);
+      for (int count = 0; count <= rGetCameraProperties().st_resolution.n_frameindex[nformat];
+           count++)
+      {
+        jarray_append(json_resolutionarray,
+                      jstring_create(rGetCameraProperties().st_resolution.c_res[count]));
+      }
+      jobject_put(
+          json_resolutionobj,
+          jstring_create(
+              getResolutionString(rGetCameraProperties().st_resolution.e_format[nformat]).c_str()),
+          json_resolutionarray);
+    }
+    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION), json_resolutionobj);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
   }
   else
@@ -507,6 +524,7 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
     jnumber_get_i32(jparams, &r_camproperties.nMicGain);
     jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MICMUTE));
     jboolean_get(jparams, (bool *)&r_camproperties.bMicMute);
+    r_camproperties.st_resolution.n_formatindex = 0;
 
     setCameraProperties(r_camproperties);
   }
