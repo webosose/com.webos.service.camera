@@ -71,7 +71,7 @@ const char *openSchema = "{ \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
     }, \
-    \"priority\": { \
+    \"mode\": { \
       \"type\": \"string\", \
       \"title\": \"The Priority Schema\", \
       \"default\": \"\", \
@@ -99,7 +99,8 @@ const char *setFormatSchema = "{ \
       \"required\": [ \
         \"width\", \
         \"height\", \
-        \"format\" \
+        \"format\", \
+        \"fps\" \
       ], \
       \"properties\": { \
         \"width\": { \
@@ -110,6 +111,11 @@ const char *setFormatSchema = "{ \
         \"height\": { \
           \"type\": \"integer\", \
           \"title\": \"The Height Schema\", \
+          \"default\": 0 \
+        }, \
+        \"fps\": { \
+          \"type\": \"integer\", \
+          \"title\": \"The fps Schema\", \
           \"default\": 0 \
         }, \
         \"format\": { \
@@ -153,6 +159,12 @@ const char *startCaptureSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
+    }, \
+    \"path\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Path Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
     }, \
     \"params\": { \
       \"type\": \"object\", \

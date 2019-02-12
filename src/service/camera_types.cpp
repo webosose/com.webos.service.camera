@@ -73,14 +73,14 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_LACK_OF_STORAGE, "Lack of storage"},
     {DEVICE_ERROR_ALREADY_EXISTS_FILE, "Already exists file"},
     {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
+    {DEVICE_ERROR_CANNOT_WRITE, "Cannot write at specified location"},
     {DEVICE_OK, "No error"}};
 
 std::map<EventType, std::string> g_event_string = {
-    {EventType::EVENT_TYPE_FORMAT, "Format"},
-    {EventType::EVENT_TYPE_PROPERTIES, "Properties"},
-    {EventType::EVENT_TYPE_CONNECT, "Device Connect"},
-    {EventType::EVENT_TYPE_DISCONNECT, "Device Disconnect"},
-    {EventType::EVENT_TYPE_NONE, "No event received"}};
+    {EventType::EVENT_TYPE_FORMAT, "FORMAT_EVENT"},
+    {EventType::EVENT_TYPE_PROPERTIES, "PROPERTIES_EVENT"},
+    {EventType::EVENT_TYPE_CONNECT, "DEVICE_CONNECT_EVENT"},
+    {EventType::EVENT_TYPE_DISCONNECT, "DEVICE_DISCONNECT_EVENT"}};
 
 std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
                                                           {CAMERA_FORMAT_YUV, "YUV"},

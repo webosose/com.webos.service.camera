@@ -34,9 +34,11 @@ private:
   EventNotification objevent_;
 
   int getId(std::string);
-  void createEventMessage(EventType, void *);
-  void createPropertiesEventMessage(int, CAMERA_PROPERTIES_T);
-  void createFormatEventMessage(int, CAMERA_FORMAT);
+  bool isPropertiesChanged(void *, void *);
+  bool isFormatChanged(void *, void *);
+  void createEventMessage(EventType, void *, int);
+  void createPropertiesEventMessage(int, void *);
+  void createFormatEventMessage(int, void *);
 
 public:
   CameraService();

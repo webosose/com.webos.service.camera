@@ -53,6 +53,7 @@ extern "C"
   private:
     int setV4l2Property(struct v4l2_queryctrl, int);
     int getV4l2Property(struct v4l2_queryctrl, int *);
+    void getResolutionProperty(camera_properties_t *);
 
     int requestMmapBuffers(int);
     int requestUserptrBuffers(int);

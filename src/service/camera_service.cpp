@@ -74,44 +74,80 @@ int CameraService::getId(std::string cameraid)
   return num;
 }
 
-void CameraService::createEventMessage(EventType etype, void *pdata)
+bool CameraService::isPropertiesChanged(void *p_oldproperty, void *p_newproperty)
+{
+  CAMERA_PROPERTIES_T *old_property = static_cast<CAMERA_PROPERTIES_T *>(p_oldproperty);
+  CAMERA_PROPERTIES_T *new_property = static_cast<CAMERA_PROPERTIES_T *>(p_newproperty);
+
+  if ((nullptr != old_property) && (nullptr != new_property))
+  {
+    if ((old_property->nZoom != new_property->nZoom) ||
+        (old_property->nGridZoomX != new_property->nGridZoomX) ||
+        (old_property->nGridZoomY != new_property->nGridZoomY) ||
+        (old_property->nPan != new_property->nPan) ||
+        (old_property->nTilt != new_property->nTilt) ||
+        (old_property->nContrast != new_property->nContrast) ||
+        (old_property->nBrightness != new_property->nBrightness) ||
+        (old_property->nSaturation != new_property->nSaturation) ||
+        (old_property->nSharpness != new_property->nSharpness) ||
+        (old_property->nHue != new_property->nHue) ||
+        (old_property->nWhiteBalanceTemperature != new_property->nWhiteBalanceTemperature) ||
+        (old_property->nGain != new_property->nGain) ||
+        (old_property->nGamma != new_property->nGamma) ||
+        (old_property->nFrequency != new_property->nFrequency) ||
+        (old_property->bMirror != new_property->bMirror) ||
+        (old_property->nExposure != new_property->nExposure) ||
+        (old_property->bAutoExposure != new_property->bAutoExposure) ||
+        (old_property->bAutoWhiteBalance != new_property->bAutoWhiteBalance) ||
+        (old_property->nBitrate != new_property->nBitrate) ||
+        (old_property->nFramerate != new_property->nFramerate) ||
+        (old_property->ngopLength != new_property->ngopLength) ||
+        (old_property->bLed != new_property->bLed) ||
+        (old_property->bYuvMode != new_property->bYuvMode) ||
+        (old_property->nIllumination != new_property->nIllumination) ||
+        (old_property->bBacklightCompensation != new_property->bBacklightCompensation) ||
+        (old_property->nMicMaxGain != new_property->nMicMaxGain) ||
+        (old_property->nMicMinGain != new_property->nMicMinGain) ||
+        (old_property->nMicGain != new_property->nMicGain) ||
+        (old_property->bMicMute != new_property->bMicMute))
+      return true;
+  }
+  return false;
+}
+
+bool CameraService::isFormatChanged(void *p_oldformat, void *p_newformat)
+{
+  CAMERA_FORMAT *old_format = static_cast<CAMERA_FORMAT *>(p_oldformat);
+  CAMERA_FORMAT *new_format = static_cast<CAMERA_FORMAT *>(p_newformat);
+
+  if ((nullptr != old_format) && (nullptr != new_format))
+  {
+    if ((old_format->eFormat != new_format->eFormat) || (old_format->nFps != new_format->nFps) ||
+        (old_format->nHeight != new_format->nHeight) || (old_format->nWidth != new_format->nWidth))
+      return true;
+  }
+  return false;
+}
+
+void CameraService::createEventMessage(EventType etype, void *pdata, int devhandle)
 {
   objevent_.setEventType(etype);
   objevent_.setEventData(pdata);
+  int deviceid = CommandManager::getInstance().getCameraId(devhandle);
+  std::string cameraid = "camera" + std::to_string(deviceid);
+  objevent_.setCameraId(cameraid);
 }
 
-void CameraService::createPropertiesEventMessage(int devhandle, CAMERA_PROPERTIES_T saved_property)
+void CameraService::createPropertiesEventMessage(int devhandle, void *old_property)
 {
   CAMERA_PROPERTIES_T new_property;
   CommandManager::getInstance().getProperty(devhandle, &new_property);
-  if ((saved_property.nZoom != new_property.nZoom) ||
-      (saved_property.nGridZoomX != new_property.nGridZoomX) ||
-      (saved_property.nGridZoomY != new_property.nGridZoomY) ||
-      (saved_property.nPan != new_property.nPan) || (saved_property.nTilt != new_property.nTilt) ||
-      (saved_property.nContrast != new_property.nContrast) ||
-      (saved_property.nBrightness != new_property.nBrightness) ||
-      (saved_property.nSaturation != new_property.nSaturation) ||
-      (saved_property.nSharpness != new_property.nSharpness) ||
-      (saved_property.nHue != new_property.nHue) ||
-      (saved_property.nWhiteBalanceTemperature != new_property.nWhiteBalanceTemperature) ||
-      (saved_property.nGain != new_property.nGain) ||
-      (saved_property.nGamma != new_property.nGamma) ||
-      (saved_property.nFrequency != new_property.nFrequency) ||
-      (saved_property.bMirror != new_property.bMirror) ||
-      (saved_property.nExposure != new_property.nExposure) ||
-      (saved_property.bAutoExposure != new_property.bAutoExposure) ||
-      (saved_property.bAutoWhiteBalance != new_property.bAutoWhiteBalance) ||
-      (saved_property.nBitrate != new_property.nBitrate) ||
-      (saved_property.nFramerate != new_property.nFramerate) ||
-      (saved_property.ngopLength != new_property.ngopLength) ||
-      (saved_property.bLed != new_property.bLed) ||
-      (saved_property.bYuvMode != new_property.bYuvMode) ||
-      (saved_property.nIllumination != new_property.nIllumination) ||
-      (saved_property.bBacklightCompensation != new_property.bBacklightCompensation))
+  void *pdata = (void *)&new_property;
+  if (true == isPropertiesChanged(old_property, pdata))
   {
-    void *pdata = (void *)&new_property;
-    createEventMessage(EventType::EVENT_TYPE_PROPERTIES, pdata);
-    std::string output_reply = objevent_.createEventObjectJsonString();
+    createEventMessage(EventType::EVENT_TYPE_PROPERTIES, pdata, devhandle);
+
+    std::string output_reply = objevent_.createEventObjectJsonString(old_property);
     LSError error;
     LSErrorInit(&error);
     if (!LSSubscriptionReply(this->get(), CONST_EVENT_NOTIFICATION, output_reply.c_str(), &error))
@@ -123,15 +159,16 @@ void CameraService::createPropertiesEventMessage(int devhandle, CAMERA_PROPERTIE
   }
 }
 
-void CameraService::createFormatEventMessage(int devhandle, CAMERA_FORMAT saved_format)
+void CameraService::createFormatEventMessage(int devhandle, void *old_format)
 {
-  CAMERA_FORMAT newformat = CommandManager::getInstance().getFormat(devhandle);
-  if ((newformat.eFormat != saved_format.eFormat) || (newformat.nHeight != saved_format.nHeight) ||
-      (newformat.nWidth != saved_format.nWidth))
+  CAMERA_FORMAT newformat;
+  CommandManager::getInstance().getFormat(devhandle, &newformat);
+  void *pdata = (void *)&newformat;
+  if (true == isFormatChanged(old_format, pdata))
   {
-    void *pdata = (void *)&newformat;
-    createEventMessage(EventType::EVENT_TYPE_FORMAT, pdata);
-    std::string output_reply = objevent_.createEventObjectJsonString();
+    createEventMessage(EventType::EVENT_TYPE_FORMAT, pdata, devhandle);
+
+    std::string output_reply = objevent_.createEventObjectJsonString(old_format);
     LSError error;
     LSErrorInit(&error);
     if (!LSSubscriptionReply(this->get(), CONST_EVENT_NOTIFICATION, output_reply.c_str(), &error))
@@ -356,14 +393,17 @@ bool CameraService::startCapture(LSMessage &message)
       PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startCapture ndevhandle : %d\n", ndevhandle);
       PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startCapture nImage : %d\n",
                  obj_startcapture.getnImage());
+      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startCapture path: %s\n",
+                 obj_startcapture.getImagePath().c_str());
 
       // capture image here
       if (0 != obj_startcapture.getnImage())
         err_id = CommandManager::getInstance().captureImage(
-            ndevhandle, obj_startcapture.getnImage(), obj_startcapture.rGetParams());
+            ndevhandle, obj_startcapture.getnImage(), obj_startcapture.rGetParams(),
+            obj_startcapture.getImagePath());
       else
-        err_id =
-            CommandManager::getInstance().startCapture(ndevhandle, obj_startcapture.rGetParams());
+        err_id = CommandManager::getInstance().startCapture(
+            ndevhandle, obj_startcapture.rGetParams(), obj_startcapture.getImagePath());
     }
     if (DEVICE_OK != err_id)
     {
@@ -617,6 +657,7 @@ bool CameraService::setProperties(LSMessage &message)
     // get old properties before setting new
     CAMERA_PROPERTIES_T old_property;
     CommandManager::getInstance().getProperty(ndevhandle, &old_property);
+    void *p_olddata = (void *)&old_property;
     // set properties here
     CAMERA_PROPERTIES_T oParams = objsetproperties.rGetCameraProperties();
     PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
@@ -631,7 +672,7 @@ bool CameraService::setProperties(LSMessage &message)
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       objsetproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       // check if new properties are different from saved properties
-      createPropertiesEventMessage(ndevhandle, old_property);
+      createPropertiesEventMessage(ndevhandle, p_olddata);
     }
   }
 
@@ -664,7 +705,9 @@ bool CameraService::setFormat(LSMessage &message)
   else
   {
     // get saved format of the device
-    CAMERA_FORMAT savedformat = CommandManager::getInstance().getFormat(ndevhandle);
+    CAMERA_FORMAT savedformat;
+    CommandManager::getInstance().getFormat(ndevhandle, &savedformat);
+    void *p_olddata = (void *)&savedformat;
     // setformat here
     PMLOG_INFO(CONST_MODULE_LUNA, "setFormat ndevhandle %d\n", ndevhandle);
     CAMERA_FORMAT sformat = objsetformat.rGetCameraFormat();
@@ -680,7 +723,7 @@ bool CameraService::setFormat(LSMessage &message)
       objsetformat.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       // check if new format settings are different from saved format settings
       // get saved format of the device
-      createFormatEventMessage(ndevhandle, savedformat);
+      createFormatEventMessage(ndevhandle, p_olddata);
     }
   }
 
@@ -713,7 +756,7 @@ bool CameraService::getEventNotification(LSMessage &message)
   }
 
   // create json string now for reply
-  std::string output_reply = objevent_.createEventObjectJsonString();
+  std::string output_reply = objevent_.createEventObjectJsonString(nullptr);
   PMLOG_INFO(CONST_MODULE_LUNA, "getEventNotification output_reply %s\n", output_reply.c_str());
 
   LS::Message request(&message);
