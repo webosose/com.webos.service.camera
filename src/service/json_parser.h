@@ -23,6 +23,7 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+#include <vector>
 
 class MethodReply
 {
@@ -311,7 +312,7 @@ public:
     {
       ro_camproperties_.st_resolution.e_format[n] = rin_info.st_resolution.e_format[n];
       ro_camproperties_.st_resolution.n_frameindex[n] = rin_info.st_resolution.n_frameindex[n];
-      for (int count = 0; count <= rin_info.st_resolution.n_frameindex[n]; count++)
+      for (int count = 0; count < rin_info.st_resolution.n_frameindex[n]; count++)
       {
         ro_camproperties_.st_resolution.n_height[n][count] =
             rin_info.st_resolution.n_height[n][count];
@@ -325,6 +326,9 @@ public:
     }
   }
   CAMERA_PROPERTIES_T rGetCameraProperties() const { return ro_camproperties_; }
+
+  void setParams(const std::string& param) { str_params_.push_back(param); }
+  std::vector<std::string> getParams() { return str_params_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
@@ -342,6 +346,7 @@ public:
 private:
   int n_devicehandle_;
   CAMERA_PROPERTIES_T ro_camproperties_;
+  std::vector<std::string> str_params_;
   MethodReply objreply_;
 };
 
@@ -406,5 +411,7 @@ private:
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
 void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, void *, jvalue_ref &);
+void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
+                                              jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/

@@ -73,7 +73,7 @@ int V4l2CameraPlugin::setFormat(stream_format_t stream_format)
 {
   // first set framerate
   struct v4l2_streamparm parm;
-
+  CLEAR(parm);
   parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   parm.parm.capture.timeperframe.numerator = 1;
   parm.parm.capture.timeperframe.denominator = stream_format.stream_fps;

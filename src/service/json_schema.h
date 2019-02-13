@@ -49,6 +49,16 @@ const char *getPropertiesSchema = "{ \
     \"required\": [ \
       \"handle\" \
     ], \
+    \"params\": { \
+      \"type\": \"array\", \
+      \"title\": \"The Params Schema\", \
+      \"items\": { \
+        \"type\": \"string\", \
+        \"title\": \"The Items Schema\",\
+        \"default\": \"\", \
+        \"pattern\": \"^(.*)$\" \
+      }\
+    },\
     \"properties\": { \
       \"handle\": { \
         \"type\": \"integer\", \
