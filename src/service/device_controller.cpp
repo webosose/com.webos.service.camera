@@ -45,9 +45,9 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
   if (path.empty())
     path = "/tmp/";
 
-  //check if specified location ends with '/'
+  // check if specified location ends with '/'
   char ch = path.back();
-  if('/' != ch)
+  if ('/' != ch)
     path += "/";
 
   // create file to save data based on format
@@ -442,8 +442,8 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(void *handle, int ncount, CAMER
 {
   PMLOG_INFO(CONST_MODULE_DC, "captureImage started ncount : %d \n", ncount);
 
-  //update image locstion if there is a change
-  if(str_imagepath_ != imagepath)
+  // update image locstion if there is a change
+  if (str_imagepath_ != imagepath)
     str_imagepath_ = imagepath;
 
   // validate if saved format and capture image format are same or not
