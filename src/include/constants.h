@@ -120,7 +120,7 @@ const std::string cstr_h264esformat = "H264ES";
 const std::string cstr_jpegformat = "JPEG";
 const std::string cstr_primary = "primary";
 const std::string cstr_secondary = "secondary";
-const std::string cstr_format = "FORMAT_EVENT";
-const std::string cstr_properties = "PROPERTIES_EVENT";
+const std::string cstr_format = "format";
+const std::string cstr_properties = "properties";
 
 #endif /*CAMERA_CONST_H_*/

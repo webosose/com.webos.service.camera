@@ -77,8 +77,8 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_OK, "No error"}};
 
 std::map<EventType, std::string> g_event_string = {
-    {EventType::EVENT_TYPE_FORMAT, "FORMAT_EVENT"},
-    {EventType::EVENT_TYPE_PROPERTIES, "PROPERTIES_EVENT"},
+    {EventType::EVENT_TYPE_FORMAT, cstr_format},
+    {EventType::EVENT_TYPE_PROPERTIES, cstr_properties},
     {EventType::EVENT_TYPE_CONNECT, "DEVICE_CONNECT_EVENT"},
     {EventType::EVENT_TYPE_DISCONNECT, "DEVICE_DISCONNECT_EVENT"}};
 
