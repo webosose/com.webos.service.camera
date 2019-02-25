@@ -106,7 +106,7 @@
 const int n_invalid_id = -1;
 const int frame_count = 8;
 const int extra_buffer = 1024;
-const int buffer_count = 2;
+const int buffer_count = 4;
 
 const std::string cstr_empty = "";
 const std::string cstr_pdmclient = "com.webos.service.pdmclient";
