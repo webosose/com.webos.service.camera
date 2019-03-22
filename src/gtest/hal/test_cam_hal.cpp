@@ -22,7 +22,7 @@ const char *subsystem = "libv4l2-camera-plugin.so";
 const char *devname = "/dev/video0";
 const char *devname_1 = "/dev/video1";
 const char *plugininvalid = "libcamera_v4l2.so";
-const char *pluginvalid = "libcamera.so";
+const char *pluginvalid = "libcamera_hal.so";
 
 const int height_480 = 480;
 const int width_640 = 640;
