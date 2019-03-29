@@ -398,9 +398,11 @@ public:
 
   void getEventObject(const char *, const char *);
   std::string createEventObjectJsonString(void *) const;
+  std::string createEventObjectSubscriptionJsonString(CAMERA_FORMAT *, CAMERA_PROPERTIES_T *) const;
   void setEventType(EventType etype) { etype_ = etype; }
   void setEventData(void *data) { pdata_ = data; }
   void setCameraId(const std::string& camid) { strcamid_ = camid; }
+  std::string getCameraId() { return strcamid_; }
 
 private:
   EventType etype_;

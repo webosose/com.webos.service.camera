@@ -744,6 +744,7 @@ bool CameraService::getEventNotification(LSMessage &message)
   LSErrorInit(&error);
 
   objevent_.getEventObject(payload, getEventNotificationSchema);
+  int ndev_id = getId(objevent_.getCameraId());
 
   if (LSMessageIsSubscription(&message))
   {
@@ -755,8 +756,15 @@ bool CameraService::getEventNotification(LSMessage &message)
     }
   }
 
+  int ndevhandle = CommandManager::getInstance().getCameraHandle(ndev_id);
+  CAMERA_FORMAT format;
+  CommandManager::getInstance().getFormat(ndevhandle, &format);
+
+  CAMERA_PROPERTIES_T property;
+  CommandManager::getInstance().getProperty(ndevhandle, &property);
+
   // create json string now for reply
-  std::string output_reply = objevent_.createEventObjectJsonString(nullptr);
+  std::string output_reply = objevent_.createEventObjectSubscriptionJsonString(&format, &property);
   PMLOG_INFO(CONST_MODULE_LUNA, "getEventNotification output_reply %s\n", output_reply.c_str());
 
   LS::Message request(&message);

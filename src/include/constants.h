@@ -122,5 +122,8 @@ const std::string cstr_primary = "primary";
 const std::string cstr_secondary = "secondary";
 const std::string cstr_format = "format";
 const std::string cstr_properties = "properties";
+const std::string cstr_oneshot = "MODE_ONESHOT";
+const std::string cstr_burst = "MODE_BURST";
+const std::string cstr_continuous = "MODE_CONTINUOUS";
 
 #endif /*CAMERA_CONST_H_*/

@@ -398,7 +398,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncount,
                                                         CAMERA_FORMAT sformat,
-                                                        const std::string& imagepath)
+                                                        const std::string& imagepath,
+                                                        const std::string& mode)
 {
   PMLOG_INFO(CONST_MODULE_VDM, "captureImage : devhandle : %d ncount : %d \n", devhandle, ncount);
 
@@ -440,7 +441,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
     void *handle;
     DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
     // capture number of images specified by ncount
-    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.captureImage(handle, ncount, sformat, imagepath);
+    DEVICE_RETURN_CODE_T ret =
+        objdevicecontrol_.captureImage(handle, ncount, sformat, imagepath, mode);
     return ret;
   }
   else

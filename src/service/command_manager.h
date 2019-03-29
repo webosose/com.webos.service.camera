@@ -66,6 +66,7 @@ public:
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
   int getCameraId(int);
+  int getCameraHandle(int);
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/
