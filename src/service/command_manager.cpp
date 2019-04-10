@@ -282,8 +282,11 @@ DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAM
 
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
+  {
+    std::string mode = (ncount == 1) ? cstr_oneshot : cstr_burst;
     // capture image
-    return ptr->captureImage(devhandle, ncount, sformat, imagepath);
+    return ptr->captureImage(devhandle, ncount, sformat, imagepath, mode);
+  }
   else
     return DEVICE_ERROR_UNKNOWN;
 }
@@ -315,6 +318,20 @@ int CommandManager::getCameraId(int devhandle)
     Device obj = it->second;
     if (devhandle == obj.devicehandle)
       return obj.deviceid;
+  }
+  return n_invalid_id;
+}
+
+int CommandManager::getCameraHandle(int devid)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "getCameraHandle : devid : %d\n", devid);
+
+  std::multimap<std::string, Device>::iterator it;
+  for (it = virtualdevmgrobj_map_.begin(); it != virtualdevmgrobj_map_.end(); ++it)
+  {
+    Device obj = it->second;
+    if (devid == obj.deviceid)
+      return obj.devicehandle;
   }
   return n_invalid_id;
 }
