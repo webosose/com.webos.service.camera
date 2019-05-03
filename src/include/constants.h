@@ -88,7 +88,11 @@
 #define CONST_PARAM_NAME_YUVMODE "yuvMode"
 #define CONST_PARAM_NAME_ILLUMINATION "illumination"
 #define CONST_PARAM_NAME_NON_STORAGE_DEVICE_LIST "nonStorageDeviceList"
+#ifdef PLATFORM_RASPBERRYPI3
 #define CONST_PARAM_NAME_DEVICE_NUM "deviceNum"
+#else
+#define CONST_PARAM_NAME_DEVICE_NUM "devNum"
+#endif
 #define CONST_PARAM_NAME_USB_PORT_NUM "usbPortNum"
 #define CONST_PARAM_NAME_VENDOR_NAME "vendorName"
 #define CONST_PARAM_NAME_PRODUCT_NAME "productName"

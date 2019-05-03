@@ -179,7 +179,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
   buffer_t frame_buffer;
   for (int i = 1; i <= ncount; i++)
   {
-    if ((retval = poll(poll_set, 2, timeout)) > 0)
+    if ((retval = poll(poll_set, 1, timeout)) > 0)
     {
       frame_buffer.start = malloc(framesize);
       retval = camera_hal_if_get_buffer(handle, &frame_buffer);
