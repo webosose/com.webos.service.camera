@@ -869,10 +869,7 @@ int V4l2CameraPlugin::captureDataMmapMode()
 
 int V4l2CameraPlugin::captureDataUserptrMode()
 {
-  enum v4l2_buf_type type;
-  int i = 0;
-
-  for (i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     struct v4l2_buffer buf;
 
@@ -883,20 +880,22 @@ int V4l2CameraPlugin::captureDataUserptrMode()
     buf.m.userptr = (unsigned long)buffers_[i].start;
     buf.length = buffers_[i].length;
 
-    if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
+    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
     {
       HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataUserptrMode : VIDIOC_QBUF failed %d, %s\n", errno,
                    strerror(errno));
       return CAMERA_ERROR_UNKNOWN;
     }
   }
-  type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  if (-1 == xioctl(fd_, VIDIOC_STREAMON, &type))
+  enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMON, &type))
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataUserptrMode : VIDIOC_STREAMON failed %d, %s\n",
                  errno, strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
+  return CAMERA_ERROR_NONE;
 }
 
 int V4l2CameraPlugin::requestDmabuffers(int num_buffer)

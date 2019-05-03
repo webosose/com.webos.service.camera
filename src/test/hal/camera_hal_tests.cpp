@@ -102,7 +102,7 @@ int main(int argc, char const *argv[])
   };
   buffer_t frame_buffer;
   // just to verify deinit, disabled while loop
-  int ret = poll(fds, 2, timeout);
+  int ret = poll(fds, 1, timeout);
   if (ret > 0)
   {
     camera_hal_if_get_buffer(p_h_camera, &frame_buffer);
