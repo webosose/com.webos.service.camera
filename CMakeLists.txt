@@ -45,6 +45,10 @@ pkg_check_modules(UDEV REQUIRED libudev)
 include_directories(${UDEV_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${UDEV_CFLAGS})
 
+if(WEBOS_TARGET_MACHINE STREQUAL "raspberrypi3")
+add_definitions(-DPLATFORM_RASPBERRYPI3)
+endif()
+
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
