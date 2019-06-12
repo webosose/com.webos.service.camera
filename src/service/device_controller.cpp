@@ -119,6 +119,9 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
 
   DEVICE_RETURN_CODE_T ret = DEVICE_OK;
   camera_pixel_format_t enewformat = getPixelFormat(sformat.eFormat);
+  //error handling
+  if(CAMERA_PIXEL_FORMAT_MAX == enewformat)
+    return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
   // check if saved format and format for capture is same or not
   // if not then stop v4l2 device, set format again and start capture
@@ -137,6 +140,9 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
     newstreamformat.stream_height = sformat.nHeight;
     newstreamformat.stream_width = sformat.nWidth;
     newstreamformat.pixel_format = getPixelFormat(sformat.eFormat);
+    //error handling
+    if(CAMERA_PIXEL_FORMAT_MAX == newstreamformat.pixel_format)
+      return DEVICE_ERROR_UNSUPPORTED_FORMAT;
     retval = camera_hal_if_set_format(handle, newstreamformat);
     if (CAMERA_ERROR_NONE != retval)
     {
@@ -230,6 +236,8 @@ camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)
   {
     return CAMERA_PIXEL_FORMAT_JPEG;
   }
+  //error case
+  return CAMERA_PIXEL_FORMAT_MAX;
 }
 
 void DeviceControl::captureThread()
@@ -698,6 +706,9 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, CAMERA_FORMAT sforma
   in_format.stream_width = sformat.nWidth;
   in_format.stream_fps = sformat.nFps;
   in_format.pixel_format = getPixelFormat(sformat.eFormat);
+  //error handling
+  if(CAMERA_PIXEL_FORMAT_MAX == in_format.pixel_format)
+    return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
   int ret = camera_hal_if_set_format(handle, in_format);
   if (CAMERA_ERROR_NONE != ret)
@@ -733,4 +744,6 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
   {
     return CAMERA_FORMAT_JPEG;
   }
+  //error case
+  return CAMERA_FORMAT_UNDEFINED;
 }
