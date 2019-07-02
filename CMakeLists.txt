@@ -96,9 +96,9 @@ include_directories(${CMAKE_SOURCE_DIR}/src/hal/)
 include_directories(${CMAKE_SOURCE_DIR}/src/hal/v4l2)
 
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if.h DESTINATION
-/usr/include)
+${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION
-/usr/include)
+${WEBOS_INSTALL_INCLUDEDIR})
 
 #cameraservice project exe
 set (SRC_CAMSRV_TEST ${CMAKE_SOURCE_DIR}/src/test/cameraservice/camera_service_test.cpp)
@@ -123,8 +123,8 @@ target_link_libraries(camera_hal
                       ${CMAKE_DL_LIBS}
                       ${PMLOGLIB_LDFLAGS}
                       pthread)
-install(TARGETS v4l2-camera-plugin DESTINATION /usr/lib)
-install(TARGETS camera_hal DESTINATION /usr/lib)
+install(TARGETS v4l2-camera-plugin DESTINATION ${WEBOS_INSTALL_LIBDIR})
+install(TARGETS camera_hal DESTINATION ${WEBOS_INSTALL_LIBDIR})
 
 #haltestapp project exe
 set (SRC_CAMHAL_TEST ${CMAKE_SOURCE_DIR}/src/test/hal/camera_hal_tests.cpp)
