@@ -50,19 +50,31 @@ static void _device_init(int devicenum, char *devicenode)
     struct udev_device *dev,*dev1;
 
     path = udev_list_entry_get_name(dev_list_entry);
-    dev = udev_device_new_from_syspath(camudev, path);
-    strDeviceNode = udev_device_get_devnode(dev);
-    dev1 = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
-    if (!dev1)
+    if(path)
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "Unable to find parent usb device.");
+      dev = udev_device_new_from_syspath(camudev, path);
+      if(dev)
+      {
+        strDeviceNode = udev_device_get_devnode(dev);
+        PMLOG_INFO(CONST_MODULE_LUNA, "_device_init strDeviceNode %s \n",strDeviceNode);
+        dev1 = udev_device_get_parent_with_subsystem_devtype(dev, "usb", "usb_device");
+        if (dev1)
+        {
+          PMLOG_INFO(CONST_MODULE_LUNA, "Found parent usb device.");
+          devnum = udev_device_get_sysattr_value(dev1, "devnum");
+          nDeviceNumber = atoi(devnum);
+          PMLOG_INFO(CONST_MODULE_LUNA, "_device_init nDeviceNumber %d \n",nDeviceNumber);
+          if (nDeviceNumber == devicenum)
+          {
+            if(strDeviceNode)
+              strcpy(devicenode, strDeviceNode);
+            udev_device_unref(dev);
+            break;
+          }
+        }
+        udev_device_unref(dev);
+      }
     }
-    devnum = udev_device_get_sysattr_value(dev1, "devnum");
-    nDeviceNumber = atoi(devnum);
-    if (nDeviceNumber == devicenum)
-      strcpy(devicenode, strDeviceNode);
-
-    udev_device_unref(dev);
   }
   udev_enumerate_unref(enumerate);
   udev_unref(camudev);

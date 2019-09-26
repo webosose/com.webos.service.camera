@@ -49,6 +49,10 @@ if(WEBOS_TARGET_MACHINE STREQUAL "raspberrypi3")
 add_definitions(-DPLATFORM_RASPBERRYPI3)
 endif()
 
+if(WEBOS_TARGET_MACHINE STREQUAL "raspberrypi4")
+add_definitions(-DPLATFORM_RASPBERRYPI4)
+endif()
+
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
