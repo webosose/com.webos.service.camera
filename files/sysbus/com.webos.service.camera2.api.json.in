@@ -1,9 +1,11 @@
 {
-        "camera": [
+        "camera.query": [
+                "com.webos.service.camera2/getCameraList",
+                "com.webos.service.camera2/getInfo"
+        ],
+        "camera.operation": [
                 "com.webos.service.camera2/captureImage",
                 "com.webos.service.camera2/close",
-                "com.webos.service.camera2/getInfo",
-                "com.webos.service.camera2/getCameraList",
                 "com.webos.service.camera2/getProperties",
                 "com.webos.service.camera2/open",
                 "com.webos.service.camera2/setFormat",
