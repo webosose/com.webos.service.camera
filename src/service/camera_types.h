@@ -143,13 +143,14 @@ enum class CameraDeviceState
 };
 
 /*Structures*/
-typedef struct
+struct CAMERA_FORMAT
 {
   int nWidth;
   int nHeight;
   int nFps;
   camera_format_t eFormat;
-} CAMERA_FORMAT;
+  bool operator != (const CAMERA_FORMAT &);
+} ;
 
 struct CAMERA_PROPERTIES_T
 {
@@ -184,6 +185,9 @@ struct CAMERA_PROPERTIES_T
   int nMicGain;
   int bMicMute;
   camera_resolution_t st_resolution;
+
+  bool operator != (const CAMERA_PROPERTIES_T &);
+
   CAMERA_PROPERTIES_T()
       : nZoom(CONST_VARIABLE_INITIALIZE), nGridZoomX(CONST_VARIABLE_INITIALIZE),
         nGridZoomY(CONST_VARIABLE_INITIALIZE), nPan(CONST_VARIABLE_INITIALIZE),
@@ -199,9 +203,7 @@ struct CAMERA_PROPERTIES_T
         bYuvMode(CONST_VARIABLE_INITIALIZE), nIllumination(CONST_VARIABLE_INITIALIZE),
         bBacklightCompensation(CONST_VARIABLE_INITIALIZE), nMicMaxGain(CONST_VARIABLE_INITIALIZE),
         nMicMinGain(CONST_VARIABLE_INITIALIZE), nMicGain(CONST_VARIABLE_INITIALIZE),
-        bMicMute(CONST_VARIABLE_INITIALIZE), st_resolution()
-  {
-  }
+        bMicMute(CONST_VARIABLE_INITIALIZE), st_resolution() { }
 };
 
 typedef struct

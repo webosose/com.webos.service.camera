@@ -170,7 +170,6 @@ public:
   }
   CAMERA_FORMAT rGetParams() const { return r_cameraparams_; }
 
-  void setnImage(int nimage) { n_image_ = nimage; }
   int getnImage() const { return n_image_; }
 
   void setImagePath(const std::string& path) { str_path_ = path; }

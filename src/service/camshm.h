@@ -30,15 +30,7 @@ typedef enum _SHMEM_STATUS_T
 
 typedef void *SHMEM_HANDLE;
 
-extern SHMEM_STATUS_T CreateShmem(SHMEM_HANDLE *, key_t *, int, int);
 extern SHMEM_STATUS_T CreateShmemEx(SHMEM_HANDLE *, key_t *, int, int, int);
-extern SHMEM_STATUS_T OpenShmem(SHMEM_HANDLE *, key_t);
-extern SHMEM_STATUS_T ReadShmem(SHMEM_HANDLE, unsigned char **, int *);
-extern SHMEM_STATUS_T ReadShmemEx(SHMEM_HANDLE, unsigned char **, int *, unsigned char **, int *);
-extern SHMEM_STATUS_T ReadLastShmem(SHMEM_HANDLE, unsigned char **, int *);
-extern SHMEM_STATUS_T ReadLastShmemEx(SHMEM_HANDLE, unsigned char **, int *, unsigned char **,
-                                      int *pExtraSize);
-extern SHMEM_STATUS_T WriteShmem(SHMEM_HANDLE, unsigned char *, int);
 extern SHMEM_STATUS_T WriteShmemEx(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
 extern SHMEM_STATUS_T CloseShmem(SHMEM_HANDLE *);
 

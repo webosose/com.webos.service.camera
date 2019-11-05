@@ -100,8 +100,7 @@ typedef struct _SHMEM_COMM_T
 
 SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
                           int extraSize, int nOpenMode);
-SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-                          unsigned char **ppExtraData, int *pExtraSize, int readMode);
+
 SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
                            unsigned char *pExtraData, int extraDataSize);
 // Internal Functions
@@ -180,22 +179,10 @@ int increseReadIndex(SHMEM_COMM_T *pShmem_buffer, int lread_index)
   return lread_index;
 }
 
-// API functions
-
-SHMEM_STATUS_T CreateShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum)
-{
-  return _OpenShmem(phShmem, pShmemKey, unitSize, unitNum, 0, MODE_CREATE);
-}
-
 SHMEM_STATUS_T CreateShmemEx(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
                              int extraSize)
 {
   return _OpenShmem(phShmem, pShmemKey, unitSize, unitNum, extraSize, MODE_CREATE);
-}
-
-extern SHMEM_STATUS_T OpenShmem(SHMEM_HANDLE *phShmem, key_t shmemKey)
-{
-  return _OpenShmem(phShmem, &shmemKey, 0, 0, 0, MODE_OPEN);
 }
 
 SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
@@ -324,97 +311,10 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
   return SHMEM_COMM_OK;
 }
 
-SHMEM_STATUS_T ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize)
-{
-  return _ReadShmem(hShmem, ppData, pSize, NULL, NULL, READ_FIRST);
-}
-
-SHMEM_STATUS_T ReadLastShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize)
-{
-  return _ReadShmem(hShmem, ppData, pSize, NULL, NULL, READ_LAST);
-}
-
-SHMEM_STATUS_T ReadShmemEx(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-                           unsigned char **ppExtraData, int *pExtraSize)
-{
-  return _ReadShmem(hShmem, ppData, pSize, ppExtraData, pExtraSize, READ_FIRST);
-}
-
-SHMEM_STATUS_T ReadLastShmemEx(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-                               unsigned char **ppExtraData, int *pExtraSize)
-{
-  return _ReadShmem(hShmem, ppData, pSize, ppExtraData, pExtraSize, READ_LAST);
-}
-
-SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-                          unsigned char **ppExtraData, int *pExtraSize, int readMode)
-{
-  SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
-  int lread_index;
-  unsigned char *read_addr;
-  int size;
-  static bool first_read;
-
-  first_read = false;
-  if (!shmem_buffer)
-  {
-    DEBUG_PRINT("shmem buffer is NULL");
-    return SHMEM_COMM_FAIL;
-  }
-  lread_index = *shmem_buffer->write_index;
-
-  do
-  {
-    if (-1 != *shmem_buffer->write_index)
-    {
-      if (*shmem_buffer->write_index == 0)
-      {
-        if (0 == first_read)
-        {
-          first_read = 1;
-          continue;
-        }
-        else
-        {
-          lread_index = *shmem_buffer->unit_num - 1;
-        }
-      }
-      else
-      {
-        lread_index = *shmem_buffer->write_index - 1;
-      }
-      size = *(int *)(shmem_buffer->length_buf + lread_index);
-
-      if ((size == 0) || (size > *shmem_buffer->unit_size))
-      {
-        DEBUG_PRINT("size error(%d)!\n", size);
-        return SHMEM_COMM_FAIL;
-      }
-
-      read_addr = shmem_buffer->data_buf + (lread_index) * (*shmem_buffer->unit_size);
-      *ppData = read_addr;
-      *pSize = size;
-      if (NULL != ppExtraData && NULL != pExtraSize)
-      {
-        *ppExtraData = shmem_buffer->extra_buf + (lread_index) * (*shmem_buffer->extra_size);
-        *pExtraSize = *shmem_buffer->extra_size;
-      }
-    }
-    break;
-  } while (1);
-
-  return SHMEM_COMM_OK;
-}
-
 SHMEM_STATUS_T WriteShmemEx(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
                             unsigned char *pExtraData, int extraDataSize)
 {
   return _WriteShmem(hShmem, pData, dataSize, pExtraData, extraDataSize);
-}
-
-SHMEM_STATUS_T WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize)
-{
-  return _WriteShmem(hShmem, pData, dataSize, NULL, 0);
 }
 
 SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
