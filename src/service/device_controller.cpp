@@ -50,7 +50,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
   std::size_t position = path.find_last_of(".");
   std::string extension = path.substr(position + 1);
 
-  if (("yuv" == extension) || ("jpeg" == extension) || ("h264" == extension))
+  if ((extension == "yuv") || (extension == "jpeg") || (extension == "h264"))
   {
     if (cstr_burst == str_capturemode_ || cstr_continuous == str_capturemode_)
     {
@@ -62,7 +62,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
   {
     // check if specified location ends with '/' else add
     char ch = path.back();
-    if ('/' != ch)
+    if (ch != '/')
       path += "/";
 
     time_t t = time(NULL);
@@ -71,15 +71,15 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
     gettimeofday(&tmnow, NULL);
 
     // create file to save data based on format
-    if (CAMERA_PIXEL_FORMAT_YUYV == epixelformat_)
+    if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV)
       snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.yuv", timePtr->tm_mday,
                (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
                (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
-    else if (CAMERA_PIXEL_FORMAT_JPEG == epixelformat_)
+    else if (epixelformat_ == CAMERA_PIXEL_FORMAT_JPEG)
       snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.jpeg", timePtr->tm_mday,
                (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
                (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
-    else if (CAMERA_PIXEL_FORMAT_H264 == epixelformat_)
+    else if (epixelformat_ == CAMERA_PIXEL_FORMAT_H264)
       snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.h264", timePtr->tm_mday,
                (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
                (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
@@ -105,7 +105,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
   // get current saved format for device
   stream_format_t streamformat;
   int retval = camera_hal_if_get_format(handle, &streamformat);
-  if (CAMERA_ERROR_NONE != retval)
+  if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "checkFormat : camera_hal_if_get_format failed \n");
     return DEVICE_ERROR_UNKNOWN;
@@ -120,7 +120,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
   DEVICE_RETURN_CODE_T ret = DEVICE_OK;
   camera_pixel_format_t enewformat = getPixelFormat(sformat.eFormat);
   //error handling
-  if(CAMERA_PIXEL_FORMAT_MAX == enewformat)
+  if(enewformat == CAMERA_PIXEL_FORMAT_MAX)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
   // check if saved format and format for capture is same or not
@@ -141,10 +141,10 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
     newstreamformat.stream_width = sformat.nWidth;
     newstreamformat.pixel_format = getPixelFormat(sformat.eFormat);
     //error handling
-    if(CAMERA_PIXEL_FORMAT_MAX == newstreamformat.pixel_format)
+    if(newstreamformat.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
       return DEVICE_ERROR_UNSUPPORTED_FORMAT;
     retval = camera_hal_if_set_format(handle, newstreamformat);
-    if (CAMERA_ERROR_NONE != retval)
+    if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "checkFormat : camera_hal_if_set_format failed \n");
       // if set format fails then reset format to preview format
@@ -206,7 +206,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
       frame_buffer.start = nullptr;
 
       retval = camera_hal_if_release_buffer(handle, frame_buffer);
-      if (CAMERA_ERROR_NONE != retval)
+      if (retval != CAMERA_ERROR_NONE)
       {
         PMLOG_ERROR(CONST_MODULE_DC,
                     "pollForCapturedImage : camera_hal_if_release_buffer failed \n");
@@ -224,15 +224,15 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
 camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)
 {
   // convert CAMERA_FORMAT_T to camera_pixel_format_t
-  if (CAMERA_FORMAT_H264ES == eformat)
+  if (eformat == CAMERA_FORMAT_H264ES)
   {
     return CAMERA_PIXEL_FORMAT_H264;
   }
-  else if (CAMERA_FORMAT_YUV == eformat)
+  else if (eformat == CAMERA_FORMAT_YUV)
   {
     return CAMERA_PIXEL_FORMAT_YUYV;
   }
-  else if (CAMERA_FORMAT_JPEG == eformat)
+  else if (eformat == CAMERA_FORMAT_JPEG)
   {
     return CAMERA_PIXEL_FORMAT_JPEG;
   }
@@ -249,7 +249,7 @@ void DeviceControl::captureThread()
   {
     DEVICE_RETURN_CODE_T ret =
         captureImage(cam_handle_, 1, informat_, str_imagepath_, cstr_continuous);
-    if (DEVICE_OK != ret)
+    if (ret != DEVICE_OK)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "captureThread : captureImage failed \n");
       break;
@@ -285,7 +285,7 @@ void DeviceControl::previewThread()
     buffer_t frame_buffer;
     frame_buffer.start = malloc(framesize);
     int retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
-    if (CAMERA_ERROR_NONE != retval)
+    if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "previewThread : camera_hal_if_get_buffer failed \n");
       free(frame_buffer.start);
@@ -295,14 +295,15 @@ void DeviceControl::previewThread()
 
     // keep writing data to shared memory
     unsigned int timestamp = 0;
-    WriteShmemEx(h_shm_, (unsigned char *)frame_buffer.start, frame_buffer.length,
-                 (unsigned char *)&timestamp, sizeof(timestamp));
+    int retshmem = IPCSharedMemory::getInstance().WriteShmemory(h_shm_, (unsigned char *)frame_buffer.start, frame_buffer.length,(unsigned char *)&timestamp, sizeof(timestamp));
+    if (retshmem != SHMEM_COMM_OK)
+      PMLOG_ERROR(CONST_MODULE_DC, "WriteShmemory error %d \n", retshmem);
 
     free(frame_buffer.start);
     frame_buffer.start = nullptr;
 
     retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
-    if (CAMERA_ERROR_NONE != retval)
+    if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "previewThread : camera_hal_if_release_buffer failed \n");
       break;
@@ -339,7 +340,7 @@ DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode)
   // open camera device
   int ret = camera_hal_if_open_device(handle, devicenode.c_str());
 
-  if (CAMERA_ERROR_NONE != ret)
+  if (ret != CAMERA_ERROR_NONE)
     return DEVICE_ERROR_CAN_NOT_OPEN;
 
   return DEVICE_OK;
@@ -349,15 +350,9 @@ DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
 {
   PMLOG_INFO(CONST_MODULE_DC, "close started \n");
 
-  int retshmem = CloseShmem(&h_shm_);
-  if (SHMEM_COMM_OK != retshmem)
-    PMLOG_ERROR(CONST_MODULE_DC, "CloseShmem error %d \n", retshmem);
-
-  h_shm_ = NULL;
-
   // close device
   int ret = camera_hal_if_close_device(handle);
-  if (CAMERA_ERROR_NONE != ret)
+  if (ret != CAMERA_ERROR_NONE)
     return DEVICE_ERROR_CAN_NOT_CLOSE;
 
   return DEVICE_OK;
@@ -377,17 +372,19 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, int *pkey)
 
   int size = streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
-  CreateShmemEx(&h_shm_, pkey, size, frame_count, sizeof(unsigned int));
+  int retshmem = IPCSharedMemory::getInstance().CreateShmemory(&h_shm_, pkey, size, frame_count, sizeof(unsigned int));
+  if (retshmem != SHMEM_COMM_OK)
+    PMLOG_ERROR(CONST_MODULE_DC, "CreateShmemory error %d \n", retshmem);
 
   int retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
-  if (CAMERA_ERROR_NONE != retval)
+  if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "startPreview : camera_hal_if_set_buffer failed \n");
     return DEVICE_ERROR_UNKNOWN;
   }
 
   retval = camera_hal_if_start_capture(handle);
-  if (CAMERA_ERROR_NONE != retval)
+  if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "startPreview : camera_hal_if_start_capture failed \n");
     return DEVICE_ERROR_UNKNOWN;
@@ -421,18 +418,24 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle)
   pthread_mutex_destroy(&mutex_);
 
   int retval = camera_hal_if_stop_capture(handle);
-  if (CAMERA_ERROR_NONE != retval)
+  if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "stopPreview : camera_hal_if_stop_capture failed \n");
     return DEVICE_ERROR_UNKNOWN;
   }
 
   retval = camera_hal_if_destroy_buffer(handle);
-  if (CAMERA_ERROR_NONE != retval)
+  if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "stopPreview : camera_hal_if_destroy_buffer failed \n");
     return DEVICE_ERROR_UNKNOWN;
   }
+
+  int retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shm_);
+  if (retshmem != SHMEM_COMM_OK)
+    PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);
+  h_shm_ = NULL;
+
 
   return DEVICE_OK;
 }
@@ -494,7 +497,7 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(void *handle, int ncount, CAMER
 
   // poll for data on buffers and save captured image
   DEVICE_RETURN_CODE_T retval = pollForCapturedImage(handle, ncount);
-  if (DEVICE_OK != retval)
+  if (retval != DEVICE_OK)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "captureImage : pollForCapturedImage failed \n");
     return retval;
@@ -509,7 +512,7 @@ DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string subs
 
   void *p_cam_handle;
   int ret = camera_hal_if_init(&p_cam_handle, subsystem.c_str());
-  if (CAMERA_ERROR_NONE != ret)
+  if (ret != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "Failed to create handle\n!!");
     *handle = NULL;
@@ -526,7 +529,7 @@ DEVICE_RETURN_CODE_T DeviceControl::destroyHandle(void *handle)
   PMLOG_INFO(CONST_MODULE_DC, "destroyHandle started \n");
 
   int ret = camera_hal_if_deinit(handle);
-  if (CAMERA_ERROR_NONE != ret)
+  if (ret != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "Failed to destroy handle\n!!");
     return DEVICE_ERROR_UNKNOWN;
@@ -541,7 +544,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode,
   PMLOG_INFO(CONST_MODULE_DC, "getDeviceInfo started \n");
 
   int ret = camera_hal_if_get_info(strdevicenode.c_str(), pinfo);
-  if (CAMERA_ERROR_NONE != ret)
+  if (ret != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
     return DEVICE_ERROR_UNKNOWN;
@@ -583,54 +586,54 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   PMLOG_INFO(CONST_MODULE_DC, "getDeviceProperty started !\n");
 
   camera_properties_t out_params;
-  out_params.nPan = CONST_VARIABLE_INITIALIZE;
-  out_params.nTilt = CONST_VARIABLE_INITIALIZE;
-  out_params.nContrast = CONST_VARIABLE_INITIALIZE;
-  out_params.nBrightness = CONST_VARIABLE_INITIALIZE;
-  out_params.nSaturation = CONST_VARIABLE_INITIALIZE;
-  out_params.nSharpness = CONST_VARIABLE_INITIALIZE;
-  out_params.nHue = CONST_VARIABLE_INITIALIZE;
-  out_params.nGain = CONST_VARIABLE_INITIALIZE;
-  out_params.nGamma = CONST_VARIABLE_INITIALIZE;
-  out_params.nFrequency = CONST_VARIABLE_INITIALIZE;
-  out_params.nAutoWhiteBalance = CONST_VARIABLE_INITIALIZE;
-  out_params.nBacklightCompensation = CONST_VARIABLE_INITIALIZE;
-  out_params.nExposure = CONST_VARIABLE_INITIALIZE;
-  out_params.nWhiteBalanceTemperature = CONST_VARIABLE_INITIALIZE;
+  out_params.n_pan = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_tilt = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_contrast = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_brightness = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_saturation = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_sharpness = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_hue = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_gain = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_gamma = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_frequency = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_autowhitebalance = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_backlightcompensation = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_exposure = CONST_PARAM_DEFAULT_VALUE;
+  out_params.n_whitebalancetemperature = CONST_PARAM_DEFAULT_VALUE;
   camera_hal_if_get_properties(handle, &out_params);
 
-  oparams->nPan = out_params.nPan;
-  oparams->nTilt = out_params.nTilt;
-  oparams->nContrast = out_params.nContrast;
-  oparams->nBrightness = out_params.nBrightness;
-  oparams->nSaturation = out_params.nSaturation;
-  oparams->nSharpness = out_params.nSharpness;
-  oparams->nHue = out_params.nHue;
-  oparams->nGain = out_params.nGain;
-  oparams->nGamma = out_params.nGamma;
-  oparams->nFrequency = out_params.nFrequency;
-  oparams->bAutoWhiteBalance = out_params.nAutoWhiteBalance;
-  oparams->bBacklightCompensation = out_params.nBacklightCompensation;
-  if (oparams->bAutoExposure == 0)
-    oparams->nExposure = out_params.nExposure;
-  if (oparams->bAutoWhiteBalance == 0)
-    oparams->nWhiteBalanceTemperature = out_params.nWhiteBalanceTemperature;
+  oparams->nPan = out_params.n_pan;
+  oparams->nTilt = out_params.n_tilt;
+  oparams->nContrast = out_params.n_contrast;
+  oparams->nBrightness = out_params.n_brightness;
+  oparams->nSaturation = out_params.n_saturation;
+  oparams->nSharpness = out_params.n_sharpness;
+  oparams->nHue = out_params.n_hue;
+  oparams->nGain = out_params.n_gain;
+  oparams->nGamma = out_params.n_gamma;
+  oparams->nFrequency = out_params.n_frequency;
+  oparams->nAutoWhiteBalance = out_params.n_autowhitebalance;
+  oparams->nBacklightCompensation = out_params.n_backlightcompensation;
+  if (oparams->nAutoExposure == 0)
+    oparams->nExposure = out_params.n_exposure;
+  if (oparams->nAutoWhiteBalance == 0)
+    oparams->nWhiteBalanceTemperature = out_params.n_whitebalancetemperature;
   // update resolution structure
-  oparams->st_resolution.n_formatindex = out_params.st_resolution.n_formatindex;
+  oparams->stResolution.n_formatindex = out_params.st_resolution.n_formatindex;
   for (int n = 0; n < out_params.st_resolution.n_formatindex; n++)
   {
-    oparams->st_resolution.e_format[n] = out_params.st_resolution.e_format[n];
-    oparams->st_resolution.n_frameindex[n] = out_params.st_resolution.n_frameindex[n];
+    oparams->stResolution.e_format[n] = out_params.st_resolution.e_format[n];
+    oparams->stResolution.n_frameindex[n] = out_params.st_resolution.n_frameindex[n];
     for (int count = 0; count < out_params.st_resolution.n_frameindex[n]; count++)
     {
-      oparams->st_resolution.n_height[n][count] = out_params.st_resolution.n_height[n][count];
-      oparams->st_resolution.n_width[n][count] = out_params.st_resolution.n_width[n][count];
+      oparams->stResolution.n_height[n][count] = out_params.st_resolution.n_height[n][count];
+      oparams->stResolution.n_width[n][count] = out_params.st_resolution.n_width[n][count];
       PMLOG_INFO(CONST_MODULE_DC, "out_params.st_resolution.c_res %s\n",
                  out_params.st_resolution.c_res[count]);
-      memset(oparams->st_resolution.c_res[count], '\0',
-             sizeof(oparams->st_resolution.c_res[count]));
-      strncpy(oparams->st_resolution.c_res[count], out_params.st_resolution.c_res[count],
-              sizeof(oparams->st_resolution.c_res[count]));
+      memset(oparams->stResolution.c_res[count], '\0',
+             sizeof(oparams->stResolution.c_res[count]));
+      strncpy(oparams->stResolution.c_res[count], out_params.st_resolution.c_res[count],
+              sizeof(oparams->stResolution.c_res[count]));
     }
   }
 
@@ -643,53 +646,53 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
 
   camera_properties_t in_params;
 
-  if (inparams->nZoom != CONST_VARIABLE_INITIALIZE)
-    in_params.nZoomAbsolute = inparams->nZoom;
+  if (inparams->nZoomAbsolute != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_zoomabsolute = inparams->nZoomAbsolute;
 
-  if (inparams->nPan != CONST_VARIABLE_INITIALIZE)
-    in_params.nPan = inparams->nPan;
+  if (inparams->nPan != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_pan = inparams->nPan;
 
-  if (inparams->nTilt != CONST_VARIABLE_INITIALIZE)
-    in_params.nTilt = inparams->nTilt;
+  if (inparams->nTilt != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_tilt = inparams->nTilt;
 
-  if (inparams->nContrast != CONST_VARIABLE_INITIALIZE)
-    in_params.nContrast = inparams->nContrast;
+  if (inparams->nContrast != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_contrast = inparams->nContrast;
 
-  if (inparams->nBrightness != CONST_VARIABLE_INITIALIZE)
-    in_params.nBrightness = inparams->nBrightness;
+  if (inparams->nBrightness != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_brightness = inparams->nBrightness;
 
-  if (inparams->nSaturation != CONST_VARIABLE_INITIALIZE)
-    in_params.nSaturation = inparams->nSaturation;
+  if (inparams->nSaturation != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_saturation = inparams->nSaturation;
 
-  if (inparams->nSharpness != CONST_VARIABLE_INITIALIZE)
-    in_params.nSharpness = inparams->nSharpness;
+  if (inparams->nSharpness != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_sharpness = inparams->nSharpness;
 
-  if (inparams->nHue != CONST_VARIABLE_INITIALIZE)
-    in_params.nHue = inparams->nHue;
+  if (inparams->nHue != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_hue = inparams->nHue;
 
-  if (inparams->bAutoExposure != CONST_VARIABLE_INITIALIZE)
-    in_params.nAutoExposure = inparams->bAutoExposure;
+  if (inparams->nAutoExposure != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_autoexposure = inparams->nAutoExposure;
 
-  if (inparams->bAutoWhiteBalance != CONST_VARIABLE_INITIALIZE)
-    in_params.nAutoWhiteBalance = inparams->bAutoWhiteBalance;
+  if (inparams->nAutoWhiteBalance != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_autowhitebalance = inparams->nAutoWhiteBalance;
 
-  if (inparams->nExposure != CONST_VARIABLE_INITIALIZE)
-    in_params.nExposure = inparams->nExposure;
+  if (inparams->nExposure != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_exposure = inparams->nExposure;
 
-  if (inparams->nWhiteBalanceTemperature != CONST_VARIABLE_INITIALIZE)
-    in_params.nWhiteBalanceTemperature = inparams->nWhiteBalanceTemperature;
+  if (inparams->nWhiteBalanceTemperature != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_whitebalancetemperature = inparams->nWhiteBalanceTemperature;
 
-  if (inparams->nGain != CONST_VARIABLE_INITIALIZE)
-    in_params.nGain = inparams->nGain;
+  if (inparams->nGain != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_gain = inparams->nGain;
 
-  if (inparams->nGamma != CONST_VARIABLE_INITIALIZE)
-    in_params.nGamma = inparams->nGamma;
+  if (inparams->nGamma != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_gamma = inparams->nGamma;
 
-  if (inparams->nFrequency != CONST_VARIABLE_INITIALIZE)
-    in_params.nFrequency = inparams->nFrequency;
+  if (inparams->nFrequency != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_frequency = inparams->nFrequency;
 
-  if (inparams->bBacklightCompensation != CONST_VARIABLE_INITIALIZE)
-    in_params.nBacklightCompensation = inparams->bBacklightCompensation;
+  if (inparams->nBacklightCompensation != CONST_PARAM_DEFAULT_VALUE)
+    in_params.n_backlightcompensation = inparams->nBacklightCompensation;
 
   camera_hal_if_set_properties(handle, &in_params);
 
@@ -707,11 +710,11 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, CAMERA_FORMAT sforma
   in_format.stream_fps = sformat.nFps;
   in_format.pixel_format = getPixelFormat(sformat.eFormat);
   //error handling
-  if(CAMERA_PIXEL_FORMAT_MAX == in_format.pixel_format)
+  if(in_format.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
   int ret = camera_hal_if_set_format(handle, in_format);
-  if (CAMERA_ERROR_NONE != ret)
+  if (ret != CAMERA_ERROR_NONE)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
   return DEVICE_OK;
@@ -732,15 +735,15 @@ DEVICE_RETURN_CODE_T DeviceControl::getFormat(void *handle, CAMERA_FORMAT *pform
 camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
 {
   // convert camera_pixel_format_t to CAMERA_FORMAT_T
-  if (CAMERA_PIXEL_FORMAT_H264 == eformat)
+  if (eformat == CAMERA_PIXEL_FORMAT_H264)
   {
     return CAMERA_FORMAT_H264ES;
   }
-  else if (CAMERA_PIXEL_FORMAT_YUYV == eformat)
+  else if (eformat == CAMERA_PIXEL_FORMAT_YUYV)
   {
     return CAMERA_FORMAT_YUV;
   }
-  else if (CAMERA_PIXEL_FORMAT_JPEG == eformat)
+  else if (eformat == CAMERA_PIXEL_FORMAT_JPEG)
   {
     return CAMERA_FORMAT_JPEG;
   }

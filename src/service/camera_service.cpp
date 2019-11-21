@@ -493,7 +493,7 @@ bool CameraService::getCameraList(LSMessage &message)
 
     for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
     {
-      arr_camdev[i] = arr_micdev[i] = CONST_VARIABLE_INITIALIZE;
+      arr_camdev[i] = arr_micdev[i] = CONST_PARAM_DEFAULT_VALUE;
       arr_camsupport[i] = arr_micsupport[i] = 0;
     }
 
@@ -516,7 +516,7 @@ bool CameraService::getCameraList(LSMessage &message)
 
       for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
       {
-        if (CONST_VARIABLE_INITIALIZE == arr_camdev[i])
+        if (arr_camdev[i] == CONST_PARAM_DEFAULT_VALUE)
           break;
         snprintf(arrlist[n_camcount], CONST_MAX_STRING_LENGTH, "%s%d", CONST_DEVICE_NAME_CAMERA,
                  arr_camdev[i]);

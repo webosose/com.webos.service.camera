@@ -116,7 +116,7 @@ void getFormatString(int nFormat, char *pFormats)
     }
   }
 
-  if (strstr(pFormats, "|") == NULL)
+  if (!strstr(pFormats, "|"))
     strncat(pFormats, "Format is out of range", 100);
 
   return;
@@ -124,7 +124,7 @@ void getFormatString(int nFormat, char *pFormats)
 
 char *getTypeString(device_t etype)
 {
-  char *pszRetString = NULL;
+  char *pszRetString = nullptr;
 
   switch (etype)
   {
@@ -220,9 +220,9 @@ std::string getResolutionString(camera_format_t eformat)
 
 bool CAMERA_PROPERTIES_T::operator != (const CAMERA_PROPERTIES_T &new_property)
 {
-  if ((this->nZoom != new_property.nZoom) ||
-      (this->nGridZoomX != new_property.nGridZoomX) ||
-      (this->nGridZoomY != new_property.nGridZoomY) ||
+  if ((this->nFocusAbsolute != new_property.nFocusAbsolute) ||
+      (this->nAutoFocus != new_property.nAutoFocus) ||
+      (this->nZoomAbsolute != new_property.nZoomAbsolute) ||
       (this->nPan != new_property.nPan) ||
       (this->nTilt != new_property.nTilt) ||
       (this->nContrast != new_property.nContrast) ||
@@ -234,21 +234,10 @@ bool CAMERA_PROPERTIES_T::operator != (const CAMERA_PROPERTIES_T &new_property)
       (this->nGain != new_property.nGain) ||
       (this->nGamma != new_property.nGamma) ||
       (this->nFrequency != new_property.nFrequency) ||
-      (this->bMirror != new_property.bMirror) ||
       (this->nExposure != new_property.nExposure) ||
-      (this->bAutoExposure != new_property.bAutoExposure) ||
-      (this->bAutoWhiteBalance != new_property.bAutoWhiteBalance) ||
-      (this->nBitrate != new_property.nBitrate) ||
-      (this->nFramerate != new_property.nFramerate) ||
-      (this->ngopLength != new_property.ngopLength) ||
-      (this->bLed != new_property.bLed) ||
-      (this->bYuvMode != new_property.bYuvMode) ||
-      (this->nIllumination != new_property.nIllumination) ||
-      (this->bBacklightCompensation != new_property.bBacklightCompensation) ||
-      (this->nMicMaxGain != new_property.nMicMaxGain) ||
-      (this->nMicMinGain != new_property.nMicMinGain) ||
-      (this->nMicGain != new_property.nMicGain) ||
-      (this->bMicMute != new_property.bMicMute))
+      (this->nAutoExposure != new_property.nAutoExposure) ||
+      (this->nAutoWhiteBalance != new_property.nAutoWhiteBalance) ||
+      (this->nBacklightCompensation != new_property.nBacklightCompensation))
          return true;
   else
     return false;
