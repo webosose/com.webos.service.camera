@@ -105,7 +105,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/hal/v4l2)
 
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if.h DESTINATION
 /usr/include)
-install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if_types.h DESTINATION
 /usr/include)
 
 #cameraservice project exe

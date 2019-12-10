@@ -351,95 +351,95 @@ int V4l2CameraPlugin::setProperties(const camera_properties_t *cam_in_params)
   int retVal = CAMERA_ERROR_NONE;
   struct v4l2_queryctrl queryctrl;
 
-  if (cam_in_params->nBrightness != variable_initialize)
+  if (cam_in_params->n_brightness != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_BRIGHTNESS;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nBrightness);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_brightness);
   }
-  if (cam_in_params->nContrast != variable_initialize)
+  if (cam_in_params->n_contrast != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_CONTRAST;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nContrast);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_contrast);
   }
-  if (cam_in_params->nSaturation != variable_initialize)
+  if (cam_in_params->n_saturation != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_SATURATION;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nSaturation);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_saturation);
   }
-  if (cam_in_params->nHue != variable_initialize)
+  if (cam_in_params->n_hue != CONST_PARAM_DEFAULT_VALUE)
   {
-    queryctrl.id = V4L2_CID_HFLIP;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nHue);
+    queryctrl.id = V4L2_CID_HUE;
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_hue);
   }
-  if (cam_in_params->nAutoWhiteBalance != variable_initialize)
+  if (cam_in_params->n_autowhitebalance != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_AUTO_WHITE_BALANCE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nAutoWhiteBalance);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_autowhitebalance);
   }
-  if (cam_in_params->nGamma != variable_initialize)
+  if (cam_in_params->n_gamma != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_GAMMA;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nGamma);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_gamma);
   }
-  if (cam_in_params->nGain != variable_initialize)
+  if (cam_in_params->n_gain != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_GAIN;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nGain);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_gain);
   }
-  if (cam_in_params->nFrequency != variable_initialize)
+  if (cam_in_params->n_frequency != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nFrequency);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_frequency);
   }
-  if (cam_in_params->nWhiteBalanceTemperature != variable_initialize)
+  if (cam_in_params->n_whitebalancetemperature != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_WHITE_BALANCE_TEMPERATURE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nWhiteBalanceTemperature);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_whitebalancetemperature);
   }
-  if (cam_in_params->nSharpness != variable_initialize)
+  if (cam_in_params->n_sharpness != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_SHARPNESS;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nSharpness);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_sharpness);
   }
-  if (cam_in_params->nBacklightCompensation != variable_initialize)
+  if (cam_in_params->n_backlightcompensation != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_BACKLIGHT_COMPENSATION;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nBacklightCompensation);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_backlightcompensation);
   }
-  if (cam_in_params->nAutoExposure != variable_initialize)
+  if (cam_in_params->n_autoexposure != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_EXPOSURE_AUTO;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nAutoExposure);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_autoexposure);
   }
-  if (cam_in_params->nExposure != variable_initialize)
+  if (cam_in_params->n_exposure != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_EXPOSURE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nExposure);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_exposure);
   }
-  if (cam_in_params->nPan != variable_initialize)
+  if (cam_in_params->n_pan != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_PAN_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nPan);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_pan);
   }
-  if (cam_in_params->nTilt != variable_initialize)
+  if (cam_in_params->n_tilt != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_TILT_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nTilt);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_tilt);
   }
-  if (cam_in_params->nFocusAbsolute != variable_initialize)
+  if (cam_in_params->n_focusabsolute != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_FOCUS_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nFocusAbsolute);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_focusabsolute);
   }
-  if (cam_in_params->nAutoFocus != variable_initialize)
+  if (cam_in_params->n_autofocus != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_FOCUS_AUTO;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nAutoFocus);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_autofocus);
   }
-  if (cam_in_params->nZoomAbsolute != variable_initialize)
+  if (cam_in_params->n_zoomabsolute != CONST_PARAM_DEFAULT_VALUE)
   {
     queryctrl.id = V4L2_CID_ZOOM_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->nZoomAbsolute);
+    retVal = setV4l2Property(queryctrl, cam_in_params->n_zoomabsolute);
   }
 
   return retVal;
@@ -450,58 +450,58 @@ int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
   struct v4l2_queryctrl queryctrl;
 
   queryctrl.id = V4L2_CID_BRIGHTNESS;
-  getV4l2Property(queryctrl, &cam_out_params->nBrightness);
+  getV4l2Property(queryctrl, &cam_out_params->n_brightness);
 
   queryctrl.id = V4L2_CID_CONTRAST;
-  getV4l2Property(queryctrl, &cam_out_params->nContrast);
+  getV4l2Property(queryctrl, &cam_out_params->n_contrast);
 
   queryctrl.id = V4L2_CID_SATURATION;
-  getV4l2Property(queryctrl, &cam_out_params->nSaturation);
+  getV4l2Property(queryctrl, &cam_out_params->n_saturation);
 
   queryctrl.id = V4L2_CID_HUE;
-  getV4l2Property(queryctrl, &cam_out_params->nHue);
+  getV4l2Property(queryctrl, &cam_out_params->n_hue);
 
   queryctrl.id = V4L2_CID_AUTO_WHITE_BALANCE;
-  getV4l2Property(queryctrl, &cam_out_params->nAutoWhiteBalance);
+  getV4l2Property(queryctrl, &cam_out_params->n_autowhitebalance);
 
   queryctrl.id = V4L2_CID_GAMMA;
-  getV4l2Property(queryctrl, &cam_out_params->nGamma);
+  getV4l2Property(queryctrl, &cam_out_params->n_gamma);
 
   queryctrl.id = V4L2_CID_GAIN;
-  getV4l2Property(queryctrl, &cam_out_params->nGain);
+  getV4l2Property(queryctrl, &cam_out_params->n_gain);
 
   queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
-  getV4l2Property(queryctrl, &cam_out_params->nFrequency);
+  getV4l2Property(queryctrl, &cam_out_params->n_frequency);
 
   queryctrl.id = V4L2_CID_WHITE_BALANCE_TEMPERATURE;
-  getV4l2Property(queryctrl, &cam_out_params->nWhiteBalanceTemperature);
+  getV4l2Property(queryctrl, &cam_out_params->n_whitebalancetemperature);
 
   queryctrl.id = V4L2_CID_SHARPNESS;
-  getV4l2Property(queryctrl, &cam_out_params->nSharpness);
+  getV4l2Property(queryctrl, &cam_out_params->n_sharpness);
 
   queryctrl.id = V4L2_CID_BACKLIGHT_COMPENSATION;
-  getV4l2Property(queryctrl, &cam_out_params->nBacklightCompensation);
+  getV4l2Property(queryctrl, &cam_out_params->n_backlightcompensation);
 
   queryctrl.id = V4L2_CID_EXPOSURE_AUTO;
-  getV4l2Property(queryctrl, &cam_out_params->nAutoExposure);
+  getV4l2Property(queryctrl, &cam_out_params->n_autoexposure);
 
   queryctrl.id = V4L2_CID_EXPOSURE;
-  getV4l2Property(queryctrl, &cam_out_params->nExposure);
+  getV4l2Property(queryctrl, &cam_out_params->n_exposure);
 
   queryctrl.id = V4L2_CID_PAN_ABSOLUTE;
-  getV4l2Property(queryctrl, &cam_out_params->nPan);
+  getV4l2Property(queryctrl, &cam_out_params->n_pan);
 
   queryctrl.id = V4L2_CID_TILT_ABSOLUTE;
-  getV4l2Property(queryctrl, &cam_out_params->nTilt);
+  getV4l2Property(queryctrl, &cam_out_params->n_tilt);
 
   queryctrl.id = V4L2_CID_FOCUS_ABSOLUTE;
-  getV4l2Property(queryctrl, &cam_out_params->nFocusAbsolute);
+  getV4l2Property(queryctrl, &cam_out_params->n_focusabsolute);
 
   queryctrl.id = V4L2_CID_FOCUS_AUTO;
-  getV4l2Property(queryctrl, &cam_out_params->nAutoFocus);
+  getV4l2Property(queryctrl, &cam_out_params->n_autofocus);
 
   queryctrl.id = V4L2_CID_ZOOM_ABSOLUTE;
-  getV4l2Property(queryctrl, &cam_out_params->nZoomAbsolute);
+  getV4l2Property(queryctrl, &cam_out_params->n_zoomabsolute);
 
   getResolutionProperty(cam_out_params);
 

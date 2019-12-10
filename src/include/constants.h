@@ -19,7 +19,7 @@
 
 #include <string>
 
-#define CONST_VARIABLE_INITIALIZE -999
+#define CONST_PARAM_DEFAULT_VALUE -999
 #define CONST_MAX_STRING_LENGTH 256
 #define CONST_PARAM_VALUE_FALSE 0
 #define CONST_PARAM_VALUE_TRUE 1
@@ -44,12 +44,13 @@
 #define CONST_PARAM_NAME_SOURCE "source"
 #define CONST_PARAM_NAME_AUTOEXPOSURE "autoExposure"
 #define CONST_PARAM_NAME_AUTOWHITEBALANCE "autoWhiteBalance"
+#define CONST_PARAM_NAME_AUTOFOCUS "autoFocus"
+#define CONST_PARAM_NAME_FOCUS_ABSOLUTE "focusAbsolute"
 #define CONST_PARAM_NAME_BACKLIGHT_COMPENSATION "backlightCompensation"
 #define CONST_PARAM_NAME_BIRGHTNESS "brightness"
 #define CONST_PARAM_NAME_BITRATE "bitrate"
 #define CONST_PARAM_NAME_BUILTIN "builtin"
 #define CONST_PARAM_NAME_DETAILS "details"
-#define CONST_PARAM_NAME_COL "col"
 #define CONST_PARAM_NAME_CONTRAST "contrast"
 #define CONST_PARAM_NAME_FORMAT "format"
 #define CONST_PARAM_NAME_MODE "mode"
@@ -75,7 +76,6 @@
 #define CONST_PARAM_NAME_PARAMS "params"
 #define CONST_PARAM_NAME_PICTURE "picture"
 #define CONST_PARAM_NAME_PAN "pan"
-#define CONST_PARAM_NAME_ROW "row"
 #define CONST_PARAM_NAME_SATURATION "saturation"
 #define CONST_PARAM_NAME_SHARPNESS "sharpness"
 #define CONST_PARAM_NAME_TILT "tilt"
@@ -83,7 +83,7 @@
 #define CONST_PARAM_NAME_APP_PRIORITY "mode"
 #define CONST_PARAM_NAME_WIDTH "width"
 #define CONST_PARAM_NAME_VIDEO "video"
-#define CONST_PARAM_NAME_ZOOM "zoom"
+#define CONST_PARAM_NAME_ZOOM_ABSOLUTE "zoomAbsolute"
 #define CONST_PARAM_NAME_WHITEBALANCETEMPERATURE "whiteBalanceTemperature"
 #define CONST_PARAM_NAME_YUVMODE "yuvMode"
 #define CONST_PARAM_NAME_ILLUMINATION "illumination"

@@ -432,18 +432,18 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
       createGetPropertiesJsonString(&obj, data, json_outobjparams);
       // add resolution structure
       jvalue_ref json_resolutionobj = jobject_create();
-      for (int nformat = 0; nformat < rGetCameraProperties().st_resolution.n_formatindex; nformat++)
+      for (int nformat = 0; nformat < rGetCameraProperties().stResolution.n_formatindex; nformat++)
       {
         jvalue_ref json_resolutionarray = jarray_create(0);
-        for (int count = 0; count < rGetCameraProperties().st_resolution.n_frameindex[nformat];
+        for (int count = 0; count < rGetCameraProperties().stResolution.n_frameindex[nformat];
              count++)
         {
           jarray_append(json_resolutionarray,
-                        jstring_create(rGetCameraProperties().st_resolution.c_res[count]));
+                        jstring_create(rGetCameraProperties().stResolution.c_res[count]));
         }
         jobject_put(json_resolutionobj,
                     jstring_create(
-                        getResolutionString(rGetCameraProperties().st_resolution.e_format[nformat])
+                        getResolutionString(rGetCameraProperties().stResolution.e_format[nformat])
                             .c_str()),
                     json_resolutionarray);
       }
@@ -486,13 +486,7 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
     CAMERA_PROPERTIES_T r_camproperties;
 
     jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
-    jvalue_ref jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_ZOOM));
-    jnumber_get_i32(jparams, &r_camproperties.nZoom);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_COL));
-    jnumber_get_i32(jparams, &r_camproperties.nGridZoomX);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_ROW));
-    jnumber_get_i32(jparams, &r_camproperties.nGridZoomY);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_PAN));
+    jvalue_ref jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_PAN));
     jnumber_get_i32(jparams, &r_camproperties.nPan);
     jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TILT));
     jnumber_get_i32(jparams, &r_camproperties.nTilt);
@@ -514,38 +508,21 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
     jnumber_get_i32(jparams, &r_camproperties.nGamma);
     jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FREQUENCY));
     jnumber_get_i32(jparams, &r_camproperties.nFrequency);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MIRROR));
-    jboolean_get(jparams, (bool *)&r_camproperties.bMirror);
     jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_EXPOSURE));
     jnumber_get_i32(jparams, &r_camproperties.nExposure);
     jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOEXPOSURE));
-    jboolean_get(jparams, (bool *)&r_camproperties.bAutoExposure);
+    jnumber_get_i32(jparams, &r_camproperties.nAutoExposure);
     jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOWHITEBALANCE));
-    jboolean_get(jparams, (bool *)&r_camproperties.bAutoWhiteBalance);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_BITRATE));
-    jnumber_get_i32(jparams, &r_camproperties.nBitrate);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FRAMERATE));
-    jnumber_get_i32(jparams, &r_camproperties.nFramerate);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_GOPLENGTH));
-    jnumber_get_i32(jparams, &r_camproperties.ngopLength);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_LED));
-    jboolean_get(jparams, (bool *)&r_camproperties.bLed);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_YUVMODE));
-    jboolean_get(jparams, (bool *)&r_camproperties.bYuvMode);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_ILLUMINATION));
-    jnumber_get_i32(jparams, &r_camproperties.nIllumination);
+    jnumber_get_i32(jparams, &r_camproperties.nAutoWhiteBalance);
     jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION));
-    jboolean_get(jparams, (bool *)&r_camproperties.bBacklightCompensation);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MICMAXGAIN));
-    jnumber_get_i32(jparams, &r_camproperties.nMicMaxGain);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MICMINGAIN));
-    jnumber_get_i32(jparams, &r_camproperties.nMicMinGain);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MICGAIN));
-    jnumber_get_i32(jparams, &r_camproperties.nMicGain);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MICMUTE));
-    jboolean_get(jparams, (bool *)&r_camproperties.bMicMute);
-    r_camproperties.st_resolution.n_formatindex = 0;
-
+    jnumber_get_i32(jparams, &r_camproperties.nBacklightCompensation);
+    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_ZOOM_ABSOLUTE));
+    jnumber_get_i32(jparams, &r_camproperties.nZoomAbsolute);
+    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOFOCUS));
+    jnumber_get_i32(jparams, &r_camproperties.nAutoFocus);
+    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FOCUS_ABSOLUTE));
+    jnumber_get_i32(jparams, &r_camproperties.nFocusAbsolute);
+    r_camproperties.stResolution.n_formatindex = 0;
     setCameraProperties(r_camproperties);
   }
   else
@@ -785,12 +762,6 @@ EventNotification::createEventObjectSubscriptionJsonString(CAMERA_FORMAT *pForma
       {
         jvalue_ref json_outobjproperties = jobject_create();
 
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM),
-                    jnumber_create_i32(pProperties->nZoom));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_COL),
-                    jnumber_create_i32(pProperties->nGridZoomX));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ROW),
-                    jnumber_create_i32(pProperties->nGridZoomY));
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN),
                     jnumber_create_i32(pProperties->nPan));
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT),
@@ -813,49 +784,33 @@ EventNotification::createEventObjectSubscriptionJsonString(CAMERA_FORMAT *pForma
                     jnumber_create_i32(pProperties->nGamma));
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY),
                     jnumber_create_i32(pProperties->nFrequency));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIRROR),
-                    jboolean_create(pProperties->bMirror));
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE),
                     jnumber_create_i32(pProperties->nExposure));
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE),
-                    jboolean_create(pProperties->bAutoExposure));
+                    jnumber_create_i32(pProperties->nAutoExposure));
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE),
-                    jboolean_create(pProperties->bAutoWhiteBalance));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BITRATE),
-                    jnumber_create_i32(pProperties->nBitrate));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
-                    jnumber_create_i32(pProperties->nFramerate));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GOPLENGTH),
-                    jnumber_create_i32(pProperties->ngopLength));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_LED),
-                    jboolean_create(pProperties->bLed));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_YUVMODE),
-                    jboolean_create(pProperties->bYuvMode));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ILLUMINATION),
-                    jnumber_create_i32(pProperties->nIllumination));
+                    jnumber_create_i32(pProperties->nAutoWhiteBalance));
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION),
-                    jboolean_create(pProperties->bBacklightCompensation));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMAXGAIN),
-                    jnumber_create_i32(pProperties->nMicMaxGain));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMINGAIN),
-                    jnumber_create_i32(pProperties->nMicMinGain));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICGAIN),
-                    jnumber_create_i32(pProperties->nMicGain));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMUTE),
-                    jboolean_create(pProperties->bMicMute));
+                    jnumber_create_i32(pProperties->nBacklightCompensation));
+        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE),
+                    jnumber_create_i32(pProperties->nZoomAbsolute));
+        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS),
+                    jnumber_create_i32(pProperties->nAutoFocus));
+        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE),
+                    jnumber_create_i32(pProperties->nFocusAbsolute));
         jvalue_ref json_resolutionobj = jobject_create();
-        for (int nformat = 0; nformat < pProperties->st_resolution.n_formatindex; nformat++)
+        for (int nformat = 0; nformat < pProperties->stResolution.n_formatindex; nformat++)
         {
           jvalue_ref json_resolutionarray = jarray_create(0);
-          for (int count = 0; count < pProperties->st_resolution.n_frameindex[nformat]; count++)
+          for (int count = 0; count < pProperties->stResolution.n_frameindex[nformat]; count++)
           {
             jarray_append(json_resolutionarray,
-                          jstring_create(pProperties->st_resolution.c_res[count]));
+                          jstring_create(pProperties->stResolution.c_res[count]));
           }
           jobject_put(
               json_resolutionobj,
               jstring_create(
-                  getResolutionString(pProperties->st_resolution.e_format[nformat]).c_str()),
+                  getResolutionString(pProperties->stResolution.e_format[nformat]).c_str()),
               json_resolutionarray);
         }
         jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
@@ -880,15 +835,15 @@ void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *properties, void *pdata,
 
   if (nullptr != old_property)
   {
-    if (properties->nZoom != old_property->nZoom)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM),
-                  jnumber_create_i32(properties->nZoom));
-    if (properties->nGridZoomX != old_property->nGridZoomX)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_COL),
-                  jnumber_create_i32(properties->nGridZoomX));
-    if (properties->nGridZoomY != old_property->nGridZoomY)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ROW),
-                  jnumber_create_i32(properties->nGridZoomY));
+    if (properties->nAutoFocus != old_property->nAutoFocus)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS),
+                  jnumber_create_i32(properties->nAutoFocus));
+    if (properties->nFocusAbsolute != old_property->nFocusAbsolute)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE),
+                  jnumber_create_i32(properties->nFocusAbsolute));
+    if (properties->nZoomAbsolute != old_property->nZoomAbsolute)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE),
+                  jnumber_create_i32(properties->nZoomAbsolute));
     if (properties->nPan != old_property->nPan)
       jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN),
                   jnumber_create_i32(properties->nPan));
@@ -922,51 +877,18 @@ void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *properties, void *pdata,
     if (properties->nFrequency != old_property->nFrequency)
       jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY),
                   jnumber_create_i32(properties->nFrequency));
-    if (properties->bMirror != old_property->bMirror)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIRROR),
-                  jboolean_create(properties->bMirror));
     if (properties->nExposure != old_property->nExposure)
       jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE),
                   jnumber_create_i32(properties->nExposure));
-    if (properties->bAutoExposure != old_property->bAutoExposure)
+    if (properties->nAutoExposure != old_property->nAutoExposure)
       jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE),
-                  jboolean_create(properties->bAutoExposure));
-    if (properties->bAutoWhiteBalance != old_property->bAutoWhiteBalance)
+                  jnumber_create_i32(properties->nAutoExposure));
+    if (properties->nAutoWhiteBalance != old_property->nAutoWhiteBalance)
       jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE),
-                  jboolean_create(properties->bAutoWhiteBalance));
-    if (properties->nBitrate != old_property->nBitrate)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BITRATE),
-                  jnumber_create_i32(properties->nBitrate));
-    if (properties->nFramerate != old_property->nFramerate)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
-                  jnumber_create_i32(properties->nFramerate));
-    if (properties->ngopLength != old_property->ngopLength)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GOPLENGTH),
-                  jnumber_create_i32(properties->ngopLength));
-    if (properties->bLed != old_property->bLed)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_LED),
-                  jboolean_create(properties->bLed));
-    if (properties->bYuvMode != old_property->bYuvMode)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_YUVMODE),
-                  jboolean_create(properties->bYuvMode));
-    if (properties->nIllumination != old_property->nIllumination)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ILLUMINATION),
-                  jnumber_create_i32(properties->nIllumination));
-    if (properties->bBacklightCompensation != old_property->bBacklightCompensation)
+                  jnumber_create_i32(properties->nAutoWhiteBalance));
+    if (properties->nBacklightCompensation != old_property->nBacklightCompensation)
       jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION),
-                  jboolean_create(properties->bBacklightCompensation));
-    if (properties->nMicMaxGain != old_property->nMicMaxGain)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMAXGAIN),
-                  jnumber_create_i32(properties->nMicMaxGain));
-    if (properties->nMicMinGain != old_property->nMicMinGain)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMINGAIN),
-                  jnumber_create_i32(properties->nMicMinGain));
-    if (properties->nMicGain != old_property->nMicGain)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICGAIN),
-                  jnumber_create_i32(properties->nMicGain));
-    if (properties->bMicMute != old_property->bMicMute)
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMUTE),
-                  jboolean_create(properties->bMicMute));
+                  jnumber_create_i32(properties->nBacklightCompensation));
   }
   return;
 }
@@ -975,15 +897,15 @@ void createGetPropertiesOutputParamJsonString(const std::string strparam,
                                               CAMERA_PROPERTIES_T *properties,
                                               jvalue_ref &json_outobjparams)
 {
-  if (CONST_PARAM_NAME_ZOOM == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM),
-                jnumber_create_i32(properties->nZoom));
-  else if (CONST_PARAM_NAME_COL == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_COL),
-                jnumber_create_i32(properties->nGridZoomX));
-  else if (CONST_PARAM_NAME_ROW == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ROW),
-                jnumber_create_i32(properties->nGridZoomY));
+  if (CONST_PARAM_NAME_ZOOM_ABSOLUTE == strparam)
+    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE),
+                jnumber_create_i32(properties->nZoomAbsolute));
+  else if (CONST_PARAM_NAME_AUTOFOCUS == strparam)
+    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS),
+                jnumber_create_i32(properties->nAutoFocus));
+  else if (CONST_PARAM_NAME_FOCUS_ABSOLUTE == strparam)
+    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE),
+                jnumber_create_i32(properties->nFocusAbsolute));
   else if (CONST_PARAM_NAME_PAN == strparam)
     jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN),
                 jnumber_create_i32(properties->nPan));
@@ -1017,64 +939,31 @@ void createGetPropertiesOutputParamJsonString(const std::string strparam,
   else if (CONST_PARAM_NAME_FREQUENCY == strparam)
     jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY),
                 jnumber_create_i32(properties->nFrequency));
-  else if (CONST_PARAM_NAME_MIRROR == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIRROR),
-                jboolean_create(properties->bMirror));
   else if (CONST_PARAM_NAME_EXPOSURE == strparam)
     jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE),
                 jnumber_create_i32(properties->nExposure));
   else if (CONST_PARAM_NAME_AUTOEXPOSURE == strparam)
     jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE),
-                jboolean_create(properties->bAutoExposure));
+                jnumber_create_i32(properties->nAutoExposure));
   else if (CONST_PARAM_NAME_AUTOWHITEBALANCE == strparam)
     jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE),
-                jboolean_create(properties->bAutoWhiteBalance));
-  else if (CONST_PARAM_NAME_BITRATE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BITRATE),
-                jnumber_create_i32(properties->nBitrate));
-  else if (CONST_PARAM_NAME_FRAMERATE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
-                jnumber_create_i32(properties->nFramerate));
-  else if (CONST_PARAM_NAME_GOPLENGTH == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GOPLENGTH),
-                jnumber_create_i32(properties->ngopLength));
-  else if (CONST_PARAM_NAME_LED == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_LED),
-                jboolean_create(properties->bLed));
-  else if (CONST_PARAM_NAME_YUVMODE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_YUVMODE),
-                jboolean_create(properties->bYuvMode));
-  else if (CONST_PARAM_NAME_ILLUMINATION == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ILLUMINATION),
-                jnumber_create_i32(properties->nIllumination));
+                jnumber_create_i32(properties->nAutoWhiteBalance));
   else if (CONST_PARAM_NAME_BACKLIGHT_COMPENSATION == strparam)
     jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION),
-                jboolean_create(properties->bBacklightCompensation));
-  else if (CONST_PARAM_NAME_MICMAXGAIN == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMAXGAIN),
-                jnumber_create_i32(properties->nMicMaxGain));
-  else if (CONST_PARAM_NAME_MICMINGAIN == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMINGAIN),
-                jnumber_create_i32(properties->nMicMinGain));
-  else if (CONST_PARAM_NAME_MICGAIN == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICGAIN),
-                jnumber_create_i32(properties->nMicGain));
-  else if (CONST_PARAM_NAME_MICMUTE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MICMUTE),
-                jboolean_create(properties->bMicMute));
+                jnumber_create_i32(properties->nBacklightCompensation));
   else if (CONST_PARAM_NAME_RESOLUTION == strparam)
   {
     jvalue_ref json_resolutionobj = jobject_create();
-    for (int nformat = 0; nformat < properties->st_resolution.n_formatindex; nformat++)
+    for (int nformat = 0; nformat < properties->stResolution.n_formatindex; nformat++)
     {
       jvalue_ref json_resolutionarray = jarray_create(0);
-      for (int count = 0; count < properties->st_resolution.n_frameindex[nformat]; count++)
+      for (int count = 0; count < properties->stResolution.n_frameindex[nformat]; count++)
       {
-        jarray_append(json_resolutionarray, jstring_create(properties->st_resolution.c_res[count]));
+        jarray_append(json_resolutionarray, jstring_create(properties->stResolution.c_res[count]));
       }
       jobject_put(
           json_resolutionobj,
-          jstring_create(getResolutionString(properties->st_resolution.e_format[nformat]).c_str()),
+          jstring_create(getResolutionString(properties->stResolution.e_format[nformat]).c_str()),
           json_resolutionarray);
     }
     jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION), json_resolutionobj);

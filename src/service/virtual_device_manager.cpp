@@ -409,32 +409,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
   PMLOG_INFO(CONST_MODULE_VDM, "captureImage : deviceid : %d \n", deviceid);
 
   // check if there is any change in format
-  if ((sformat.eFormat != sformat_.eFormat) || (sformat.nHeight != sformat_.nHeight) ||
-      (sformat.nWidth != sformat_.nWidth))
-  {
-    // check if the app requesting startCapture is secondary then do not change settings
-    std::string priority = getAppPriority(devhandle);
-    PMLOG_INFO(CONST_MODULE_VDM, "captureImage : priority : %s\n", priority.c_str());
-    if (cstr_primary != priority)
-    {
-      // check if there exists any app with primary priority
-      if (true == checkAppPriorityMap())
-      {
-        PMLOG_INFO(CONST_MODULE_VDM,
-                   "captureImage : Already an app exists with primary priority\n");
-        sformat.eFormat = sformat_.eFormat;
-        sformat.nHeight = sformat_.nHeight;
-        sformat.nWidth = sformat_.nWidth;
-      }
-    }
-    else
-    {
-      PMLOG_INFO(CONST_MODULE_VDM, "captureImage : Save the format\n");
-      sformat_.eFormat = sformat.eFormat;
-      sformat_.nHeight = sformat.nHeight;
-      sformat_.nWidth = sformat.nWidth;
-    }
-  }
+  updateFormat( sformat,devhandle);
 
   if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
   {
@@ -452,6 +427,38 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
   }
 }
 
+void VirtualDeviceManager::updateFormat(CAMERA_FORMAT &sformat,int devhandle)
+{
+  PMLOG_INFO(CONST_MODULE_VDM, "VirtualDeviceManager updateFormat\n");
+  // check if there is any change in format
+  if ((sformat.eFormat != sformat_.eFormat) || (sformat.nHeight != sformat_.nHeight) ||
+      (sformat.nWidth != sformat_.nWidth))
+  {
+    // check if the app requesting startCapture is secondary then do not change settings
+    std::string priority = getAppPriority(devhandle);
+    PMLOG_INFO(CONST_MODULE_VDM, "updateFormat : priority : %s\n", priority.c_str());
+    if (cstr_primary != priority)
+    {
+      // check if there exists any app with primary priority
+      if (true == checkAppPriorityMap())
+      {
+        PMLOG_INFO(CONST_MODULE_VDM,
+                   "updateFormat : Already an app exists with primary priority\n");
+        sformat.eFormat = sformat_.eFormat;
+        sformat.nHeight = sformat_.nHeight;
+        sformat.nWidth = sformat_.nWidth;
+      }
+    }
+    else
+    {
+      PMLOG_INFO(CONST_MODULE_VDM, "updateFormat : Save the format\n");
+      sformat_.eFormat = sformat.eFormat;
+      sformat_.nHeight = sformat.nHeight;
+      sformat_.nWidth = sformat.nWidth;
+    }
+  }
+}
+
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
                                                         const std::string& imagepath)
 {
@@ -463,32 +470,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
   PMLOG_INFO(CONST_MODULE_VDM, "startCapture : deviceid : %d \n", deviceid);
 
   // check if there is any change in format
-  if ((sformat.eFormat != sformat_.eFormat) || (sformat.nHeight != sformat_.nHeight) ||
-      (sformat.nWidth != sformat_.nWidth))
-  {
-    // check if the app requesting startCapture is secondary then do not change settings
-    std::string priority = getAppPriority(devhandle);
-    PMLOG_INFO(CONST_MODULE_VDM, "startCapture : priority : %s\n", priority.c_str());
-    if (cstr_primary != priority)
-    {
-      // check if there exists any app with primary priority
-      if (true == checkAppPriorityMap())
-      {
-        PMLOG_INFO(CONST_MODULE_VDM,
-                   "startCapture : Already an app exists with primary priority\n");
-        sformat.eFormat = sformat_.eFormat;
-        sformat.nHeight = sformat_.nHeight;
-        sformat.nWidth = sformat_.nWidth;
-      }
-    }
-    else
-    {
-      PMLOG_INFO(CONST_MODULE_VDM, "captureImage : Save the format\n");
-      sformat_.eFormat = sformat.eFormat;
-      sformat_.nHeight = sformat.nHeight;
-      sformat_.nWidth = sformat.nWidth;
-    }
-  }
+  updateFormat( sformat,devhandle);
 
   if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
   {

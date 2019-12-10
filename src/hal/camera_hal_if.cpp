@@ -16,6 +16,7 @@
 
 #include "camera_hal_if.h"
 #include "camera_base_wrapper.h"
+#include "camera_hal_types.h"
 #include <dlfcn.h>
 #include <new>
 
@@ -27,14 +28,12 @@ extern "C"
   int camera_hal_if_init(void **h, const char *subsystem)
   {
     camera_handle_t *camera_handle = new (std::nothrow) camera_handle_t();
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle is NULL\n");
       return CAMERA_ERROR_CREATE_HANDLE;
     }
     HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle : %p\n", camera_handle);
-
-    camera_handle->h_library = (void *)subsystem;
 
     camera_handle->h_plugin = dlopen(subsystem, RTLD_LAZY);
     if (!camera_handle->h_plugin)
@@ -57,13 +56,6 @@ extern "C"
     HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle->handle : %p \n",
                  camera_handle->handle);
     camera_handle->current_state = CAMERA_HAL_STATE_INIT;
-    if (0 != pthread_mutex_init(&camera_handle->lock, NULL))
-    {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : pthread_mutex_init failed \n");
-      int retVal = camera_hal_if_deinit((void *)camera_handle);
-      *h = NULL;
-      return retVal;
-    }
 
     *h = (void *)camera_handle;
 
@@ -73,7 +65,7 @@ extern "C"
   int camera_hal_if_deinit(void *h)
   {
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_deinit : camera_handle is NULL\n");
       return CAMERA_ERROR_DESTROY_HANDLE;
@@ -91,7 +83,6 @@ extern "C"
     }
 
     camera_handle->current_state = CAMERA_HAL_STATE_UNKNOWN;
-    pthread_mutex_destroy(&camera_handle->lock);
 
     pf_destroy_handle(camera_handle->handle);
     delete camera_handle;
@@ -104,7 +95,7 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle NULL \n");
@@ -114,21 +105,20 @@ extern "C"
     HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle : %p \n",
                  camera_handle);
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in INIT state
     if (camera_handle->current_state != CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : Camera HAL State not INIT \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
     camera_handle->fd = open_device(camera_handle, dev);
     HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : fd : %d \n", camera_handle->fd);
 
-    if (CAMERA_ERROR_UNKNOWN == camera_handle->fd)
+    if (camera_handle->fd == CAMERA_ERROR_UNKNOWN)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : fd invalid \n");
@@ -137,9 +127,6 @@ extern "C"
     {
       camera_handle->current_state = CAMERA_HAL_STATE_OPEN;
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -148,21 +135,20 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in OPEN state
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device : Camera HAL State not OPEN\n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -175,9 +161,6 @@ extern "C"
     {
       camera_handle->current_state = CAMERA_HAL_STATE_INIT;
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -186,21 +169,20 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in OPEN state
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : Camera HAL State not OPEN\n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -209,9 +191,6 @@ extern "C"
       retVal = CAMERA_ERROR_SET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : set_format failed\n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -220,14 +199,14 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_format : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in OPEN or STREAMING state
     if (camera_handle->current_state == CAMERA_HAL_STATE_INIT)
@@ -235,7 +214,6 @@ extern "C"
       retVal = CAMERA_ERROR_GET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL,
                    "camera_hal_if_get_format : Camera HAL State not OPEN or STREAMING \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -244,9 +222,6 @@ extern "C"
       retVal = CAMERA_ERROR_GET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_format : get_format failed\n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -255,21 +230,20 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in OPEN state
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : Camera HAL State not OPEN \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -278,9 +252,6 @@ extern "C"
       retVal = CAMERA_ERROR_SET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : set_buffer failed \n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -289,14 +260,14 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in STREAMING state
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
@@ -304,7 +275,6 @@ extern "C"
       retVal = CAMERA_ERROR_GET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL,
                    "camera_hal_if_get_buffer : Camera HAL State not STREAMING \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -313,9 +283,6 @@ extern "C"
       retVal = CAMERA_ERROR_GET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer : get_buffer failed\n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -324,14 +291,14 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_release_buffer : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in STREAMING state
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
@@ -339,7 +306,6 @@ extern "C"
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL,
                    "camera_hal_if_release_buffer : Camera HAL State not STREAMING \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -348,9 +314,6 @@ extern "C"
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_release_buffer : release_buffer failed\n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -359,21 +322,20 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if camera is in OPEN state
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : Camera HAL State not OPEN \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -382,9 +344,6 @@ extern "C"
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : destroy_buffer failed\n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -393,21 +352,20 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if HAL state is OPEN
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : Camera HAL State not OPEN \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -420,9 +378,6 @@ extern "C"
     {
       camera_handle->current_state = CAMERA_HAL_STATE_STREAMING;
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -431,14 +386,14 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_stop_capture : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if HAL state is STREAMING
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
@@ -446,7 +401,6 @@ extern "C"
       retVal = CAMERA_ERROR_STOP_CAPTURE;
       HAL_LOG_INFO(CONST_MODULE_HAL,
                    "camera_hal_if_stop_capture : Camera HAL State not STREAMING \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -459,9 +413,6 @@ extern "C"
     {
       camera_handle->current_state = CAMERA_HAL_STATE_OPEN;
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -470,21 +421,20 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
     // check if HAL state is OPEN
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : Camera HAL State not OPEN \n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -493,9 +443,6 @@ extern "C"
       retVal = CAMERA_ERROR_SET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : set_properties failed\n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
@@ -504,22 +451,20 @@ extern "C"
     int retVal = CAMERA_ERROR_NONE;
 
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_properties : camera_handle NULL \n");
       return retVal;
     }
 
-    pthread_mutex_lock(&camera_handle->lock);
-
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
     // check if HAL state is OPEN or STREAMING
     if (camera_handle->current_state == CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL,
                    "camera_hal_if_get_properties : Camera HAL State not OPEN or STREAMING\n");
-      pthread_mutex_unlock(&camera_handle->lock);
       return retVal;
     }
 
@@ -528,17 +473,13 @@ extern "C"
       retVal = CAMERA_ERROR_GET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_properties : get_properties failed\n");
     }
-
-    pthread_mutex_unlock(&camera_handle->lock);
-
     return retVal;
   }
 
   int camera_hal_if_get_fd(void *h, int *fd)
   {
     camera_handle_t *camera_handle = (camera_handle_t *)h;
-
-    if (NULL != camera_handle)
+    if (camera_handle)
     {
       *fd = camera_handle->fd;
     }
@@ -550,7 +491,7 @@ extern "C"
     void *handle;
     int retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so");
     camera_handle_t *camera_handle = (camera_handle_t *)handle;
-    if (NULL == camera_handle)
+    if (!camera_handle)
     {
       retVal = CAMERA_ERROR_GET_INFO;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_info : camera_handle NULL \n");

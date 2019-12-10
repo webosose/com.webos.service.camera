@@ -53,7 +53,7 @@ private:
   void removeVirtualDeviceHandle(int);
   std::string getAppPriority(int);
   void removeHandlePriorityObj(int);
-
+  void updateFormat(CAMERA_FORMAT &,int);
   DEVICE_RETURN_CODE_T openDevice(int, int *);
 
 public:
