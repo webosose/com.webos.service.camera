@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -88,7 +88,7 @@
 #define CONST_PARAM_NAME_YUVMODE "yuvMode"
 #define CONST_PARAM_NAME_ILLUMINATION "illumination"
 #define CONST_PARAM_NAME_NON_STORAGE_DEVICE_LIST "nonStorageDeviceList"
-#if defined(PLATFORM_RASPBERRYPI3) || defined(PLATFORM_RASPBERRYPI4) || defined(PLATFORM_QEMUX86)
+#if defined(PLATFORM_RASPBERRYPI3) || defined(PLATFORM_RASPBERRYPI4) || defined(PLATFORM_QEMUX86) || defined(PLATFORM_QUALCOMM_SA8155)
 #define CONST_PARAM_NAME_DEVICE_NUM "deviceNum"
 #else
 #define CONST_PARAM_NAME_DEVICE_NUM "devNum"
