@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -218,6 +218,7 @@ typedef struct
 PmLogContext getCameraLunaPmLogContext();
 void getFormatString(int, char *);
 char *getTypeString(device_t);
+int getRandomNumber();
 std::string getErrorString(DEVICE_RETURN_CODE_T);
 void convertFormatToCode(std::string, camera_format_t *);
 std::string getEventNotificationString(EventType);

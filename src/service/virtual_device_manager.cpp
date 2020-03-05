@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #include "constants.h"
 #include "device_manager.h"
 
+#include <fstream>
 #include <algorithm>
 
 VirtualDeviceManager::VirtualDeviceManager()
@@ -54,7 +55,7 @@ bool VirtualDeviceManager::checkAppPriorityMap()
 
 int VirtualDeviceManager::getVirtualDeviceHandle(int devid)
 {
-  int virtual_devhandle = rand() % 10000;
+  int virtual_devhandle = getRandomNumber();
   DeviceStateMap obj_devstate;
   obj_devstate.ndeviceid_ = DeviceManager::getInstance().getDeviceId(&devid);
   obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_OPEN;

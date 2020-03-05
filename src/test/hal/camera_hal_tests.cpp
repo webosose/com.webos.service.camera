@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 const char *subsystem = "libv4l2-camera-plugin.so";
 const char *devname = "/dev/video0";
 
+static unsigned int random_value = 0;
+
 // default values
 #define DEFAULT_BRIGHTNESS 101
 #define DEFAULT_CONTRAST 7
@@ -45,7 +47,7 @@ void PrintCameraProperties(camera_properties_t params)
   HAL_LOG_INFO(CONST_MODULE_HAL, "    contrast : %d\n", params.n_contrast);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    saturation : %d\n", params.n_saturation);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    hue : %d\n", params.n_hue);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto white balance temp : : %b\n", params.n_autowhitebalance);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto white balance temp : : %d\n", params.n_autowhitebalance);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    gamma : %d\n", params.n_gamma);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    gain : %d\n", params.n_gain);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.n_frequency);
@@ -66,7 +68,7 @@ void writeImageToFile(const void *p, int size)
   FILE *fp;
   char image_name[100] = {};
 
-  snprintf(image_name, 100, "/tmp/Picture%d.yuv", rand());
+  snprintf(image_name, 100, "/tmp/Picture%d.yuv", random_value++);
   if (nullptr == (fp = fopen(image_name, "wb")))
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "fopen failed\n");
