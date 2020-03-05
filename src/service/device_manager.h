@@ -22,8 +22,6 @@
  ------------------------------------------------------------------------------*/
 #include "camera_hal_types.h"
 #include "camera_types.h"
-#include <map>
-#include <string>
 
 class DeviceManager
 {

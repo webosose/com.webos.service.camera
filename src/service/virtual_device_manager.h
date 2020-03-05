@@ -22,9 +22,8 @@
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
 #include "device_controller.h"
-#include <map>
-#include <string>
 #include <vector>
+#include <map>
 
 class DeviceStateMap
 {
