@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ extern "C"
     if (!camera_handle->h_plugin)
     {
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : dlopen failed for : %s\n", subsystem);
+      delete camera_handle;
       return CAMERA_ERROR_PLUGIN_NOT_FOUND;
     }
 
@@ -50,6 +51,7 @@ extern "C"
     if (!pf_create_handle)
     {
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : dlsym failed \n");
+      delete camera_handle;
       return CAMERA_ERROR_CREATE_HANDLE;
     }
 
@@ -549,22 +551,22 @@ extern "C"
   {
     void *handle;
     int retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so");
-    camera_handle_t *camera_handle = (camera_handle_t *)handle;
-    if (NULL == camera_handle)
+    if (CAMERA_ERROR_NONE != retVal)
     {
       retVal = CAMERA_ERROR_GET_INFO;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_info : camera_handle NULL \n");
       return retVal;
     }
+    camera_handle_t *camera_handle = (camera_handle_t *)handle;
 
-    if (CAMERA_ERROR_UNKNOWN == get_info(camera_handle, caminfo, devicenode))
+    retVal = get_info(camera_handle, caminfo, devicenode);
+    if (CAMERA_ERROR_UNKNOWN == retVal)
     {
       retVal = CAMERA_ERROR_GET_INFO;
       HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_info : get_info failed\n");
     }
 
-    retVal = camera_hal_if_deinit(handle);
-
+    camera_hal_if_deinit(handle);
     return retVal;
   }
 

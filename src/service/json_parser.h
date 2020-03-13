@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -275,7 +275,7 @@ public:
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
 
-  void setCameraProperties(CAMERA_PROPERTIES_T rin_info)
+  void setCameraProperties(const CAMERA_PROPERTIES_T& rin_info)
   {
     ro_camproperties_.nZoom = rin_info.nZoom;
     ro_camproperties_.nGridZoomX = rin_info.nGridZoomX;

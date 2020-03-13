@@ -39,7 +39,7 @@ void PrintStreamFormat(stream_format_t streamformat)
   HAL_LOG_INFO(CONST_MODULE_HAL, "    Height : %d\n", streamformat.stream_height);
 }
 
-void PrintCameraProperties(camera_properties_t params)
+void PrintCameraProperties(const camera_properties_t& params)
 {
   HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_PROPERTIES_T : \n");
   HAL_LOG_INFO(CONST_MODULE_HAL, "    brightness : %d\n", params.nBrightness);
