@@ -151,13 +151,13 @@ char *getTypeString(device_t etype)
   switch (etype)
   {
   case DEVICE_MICROPHONE:
-    pszRetString = "microphone";
+    pszRetString = (char*)"microphone";
     break;
   case DEVICE_CAMERA:
-    pszRetString = "camera";
+    pszRetString = (char*)"camera";
     break;
   default:
-    pszRetString = "type is out of range";
+    pszRetString = (char*)"type is out of range";
     break;
   }
 
