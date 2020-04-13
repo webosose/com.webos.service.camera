@@ -114,7 +114,7 @@ int getRandomNumber()
     }
     else
     {
-        random_value = random_value++;
+        random_value++;
     }
     return random_value;
 }

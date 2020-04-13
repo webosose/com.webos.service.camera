@@ -85,7 +85,7 @@ int main(int argc, char const *argv[])
   camera_hal_if_init(&p_h_camera, subsystem);
   camera_hal_if_open_device(p_h_camera, devname);
 
-  stream_format_t streamformat;
+  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = 480;
   streamformat.stream_width = 640;
