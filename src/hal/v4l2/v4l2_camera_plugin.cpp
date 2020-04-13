@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ void destroy_handle(void *handle)
 
 V4l2CameraPlugin::V4l2CameraPlugin()
     : buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), io_mode_(IOMODE_UNKNOWN),
-      fourcc_format_(), camera_format_()
+      fourcc_format_(), camera_format_(),stream_format_()
 {
 }
 

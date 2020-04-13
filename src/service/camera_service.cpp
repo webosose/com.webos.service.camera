@@ -456,7 +456,7 @@ bool CameraService::getInfo(LSMessage &message)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       obj_getinfo.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
-      obj_getinfo.setCameraInfo(o_camerainfo);
+      obj_getinfo.setCameraInfo(&o_camerainfo);
     }
   }
 

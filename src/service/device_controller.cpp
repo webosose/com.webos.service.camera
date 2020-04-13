@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,8 +32,9 @@ int DeviceControl::n_imagecount_ = 0;
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isshmwritedone_(true),
       cam_handle_(NULL), informat_(), mutex_(PTHREAD_MUTEX_INITIALIZER),
-      cond_(PTHREAD_COND_INITIALIZER), h_shm_(NULL), str_imagepath_(cstr_empty),
-      str_capturemode_(cstr_oneshot)
+      cond_(PTHREAD_COND_INITIALIZER), tid_capture_(NULL),tid_preview_(NULL),
+      h_shm_(NULL), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot),
+      epixelformat_(CAMERA_PIXEL_FORMAT_JPEG)
 {
 }
 
@@ -136,7 +137,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
     open(handle, strdevicenode_);
 
     // set format again
-    stream_format_t newstreamformat;
+    stream_format_t newstreamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
     newstreamformat.stream_height = sformat.nHeight;
     newstreamformat.stream_width = sformat.nWidth;
     newstreamformat.pixel_format = getPixelFormat(sformat.eFormat);
@@ -633,7 +634,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
       memset(oparams->stResolution.c_res[count], '\0',
              sizeof(oparams->stResolution.c_res[count]));
       strncpy(oparams->stResolution.c_res[count], out_params.st_resolution.c_res[count],
-              sizeof(oparams->stResolution.c_res[count]));
+              sizeof(oparams->stResolution.c_res[count])-1);
     }
   }
 
@@ -704,7 +705,7 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, CAMERA_FORMAT sforma
   PMLOG_INFO(CONST_MODULE_DC, "sFormat Height %d Width %d Format %d Fps : %d\n", sformat.nHeight,
              sformat.nWidth, sformat.eFormat, sformat.nFps);
 
-  stream_format_t in_format;
+  stream_format_t in_format = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
   in_format.stream_height = sformat.nHeight;
   in_format.stream_width = sformat.nWidth;
   in_format.stream_fps = sformat.nFps;

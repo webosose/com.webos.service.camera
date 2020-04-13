@@ -232,7 +232,7 @@ public:
   void setDeviceId(const std::string& devid) { str_deviceid_ = devid; }
   std::string strGetDeviceId() const { return str_deviceid_; }
 
-  void setCameraInfo(camera_device_info_t r_ininfo)
+  void setCameraInfo(const camera_device_info_t& r_ininfo)
   {
     strncpy(ro_info_.str_devicename, r_ininfo.str_devicename, 32);
     ro_info_.b_builtin = r_ininfo.b_builtin;
@@ -309,7 +309,7 @@ public:
         memset(ro_camproperties_.stResolution.c_res[count], '\0',
                sizeof(ro_camproperties_.stResolution.c_res[count]));
         strncpy(ro_camproperties_.stResolution.c_res[count], rin_info.stResolution.c_res[count],
-                sizeof(ro_camproperties_.stResolution.c_res[count]));
+                sizeof(ro_camproperties_.stResolution.c_res[count])-1);
       }
     }
   }

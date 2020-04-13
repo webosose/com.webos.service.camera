@@ -298,8 +298,9 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
   {
     PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
   }
+  memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
   strncpy(p_info->str_devicename, gdev_status[ncam_id].stList.strVendorName,
-          sizeof(gdev_status[ncam_id].stList.strVendorName));
+          sizeof(p_info->str_devicename)-1);
 
   return ret;
 }
