@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -233,7 +233,7 @@ public:
   void setDeviceId(const std::string& devid) { str_deviceid_ = devid; }
   std::string strGetDeviceId() const { return str_deviceid_; }
 
-  void setCameraInfo(camera_device_info_t r_ininfo)
+  void setCameraInfo(const camera_device_info_t& r_ininfo)
   {
     strncpy(ro_info_.str_devicename, r_ininfo.str_devicename, 32);
     ro_info_.b_builtin = r_ininfo.b_builtin;
@@ -275,7 +275,7 @@ public:
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
 
-  void setCameraProperties(CAMERA_PROPERTIES_T rin_info)
+  void setCameraProperties(const CAMERA_PROPERTIES_T& rin_info)
   {
     ro_camproperties_.nZoom = rin_info.nZoom;
     ro_camproperties_.nGridZoomX = rin_info.nGridZoomX;
@@ -321,7 +321,7 @@ public:
         memset(ro_camproperties_.st_resolution.c_res[count], '\0',
                sizeof(ro_camproperties_.st_resolution.c_res[count]));
         strncpy(ro_camproperties_.st_resolution.c_res[count], rin_info.st_resolution.c_res[count],
-                sizeof(ro_camproperties_.st_resolution.c_res[count]));
+                sizeof(ro_camproperties_.st_resolution.c_res[count])-1);
       }
     }
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,8 @@
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include <fstream>
 #include <map>
-#include <string.h>
 
 const std::string error_outof_range = "error code is out of range";
 
@@ -97,6 +97,27 @@ extern PmLogContext getCameraLunaPmLogContext()
   return usLogContext;
 }
 
+
+int getRandomNumber()
+{
+    static unsigned int random_value = 0;
+    std::ifstream urandom("/dev/urandom", std::ios::in|std::ios::binary);
+    if(urandom)
+    {
+        urandom.read(reinterpret_cast<char*>(&random_value),sizeof(random_value));
+
+        if(urandom)
+        {
+            random_value = random_value % 10000;
+        }
+        urandom.close();
+    }
+    else
+    {
+        random_value++;
+    }
+    return random_value;
+}
 void getFormatString(int nFormat, char *pFormats)
 {
   int i;
@@ -134,13 +155,13 @@ char *getTypeString(device_t etype)
   switch (etype)
   {
   case DEVICE_MICROPHONE:
-    pszRetString = "microphone";
+    pszRetString = (char*)"microphone";
     break;
   case DEVICE_CAMERA:
-    pszRetString = "camera";
+    pszRetString = (char*)"camera";
     break;
   default:
-    pszRetString = "type is out of range";
+    pszRetString = (char*)"type is out of range";
     break;
   }
 

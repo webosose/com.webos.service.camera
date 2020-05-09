@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@
 const char *subsystem = "libv4l2-camera-plugin.so";
 const char *devname = "/dev/video0";
 
+static unsigned int random_value = 0;
+
 // default values
 #define DEFAULT_BRIGHTNESS 101
 #define DEFAULT_CONTRAST 7
@@ -37,7 +39,7 @@ void PrintStreamFormat(stream_format_t streamformat)
   HAL_LOG_INFO(CONST_MODULE_HAL, "    Height : %d\n", streamformat.stream_height);
 }
 
-void PrintCameraProperties(camera_properties_t params)
+void PrintCameraProperties(const camera_properties_t& params)
 {
   HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_PROPERTIES_T : \n");
   HAL_LOG_INFO(CONST_MODULE_HAL, "    brightness : %d\n", params.nBrightness);
@@ -65,7 +67,7 @@ void writeImageToFile(const void *p, int size)
   FILE *fp;
   char image_name[100] = {};
 
-  snprintf(image_name, 100, "/tmp/Picture%d.yuv", rand());
+  snprintf(image_name, 100, "/tmp/Picture%d.yuv", random_value++);
   if ((fp = fopen(image_name, "wb")) == NULL)
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "fopen failed\n");
@@ -83,7 +85,7 @@ int main(int argc, char const *argv[])
   camera_hal_if_init(&p_h_camera, subsystem);
   camera_hal_if_open_device(p_h_camera, devname);
 
-  stream_format_t streamformat;
+  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = 480;
   streamformat.stream_width = 640;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -297,8 +297,9 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
   {
     PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
   }
+  memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
   strncpy(p_info->str_devicename, gdev_status[ncam_id].stList.strVendorName,
-          sizeof(gdev_status[ncam_id].stList.strVendorName));
+          sizeof(p_info->str_devicename)-1);
 
   return ret;
 }
@@ -306,12 +307,11 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
 DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
 {
   PMLOG_INFO(CONST_MODULE_DM, "updateHandle ! deviceid : %d \n", deviceid);
-
+  int devicehandle = getRandomNumber();
   int dev_num = findDevNum(deviceid);
   if (n_invalid_id == dev_num)
     return DEVICE_ERROR_NODEVICE;
 
-  int devicehandle = rand() % 10000;
   gdev_status[dev_num].nDeviceID = devicehandle;
   gdev_status[dev_num].pcamhandle = handle;
 
