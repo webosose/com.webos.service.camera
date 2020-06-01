@@ -296,8 +296,11 @@ void DeviceControl::previewThread()
 
     // keep writing data to shared memory
     unsigned int timestamp = 0;
-    WriteShmemEx(h_shm_, (unsigned char *)frame_buffer.start, frame_buffer.length,
+    int retshmem = IPCSharedMemory::getInstance().WriteShmemEx(h_shm_, (unsigned char *)frame_buffer.start, frame_buffer.length,
                  (unsigned char *)&timestamp, sizeof(timestamp));
+    if (retshmem != SHMEM_COMM_OK)
+      PMLOG_ERROR(CONST_MODULE_DC, "WriteShmemory error %d \n", retshmem);
+
 
     free(frame_buffer.start);
     frame_buffer.start = nullptr;
@@ -350,7 +353,7 @@ DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
 {
   PMLOG_INFO(CONST_MODULE_DC, "close started \n");
 
-  int retshmem = CloseShmem(&h_shm_);
+  int retshmem = IPCSharedMemory::getInstance().CloseShmem(&h_shm_);
   if (SHMEM_COMM_OK != retshmem)
     PMLOG_ERROR(CONST_MODULE_DC, "CloseShmem error %d \n", retshmem);
 
@@ -378,7 +381,10 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, int *pkey)
 
   int size = streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
-  CreateShmemEx(&h_shm_, pkey, size, frame_count, sizeof(unsigned int));
+  int retshmem = IPCSharedMemory::getInstance().CreateShmemEx(&h_shm_, pkey, size, frame_count, sizeof(unsigned int));
+
+  if (retshmem != SHMEM_COMM_OK)
+    PMLOG_ERROR(CONST_MODULE_DC, "CreateShmemory error %d \n", retshmem);
 
   int retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
   if (CAMERA_ERROR_NONE != retval)
