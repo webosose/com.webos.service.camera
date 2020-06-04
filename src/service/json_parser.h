@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string>
 #include <vector>
+#include <map>
 
 class MethodReply
 {
@@ -397,10 +398,13 @@ private:
   void *pdata_;
   bool b_issubscribed_;
   std::string strcamid_;
+  void outputObjectFormat(CAMERA_FORMAT *, jvalue_ref &)const;
+  void outputObjectProperties(CAMERA_PROPERTIES_T *, jvalue_ref &)const;
 };
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
 void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, void *, jvalue_ref &);
+void mappingPropertieswithConstValues(std::map<std::string,int> &, CAMERA_PROPERTIES_T *);
 void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
                                               jvalue_ref &);
 

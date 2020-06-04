@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -720,6 +720,65 @@ std::string EventNotification::createEventObjectJsonString(void *pdata) const
   return strreply;
 }
 
+void EventNotification::outputObjectFormat(CAMERA_FORMAT *pFormat, jvalue_ref &json_outobj)const
+{
+  jvalue_ref json_outobjformat = jobject_create();
+
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
+                    jnumber_create_i32(pFormat->nWidth));
+
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
+                    jnumber_create_i32(pFormat->nHeight));
+
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
+                    jnumber_create_i32(pFormat->nFps));
+
+  std::string strformat = getFormatStringFromCode(pFormat->eFormat);
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
+                    jstring_create(strformat.c_str()));
+
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMATINFO), json_outobjformat);
+}
+
+void EventNotification::outputObjectProperties(CAMERA_PROPERTIES_T *pProperties, jvalue_ref &json_outobj)const
+{
+  jvalue_ref json_outobjproperties = jobject_create();
+
+  std::map<std::string,int> gPropertyMap;
+
+  mappingPropertieswithConstValues(gPropertyMap,pProperties);
+
+  std::map<std::string,int>::iterator it;
+
+  std::string sProperty = "";
+  for (it = gPropertyMap.begin(); it != gPropertyMap.end(); ++it)
+  {
+    sProperty = it->first;
+    jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(sProperty.c_str()),
+                jnumber_create_i32(it->second));
+  }
+
+  jvalue_ref json_resolutionobj = jobject_create();
+  for (int nformat = 0; nformat < pProperties->stResolution.n_formatindex; nformat++)
+  {
+    jvalue_ref json_resolutionarray = jarray_create(0);
+    for (int count = 0; count < pProperties->stResolution.n_frameindex[nformat]; count++)
+    {
+      jarray_append(json_resolutionarray,
+                    jstring_create(pProperties->stResolution.c_res[count]));
+    }
+    jobject_put(
+        json_resolutionobj,
+        jstring_create(
+            getResolutionString(pProperties->stResolution.e_format[nformat]).c_str()),
+        json_resolutionarray);
+  }
+  jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
+              json_resolutionobj);
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PROPERTIESINFO),
+              json_outobjproperties);
+}
+
 std::string
 EventNotification::createEventObjectSubscriptionJsonString(CAMERA_FORMAT *pFormat,
                                                            CAMERA_PROPERTIES_T *pProperties) const
@@ -740,84 +799,10 @@ EventNotification::createEventObjectSubscriptionJsonString(CAMERA_FORMAT *pForma
                   jstring_create(strcamid_.c_str()));
 
       if (nullptr != pFormat)
-      {
-        jvalue_ref json_outobjformat = jobject_create();
+        outputObjectFormat(pFormat, json_outobj);
 
-        jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
-                    jnumber_create_i32(pFormat->nWidth));
-
-        jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
-                    jnumber_create_i32(pFormat->nHeight));
-
-        jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
-                    jnumber_create_i32(pFormat->nFps));
-
-        std::string strformat = getFormatStringFromCode(pFormat->eFormat);
-        jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
-                    jstring_create(strformat.c_str()));
-
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMATINFO), json_outobjformat);
-      }
       if (nullptr != pProperties)
-      {
-        jvalue_ref json_outobjproperties = jobject_create();
-
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN),
-                    jnumber_create_i32(pProperties->nPan));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT),
-                    jnumber_create_i32(pProperties->nTilt));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST),
-                    jnumber_create_i32(pProperties->nContrast));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS),
-                    jnumber_create_i32(pProperties->nBrightness));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION),
-                    jnumber_create_i32(pProperties->nSaturation));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS),
-                    jnumber_create_i32(pProperties->nSharpness));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE),
-                    jnumber_create_i32(pProperties->nHue));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE),
-                    jnumber_create_i32(pProperties->nWhiteBalanceTemperature));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN),
-                    jnumber_create_i32(pProperties->nGain));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA),
-                    jnumber_create_i32(pProperties->nGamma));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY),
-                    jnumber_create_i32(pProperties->nFrequency));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE),
-                    jnumber_create_i32(pProperties->nExposure));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE),
-                    jnumber_create_i32(pProperties->nAutoExposure));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE),
-                    jnumber_create_i32(pProperties->nAutoWhiteBalance));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION),
-                    jnumber_create_i32(pProperties->nBacklightCompensation));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE),
-                    jnumber_create_i32(pProperties->nZoomAbsolute));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS),
-                    jnumber_create_i32(pProperties->nAutoFocus));
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE),
-                    jnumber_create_i32(pProperties->nFocusAbsolute));
-        jvalue_ref json_resolutionobj = jobject_create();
-        for (int nformat = 0; nformat < pProperties->stResolution.n_formatindex; nformat++)
-        {
-          jvalue_ref json_resolutionarray = jarray_create(0);
-          for (int count = 0; count < pProperties->stResolution.n_frameindex[nformat]; count++)
-          {
-            jarray_append(json_resolutionarray,
-                          jstring_create(pProperties->stResolution.c_res[count]));
-          }
-          jobject_put(
-              json_resolutionobj,
-              jstring_create(
-                  getResolutionString(pProperties->stResolution.e_format[nformat]).c_str()),
-              json_resolutionarray);
-        }
-        jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
-                    json_resolutionobj);
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PROPERTIESINFO),
-                    json_outobjproperties);
-      }
+        outputObjectProperties(pProperties, json_outobj);
     }
   }
   strreply = jvalue_stringify(json_outobj);
@@ -893,64 +878,37 @@ void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *properties, void *pdata,
   return;
 }
 
+void mappingPropertieswithConstValues(std::map<std::string,int> &gPropertyMap, CAMERA_PROPERTIES_T *properties)
+{
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_PAN,properties->nPan));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_TILT,properties->nTilt));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_CONTRAST,properties->nContrast));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_BIRGHTNESS,properties->nBrightness));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_SATURATION,properties->nSaturation));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_SHARPNESS,properties->nSharpness));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_HUE,properties->nHue));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE,properties->nWhiteBalanceTemperature));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_GAIN,properties->nGain));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_GAMMA,properties->nGamma));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_FREQUENCY,properties->nFrequency));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_EXPOSURE,properties->nExposure));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_AUTOEXPOSURE,properties->nAutoExposure));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_AUTOWHITEBALANCE,properties->nAutoWhiteBalance));
+  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION,properties->nBacklightCompensation));
+}
+
 void createGetPropertiesOutputParamJsonString(const std::string strparam,
                                               CAMERA_PROPERTIES_T *properties,
                                               jvalue_ref &json_outobjparams)
 {
-  if (CONST_PARAM_NAME_ZOOM_ABSOLUTE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE),
-                jnumber_create_i32(properties->nZoomAbsolute));
-  else if (CONST_PARAM_NAME_AUTOFOCUS == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS),
-                jnumber_create_i32(properties->nAutoFocus));
-  else if (CONST_PARAM_NAME_FOCUS_ABSOLUTE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE),
-                jnumber_create_i32(properties->nFocusAbsolute));
-  else if (CONST_PARAM_NAME_PAN == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN),
-                jnumber_create_i32(properties->nPan));
-  else if (CONST_PARAM_NAME_TILT == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT),
-                jnumber_create_i32(properties->nTilt));
-  else if (CONST_PARAM_NAME_CONTRAST == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST),
-                jnumber_create_i32(properties->nContrast));
-  else if (CONST_PARAM_NAME_BIRGHTNESS == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS),
-                jnumber_create_i32(properties->nBrightness));
-  else if (CONST_PARAM_NAME_SATURATION == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION),
-                jnumber_create_i32(properties->nSaturation));
-  else if (CONST_PARAM_NAME_SHARPNESS == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS),
-                jnumber_create_i32(properties->nSharpness));
-  else if (CONST_PARAM_NAME_HUE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE),
-                jnumber_create_i32(properties->nHue));
-  else if (CONST_PARAM_NAME_WHITEBALANCETEMPERATURE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE),
-                jnumber_create_i32(properties->nWhiteBalanceTemperature));
-  else if (CONST_PARAM_NAME_GAIN == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN),
-                jnumber_create_i32(properties->nGain));
-  else if (CONST_PARAM_NAME_GAMMA == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA),
-                jnumber_create_i32(properties->nGamma));
-  else if (CONST_PARAM_NAME_FREQUENCY == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY),
-                jnumber_create_i32(properties->nFrequency));
-  else if (CONST_PARAM_NAME_EXPOSURE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE),
-                jnumber_create_i32(properties->nExposure));
-  else if (CONST_PARAM_NAME_AUTOEXPOSURE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE),
-                jnumber_create_i32(properties->nAutoExposure));
-  else if (CONST_PARAM_NAME_AUTOWHITEBALANCE == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE),
-                jnumber_create_i32(properties->nAutoWhiteBalance));
-  else if (CONST_PARAM_NAME_BACKLIGHT_COMPENSATION == strparam)
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION),
-                jnumber_create_i32(properties->nBacklightCompensation));
+  std::map<std::string,int> gPropertyMap;
+
+  mappingPropertieswithConstValues(gPropertyMap,properties);
+
+  std::map<std::string,int>::iterator it = gPropertyMap.find(strparam);
+
+  if (it != gPropertyMap.end())
+    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(strparam.c_str()), jnumber_create_i32(it->second));
   else if (CONST_PARAM_NAME_RESOLUTION == strparam)
   {
     jvalue_ref json_resolutionobj = jobject_create();
