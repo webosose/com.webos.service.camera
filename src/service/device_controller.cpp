@@ -24,16 +24,14 @@
 
 #include <ctime>
 #include <poll.h>
-#include <string.h>
 #include <sys/time.h>
 
 int DeviceControl::n_imagecount_ = 0;
 
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isshmwritedone_(true),
-      cam_handle_(NULL), informat_(), mutex_(PTHREAD_MUTEX_INITIALIZER),
-      cond_(PTHREAD_COND_INITIALIZER), tid_capture_(NULL),tid_preview_(NULL),
-      h_shm_(NULL), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot),
+      cam_handle_(NULL), informat_(), tMutex(), tCondVar(), h_shm_(NULL),
+      str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot),
       epixelformat_(CAMERA_PIXEL_FORMAT_JPEG)
 {
 }
@@ -43,7 +41,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
   FILE *fp;
   char image_name[100] = {};
 
-  std::string path = str_imagepath_;
+  auto path = str_imagepath_;
   if (path.empty())
     path = "/tmp/";
 
@@ -105,7 +103,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
 
   // get current saved format for device
   stream_format_t streamformat;
-  int retval = camera_hal_if_get_format(handle, &streamformat);
+  auto retval = camera_hal_if_get_format(handle, &streamformat);
   if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "checkFormat : camera_hal_if_get_format failed \n");
@@ -119,7 +117,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
   epixelformat_ = streamformat.pixel_format;
 
   DEVICE_RETURN_CODE_T ret = DEVICE_OK;
-  camera_pixel_format_t enewformat = getPixelFormat(sformat.eFormat);
+  auto enewformat = getPixelFormat(sformat.eFormat);
   //error handling
   if(enewformat == CAMERA_PIXEL_FORMAT_MAX)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
@@ -168,7 +166,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
 DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncount) const
 {
   int fd = -1;
-  int retval = camera_hal_if_get_fd(handle, &fd);
+  auto retval = camera_hal_if_get_fd(handle, &fd);
   PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage camera_hal_if_get_fd fd : %d \n", fd);
   struct pollfd poll_set[]{
       {.fd = fd, .events = POLLIN},
@@ -248,7 +246,7 @@ void DeviceControl::captureThread()
   // run capture thread until stopCapture received
   while (b_iscontinuous_capture_)
   {
-    DEVICE_RETURN_CODE_T ret =
+    auto ret =
         captureImage(cam_handle_, 1, informat_, str_imagepath_, cstr_continuous);
     if (ret != DEVICE_OK)
     {
@@ -258,19 +256,16 @@ void DeviceControl::captureThread()
   }
   // set continuous capture to false
   b_iscontinuous_capture_ = false;
-  pthread_detach(tid_capture_);
+  tidCapture.detach();
   n_imagecount_ = 0;
   return;
 }
 
 void DeviceControl::previewThread()
 {
-  pthread_cond_init(&cond_, NULL);
-  pthread_mutex_init(&mutex_, NULL);
-
   // poll for data on buffers and save captured image
   // lock so that if stop preview is called, first this cycle should complete
-  pthread_mutex_lock(&mutex_);
+  std::lock_guard<std::mutex> guard(tMutex);
   b_isshmwritedone_ = false;
 
   // get current saved format for device
@@ -285,7 +280,7 @@ void DeviceControl::previewThread()
   {
     buffer_t frame_buffer;
     frame_buffer.start = malloc(framesize);
-    int retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
+    auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
     if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "previewThread : camera_hal_if_get_buffer failed \n");
@@ -296,7 +291,8 @@ void DeviceControl::previewThread()
 
     // keep writing data to shared memory
     unsigned int timestamp = 0;
-    int retshmem = IPCSharedMemory::getInstance().WriteShmemory(h_shm_, (unsigned char *)frame_buffer.start, frame_buffer.length,(unsigned char *)&timestamp, sizeof(timestamp));
+    auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(h_shm_, (unsigned char *)frame_buffer.start,
+                    frame_buffer.length,(unsigned char *)&timestamp, sizeof(timestamp));
     if (retshmem != SHMEM_COMM_OK)
       PMLOG_ERROR(CONST_MODULE_DC, "WriteShmemory error %d \n", retshmem);
 
@@ -312,24 +308,9 @@ void DeviceControl::previewThread()
   }
 
   b_isshmwritedone_ = true;
-  pthread_cond_signal(&cond_);
-  pthread_mutex_unlock(&mutex_);
-  pthread_detach(tid_preview_);
+  tCondVar.notify_one();
+  tidPreview.detach();
   return;
-}
-
-void *DeviceControl::runCaptureImageThread(void *arg)
-{
-  DeviceControl *ptr = reinterpret_cast<DeviceControl *>(arg);
-  ptr->captureThread();
-  return 0;
-}
-
-void *DeviceControl::runPreviewThread(void *arg)
-{
-  DeviceControl *ptr = reinterpret_cast<DeviceControl *>(arg);
-  ptr->previewThread();
-  return 0;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode)
@@ -339,7 +320,7 @@ DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode)
   strdevicenode_ = devicenode;
 
   // open camera device
-  int ret = camera_hal_if_open_device(handle, devicenode.c_str());
+  auto ret = camera_hal_if_open_device(handle, devicenode.c_str());
 
   if (ret != CAMERA_ERROR_NONE)
     return DEVICE_ERROR_CAN_NOT_OPEN;
@@ -352,7 +333,7 @@ DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
   PMLOG_INFO(CONST_MODULE_DC, "close started \n");
 
   // close device
-  int ret = camera_hal_if_close_device(handle);
+  auto ret = camera_hal_if_close_device(handle);
   if (ret != CAMERA_ERROR_NONE)
     return DEVICE_ERROR_CAN_NOT_CLOSE;
 
@@ -373,11 +354,12 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, int *pkey)
 
   int size = streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
-  int retshmem = IPCSharedMemory::getInstance().CreateShmemory(&h_shm_, pkey, size, frame_count, sizeof(unsigned int));
+  auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(&h_shm_,
+                  pkey, size, frame_count, sizeof(unsigned int));
   if (retshmem != SHMEM_COMM_OK)
     PMLOG_ERROR(CONST_MODULE_DC, "CreateShmemory error %d \n", retshmem);
 
-  int retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
+  auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
   if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "startPreview : camera_hal_if_set_buffer failed \n");
@@ -394,12 +376,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, int *pkey)
   b_isstreamon_ = true;
 
   // create thread that will continuously capture images until stopcapture received
-  if (0 != (pthread_create(&tid_preview_, NULL, runPreviewThread, this)))
-  {
-    PMLOG_ERROR(CONST_MODULE_DC, "runPreviewThread failed\n");
-    return DEVICE_ERROR_UNKNOWN;
-  }
-
+  tidPreview = std::thread{[this]() { this->previewThread(); }};
   return DEVICE_OK;
 }
 
@@ -410,15 +387,15 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle)
   b_isstreamon_ = false;
 
   // wait for preview thread to close
-  pthread_mutex_lock(&mutex_);
+  std::lock_guard<std::mutex> guard(tMutex);
+
   while (!b_isshmwritedone_)
-    pthread_cond_wait(&cond_, &mutex_);
-  pthread_mutex_unlock(&mutex_);
+  {
+    std::unique_lock<std::mutex> uniqLock(tMutex);
+    tCondVar.wait(uniqLock);
+  }
 
-  pthread_cond_destroy(&cond_);
-  pthread_mutex_destroy(&mutex_);
-
-  int retval = camera_hal_if_stop_capture(handle);
+  auto retval = camera_hal_if_stop_capture(handle);
   if (retval != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "stopPreview : camera_hal_if_stop_capture failed \n");
@@ -432,7 +409,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle)
     return DEVICE_ERROR_UNKNOWN;
   }
 
-  int retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shm_);
+  auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shm_);
   if (retshmem != SHMEM_COMM_OK)
     PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);
   h_shm_ = NULL;
@@ -454,11 +431,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startCapture(void *handle, CAMERA_FORMAT sfo
   str_imagepath_ = imagepath;
 
   // create thread that will continuously capture images until stopcapture received
-  if (0 != (pthread_create(&tid_capture_, NULL, runCaptureImageThread, this)))
-  {
-    PMLOG_ERROR(CONST_MODULE_DC, "runCaptureImageThread failed\n");
-    return DEVICE_ERROR_UNKNOWN;
-  }
+  tidCapture = std::thread{[this]() { this->captureThread(); }};
 
   return DEVICE_OK;
 }
@@ -497,7 +470,7 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(void *handle, int ncount, CAMER
   }
 
   // poll for data on buffers and save captured image
-  DEVICE_RETURN_CODE_T retval = pollForCapturedImage(handle, ncount);
+  auto retval = pollForCapturedImage(handle, ncount);
   if (retval != DEVICE_OK)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "captureImage : pollForCapturedImage failed \n");
@@ -512,7 +485,7 @@ DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string subs
   PMLOG_INFO(CONST_MODULE_DC, "createHandle started \n");
 
   void *p_cam_handle;
-  int ret = camera_hal_if_init(&p_cam_handle, subsystem.c_str());
+  auto ret = camera_hal_if_init(&p_cam_handle, subsystem.c_str());
   if (ret != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "Failed to create handle\n!!");
@@ -529,7 +502,7 @@ DEVICE_RETURN_CODE_T DeviceControl::destroyHandle(void *handle)
 {
   PMLOG_INFO(CONST_MODULE_DC, "destroyHandle started \n");
 
-  int ret = camera_hal_if_deinit(handle);
+  auto ret = camera_hal_if_deinit(handle);
   if (ret != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "Failed to destroy handle\n!!");
@@ -544,7 +517,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode,
 {
   PMLOG_INFO(CONST_MODULE_DC, "getDeviceInfo started \n");
 
-  int ret = camera_hal_if_get_info(strdevicenode.c_str(), pinfo);
+  auto ret = camera_hal_if_get_info(strdevicenode.c_str(), pinfo);
   if (ret != CAMERA_ERROR_NONE)
   {
     PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
@@ -714,7 +687,7 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, CAMERA_FORMAT sforma
   if(in_format.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
-  int ret = camera_hal_if_set_format(handle, in_format);
+  auto ret = camera_hal_if_set_format(handle, in_format);
   if (ret != CAMERA_ERROR_NONE)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
