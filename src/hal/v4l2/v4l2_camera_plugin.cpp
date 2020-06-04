@@ -25,6 +25,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#define CONST_PARAM_DEFAULT_VALUE -999
+
 using namespace std;
 
 void *create_handle() { return new V4l2CameraPlugin; }
@@ -349,98 +351,29 @@ int V4l2CameraPlugin::stopCapture()
 int V4l2CameraPlugin::setProperties(const camera_properties_t *cam_in_params)
 {
   int retVal = CAMERA_ERROR_NONE;
-  struct v4l2_queryctrl queryctrl;
 
-  if (cam_in_params->n_brightness != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_BRIGHTNESS;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_brightness);
-  }
-  if (cam_in_params->n_contrast != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_CONTRAST;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_contrast);
-  }
-  if (cam_in_params->n_saturation != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_SATURATION;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_saturation);
-  }
-  if (cam_in_params->n_hue != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_HUE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_hue);
-  }
-  if (cam_in_params->n_autowhitebalance != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_AUTO_WHITE_BALANCE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_autowhitebalance);
-  }
-  if (cam_in_params->n_gamma != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_GAMMA;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_gamma);
-  }
-  if (cam_in_params->n_gain != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_GAIN;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_gain);
-  }
-  if (cam_in_params->n_frequency != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_frequency);
-  }
-  if (cam_in_params->n_whitebalancetemperature != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_WHITE_BALANCE_TEMPERATURE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_whitebalancetemperature);
-  }
-  if (cam_in_params->n_sharpness != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_SHARPNESS;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_sharpness);
-  }
-  if (cam_in_params->n_backlightcompensation != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_BACKLIGHT_COMPENSATION;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_backlightcompensation);
-  }
-  if (cam_in_params->n_autoexposure != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_EXPOSURE_AUTO;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_autoexposure);
-  }
-  if (cam_in_params->n_exposure != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_EXPOSURE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_exposure);
-  }
-  if (cam_in_params->n_pan != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_PAN_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_pan);
-  }
-  if (cam_in_params->n_tilt != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_TILT_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_tilt);
-  }
-  if (cam_in_params->n_focusabsolute != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_FOCUS_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_focusabsolute);
-  }
-  if (cam_in_params->n_autofocus != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_FOCUS_AUTO;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_autofocus);
-  }
-  if (cam_in_params->n_zoomabsolute != CONST_PARAM_DEFAULT_VALUE)
-  {
-    queryctrl.id = V4L2_CID_ZOOM_ABSOLUTE;
-    retVal = setV4l2Property(queryctrl, cam_in_params->n_zoomabsolute);
-  }
+  std::map <int, int> gIdWithPropertyValue;
+
+  gIdWithPropertyValue[V4L2_CID_BRIGHTNESS] = cam_in_params->n_brightness;
+  gIdWithPropertyValue[V4L2_CID_CONTRAST] = cam_in_params->n_contrast;
+  gIdWithPropertyValue[V4L2_CID_SATURATION] = cam_in_params->n_saturation;
+  gIdWithPropertyValue[V4L2_CID_HUE] = cam_in_params->n_hue;
+  gIdWithPropertyValue[V4L2_CID_AUTO_WHITE_BALANCE] = cam_in_params->n_autowhitebalance;
+  gIdWithPropertyValue[V4L2_CID_GAMMA] = cam_in_params->n_gamma;
+  gIdWithPropertyValue[V4L2_CID_GAIN] = cam_in_params->n_gain;
+  gIdWithPropertyValue[V4L2_CID_POWER_LINE_FREQUENCY] = cam_in_params->n_frequency;
+  gIdWithPropertyValue[V4L2_CID_WHITE_BALANCE_TEMPERATURE] = cam_in_params->n_whitebalancetemperature;
+  gIdWithPropertyValue[V4L2_CID_SHARPNESS] = cam_in_params->n_sharpness;
+  gIdWithPropertyValue[V4L2_CID_BACKLIGHT_COMPENSATION] = cam_in_params->n_backlightcompensation;
+  gIdWithPropertyValue[V4L2_CID_EXPOSURE_AUTO] = cam_in_params->n_autoexposure;
+  gIdWithPropertyValue[V4L2_CID_EXPOSURE] = cam_in_params->n_exposure;
+  gIdWithPropertyValue[V4L2_CID_PAN_ABSOLUTE] = cam_in_params->n_pan;
+  gIdWithPropertyValue[V4L2_CID_TILT_ABSOLUTE] = cam_in_params->n_tilt;
+  gIdWithPropertyValue[V4L2_CID_FOCUS_ABSOLUTE] = cam_in_params->n_focusabsolute;
+  gIdWithPropertyValue[V4L2_CID_FOCUS_AUTO] = cam_in_params->n_autofocus;
+  gIdWithPropertyValue[V4L2_CID_ZOOM_ABSOLUTE] = cam_in_params->n_zoomabsolute;
+
+  retVal = setV4l2Property(gIdWithPropertyValue);
 
   return retVal;
 }
@@ -580,30 +513,39 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
   return ret;
 }
 
-int V4l2CameraPlugin::setV4l2Property(struct v4l2_queryctrl queryctrl, int value)
+int V4l2CameraPlugin::setV4l2Property(std::map <int, int> gIdWithPropertyValue)
 {
-  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl))
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "setV4l2Property : VIDIOC_QUERYCTRL failed %d, %s\n", errno,
-                 strerror(errno));
-    return CAMERA_ERROR_UNKNOWN;
-  }
-  else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL,
-                 "setV4l2Property : Requested VIDIOC_QUERYCTRL flags is not supported\n");
-    return CAMERA_ERROR_UNKNOWN;
-  }
-
+  struct v4l2_queryctrl queryctrl;
   struct v4l2_control control;
-  CLEAR(control);
-  control.id = queryctrl.id;
-  control.value = value;
-  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_CTRL, &control))
+
+  for(const auto &it: gIdWithPropertyValue)
   {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "setV4l2Property : VIDIOC_S_CTRL failed %d, %s\n", errno,
+    if(CONST_PARAM_DEFAULT_VALUE != it.second)
+    {
+      queryctrl.id = it.first;
+      if (xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl) != CAMERA_ERROR_NONE)
+      {
+        HAL_LOG_INFO(CONST_MODULE_HAL, "setV4l2Property : VIDIOC_QUERYCTRL failed %d, %s\n", errno,
                  strerror(errno));
-    return CAMERA_ERROR_UNKNOWN;
+        return CAMERA_ERROR_UNKNOWN;
+      }
+      else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
+      {
+        HAL_LOG_INFO(CONST_MODULE_HAL,
+                 "setV4l2Property : Requested VIDIOC_QUERYCTRL flags is not supported\n");
+        return CAMERA_ERROR_UNKNOWN;
+      }
+
+      CLEAR(control);
+      control.id = queryctrl.id;
+      control.value = it.second;
+      if (xioctl(fd_, VIDIOC_S_CTRL, &control) != CAMERA_ERROR_NONE)
+      {
+        HAL_LOG_INFO(CONST_MODULE_HAL, "setV4l2Property : VIDIOC_S_CTRL failed %d, %s\n", errno,
+                 strerror(errno));
+        return CAMERA_ERROR_UNKNOWN;
+      }
+    }
   }
   return CAMERA_ERROR_NONE;
 }
@@ -636,39 +578,38 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *valu
   return CAMERA_ERROR_NONE;
 }
 
+void V4l2CameraPlugin::getCameraFormat(struct v4l2_fmtdesc format, camera_properties_t *cam_out_params)
+{
+    switch (format.pixelformat)
+    {
+    case V4L2_PIX_FMT_YUYV:
+      cam_out_params->st_resolution.e_format[format.index] = CAMERA_FORMAT_YUV;
+      break;
+    case V4L2_PIX_FMT_MJPEG:
+      cam_out_params->st_resolution.e_format[format.index] = CAMERA_FORMAT_JPEG;
+      break;
+    case V4L2_PIX_FMT_H264:
+      cam_out_params->st_resolution.e_format[format.index] = CAMERA_FORMAT_H264ES;
+      break;
+    default:
+      HAL_LOG_INFO(CONST_MODULE_HAL, "getResolutionProperty format.pixelformat:%d\n", format.pixelformat);
+    }
+}
+
 void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params)
 {
-  int pixelfmt = 0;
   struct v4l2_fmtdesc format;
   CLEAR(format);
 
   format.index = 0;
   format.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  int nformatindex = 0;
   struct v4l2_frmsizeenum frmsize;
   CLEAR(frmsize);
   int ncount = 0;
   while ((-1 != xioctl(fd_, VIDIOC_ENUM_FMT, &format)))
   {
+    getCameraFormat(format, cam_out_params);
     format.index++;
-    switch (format.pixelformat)
-    {
-    case V4L2_PIX_FMT_YUYV:
-      pixelfmt = pixelfmt | 1;
-      cam_out_params->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_YUV;
-      break;
-    case V4L2_PIX_FMT_MJPEG:
-      pixelfmt = pixelfmt | 4;
-      cam_out_params->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_JPEG;
-      break;
-    case V4L2_PIX_FMT_H264:
-      pixelfmt = pixelfmt | 2;
-      cam_out_params->st_resolution.e_format[nformatindex] = CAMERA_FORMAT_H264ES;
-      break;
-    default:
-      HAL_LOG_INFO(CONST_MODULE_HAL, "getResolutionProperty : pixelfmt : %d \n", pixelfmt);
-    }
-    nformatindex++;
     frmsize.pixel_format = format.pixelformat;
     frmsize.index = 0;
     struct v4l2_frmivalenum fival;
@@ -702,7 +643,7 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
       frmsize.index++;
     }
     ncount++;
-    cam_out_params->st_resolution.n_formatindex = nformatindex;
+    cam_out_params->st_resolution.n_formatindex = format.index;
   }
 }
 
