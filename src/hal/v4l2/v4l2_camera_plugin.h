@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,8 +51,9 @@ extern "C"
     virtual int getInfo(camera_device_info_t *, std::string) override;
 
   private:
-    int setV4l2Property(struct v4l2_queryctrl, int);
+    int setV4l2Property(std::map <int,int>);
     int getV4l2Property(struct v4l2_queryctrl, int *);
+    void getCameraFormatProperty(struct v4l2_fmtdesc, camera_properties_t *);
     void getResolutionProperty(camera_properties_t *);
 
     int requestMmapBuffers(int);
