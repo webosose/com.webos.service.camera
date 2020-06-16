@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,8 +25,9 @@
 #include "camshm.h"
 #include "constants.h"
 
-#include <pthread.h>
+#include <thread>
 #include <string>
+#include <condition_variable>
 
 class DeviceControl
 {
@@ -38,8 +39,6 @@ private:
   static camera_format_t getCameraFormat(camera_pixel_format_t);
   void captureThread();
   void previewThread();
-  static void *runCaptureImageThread(void *);
-  static void *runPreviewThread(void *);
 
   bool b_iscontinuous_capture_;
   bool b_isstreamon_;
@@ -47,10 +46,10 @@ private:
   void *cam_handle_;
   CAMERA_FORMAT informat_;
   camera_pixel_format_t epixelformat_;
-  pthread_t tid_capture_;
-  pthread_t tid_preview_;
-  pthread_mutex_t mutex_;
-  pthread_cond_t cond_;
+  std::thread tidPreview;
+  std::thread tidCapture;
+  std::mutex tMutex;
+  std::condition_variable tCondVar;
   std::string strdevicenode_;
   SHMEM_HANDLE h_shm_;
   std::string str_imagepath_;
@@ -66,7 +65,7 @@ public:
   DEVICE_RETURN_CODE_T stopPreview(void *);
   DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(void *);
-  DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT, const std::string&,
+  DEVICE_RETURN_CODE_T captureImage(void *,int, CAMERA_FORMAT, const std::string&,
                                     const std::string&);
   DEVICE_RETURN_CODE_T createHandle(void **, std::string);
   DEVICE_RETURN_CODE_T destroyHandle(void *);
