@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 #include <sys/shm.h>
 
-typedef enum _SHMEM_STATUS_T
+typedef enum
 {
   SHMEM_COMM_OK = 0x0,
   SHMEM_COMM_FAIL = -1,
@@ -30,16 +30,23 @@ typedef enum _SHMEM_STATUS_T
 
 typedef void *SHMEM_HANDLE;
 
-extern SHMEM_STATUS_T CreateShmem(SHMEM_HANDLE *, key_t *, int, int);
-extern SHMEM_STATUS_T CreateShmemEx(SHMEM_HANDLE *, key_t *, int, int, int);
-extern SHMEM_STATUS_T OpenShmem(SHMEM_HANDLE *, key_t);
-extern SHMEM_STATUS_T ReadShmem(SHMEM_HANDLE, unsigned char **, int *);
-extern SHMEM_STATUS_T ReadShmemEx(SHMEM_HANDLE, unsigned char **, int *, unsigned char **, int *);
-extern SHMEM_STATUS_T ReadLastShmem(SHMEM_HANDLE, unsigned char **, int *);
-extern SHMEM_STATUS_T ReadLastShmemEx(SHMEM_HANDLE, unsigned char **, int *, unsigned char **,
-                                      int *pExtraSize);
-extern SHMEM_STATUS_T WriteShmem(SHMEM_HANDLE, unsigned char *, int);
-extern SHMEM_STATUS_T WriteShmemEx(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
-extern SHMEM_STATUS_T CloseShmem(SHMEM_HANDLE *);
+class IPCSharedMemory
+{
+public:
+  static IPCSharedMemory& getInstance ()
+  {
+    static IPCSharedMemory sharedMemoryInstance;
+    return sharedMemoryInstance;
+  }
+  SHMEM_STATUS_T CreateShmemEx(SHMEM_HANDLE *, key_t *, int, int, int);
+  SHMEM_STATUS_T WriteShmemEx(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
+  SHMEM_STATUS_T CloseShmem(SHMEM_HANDLE *);
+
+  IPCSharedMemory (IPCSharedMemory const &)  = delete;
+  void operator = (IPCSharedMemory const &)  = delete;
+
+private:
+  IPCSharedMemory (){}
+};
 
 #endif // CAMSHM_H_
