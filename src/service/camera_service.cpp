@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #include <string>
 
 const std::string service = "com.webos.service.camera2";
+const std::string camerastr  = "camera";
 
 CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str()))
 {
@@ -62,13 +63,33 @@ int CameraService::getId(std::string cameraid)
 {
   std::stringstream strStream;
   int num = n_invalid_id;
-  int len = cameraid.length();
+  int len = 0;
+  int ndeviceid = 0;
+
+  if ((cameraid.compare(0, camerastr.length(), camerastr)) == 0)
+  {
+    cameraid.erase (0, camerastr.length());
+  }
+  else
+  {
+    return num;
+  }
+
+  len = cameraid.length();
+
   for (int index = 0; index < len; index++)
   {
     if (isdigit(cameraid[index]))
     {
       strStream << cameraid[index];
       strStream >> num;
+      strStream.clear();
+      ndeviceid = num + ndeviceid*10;
+      num = ndeviceid;
+    }
+    else
+    {
+      return n_invalid_id;
     }
   }
   return num;
