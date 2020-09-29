@@ -172,6 +172,7 @@ TEST(CameraHAL, SetFormat_Validparameters)
   // jpeg format with resolution 1920x1080
   streamformat.stream_height = 1080;
   streamformat.stream_width = 1920;
+  streamformat.stream_fps  = fps_30;
   retval = camera_hal_if_set_format(p_h_camera, streamformat);
   // unsupported yuv format with resolution 640x220
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
@@ -1006,6 +1007,7 @@ TEST(CameraHAL, GetBufferUSERPTR_Invalidstate)
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
+  streamformat.stream_fps  = fps_30;
   camera_hal_if_set_format(p_h_camera, streamformat);
   camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
 
@@ -1026,6 +1028,7 @@ TEST(CameraHAL, ReleaseBuffer_Validparameters)
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
+  streamformat.stream_fps  = fps_30;
   camera_hal_if_set_format(p_h_camera, streamformat);
   camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
   camera_hal_if_start_capture(p_h_camera);
@@ -1050,6 +1053,7 @@ TEST(CameraHAL, ReleaseBuffer_Invalidhandle)
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
+  streamformat.stream_fps  = fps_30;
   camera_hal_if_set_format(p_h_camera, streamformat);
   camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
   camera_hal_if_start_capture(p_h_camera);
@@ -1075,6 +1079,7 @@ TEST(CameraHAL, ReleaseBuffer_Invalidstate)
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
+  streamformat.stream_fps  = fps_30;
   camera_hal_if_set_format(p_h_camera, streamformat);
   camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
 
