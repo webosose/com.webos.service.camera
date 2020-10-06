@@ -897,6 +897,65 @@ void mappingPropertieswithConstValues(std::map<std::string,int> &gPropertyMap, C
   gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION,properties->nBacklightCompensation));
 }
 
+void createGetPropertiesOutputJsonString(const std::string propertyName,
+                                   int propertyValue, jvalue_ref &json_outobjparams)
+{
+  if (propertyName == CONST_PARAM_NAME_AUTOFOCUS)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_FOCUS_ABSOLUTE)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_ZOOM_ABSOLUTE)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_PAN)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_TILT)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_CONTRAST)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_BIRGHTNESS)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_SATURATION)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_SHARPNESS)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_HUE)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_WHITEBALANCETEMPERATURE)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_GAIN)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_GAMMA)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_FREQUENCY)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_EXPOSURE)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_AUTOEXPOSURE)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_AUTOWHITEBALANCE)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE),
+                  jnumber_create_i32(propertyValue));
+  if (propertyName == CONST_PARAM_NAME_BACKLIGHT_COMPENSATION)
+      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION),
+                  jnumber_create_i32(propertyValue));
+}
+
 void createGetPropertiesOutputParamJsonString(const std::string strparam,
                                               CAMERA_PROPERTIES_T *properties,
                                               jvalue_ref &json_outobjparams)
@@ -908,7 +967,9 @@ void createGetPropertiesOutputParamJsonString(const std::string strparam,
   std::map<std::string,int>::iterator it = gPropertyMap.find(strparam);
 
   if (it != gPropertyMap.end())
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(strparam.c_str()), jnumber_create_i32(it->second));
+  {
+     createGetPropertiesOutputJsonString(strparam, it->second, json_outobjparams);
+  }
   else if (CONST_PARAM_NAME_RESOLUTION == strparam)
   {
     jvalue_ref json_resolutionobj = jobject_create();
