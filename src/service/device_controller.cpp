@@ -194,7 +194,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
         return DEVICE_ERROR_UNKNOWN;
       }
       PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage buffer start : %p \n", frame_buffer.start);
-      PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage buffer length : %d \n",
+      PMLOG_INFO(CONST_MODULE_DC, "pollForCapturedImage buffer length : %lu \n",
                  frame_buffer.length);
 
       // write captured image to /tmp only if startCapture request is made

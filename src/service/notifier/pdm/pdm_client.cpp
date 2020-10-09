@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2020 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -66,8 +66,12 @@ static void _device_init(int devicenum, char *devicenode)
           PMLOG_INFO(CONST_MODULE_LUNA, "_device_init nDeviceNumber %d \n",nDeviceNumber);
           if (nDeviceNumber == devicenum)
           {
-            if(strDeviceNode)
-              strcpy(devicenode, strDeviceNode);
+            if(strDeviceNode) {
+              PMLOG_INFO(CONST_MODULE_LUNA,"_device_init  devicenode len = %d", strlen(strDeviceNode));
+              strncpy(devicenode, strDeviceNode, strlen(strDeviceNode));
+              devicenode[strlen(strDeviceNode)] = '\0';
+              PMLOG_INFO(CONST_MODULE_LUNA,"_device_init devicenode is %s", devicenode);
+            }
             udev_device_unref(dev);
             break;
           }

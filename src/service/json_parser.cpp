@@ -348,7 +348,7 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TYPE),
                 jstring_create(getTypeString(rGetCameraInfo().n_devicetype)));
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BUILTIN),
-                jboolean_create((bool *)rGetCameraInfo().b_builtin));
+                jboolean_create(rGetCameraInfo().b_builtin));
 
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
                 jnumber_create_i32(rGetCameraInfo().n_maxvideowidth));
