@@ -1,7 +1,7 @@
 {
     "exeName":"@WEBOS_INSTALL_SBINDIR@/com.webos.service.camera2",
     "type": "regular",
-    "trustlevel": "oem",
+    "trustLevel": "oem",
     "allowedNames": ["com.webos.service.camera2"],
     "permissions": [
         {
