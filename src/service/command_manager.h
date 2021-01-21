@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public:
   DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
-  DEVICE_RETURN_CODE_T startPreview(int, int *);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(int);

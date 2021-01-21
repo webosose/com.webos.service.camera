@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ class DeviceStateMap
 {
 public:
   int ndeviceid_;
+  int shmemtype;
   CameraDeviceState ecamstate_;
 };
 
@@ -38,9 +39,10 @@ class VirtualDeviceManager
 private:
   std::map<int, DeviceStateMap> virtualhandle_map_;
   std::map<int, std::string> handlepriority_map_;
-  bool bpreviewinprogress_;
+  int shmempreview_count_[2];
   bool bcaptureinprogress_;
   int shmkey_;
+  int poshmkey_;
   std::vector<int> npreviewhandle_;
   std::vector<int> ncapturehandle_;
   CAMERA_FORMAT sformat_;
@@ -60,7 +62,7 @@ public:
   VirtualDeviceManager();
   DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T startPreview(int, int *);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&,
                                     const std::string&);

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -993,4 +993,45 @@ void createGetPropertiesOutputParamJsonString(const std::string strparam,
   }
 
   return;
+}
+
+void GetFdMethod::getObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    int devicehandle = n_invalid_id;
+    jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
+    setDeviceHandle(devicehandle);
+  }
+  else
+  {
+    setDeviceHandle(n_invalid_id);
+  }
+  j_release(&j_obj);
+}
+
+std::string GetFdMethod::createObjectJsonString() const
+{
+  jvalue_ref json_outobj = jobject_create();
+  std::string str_reply;
+
+  MethodReply obj_reply = getMethodReply();
+
+  if (obj_reply.bGetReturnValue())
+  {
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                jboolean_create(obj_reply.bGetReturnValue()));
+  }
+  else
+  {
+    createJsonStringFailure(obj_reply, json_outobj);
+  }
+
+  str_reply = jvalue_stringify(json_outobj);
+  j_release(&json_outobj);
+
+  return str_reply;
 }

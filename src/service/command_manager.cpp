@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -211,7 +211,7 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, int *pkey)
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey)
 {
   PMLOG_INFO(CONST_MODULE_CM, "startPreview  : devhandle : %d\n", devhandle);
 
@@ -221,7 +221,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, int *pkey)
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start preview
-    return ptr->startPreview(devhandle, pkey);
+    return ptr->startPreview(devhandle, memtype, pkey);
   else
     return DEVICE_ERROR_UNKNOWN;
 }

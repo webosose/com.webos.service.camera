@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#include <unistd.h>
 #include "camera_hal_if.h"
 #include "camera_base_wrapper.h"
 #include "camera_hal_types.h"
@@ -508,6 +509,29 @@ extern "C"
     }
 
     camera_hal_if_deinit(handle);
+    return retVal;
+  }
+
+  int camera_hal_if_get_buffer_fd(void *h, int *bufFd, int *count)
+  {
+    int retVal = -1;
+    camera_handle_t *camera_handle = (camera_handle_t *)h;
+    if (camera_handle)
+    {
+      const std::lock_guard<std::mutex> lock(camera_handle->lock);
+
+      retVal = get_buffer_fd(camera_handle, bufFd, count);
+      if (retVal == CAMERA_ERROR_UNKNOWN)
+      {
+        retVal = CAMERA_ERROR_GET_BUFFER_FD;
+        HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer_fd failed \n");
+      }
+    }
+    else
+    {
+      retVal = CAMERA_ERROR_GET_BUFFER_FD;
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer_fd : camera handle NULL  \n");
+    }
     return retVal;
   }
 

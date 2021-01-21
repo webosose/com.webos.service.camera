@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,7 +70,8 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_ALREADY_EXISTS_FILE, "Already exists file"},
     {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
     {DEVICE_ERROR_CANNOT_WRITE, "Cannot write at specified location"},
-    {DEVICE_OK, "No error"}};
+    {DEVICE_OK, "No error"},
+    {DEVICE_ERROR_GET_FD, "Wrong handle"}};
 
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},

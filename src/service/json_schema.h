@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -278,6 +278,21 @@ const char *getEventNotificationSchema = "{ \
       \"type\": \"boolean\", \
       \"title\": \"The subscribe Schema\", \
       \"default\": false \
+    } \
+  } \
+}";
+
+const char *getFdSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"handle\" \
+  ], \
+  \"properties\": { \
+    \"handle\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Handle Schema\", \
+      \"default\": 0 \
     } \
   } \
 }";

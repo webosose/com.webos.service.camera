@@ -1,4 +1,4 @@
-# Copyright (c) 2019 LG Electronics, Inc.
+# Copyright (c) 2019-2021 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ endif()
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -Werror=return-type")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -lrt -Werror=return-type")
 
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/files/)
@@ -84,6 +84,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/pdm_client.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/cam_posixshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
     )
 

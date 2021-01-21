@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,8 +39,8 @@ void destroy_handle(void *handle)
 }
 
 V4l2CameraPlugin::V4l2CameraPlugin()
-    : buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), io_mode_(IOMODE_UNKNOWN),
-      fourcc_format_(), camera_format_(),stream_format_()
+    : buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_({0}),
+    io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_(),stream_format_()
 {
 }
 
@@ -188,23 +188,24 @@ int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode)
 
 int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
 {
-  struct v4l2_buffer buf;
-  CLEAR(buf);
-  buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  buf.memory = V4L2_MEMORY_MMAP;
-
-  int retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
-  if (CAMERA_ERROR_NONE != retVal)
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "getBuffer : VIDIOC_DQBUF failed %d, %s\n", errno,
-                 strerror(errno));
-    return retVal;
-  }
+  int retVal = -1;
 
   switch (io_mode_)
   {
   case IOMODE_MMAP:
   {
+    struct v4l2_buffer buf;
+    CLEAR(buf);
+
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+
+    retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
+    if (CAMERA_ERROR_NONE != retVal)
+    {
+      HAL_LOG_INFO(CONST_MODULE_HAL, "getBuffer : VIDIOC_DQBUF failed %d, %s\n", errno,
+                   strerror(errno));
+    }
     memcpy(outbuf->start, buffers_[buf.index].start, buf.length);
     outbuf->length = buf.length;
     outbuf->index = buf.index;
@@ -212,6 +213,17 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
   }
   case IOMODE_USERPTR:
   {
+    struct v4l2_buffer buf;
+    CLEAR(buf);
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+
+    retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
+    if (CAMERA_ERROR_NONE != retVal)
+    {
+      HAL_LOG_INFO(CONST_MODULE_HAL, "getBuffer : VIDIOC_DQBUF failed %d, %s\n", errno,
+                   strerror(errno));
+    }
     outbuf->start = (void *)buf.m.userptr;
     outbuf->length = buf.bytesused;
     outbuf->index = buf.index;
@@ -219,10 +231,19 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
   }
   case IOMODE_DMABUF:
   {
-    outbuf->start = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, fd_, buf.m.offset);
+    struct v4l2_buffer buf;
+    CLEAR(buf);
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_DMABUF;
+
+    retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
+    if (CAMERA_ERROR_NONE != retVal)
+    {
+      HAL_LOG_INFO(CONST_MODULE_HAL, "getBuffer : VIDIOC_DQBUF failed %d, %s\n", errno,
+                   strerror(errno));
+    }
     outbuf->length = buf.length;
     outbuf->index = buf.index;
-    outbuf->fd = buf.m.fd;
     break;
   }
   default:
@@ -236,7 +257,6 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
 int V4l2CameraPlugin::releaseBuffer(buffer_t inbuf)
 {
   struct v4l2_buffer buf;
-
   CLEAR(buf);
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buf.memory = V4L2_MEMORY_MMAP;
@@ -249,7 +269,7 @@ int V4l2CameraPlugin::releaseBuffer(buffer_t inbuf)
     return CAMERA_ERROR_UNKNOWN;
   }
 
-  if (IOMODE_DMABUF == io_mode_)
+  if (IOMODE_DMABUF != io_mode_)
   {
     munmap(inbuf.start, inbuf.length);
   }
@@ -271,6 +291,11 @@ int V4l2CameraPlugin::destroyBuffer()
   case IOMODE_USERPTR:
   {
     retVal = releaseUserptrBuffers();
+    break;
+  }
+  case IOMODE_DMABUF:
+  {
+    retVal = releaseDmaBuffersFd();
     break;
   }
   default:
@@ -778,6 +803,16 @@ int V4l2CameraPlugin::releaseUserptrBuffers()
   return CAMERA_ERROR_NONE;
 }
 
+int V4l2CameraPlugin::releaseDmaBuffersFd()
+{
+  for (int i = 0; i < n_buffers_; ++i)
+  {
+    close(dmafd_[i]);
+    dmafd_[i] = -1;
+  }
+  return CAMERA_ERROR_NONE;
+}
+
 int V4l2CameraPlugin::captureDataMmapMode()
 {
   struct v4l2_buffer buf;
@@ -855,34 +890,54 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
                  strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
+
+  //Create buffer now
+  struct v4l2_create_buffers bcreate = {0};
+  struct v4l2_format fmt = {0};
+
+  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  fmt.fmt.pix.width = stream_format_.stream_width;
+  fmt.fmt.pix.height = stream_format_.stream_height;
+  fmt.fmt.pix.pixelformat = getFourCCPixelFormat(stream_format_.pixel_format);
+  fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
+  fmt.fmt.pix.sizeimage = stream_format_.buffer_size;
+
+  bcreate.memory = V4L2_MEMORY_MMAP;
+  bcreate.format = fmt;
+  bcreate.count = req.count;
+
+  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_CREATE_BUFS, &bcreate))
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "requestDmabuffers : VIDIOC_CREATE_BUFS failed %d, %s\n", errno,
+                 strerror(errno));
+    return CAMERA_ERROR_UNKNOWN;
+  }
+  for(int i = 0; i < req.count; i++)
+  {
+    struct v4l2_buffer qrybuf = {0};
+
+    qrybuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    qrybuf.memory = V4L2_MEMORY_DMABUF;
+    qrybuf.index = i;
+
+    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYBUF, &qrybuf))
+    {
+      HAL_LOG_INFO(CONST_MODULE_HAL, "requestDmabuffers : VIDIOC_QUERYBUF failed %d, %s\n", errno,
+                   strerror(errno));
+      return CAMERA_ERROR_UNKNOWN;
+    }
+  }
   return CAMERA_ERROR_NONE;
 }
 
 int V4l2CameraPlugin::captureDataDmaMode()
 {
-  struct v4l2_exportbuffer expbuf;
   struct v4l2_buffer buf;
-
-  int dmafd[n_buffers_];
-
   for (int i = 0; i < n_buffers_; ++i)
   {
-    CLEAR(expbuf);
-
-    expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    expbuf.index = i;
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_EXPBUF, &expbuf))
-    {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataDmaMode : VIDIOC_EXPBUF failed %d, %s\n", errno,
-                   strerror(errno));
-      return CAMERA_ERROR_UNKNOWN;
-    }
-    dmafd[i] = expbuf.fd;
-
     CLEAR(buf);
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     buf.memory = V4L2_MEMORY_MMAP;
-    buf.m.fd = dmafd[i];
     buf.index = i;
 
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
@@ -900,6 +955,33 @@ int V4l2CameraPlugin::captureDataDmaMode()
     HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataDmaMode : VIDIOC_STREAMON failed %d, %s\n", errno,
                  strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
+  }
+  return CAMERA_ERROR_NONE;
+}
+
+int V4l2CameraPlugin::getBufferFd(int *bufFd, int *count)
+{
+  struct v4l2_exportbuffer expbuf;
+  *count = 0;
+
+  for (int i = 0; i < n_buffers_; ++i)
+  {
+    CLEAR(expbuf);
+    expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    expbuf.index = i;
+    expbuf.plane = 0;
+    expbuf.flags = O_CLOEXEC | O_RDWR;
+
+    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_EXPBUF, &expbuf))
+    {
+      HAL_LOG_INFO(CONST_MODULE_HAL, "captureDataDmaMode : VIDIOC_EXPBUF failed %d, %s\n", errno,
+                   strerror(errno));
+      return CAMERA_ERROR_UNKNOWN;
+    }
+    dmafd_[i] = expbuf.fd;
+    *bufFd = expbuf.fd;
+    bufFd++;
+    *count = *count + 1;
   }
   return CAMERA_ERROR_NONE;
 }

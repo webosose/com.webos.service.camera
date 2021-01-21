@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@
 
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
+
+const std::string kMemtypeShmem = "sharedmemory";
+const std::string kMemtypePosixshm = "posixshm";
 
 /*-----------------------------------------------------------------------------
  (Type Definitions)
@@ -95,7 +98,8 @@ typedef enum
   DEVICE_ERROR_LACK_OF_STORAGE,
   DEVICE_ERROR_ALREADY_EXISTS_FILE,
   DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE,
-  DEVICE_ERROR_CANNOT_WRITE
+  DEVICE_ERROR_CANNOT_WRITE,
+  DEVICE_ERROR_GET_FD
 } DEVICE_RETURN_CODE_T;
 
 typedef enum
@@ -120,6 +124,13 @@ typedef enum
   CAMERA_TYPE_V4L2 = 1,
   CAMERA_TYPE_OMX = 2,
 } CAMERA_TYPE_T;
+
+typedef enum
+{
+  SHMEME_UNKNOWN = -1,
+  SHMEM_SYSTEMV  =  0,
+  SHMEM_POSIX
+}SHMEM_TYPE_T;
 
 enum class NotifierClient
 {

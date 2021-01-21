@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
  -- ----------------------------------------------------------------------------*/
 #include "camera_service.h"
 #include "camera_hal_types.h"
+#include "camera_types.h"
 #include "command_manager.h"
 #include "json_schema.h"
 #include "notifier.h"
@@ -29,6 +30,7 @@
 
 const std::string service = "com.webos.service.camera2";
 const std::string camerastr  = "camera";
+int poshmFd = -1;
 
 CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str()))
 {
@@ -45,6 +47,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   LS_CATEGORY_METHOD(startPreview)
   LS_CATEGORY_METHOD(stopPreview)
   LS_CATEGORY_METHOD(getEventNotification)
+  LS_CATEGORY_METHOD(getFd)
   LS_CATEGORY_END;
 
   // attach to mainloop and run it
@@ -253,6 +256,7 @@ bool CameraService::startPreview(LSMessage &message)
 {
   auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+  camera_memory_source_t memType;
 
   StartPreviewMethod obj_startpreview;
   obj_startpreview.getStartPreviewObject(payload, startPreviewSchema);
@@ -269,7 +273,9 @@ bool CameraService::startPreview(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::startPreview ndevhandle : %d\n", ndevhandle);
     // start preview here
     int key = 0;
-    err_id = CommandManager::getInstance().startPreview(ndevhandle, &key);
+
+    memType = obj_startpreview.rGetParams();
+    err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key);
 
     if (DEVICE_OK != err_id)
     {
@@ -278,6 +284,8 @@ bool CameraService::startPreview(LSMessage &message)
     }
     else
     {
+      if(memType.str_memorytype == kMemtypePosixshm)
+        poshmFd = key;
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       obj_startpreview.setKeyValue(key);
@@ -325,6 +333,8 @@ bool CameraService::stopPreview(LSMessage &message)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+      if(poshmFd > 0)
+          poshmFd = -1;
     }
   }
 
@@ -745,6 +755,55 @@ bool CameraService::getEventNotification(LSMessage &message)
 
   LSErrorFree(&error);
 
+  return true;
+}
+
+bool CameraService::getFd(LSMessage &message)
+{
+  auto *payload = LSMessageGetPayload(&message);
+  LS::Message request(&message);
+  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+
+  GetFdMethod obj_getfd;
+  obj_getfd.getObject(payload, getFdSchema);
+
+  int ndevhandle = obj_getfd.getDeviceHandle();
+
+  if (n_invalid_id == ndevhandle)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
+    err_id = DEVICE_ERROR_JSON_PARSING;
+    obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::getFd ndevhandle %d\n", ndevhandle);
+
+    if(poshmFd > 0)
+    {
+      obj_getfd.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+
+      // create json string now for reply
+      std::string output_reply = obj_getfd.createObjectJsonString();
+      PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+
+      LS::Payload response_payload(output_reply.c_str());
+      response_payload.attachFd(poshmFd);//attach a fd here
+      request.respond(std::move(response_payload));
+      return true;
+    }
+    else
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_GET_FD\n");
+      err_id = DEVICE_ERROR_GET_FD;
+      obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+    }
+  }
+  // create json string now for reply
+  std::string output_reply = obj_getfd.createObjectJsonString();
+  PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+
+  request.respond(output_reply.c_str());
   return true;
 }
 
