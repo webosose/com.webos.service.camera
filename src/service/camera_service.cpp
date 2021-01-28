@@ -30,7 +30,6 @@
 
 const std::string service = "com.webos.service.camera2";
 const std::string camerastr  = "camera";
-int poshmFd = -1;
 
 CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str()))
 {
@@ -284,8 +283,6 @@ bool CameraService::startPreview(LSMessage &message)
     }
     else
     {
-      if(memType.str_memorytype == kMemtypePosixshm)
-        poshmFd = key;
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       obj_startpreview.setKeyValue(key);
@@ -333,8 +330,6 @@ bool CameraService::stopPreview(LSMessage &message)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
-      if(poshmFd > 0)
-          poshmFd = -1;
     }
   }
 
@@ -764,6 +759,7 @@ bool CameraService::getFd(LSMessage &message)
   LS::Message request(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
+  int shmfd = -1;
   GetFdMethod obj_getfd;
   obj_getfd.getObject(payload, getFdSchema);
 
@@ -779,7 +775,9 @@ bool CameraService::getFd(LSMessage &message)
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::getFd ndevhandle %d\n", ndevhandle);
 
-    if(poshmFd > 0)
+    err_id = CommandManager::getInstance().getFd(ndevhandle, &shmfd);
+
+    if(err_id == DEVICE_OK)
     {
       obj_getfd.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
 
@@ -788,14 +786,13 @@ bool CameraService::getFd(LSMessage &message)
       PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
 
       LS::Payload response_payload(output_reply.c_str());
-      response_payload.attachFd(poshmFd);//attach a fd here
+      response_payload.attachFd(shmfd);//attach a fd here
       request.respond(std::move(response_payload));
       return true;
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_GET_FD\n");
-      err_id = DEVICE_ERROR_GET_FD;
+      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService:: %s\n", getErrorString(err_id));
       obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
   }

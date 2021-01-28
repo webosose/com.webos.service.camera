@@ -741,3 +741,30 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMA
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
+
+DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
+{
+  PMLOG_INFO(CONST_MODULE_VDM, "getFd : devhandle : %d\n", devhandle);
+
+  DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+
+  if( obj_devstate.ecamstate_ == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+  {
+    if(obj_devstate.shmemtype == SHMEM_POSIX)
+    {
+      *shmfd = poshmkey_;
+      PMLOG_INFO(CONST_MODULE_VDM, "getFd : posix shared memory fd is : %d\n", *shmfd);
+    }
+    else
+    {
+      PMLOG_INFO(CONST_MODULE_VDM, "getFd : handle is not posix shared memory \n");
+      return DEVICE_ERROR_NOT_POSIXSHM ;
+    }
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_VDM, "getFd : Device preview not started\n");
+    return DEVICE_ERROR_PREVIEW_NOT_STARTED;
+  }
+  return DEVICE_OK;
+}

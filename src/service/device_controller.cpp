@@ -31,10 +31,10 @@ int DeviceControl::n_imagecount_ = 0;
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
       b_issystemvruning(false), b_isshmwritedone_(true), b_issyshmwritedone_(true),
-      b_isposhmwritedone_(true), cam_handle_(NULL), informat_(), tMutex(), tCondVar(),
-      h_shmsystem_(NULL), h_shmposix_(NULL), str_imagepath_(cstr_empty),
-      str_capturemode_(cstr_oneshot), str_memtype_(""),
-      epixelformat_(CAMERA_PIXEL_FORMAT_JPEG)
+      b_isposhmwritedone_(true), cam_handle_(NULL), shmemfd_(-1), informat_(),
+      tMutex(), tCondVar(), h_shmsystem_(NULL), h_shmposix_(NULL),
+      str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
+      str_shmemname_(""), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG)
 {
 }
 
@@ -334,6 +334,8 @@ void DeviceControl::previewThread()
   }
 
   b_isshmwritedone_ = true;
+  b_issyshmwritedone_ = true;
+  b_isposhmwritedone_ = true;
   tCondVar.notify_one();
   tidPreview.detach();
   return;
@@ -391,10 +393,14 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
   }
   else
   {
+    std::string shmname = "";
     auto retshmem = IPCPosixSharedMemory::getInstance().CreatePosixShmemory(&h_shmposix_,
-                             size, frame_count, sizeof(unsigned int), pkey);
+                             size, frame_count, sizeof(unsigned int), pkey, &shmname);
     if (retshmem != POSHMEM_COMM_OK)
        PMLOG_ERROR(CONST_MODULE_DC, "CreatePosixShmemory error %d \n", retshmem);
+
+    shmemfd_ = *pkey;
+    str_shmemname_ = shmname;
   }
 
   if(b_isstreamon_ == false)
@@ -453,14 +459,12 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
       std::unique_lock<std::mutex> uniqLock(tMutex);
       tCondVar.wait(uniqLock);
     }
-
     auto retval = camera_hal_if_stop_capture(handle);
     if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "stopPreview : camera_hal_if_stop_capture failed \n");
       return DEVICE_ERROR_UNKNOWN;
     }
-
     retval = camera_hal_if_destroy_buffer(handle);
     if (retval != CAMERA_ERROR_NONE)
     {
@@ -471,13 +475,15 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
   if(memtype == SHMEM_POSIX)
   {
     b_isposixruning = false;
-    while (!b_isposhmwritedone_)
+    if(b_isstreamon_)
     {
-      continue;
+      while (!b_isposhmwritedone_)
+      {
+        continue;
+      }
     }
-
     auto retshmem = IPCPosixSharedMemory::getInstance().ClosePosixShmemory(&h_shmposix_,
-                    frame_count, size, sizeof(unsigned int));
+                    frame_count, size, sizeof(unsigned int), str_shmemname_, shmemfd_);
     if (retshmem != POSHMEM_COMM_OK)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "ClosePosixShmemory error %d \n", retshmem);
@@ -487,11 +493,13 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
   else
   {
     b_issystemvruning = false;
-    while (!b_issyshmwritedone_)
+    if(b_isstreamon_)
     {
-      continue;
+      while (!b_issyshmwritedone_)
+      {
+        continue;
+      }
     }
-
     auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
     if (retshmem != SHMEM_COMM_OK)
       PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);

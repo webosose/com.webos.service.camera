@@ -49,6 +49,7 @@ private:
   bool b_issyshmwritedone_;
   bool b_isposhmwritedone_;
   void *cam_handle_;
+  int shmemfd_;
   CAMERA_FORMAT informat_;
   camera_pixel_format_t epixelformat_;
   std::thread tidPreview;
@@ -61,6 +62,7 @@ private:
   std::string str_imagepath_;
   std::string str_capturemode_;
   std::string str_memtype_;
+  std::string str_shmemname_;
 
   static int n_imagecount_;
 

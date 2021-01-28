@@ -72,6 +72,7 @@ public:
   DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
+  DEVICE_RETURN_CODE_T getFd(int, int *);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

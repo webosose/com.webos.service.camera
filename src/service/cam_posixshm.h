@@ -18,6 +18,7 @@
 #define CAMPOSHM_H_
 
 #include <sys/shm.h>
+#include <string>
 
 typedef enum
 {
@@ -38,9 +39,9 @@ public:
     static IPCPosixSharedMemory sharedMemoryInstance;
     return sharedMemoryInstance;
   }
-  POSHMEM_STATUS_T CreatePosixShmemory(SHMEM_HANDLE *, int, int, int, int *);
+  POSHMEM_STATUS_T CreatePosixShmemory(SHMEM_HANDLE *, int, int, int, int *, std::string *);
   POSHMEM_STATUS_T WritePosixShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
-  POSHMEM_STATUS_T ClosePosixShmemory(SHMEM_HANDLE *, int, int, int);
+  POSHMEM_STATUS_T ClosePosixShmemory(SHMEM_HANDLE *, int, int, int, std::string, int);
 
   IPCPosixSharedMemory (IPCPosixSharedMemory const &)  = delete;
   void operator = (IPCPosixSharedMemory const &)  = delete;

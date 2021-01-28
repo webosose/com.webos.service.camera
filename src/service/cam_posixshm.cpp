@@ -87,11 +87,8 @@ typedef struct
   unsigned char *extra_buf;
 } POSHMEM_COMM_T;
 
-char poshm_name[100] = {};
-int shm_fd;
-
 POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem,
-                             int unitSize, int unitNum, int extraSize, int *fd)
+                 int unitSize, int unitNum, int extraSize, int *fd, std::string *shmemname)
 {
   *phShmem = (SHMEM_HANDLE)malloc(sizeof(POSHMEM_COMM_T));
   POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
@@ -103,16 +100,32 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
                                            + sizeof(int) + extraSize * unitNum;
   //Create shared memory name
   pid_t pid = getpid();
-  snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm",(int)pid);
+  int shm_fd = -1;
+  char poshm_name[100] = {};
 
-  shm_fd = shm_open(poshm_name, O_CREAT|O_EXCL|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP);
-
-  if(shm_fd < 0)
+  while(TRUE)
   {
-    DEBUG_PRINT("Create failed and error is %s\n", std::strerror(errno));
-    return POSHMEM_COMM_FAIL;
-  }
+    snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm",(int)pid++);
 
+    shm_fd = shm_open(poshm_name, O_CREAT|O_EXCL|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP);
+
+    if(shm_fd > 0)
+    {
+      DEBUG_PRINT("POSIX shared memory created.\n");
+      *shmemname = poshm_name;
+      break;
+    }
+    else if(shm_fd == -1 && errno == EEXIST)
+    {
+      DEBUG_PRINT("POSIX shared memory name %s already exist \n", poshm_name);
+      continue;
+    }
+    else
+    {
+      DEBUG_PRINT("Create failed and error is %s\n", std::strerror(errno));
+      return POSHMEM_COMM_FAIL;
+    }
+  }
   if (ftruncate(shm_fd, shmemSize) == -1)
   {
     DEBUG_PRINT("Failed to set size of shared memory \n");
@@ -248,7 +261,8 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::WritePosixShmemory(SHMEM_HANDLE hShmem,
 }
 
 POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
-                                     int unitNum, int unitSize, int extraSize)
+                                     int unitNum, int unitSize, int extraSize,
+                                     std::string shmemname, int shmemfd)
 {
   DEBUG_PRINT("CloseShmemory start");
 
@@ -269,11 +283,11 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
     return POSHMEM_COMM_FAIL;
   }
 
-  if (shm_unlink(poshm_name) == -1)
+  if (shm_unlink(shmemname.c_str()) == -1)
   {
     return POSHMEM_COMM_FAIL;
   }
-  close(shm_fd);
+  close(shmemfd);
   free(shmem_buffer);
   shmem_buffer = nullptr;
 

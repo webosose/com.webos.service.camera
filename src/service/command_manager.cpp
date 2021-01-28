@@ -335,3 +335,15 @@ int CommandManager::getCameraHandle(int devid)
   }
   return n_invalid_id;
 }
+
+DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, int *shmfd)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "getFd : devhandle : %d\n", devhandle);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->getFd(devhandle, shmfd);
+  }
+  return DEVICE_ERROR_HANDLE_NOT_EXIST;
+}
