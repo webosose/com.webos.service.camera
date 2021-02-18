@@ -67,7 +67,7 @@ static void _device_init(int devicenum, char *devicenode)
           if (nDeviceNumber == devicenum)
           {
             if(strDeviceNode) {
-              PMLOG_INFO(CONST_MODULE_LUNA,"_device_init  devicenode len = %d", strlen(strDeviceNode));
+              PMLOG_INFO(CONST_MODULE_LUNA,"_device_init  devicenode len = %lu", strlen(strDeviceNode));
               strncpy(devicenode, strDeviceNode, strlen(strDeviceNode));
               devicenode[strlen(strDeviceNode)] = '\0';
               PMLOG_INFO(CONST_MODULE_LUNA,"_device_init devicenode is %s", devicenode);
@@ -86,108 +86,116 @@ static void _device_init(int devicenum, char *devicenode)
 
 static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
-  PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb callback received\n");
-
   jerror *error = NULL;
   const char *payload = LSMessageGetPayload(message);
+  PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb payload : %s \n", payload);
   jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
 
   if (jis_valid(jin_obj))
   {
     bool retvalue;
+    int camcount = 0;
     jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
     PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb retvalue : %d \n", retvalue);
     if (retvalue)
     {
-      jvalue_ref jin_obj_child =
-          jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_NON_STORAGE_DEVICE_LIST));
-
-      int listcount = jarray_size(jin_obj_child);
-      PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb listcount : %d \n", listcount);
-
-      int camcount = 0;
-
-      for (int i = 0; i < listcount; i++)
+      jvalue_ref jin_obj_devlistinfo;
+      bool is_devlistinfo = jobject_get_exists(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO), &jin_obj_devlistinfo);
+      PMLOG_INFO(CONST_MODULE_LUNA, "Check for deviceListInfo in the received JSON - %d", is_devlistinfo);
+      int devlistsize = 0, devlistindex=0;
+      if (is_devlistinfo)
       {
-        jvalue_ref jin_array_obj = jarray_get(jin_obj_child, i);
-        int portnum = -1;
-        jnumber_get_i32(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_USB_PORT_NUM)),
-                        &portnum);
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb portnum : %d \n", portnum);
-
-        raw_buffer serialnum = jstring_get_fast(
-            jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SERIAL_NUMBER)));
-        std::string str_serialnum = serialnum.m_str;
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb serialnum : %s \n", str_serialnum.c_str());
-
-        bool b_powerstatus = false;
-        jboolean_get(
-            jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_IS_POWER_ON_CONNECT)),
-            &b_powerstatus);
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb b_powerstatus : %d \n", b_powerstatus);
-
-        int devicenum = -1;
-        jnumber_get_i32(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_NUM)),
-                        &devicenum);
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb devicenum : %d \n", devicenum);
-
-        raw_buffer devsubtype = jstring_get_fast(
-            jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_SUBTYPE)));
-        std::string str_devicesubtype = devsubtype.m_str;
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicesubtype : %s \n",
-                   str_devicesubtype.c_str());
-
-        raw_buffer vendor_name = jstring_get_fast(
-            jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_NAME)));
-        std::string str_vendorname = vendor_name.m_str;
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_vendorname : %s \n",
-                   str_vendorname.c_str());
-
-        raw_buffer device_type = jstring_get_fast(
-            jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE)));
-        std::string str_devicetype = device_type.m_str;
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicetype : %s \n",
-                   str_devicetype.c_str());
-
-        raw_buffer product_name = jstring_get_fast(
-            jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_NAME)));
-        std::string str_productname = product_name.m_str;
-        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_productname : %s \n",
-                   str_productname.c_str());
-
-        if (cstr_cam == str_devicetype)
-        {
-          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb received cam device\n");
-          dev_info_[camcount].nDeviceNum = devicenum;
-          dev_info_[camcount].nPortNum = portnum;
-
-          strncpy(dev_info_[camcount].strVendorName, str_vendorname.c_str(),
-                  CONST_MAX_STRING_LENGTH - 1);
-          dev_info_[camcount].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-          strncpy(dev_info_[camcount].strProductName, str_productname.c_str(),
-                  CONST_MAX_STRING_LENGTH - 1);
-          dev_info_[camcount].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-          strncpy(dev_info_[camcount].strSerialNumber, str_serialnum.c_str(),
-                  CONST_MAX_STRING_LENGTH - 1);
-          dev_info_[camcount].strSerialNumber[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-          strncpy(dev_info_[camcount].strDeviceType, str_devicetype.c_str(),
-                  CONST_MAX_STRING_LENGTH - 1);
-          dev_info_[camcount].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-          strncpy(dev_info_[camcount].strDeviceSubtype, str_devicesubtype.c_str(),
-                  CONST_MAX_STRING_LENGTH - 1);
-          dev_info_[camcount].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-          dev_info_[camcount].isPowerOnConnect = b_powerstatus;
-
-          _device_init(dev_info_[camcount].nDeviceNum, dev_info_[camcount].strDeviceNode);
-
-          camcount++;
-        }
+        jin_obj_devlistinfo = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO));
+        devlistsize = jarray_size(jin_obj_devlistinfo);
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb devlist array size  : %d \n", devlistsize);
       }
+
+      do {
+        jvalue_ref jin_obj_child;
+        if (is_devlistinfo)
+        {
+          jvalue_ref jin_array_devinfo_obj = jarray_get(jin_obj_devlistinfo, devlistindex++);
+          jin_obj_child = jobject_get(jin_array_devinfo_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_NON_STORAGE_DEVICE_LIST));
+        }
+        else
+          jin_obj_child = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_NON_STORAGE_DEVICE_LIST));
+
+        int listcount = jarray_size(jin_obj_child);
+        PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb listcount : %d \n", listcount);
+
+        for (int i = 0; i < listcount; i++)
+        {
+          jvalue_ref jin_array_obj = jarray_get(jin_obj_child, i);
+          int portnum = -1;
+          jnumber_get_i32(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_USB_PORT_NUM)),
+                          &portnum);
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb portnum : %d \n", portnum);
+
+          bool b_powerstatus = false;
+          jboolean_get(
+              jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_IS_POWER_ON_CONNECT)),
+              &b_powerstatus);
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb b_powerstatus : %d \n", b_powerstatus);
+
+          int devicenum = -1;
+          jnumber_get_i32(jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_NUM)),
+                          &devicenum);
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb devicenum : %d \n", devicenum);
+
+          raw_buffer devsubtype = jstring_get_fast(
+              jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_SUBTYPE)));
+          std::string str_devicesubtype = devsubtype.m_str;
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicesubtype : %s \n",
+                     str_devicesubtype.c_str());
+
+          raw_buffer vendor_name = jstring_get_fast(
+              jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_NAME)));
+          std::string str_vendorname = vendor_name.m_str;
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_vendorname : %s \n",
+                     str_vendorname.c_str());
+
+          raw_buffer device_type = jstring_get_fast(
+              jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE)));
+          std::string str_devicetype = device_type.m_str;
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_devicetype : %s \n",
+                     str_devicetype.c_str());
+
+          raw_buffer product_name = jstring_get_fast(
+              jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_NAME)));
+          std::string str_productname = product_name.m_str;
+          PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb str_productname : %s \n",
+                     str_productname.c_str());
+
+          if (cstr_cam == str_devicetype)
+          {
+            PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb received cam device\n");
+            dev_info_[camcount].nDeviceNum = devicenum;
+            dev_info_[camcount].nPortNum = portnum;
+
+            strncpy(dev_info_[camcount].strVendorName, str_vendorname.c_str(),
+                    CONST_MAX_STRING_LENGTH - 1);
+            dev_info_[camcount].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+            strncpy(dev_info_[camcount].strProductName, str_productname.c_str(),
+                    CONST_MAX_STRING_LENGTH - 1);
+            dev_info_[camcount].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+            strncpy(dev_info_[camcount].strDeviceType, str_devicetype.c_str(),
+                    CONST_MAX_STRING_LENGTH - 1);
+            dev_info_[camcount].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+            strncpy(dev_info_[camcount].strDeviceSubtype, str_devicesubtype.c_str(),
+                    CONST_MAX_STRING_LENGTH - 1);
+            dev_info_[camcount].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+            dev_info_[camcount].isPowerOnConnect = b_powerstatus;
+
+            _device_init(dev_info_[camcount].nDeviceNum, dev_info_[camcount].strDeviceNode);
+
+            camcount++;
+          }
+        }
+      } while((devlistsize > 0) && (devlistindex < devlistsize));
 
       DEVICE_EVENT_STATE_T nCamEvent = DEVICE_EVENT_NONE;
       DEVICE_EVENT_STATE_T nMicEvent = DEVICE_EVENT_NONE;
@@ -204,17 +212,27 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
   return true;
 }
 
-void PDMClient::subscribeToClient(pdmhandlercb cb)
+void PDMClient::subscribeToClient(pdmhandlercb cb, GMainLoop *loop)
 {
+  LSError lsregistererror;
+  LSErrorInit(&lsregistererror);
+
   // register to PDM luna service with cb to be called
   subscribeToDeviceInfoCb_ = cb;
-
-  subscribeToPdmService();
+  bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
+                                         subscribeToPdmService, loop, NULL, &lsregistererror);
+  if (!result)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA,"LSRegister Server Status failed:%s:%d",__FUNCTION__, __LINE__);
+  }
 }
 
 void PDMClient::setLSHandle(LSHandle *handle) { lshandle_ = handle; }
 
-int PDMClient::subscribeToPdmService()
+bool PDMClient::subscribeToPdmService(LSHandle *sh,
+                                    const char *serviceName,
+                                    bool connected,
+                                    void *ctx)
 {
   int retval = 0;
   int ret = 0;
@@ -222,13 +240,21 @@ int PDMClient::subscribeToPdmService()
   LSError lserror;
   LSErrorInit(&lserror);
 
-  // get camera service handle and register cb function with pdm
-  retval = LSCall(lshandle_, cstr_uri.c_str(), cstr_payload.c_str(), deviceStateCb, NULL, NULL,
-                  &lserror);
-  if (!retval)
+  PMLOG_INFO(CONST_MODULE_LUNA, "connected status:%d \n", connected);
+  if (connected)
   {
-    g_print("PDM client uUnable to unregister service\n");
-    ret = -1;
+    // get camera service handle and register cb function with pdm
+    retval = LSCall(sh, cstr_uri.c_str(), cstr_payload.c_str(), deviceStateCb, NULL, NULL,
+                    &lserror);
+    if (!retval)
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA,"PDM client Unable to unregister service\n");
+      ret = -1;
+    }
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "connected value is false");
   }
 
   if (LSErrorIsSet(&lserror))

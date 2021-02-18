@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ private:
   using handlercb = std::function<void(DEVICE_LIST_T *)>;
 
 public:
-  virtual void subscribeToClient(handlercb) = 0;
+  virtual void subscribeToClient(handlercb, GMainLoop *loop) = 0;
   virtual void setLSHandle(LSHandle *) = 0;
 };
 

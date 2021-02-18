@@ -650,53 +650,53 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   PMLOG_INFO(CONST_MODULE_DC, "getDeviceProperty started !\n");
 
   camera_properties_t out_params;
-  out_params.n_pan = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_tilt = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_contrast = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_brightness = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_saturation = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_sharpness = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_hue = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_gain = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_gamma = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_frequency = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_autowhitebalance = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_backlightcompensation = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_exposure = CONST_PARAM_DEFAULT_VALUE;
-  out_params.n_whitebalancetemperature = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nPan = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nTilt = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nContrast = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nBrightness = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nSaturation = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nSharpness = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nHue = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nGain = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nGamma = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nFrequency = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nAutoWhiteBalance = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nBacklightCompensation = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nExposure = CONST_PARAM_DEFAULT_VALUE;
+  out_params.nWhiteBalanceTemperature = CONST_PARAM_DEFAULT_VALUE;
   camera_hal_if_get_properties(handle, &out_params);
 
-  oparams->nPan = out_params.n_pan;
-  oparams->nTilt = out_params.n_tilt;
-  oparams->nContrast = out_params.n_contrast;
-  oparams->nBrightness = out_params.n_brightness;
-  oparams->nSaturation = out_params.n_saturation;
-  oparams->nSharpness = out_params.n_sharpness;
-  oparams->nHue = out_params.n_hue;
-  oparams->nGain = out_params.n_gain;
-  oparams->nGamma = out_params.n_gamma;
-  oparams->nFrequency = out_params.n_frequency;
-  oparams->nAutoWhiteBalance = out_params.n_autowhitebalance;
-  oparams->nBacklightCompensation = out_params.n_backlightcompensation;
+  oparams->nPan = out_params.nPan;
+  oparams->nTilt = out_params.nTilt;
+  oparams->nContrast = out_params.nContrast;
+  oparams->nBrightness = out_params.nBrightness;
+  oparams->nSaturation = out_params.nSaturation;
+  oparams->nSharpness = out_params.nSharpness;
+  oparams->nHue = out_params.nHue;
+  oparams->nGain = out_params.nGain;
+  oparams->nGamma = out_params.nGamma;
+  oparams->nFrequency = out_params.nFrequency;
+  oparams->nAutoWhiteBalance = out_params.nAutoWhiteBalance;
+  oparams->nBacklightCompensation = out_params.nBacklightCompensation;
   if (oparams->nAutoExposure == 0)
-    oparams->nExposure = out_params.n_exposure;
+    oparams->nExposure = out_params.nExposure;
   if (oparams->nAutoWhiteBalance == 0)
-    oparams->nWhiteBalanceTemperature = out_params.n_whitebalancetemperature;
+    oparams->nWhiteBalanceTemperature = out_params.nWhiteBalanceTemperature;
   // update resolution structure
-  oparams->stResolution.n_formatindex = out_params.st_resolution.n_formatindex;
-  for (int n = 0; n < out_params.st_resolution.n_formatindex; n++)
+  oparams->stResolution.n_formatindex = out_params.stResolution.n_formatindex;
+  for (int n = 0; n < out_params.stResolution.n_formatindex; n++)
   {
-    oparams->stResolution.e_format[n] = out_params.st_resolution.e_format[n];
-    oparams->stResolution.n_frameindex[n] = out_params.st_resolution.n_frameindex[n];
-    for (int count = 0; count < out_params.st_resolution.n_frameindex[n]; count++)
+    oparams->stResolution.e_format[n] = out_params.stResolution.e_format[n];
+    oparams->stResolution.n_frameindex[n] = out_params.stResolution.n_frameindex[n];
+    for (int count = 0; count < out_params.stResolution.n_frameindex[n]; count++)
     {
-      oparams->stResolution.n_height[n][count] = out_params.st_resolution.n_height[n][count];
-      oparams->stResolution.n_width[n][count] = out_params.st_resolution.n_width[n][count];
-      PMLOG_INFO(CONST_MODULE_DC, "out_params.st_resolution.c_res %s\n",
-                 out_params.st_resolution.c_res[count]);
+      oparams->stResolution.n_height[n][count] = out_params.stResolution.n_height[n][count];
+      oparams->stResolution.n_width[n][count] = out_params.stResolution.n_width[n][count];
+      PMLOG_INFO(CONST_MODULE_DC, "out_params.stResolution.c_res %s\n",
+                 out_params.stResolution.c_res[count]);
       memset(oparams->stResolution.c_res[count], '\0',
              sizeof(oparams->stResolution.c_res[count]));
-      strncpy(oparams->stResolution.c_res[count], out_params.st_resolution.c_res[count],
+      strncpy(oparams->stResolution.c_res[count], out_params.stResolution.c_res[count],
               sizeof(oparams->stResolution.c_res[count])-1);
     }
   }
@@ -711,52 +711,52 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
   camera_properties_t in_params;
 
   if (inparams->nZoomAbsolute != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_zoomabsolute = inparams->nZoomAbsolute;
+    in_params.nZoomAbsolute = inparams->nZoomAbsolute;
 
   if (inparams->nPan != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_pan = inparams->nPan;
+    in_params.nPan = inparams->nPan;
 
   if (inparams->nTilt != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_tilt = inparams->nTilt;
+    in_params.nTilt = inparams->nTilt;
 
   if (inparams->nContrast != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_contrast = inparams->nContrast;
+    in_params.nContrast = inparams->nContrast;
 
   if (inparams->nBrightness != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_brightness = inparams->nBrightness;
+    in_params.nBrightness = inparams->nBrightness;
 
   if (inparams->nSaturation != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_saturation = inparams->nSaturation;
+    in_params.nSaturation = inparams->nSaturation;
 
   if (inparams->nSharpness != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_sharpness = inparams->nSharpness;
+    in_params.nSharpness = inparams->nSharpness;
 
   if (inparams->nHue != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_hue = inparams->nHue;
+    in_params.nHue = inparams->nHue;
 
   if (inparams->nAutoExposure != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_autoexposure = inparams->nAutoExposure;
+    in_params.nAutoExposure = inparams->nAutoExposure;
 
   if (inparams->nAutoWhiteBalance != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_autowhitebalance = inparams->nAutoWhiteBalance;
+    in_params.nAutoWhiteBalance = inparams->nAutoWhiteBalance;
 
   if (inparams->nExposure != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_exposure = inparams->nExposure;
+    in_params.nExposure = inparams->nExposure;
 
   if (inparams->nWhiteBalanceTemperature != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_whitebalancetemperature = inparams->nWhiteBalanceTemperature;
+    in_params.nWhiteBalanceTemperature = inparams->nWhiteBalanceTemperature;
 
   if (inparams->nGain != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_gain = inparams->nGain;
+    in_params.nGain = inparams->nGain;
 
   if (inparams->nGamma != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_gamma = inparams->nGamma;
+    in_params.nGamma = inparams->nGamma;
 
   if (inparams->nFrequency != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_frequency = inparams->nFrequency;
+    in_params.nFrequency = inparams->nFrequency;
 
   if (inparams->nBacklightCompensation != CONST_PARAM_DEFAULT_VALUE)
-    in_params.n_backlightcompensation = inparams->nBacklightCompensation;
+    in_params.nBacklightCompensation = inparams->nBacklightCompensation;
 
   camera_hal_if_set_properties(handle, &in_params);
 

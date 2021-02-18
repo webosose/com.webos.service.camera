@@ -100,25 +100,25 @@ typedef struct
 
 typedef struct
 {
-  int n_autowhitebalance;
-  int n_brightness;
-  int n_contrast;
-  int n_saturation;
-  int n_hue;
-  int n_gamma;
-  int n_gain;
-  int n_frequency;
-  int n_whitebalancetemperature;
-  int n_sharpness;
-  int n_backlightcompensation;
-  int n_autoexposure;
-  int n_exposure;
-  int n_pan;
-  int n_tilt;
-  int n_focusabsolute;
-  int n_autofocus;
-  int n_zoomabsolute;
-  camera_resolution_t st_resolution;
+  int nBrightness;
+  int nContrast;
+  int nSaturation;
+  int nHue;
+  int nAutoWhiteBalance;
+  int nGamma;
+  int nGain;
+  int nFrequency;
+  int nWhiteBalanceTemperature;
+  int nSharpness;
+  int nBacklightCompensation;
+  int nAutoExposure;
+  int nExposure;
+  int nPan;
+  int nTilt;
+  int nFocusAbsolute;
+  int nAutoFocus;
+  int nZoomAbsolute;
+  camera_resolution_t stResolution;
 } camera_properties_t;
 
 typedef struct

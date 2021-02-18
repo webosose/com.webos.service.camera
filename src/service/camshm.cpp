@@ -119,6 +119,19 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
   pShmemBuffer->mark = (SHMEM_MARK_T *)(pSharedmem + sizeof(int) * 4);
   pShmemBuffer->length_buf = (unsigned int *)(pSharedmem + sizeof(int) * 5);
 
+  if ((pShmemBuffer->sema_id = semget(shmemKey, 1, shmemMode)) == -1)
+  {
+#ifdef SHMEM_COMM_DEBUG
+      DEBUG_PRINT("Failed to create semaphore : %s\n", strerror(errno));
+#endif
+    if ((pShmemBuffer->sema_id = semget((key_t)shmemKey, 1, 0666)) == -1)
+    {
+      DEBUG_PRINT("Failed to get semaphore : %s\n", strerror(errno));
+      free(pShmemBuffer);
+      return SHMEM_COMM_FAIL;
+    }
+  }
+
   *pShmemBuffer->unit_size = unitSize;
   *pShmemBuffer->unit_num = unitNum;
 

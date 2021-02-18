@@ -105,8 +105,15 @@ extern "C"
       return retVal;
     }
 
-    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle : %p \n",
-                 camera_handle);
+    if (!*dev)
+    {
+      retVal = CAMERA_ERROR_DEVICE_OPEN;
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : device node is empty \n");
+      return retVal;
+    }
+
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle : %p , device : %s\n",
+                 camera_handle, dev);
 
     const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
