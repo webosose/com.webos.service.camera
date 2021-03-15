@@ -32,6 +32,10 @@ public:
   int ndeviceid_;
   int shmemtype;
   CameraDeviceState ecamstate_;
+  DeviceStateMap() :
+    ndeviceid_(0),
+    shmemtype(0),
+    ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_UNKNOWN) { };
 };
 
 class VirtualDeviceManager
