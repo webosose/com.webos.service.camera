@@ -206,7 +206,7 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
   case IOMODE_MMAP:
   {
     memcpy(outbuf->start, buffers_[buf.index].start, buf.length);
-    outbuf->length = buf.length;
+    outbuf->length = buf.bytesused;
     outbuf->index = buf.index;
     break;
   }
