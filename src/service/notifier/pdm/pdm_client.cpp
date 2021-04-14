@@ -64,7 +64,7 @@ static void _device_init(int devicenum, char *devicenode)
           devnum = udev_device_get_sysattr_value(dev1, "devnum");
           nDeviceNumber = atoi(devnum);
           PMLOG_INFO(CONST_MODULE_LUNA, "_device_init nDeviceNumber %d \n",nDeviceNumber);
-          if (nDeviceNumber == devicenum)
+          //if (nDeviceNumber == devicenum)
           {
             if(strDeviceNode)
               strcpy(devicenode, strDeviceNode);
