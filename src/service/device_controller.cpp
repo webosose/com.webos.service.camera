@@ -139,6 +139,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
     stream_format_t newstreamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
     newstreamformat.stream_height = sformat.nHeight;
     newstreamformat.stream_width = sformat.nWidth;
+    newstreamformat.stream_fps = sformat.nFps;
     newstreamformat.pixel_format = getPixelFormat(sformat.eFormat);
     //error handling
     if(CAMERA_PIXEL_FORMAT_MAX == newstreamformat.pixel_format)

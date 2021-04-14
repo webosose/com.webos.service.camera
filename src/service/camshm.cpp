@@ -233,7 +233,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteShmemEx(SHMEM_HANDLE hShmem, unsigned char 
 
   // Once the writer writes the last buffer, it is made to point to the first
   // buffer again
-  if (lwrite_index == (unit_num - 1))
+  if (lwrite_index == unit_num)
   {
     DEBUG_PRINT("Overflow write data(write_index = %d, unit_num = %d)!\n", lwrite_index,
                 *shmem_buffer->unit_num);
