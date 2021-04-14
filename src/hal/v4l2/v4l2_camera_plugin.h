@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -49,6 +49,7 @@ extern "C"
     virtual int setProperties(const camera_properties_t *) override;
     virtual int getProperties(camera_properties_t *) override;
     virtual int getInfo(camera_device_info_t *, std::string) override;
+    virtual int getBufferFd(int *, int *) override;
 
   private:
     int findQueryId(int value);
@@ -66,6 +67,7 @@ extern "C"
 
     int requestDmabuffers(int);
     int captureDataDmaMode();
+    int releaseDmaBuffersFd();
 
     void createFourCCPixelFormatMap();
     void createCameraPixelFormatMap();
@@ -79,6 +81,7 @@ extern "C"
     buffer_t *buffers_;
     unsigned int n_buffers_;
     int fd_;
+    int dmafd_[CONST_MAX_BUFFER_NUM];
     int io_mode_;
     std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
     std::map<unsigned long, camera_pixel_format_t> camera_format_;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,13 +29,14 @@ using pdmhandlercb = std::function<void(DEVICE_LIST_T *)>;
 class PDMClient : public DeviceNotifier
 {
 private:
-  int subscribeToPdmService();
+  static bool subscribeToPdmService(LSHandle *sh,
+                const char *serviceName, bool connected, void *ctx);
   LSHandle *lshandle_;
 
 public:
   PDMClient() { lshandle_ = nullptr; }
   virtual ~PDMClient() {}
-  virtual void subscribeToClient(pdmhandlercb) override;
+  virtual void subscribeToClient(pdmhandlercb, GMainLoop *loop) override;
   void setLSHandle(LSHandle *);
 };
 

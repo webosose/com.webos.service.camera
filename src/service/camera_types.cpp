@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,17 +14,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-/** @file camera_types.c
- *
- * camera service's handler
- * this file is related by luna bus interface.
- */
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
-#include <fstream>
 #include <map>
+#include <string.h>
+#include <fstream>
 
 const std::string error_outof_range = "error code is out of range";
 
@@ -75,8 +71,10 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
     {DEVICE_ERROR_CANNOT_WRITE, "Cannot write at specified location"},
     {DEVICE_OK, "No error"},
-    {DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE, "Unsupported Memory Type"}
-};
+    {DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE, "Unsupported Memory Type"},
+    {DEVICE_ERROR_HANDLE_NOT_EXIST, "Wrong handle"},
+    {DEVICE_ERROR_PREVIEW_NOT_STARTED, "Preview not started"},
+    {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"}};
 
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},
@@ -144,7 +142,7 @@ void getFormatString(int nFormat, char *pFormats)
     }
   }
 
-  if (strstr(pFormats, "|") == NULL)
+  if (!strstr(pFormats, "|"))
     strncat(pFormats, "Format is out of range", 100);
 
   return;
@@ -152,7 +150,7 @@ void getFormatString(int nFormat, char *pFormats)
 
 char *getTypeString(device_t etype)
 {
-  char *pszRetString = NULL;
+  char *pszRetString = nullptr;
 
   switch (etype)
   {

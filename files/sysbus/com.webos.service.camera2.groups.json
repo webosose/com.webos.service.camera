@@ -1,0 +1,6 @@
+{
+    "allowedNames": ["com.webos.service.camera2"],
+        "camera.query": ["dev"],
+        "camera.operation": ["dev"]
+}
+

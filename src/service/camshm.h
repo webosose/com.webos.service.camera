@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,9 +38,9 @@ public:
     static IPCSharedMemory sharedMemoryInstance;
     return sharedMemoryInstance;
   }
-  SHMEM_STATUS_T CreateShmemEx(SHMEM_HANDLE *, key_t *, int, int, int);
-  SHMEM_STATUS_T WriteShmemEx(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
-  SHMEM_STATUS_T CloseShmem(SHMEM_HANDLE *);
+  SHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, key_t *, int, int, int);
+  SHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
+  SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);
 
   IPCSharedMemory (IPCSharedMemory const &)  = delete;
   void operator = (IPCSharedMemory const &)  = delete;

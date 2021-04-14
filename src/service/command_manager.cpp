@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -211,7 +211,7 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, int *pkey)
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey)
 {
   PMLOG_INFO(CONST_MODULE_CM, "startPreview  : devhandle : %d\n", devhandle);
 
@@ -221,7 +221,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, int *pkey)
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start preview
-    return ptr->startPreview(devhandle, pkey);
+    return ptr->startPreview(devhandle, memtype, pkey);
   else
     return DEVICE_ERROR_UNKNOWN;
 }
@@ -334,6 +334,19 @@ int CommandManager::getCameraHandle(int devid)
       return obj.devicehandle;
   }
   return n_invalid_id;
+}
+
+
+DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, int *shmfd)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "getFd : devhandle : %d\n", devhandle);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->getFd(devhandle, shmfd);
+  }
+  return DEVICE_ERROR_HANDLE_NOT_EXIST;
 }
 
 bool CommandManager::registerClientPid(int devhandle, int n_client_pid, int n_client_sig, std::string & outmsg)

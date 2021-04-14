@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 #include <string>
 
 const std::string service = "com.webos.service.camera2";
+const std::string camerastr  = "camera";
 
 CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str()))
 {
@@ -45,6 +46,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   LS_CATEGORY_METHOD(startPreview)
   LS_CATEGORY_METHOD(stopPreview)
   LS_CATEGORY_METHOD(getEventNotification)
+  LS_CATEGORY_METHOD(getFd)
   LS_CATEGORY_END;
 
   // attach to mainloop and run it
@@ -53,7 +55,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   // subscribe to pdm client
   Notifier notifier;
   notifier.setLSHandle(this->get());
-  notifier.addNotifier(NotifierClient::NOTIFIER_CLIENT_PDM);
+  notifier.addNotifier(NotifierClient::NOTIFIER_CLIENT_PDM, main_loop_ptr_.get());
 
   // run the gmainloop
   g_main_loop_run(main_loop_ptr_.get());
@@ -63,13 +65,33 @@ int CameraService::getId(std::string cameraid)
 {
   std::stringstream strStream;
   int num = n_invalid_id;
-  int len = cameraid.length();
+  int len = 0;
+  int ndeviceid = 0;
+
+  if ((cameraid.compare(0, camerastr.length(), camerastr)) == 0)
+  {
+    cameraid.erase (0, camerastr.length());
+  }
+  else
+  {
+    return num;
+  }
+
+  len = cameraid.length();
+
   for (int index = 0; index < len; index++)
   {
     if (isdigit(cameraid[index]))
     {
       strStream << cameraid[index];
       strStream >> num;
+      strStream.clear();
+      ndeviceid = num + ndeviceid*10;
+      num = ndeviceid;
+    }
+    else
+    {
+      return n_invalid_id;
     }
   }
   return num;
@@ -135,7 +157,7 @@ void CameraService::createEventMessage(EventType etype, void *pdata, int devhand
 
 bool CameraService::open(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
 
   // create Open class object and read data from json object after schema validation
   OpenMethod open;
@@ -208,7 +230,7 @@ bool CameraService::open(LSMessage &message)
 
 bool CameraService::close(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
 
   // create close class object and read data from json object after schema validation
   StopPreviewCaptureCloseMethod obj_close;
@@ -289,7 +311,7 @@ bool CameraService::close(LSMessage &message)
 
 bool CameraService::startPreview(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
   camera_memory_source_t memType;
 
@@ -312,7 +334,7 @@ bool CameraService::startPreview(LSMessage &message)
     memType = obj_startpreview.rGetParams();
     if (memType.str_memorytype == kMemtypeShmem)
     {
-        err_id = CommandManager::getInstance().startPreview(ndevhandle, &key);
+        err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key);
 
         if (DEVICE_OK != err_id)
         {
@@ -346,7 +368,7 @@ bool CameraService::startPreview(LSMessage &message)
 
 bool CameraService::stopPreview(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
   StopPreviewCaptureCloseMethod obj_stoppreview;
@@ -390,7 +412,7 @@ bool CameraService::stopPreview(LSMessage &message)
 
 bool CameraService::startCapture(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
   StartCaptureMethod obj_startcapture;
@@ -452,7 +474,7 @@ bool CameraService::startCapture(LSMessage &message)
 
 bool CameraService::stopCapture(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
   StopPreviewCaptureCloseMethod obj_stopcapture;
@@ -496,7 +518,7 @@ bool CameraService::stopCapture(LSMessage &message)
 
 bool CameraService::getInfo(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
   GetInfoMethod obj_getinfo;
@@ -543,7 +565,7 @@ bool CameraService::getInfo(LSMessage &message)
 
 bool CameraService::getCameraList(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
   // create CameraList class object and read data from json object after schema validation
@@ -614,7 +636,7 @@ bool CameraService::getCameraList(LSMessage &message)
 
 bool CameraService::getProperties(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
   GetSetPropertiesMethod obj_getproperties;
@@ -711,7 +733,7 @@ bool CameraService::setProperties(LSMessage &message)
 
 bool CameraService::setFormat(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
   SetFormatMethod objsetformat;
@@ -730,7 +752,7 @@ bool CameraService::setFormat(LSMessage &message)
     // get saved format of the device
     CAMERA_FORMAT savedformat;
     CommandManager::getInstance().getFormat(ndevhandle, &savedformat);
-    void *p_olddata = (void *)&savedformat;
+    auto *p_olddata = static_cast<void *>(&savedformat);
     // setformat here
     PMLOG_INFO(CONST_MODULE_LUNA, "setFormat ndevhandle %d\n", ndevhandle);
     CAMERA_FORMAT sformat = objsetformat.rGetCameraFormat();
@@ -762,7 +784,7 @@ bool CameraService::setFormat(LSMessage &message)
 
 bool CameraService::getEventNotification(LSMessage &message)
 {
-  const char *payload = LSMessageGetPayload(&message);
+  auto *payload = LSMessageGetPayload(&message);
   LSError error;
   LSErrorInit(&error);
 
@@ -795,6 +817,57 @@ bool CameraService::getEventNotification(LSMessage &message)
 
   LSErrorFree(&error);
 
+  return true;
+}
+
+bool CameraService::getFd(LSMessage &message)
+{
+  auto *payload = LSMessageGetPayload(&message);
+  LS::Message request(&message);
+  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+
+  int shmfd = -1;
+  GetFdMethod obj_getfd;
+  obj_getfd.getObject(payload, getFdSchema);
+
+  int ndevhandle = obj_getfd.getDeviceHandle();
+
+  if (n_invalid_id == ndevhandle)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::DEVICE_ERROR_JSON_PARSING\n");
+    err_id = DEVICE_ERROR_JSON_PARSING;
+    obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::getFd ndevhandle %d\n", ndevhandle);
+
+    err_id = CommandManager::getInstance().getFd(ndevhandle, &shmfd);
+
+    if(err_id == DEVICE_OK)
+    {
+      obj_getfd.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+
+      // create json string now for reply
+      std::string output_reply = obj_getfd.createObjectJsonString();
+      PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+
+      LS::Payload response_payload(output_reply.c_str());
+      response_payload.attachFd(shmfd);//attach a fd here
+      request.respond(std::move(response_payload));
+      return true;
+    }
+    else
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService:: %s\n", getErrorString(err_id));
+      obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+    }
+  }
+  // create json string now for reply
+  std::string output_reply = obj_getfd.createObjectJsonString();
+  PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+
+  request.respond(output_reply.c_str());
   return true;
 }
 

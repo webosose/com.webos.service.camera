@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@
 #define MAX_DEVICE_COUNT 10
 
 const std::string kMemtypeShmem = "sharedmemory";
+const std::string kMemtypePosixshm = "posixshm";
 
 /*-----------------------------------------------------------------------------
  (Type Definitions)
@@ -62,6 +63,8 @@ typedef enum
   DEVICE_ERROR_DEVICE_IS_NOT_STARTED,
   DEVICE_ERROR_NODEVICE,
   DEVICE_ERROR_MAX_LIMIT_REACHED,
+  DEVICE_ERROR_PREVIEW_NOT_STARTED,
+  DEVICE_ERROR_NOT_POSIXSHM,
   // session
   DEVICE_ERROR_SESSION_ERROR,
   DEVICE_ERROR_SESSION_NOT_OWNER,
@@ -99,6 +102,7 @@ typedef enum
   DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE,
   DEVICE_ERROR_CANNOT_WRITE,
   DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE,
+  DEVICE_ERROR_HANDLE_NOT_EXIST,
 } DEVICE_RETURN_CODE_T;
 
 typedef enum
@@ -123,6 +127,13 @@ typedef enum
   CAMERA_TYPE_V4L2 = 1,
   CAMERA_TYPE_OMX = 2,
 } CAMERA_TYPE_T;
+
+typedef enum
+{
+  SHMEME_UNKNOWN = -1,
+  SHMEM_SYSTEMV  =  0,
+  SHMEM_POSIX
+}SHMEM_TYPE_T;
 
 enum class NotifierClient
 {
@@ -201,7 +212,6 @@ typedef struct
   int nPortNum;
   char strVendorName[CONST_MAX_STRING_LENGTH];
   char strProductName[CONST_MAX_STRING_LENGTH];
-  char strSerialNumber[CONST_MAX_STRING_LENGTH];
   char strDeviceType[CONST_MAX_STRING_LENGTH];
   char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
   int isPowerOnConnect;

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ void writeImageToFile(const void *p, int size)
   char image_name[100] = {};
 
   snprintf(image_name, 100, "/tmp/Picture%d.yuv", random_value++);
-  if ((fp = fopen(image_name, "wb")) == NULL)
+  if (nullptr == (fp = fopen(image_name, "wb")))
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "fopen failed\n");
     return;

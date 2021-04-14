@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ public:
   virtual int setProperties(const camera_properties_t *) = 0;
   virtual int getProperties(camera_properties_t *) = 0;
   virtual int getInfo(camera_device_info_t *, std::string) = 0;
+  virtual int getBufferFd(int *, int *) = 0;
 };
 
 #endif

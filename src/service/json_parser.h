@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -179,7 +179,6 @@ public:
   }
   CAMERA_FORMAT rGetParams() const { return r_cameraparams_; }
 
-  void setnImage(int nimage) { n_image_ = nimage; }
   int getnImage() const { return n_image_; }
 
   void setImagePath(const std::string& path) { str_path_ = path; }
@@ -399,6 +398,31 @@ private:
   MethodReply objreply_;
 };
 
+class GetFdMethod
+{
+public:
+  GetFdMethod() { n_devicehandle_ = -1; };
+  ~GetFdMethod() {}
+
+  void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+  int getDeviceHandle() const { return n_devicehandle_; }
+
+  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  {
+    objreply_.setReturnValue(returnvalue);
+    objreply_.setErrorCode(errorcode);
+    objreply_.setErrorText(errortext);
+  }
+  MethodReply getMethodReply() const { return objreply_; }
+
+  void getObject(const char *, const char *);
+  std::string createObjectJsonString() const;
+
+private:
+  int n_devicehandle_;
+  MethodReply objreply_;
+};
+
 class EventNotification
 {
 public:
@@ -425,7 +449,6 @@ private:
   std::string strcamid_;
   void outputObjectFormat(CAMERA_FORMAT *, jvalue_ref &)const;
   void outputObjectProperties(CAMERA_PROPERTIES_T *, jvalue_ref &)const;
-
 };
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);

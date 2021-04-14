@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@
 #include "camera_hal_types.h"
 #include "camera_types.h"
 #include "camshm.h"
+#include "cam_posixshm.h"
 #include "constants.h"
-
+#include <unistd.h>
 #include <thread>
 #include <string>
 #include <condition_variable>
@@ -43,8 +44,13 @@ private:
 
   bool b_iscontinuous_capture_;
   bool b_isstreamon_;
+  bool b_isposixruning;
+  bool b_issystemvruning;
   bool b_isshmwritedone_;
+  bool b_issyshmwritedone_;
+  bool b_isposhmwritedone_;
   void *cam_handle_;
+  int shmemfd_;
   CAMERA_FORMAT informat_;
   camera_pixel_format_t epixelformat_;
   std::thread tidPreview;
@@ -52,9 +58,12 @@ private:
   std::mutex tMutex;
   std::condition_variable tCondVar;
   std::string strdevicenode_;
-  SHMEM_HANDLE h_shm_;
+  SHMEM_HANDLE h_shmsystem_;
+  SHMEM_HANDLE h_shmposix_;
   std::string str_imagepath_;
   std::string str_capturemode_;
+  std::string str_memtype_;
+  std::string str_shmemname_;
 
   static int n_imagecount_;
 
@@ -65,11 +74,11 @@ public:
   DeviceControl();
   DEVICE_RETURN_CODE_T open(void *, std::string);
   DEVICE_RETURN_CODE_T close(void *);
-  DEVICE_RETURN_CODE_T startPreview(void *, int *);
-  DEVICE_RETURN_CODE_T stopPreview(void *);
+  DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *);
+  DEVICE_RETURN_CODE_T stopPreview(void *, int);
   DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(void *);
-  DEVICE_RETURN_CODE_T captureImage(void *,int, CAMERA_FORMAT, const std::string&,
+  DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT, const std::string&,
                                     const std::string&);
   DEVICE_RETURN_CODE_T createHandle(void **, std::string);
   DEVICE_RETURN_CODE_T destroyHandle(void *);

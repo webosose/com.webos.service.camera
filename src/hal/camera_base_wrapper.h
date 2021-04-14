@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ extern "C"
   int set_properties(camera_handle_t *, const camera_properties_t *);
   int get_properties(camera_handle_t *, camera_properties_t *);
   int get_info(camera_handle_t *, camera_device_info_t *, const char *);
+  int get_buffer_fd(camera_handle_t *, int *, int *);
 
 #ifdef __cplusplus
 }

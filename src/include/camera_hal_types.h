@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@
 #ifndef CAMERA_HAL_TYPES
 #define CAMERA_HAL_TYPES
 
-#include <pthread.h>
 #include <stdio.h>
-
+#include <mutex>
 #include "PmLogLib.h"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
@@ -53,7 +52,8 @@ typedef enum
   CAMERA_ERROR_GET_INFO,
   CAMERA_ERROR_SET_CALLBACK,
   CAMERA_ERROR_REMOVE_CALLBACK,
-  CAMERA_ERROR_NO_DEVICE
+  CAMERA_ERROR_NO_DEVICE,
+  CAMERA_ERROR_GET_BUFFER_FD
 } camera_error_t;
 
 typedef enum
@@ -68,13 +68,11 @@ typedef enum
 
 typedef struct
 {
-  void *h_library;
   void *h_plugin;
   void *handle;
   int fd;
-  void *cb;
   int current_state;
-  pthread_mutex_t lock;
+  std::mutex lock;
 } camera_handle_t;
 
 static PmLogContext getHALLunaPmLogContext()
