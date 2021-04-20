@@ -179,7 +179,20 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
           dev_info_[camcount].isPowerOnConnect = b_powerstatus;
 
-          _device_init(dev_info_[camcount].nDeviceNum, dev_info_[camcount].strDeviceNode);
+          jvalue_ref jin_obj_devPath;
+          bool is_devPath = jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_PATH), &jin_obj_devPath);
+          PMLOG_INFO(CONST_MODULE_LUNA, "Check for devPath in the received JSON - %d", is_devPath);
+          if(is_devPath)
+          {
+            raw_buffer devPath = jstring_get_fast(jin_obj_devPath);
+            std::string str_devPath = devPath.m_str;
+            PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb devPath : %s \n",  str_devPath.c_str());
+            strcpy(dev_info_[camcount].strDeviceNode, str_devPath.c_str());
+          }
+          else
+          {
+            _device_init(dev_info_[camcount].nDeviceNum, dev_info_[camcount].strDeviceNode);
+          }
 
           camcount++;
         }

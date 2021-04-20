@@ -102,6 +102,7 @@
 #define CONST_EVENT_NOTIFICATION "getEventNotification"
 #define CONST_PARAM_NAME_FPS "fps"
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
+#define CONST_PARAM_NAME_DEVICE_PATH "devPath"
 
 const int n_invalid_id = -1;
 const int frame_count = 8;
