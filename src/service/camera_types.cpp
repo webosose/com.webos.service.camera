@@ -74,7 +74,9 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_ALREADY_EXISTS_FILE, "Already exists file"},
     {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
     {DEVICE_ERROR_CANNOT_WRITE, "Cannot write at specified location"},
-    {DEVICE_OK, "No error"}};
+    {DEVICE_OK, "No error"},
+    {DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE, "Unsupported Memory Type"}
+};
 
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},
