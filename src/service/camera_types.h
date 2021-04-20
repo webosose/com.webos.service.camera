@@ -29,6 +29,8 @@
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
 
+const std::string kMemtypeShmem = "sharedmemory";
+
 /*-----------------------------------------------------------------------------
  (Type Definitions)
  ------------------------------------------------------------------------------*/
@@ -94,7 +96,8 @@ typedef enum
   DEVICE_ERROR_LACK_OF_STORAGE,
   DEVICE_ERROR_ALREADY_EXISTS_FILE,
   DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE,
-  DEVICE_ERROR_CANNOT_WRITE
+  DEVICE_ERROR_CANNOT_WRITE,
+  DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE,
 } DEVICE_RETURN_CODE_T;
 
 typedef enum
