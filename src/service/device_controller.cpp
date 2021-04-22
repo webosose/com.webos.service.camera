@@ -27,6 +27,11 @@
 #include <string.h>
 #include <sys/time.h>
 
+#include <signal.h>
+#include <errno.h>
+#include <algorithm>
+
+
 int DeviceControl::n_imagecount_ = 0;
 
 DeviceControl::DeviceControl()
@@ -297,9 +302,12 @@ void DeviceControl::previewThread()
     auto retshmem = IPCSharedMemory::getInstance().WriteShmemEx(h_shm_, (unsigned char *)frame_buffer.start, frame_buffer.length,
                  (unsigned char *)&timestamp, sizeof(timestamp));
     if (retshmem != SHMEM_COMM_OK)
+    {
       PMLOG_ERROR(CONST_MODULE_DC, "WriteShmemory error %d \n", retshmem);
+    } 
 
-
+    broadcast_();
+    
     free(frame_buffer.start);
     frame_buffer.start = nullptr;
 
@@ -727,4 +735,83 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
   }
   //error case
   return CAMERA_FORMAT_UNDEFINED;
+}
+
+
+bool DeviceControl::registerClient(pid_t pid, int sig, std::string& outmsg)
+{
+  auto it = std::find_if(client_map_.begin(), client_map_.end(), 
+                         [=](const std::pair<const pid_t, int>& p) { 
+                           return p.first == pid;
+                         });
+
+  if (it == client_map_.end())
+  {
+    auto p = std::make_pair(pid, sig);
+    client_map_.insert(p);
+    outmsg = "The client of pid " + std::to_string(pid) + " registered with sig " + std::to_string(sig) + " :: OK";
+    return true;
+  }
+  else
+  {
+    outmsg = "The client of pid " + std::to_string(pid) + " is already registered :: ignored";
+    PMLOG_INFO(CONST_MODULE_DC, outmsg.c_str());
+    return false;
+  }
+}
+
+bool DeviceControl::unregisterClient(pid_t pid, std::string& outmsg)
+{
+  auto it = std::find_if(client_map_.begin(), client_map_.end(), 
+                         [=](const std::pair<const pid_t, int>& p) {
+                           return p.first == pid;
+                         });
+
+  if (it != client_map_.end())
+  {
+    client_map_.erase(it);
+    outmsg = "The client of pid " + std::to_string(pid) + " unregistered :: OK";
+    PMLOG_INFO(CONST_MODULE_DC, outmsg.c_str());
+    return true;
+  }
+  else
+  {
+    outmsg = "No client of pid " + std::to_string(pid) + " exists :: ignored";
+    PMLOG_INFO(CONST_MODULE_DC, outmsg.c_str());
+    return false;
+  } 
+}
+
+void DeviceControl::broadcast_()
+{
+  PMLOG_INFO(CONST_MODULE_DC, "Broadcasting to %u clients\n", client_map_.size());
+
+  auto it = client_map_.begin();
+  while (it != client_map_.end())
+  {
+    PMLOG_INFO(CONST_MODULE_DC, "About to send a signal %d to the client of pid %d ...\n", it->second, it->first);
+    int errid = kill(it->first, it->second);
+    if (errid == -1)
+    {
+      switch (errno)
+      {
+        case ESRCH:
+          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d does not exist and will be removed from the pool!!", it->first);
+          // remove this pid from the client pool to make ensure no zombie process exists.
+          // TODO: probably able to place a shared memory cleaner code here if legitimate when the client app crashes.
+          it = client_map_.erase(it);
+          break;
+        case EINVAL:
+          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d was given an invalid signal %d and will be be removed from the pool!!", it->first, it->second);
+          it = client_map_.erase(it);
+        default: // case errno = EPERM
+          PMLOG_ERROR(CONST_MODULE_DC, "Unexpected error in sending the signal to the client of pid %d\n", it->first);
+          break;
+      }
+    }
+    else
+    {
+      ++it;
+    }  
+  }
 }

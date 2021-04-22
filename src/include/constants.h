@@ -103,11 +103,15 @@
 #define CONST_PARAM_NAME_FPS "fps"
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
+#define CONST_CLIENT_PROCESS_ID "pid"
+#define CONST_CLIENT_SIGNAL_NUM "sig"
 
 const int n_invalid_id = -1;
 const int frame_count = 8;
 const int extra_buffer = 1024;
 const int buffer_count = 4;
+const int n_invalid_pid = -1;
+const int n_invalid_sig = -1;
 
 const std::string cstr_empty = "";
 const std::string cstr_pdmclient = "com.webos.service.pdmclient";

@@ -28,6 +28,7 @@
 #include <thread>
 #include <string>
 #include <condition_variable>
+#include <map>
 
 class DeviceControl
 {
@@ -57,6 +58,9 @@ private:
 
   static int n_imagecount_;
 
+  std::map<pid_t, int> client_map_;
+  void broadcast_();
+
 public:
   DeviceControl();
   DEVICE_RETURN_CODE_T open(void *, std::string);
@@ -75,6 +79,9 @@ public:
   DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
+
+  bool registerClient(pid_t, int, std::string& outmsg);
+  bool unregisterClient(pid_t, std::string& outmsg);
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

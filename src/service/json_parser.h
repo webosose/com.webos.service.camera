@@ -95,6 +95,12 @@ public:
   void setAppPriority(const std::string& priority) { str_priority_ = priority; }
   std::string getAppPriority() const { return str_priority_; }
 
+  void setClientProcessId(int pid) { n_client_pid_ = pid; }
+  int getClientProcessId() const { return n_client_pid_; }
+
+  void setClientSignal(int sig) { n_client_sig_ = sig; }
+  int getClientSignal() const { return n_client_sig_; }
+
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
     objreply_.setReturnValue(returnvalue);
@@ -110,6 +116,8 @@ private:
   int n_devicehandle_;
   std::string str_devid_;
   std::string str_priority_;
+  int n_client_pid_;
+  int n_client_sig_;
   MethodReply objreply_;
 };
 
@@ -208,6 +216,9 @@ public:
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
+  
+  void setClientProcessId(int pid) { n_client_pid_ = pid; }
+  int getClientProcessId() const { return n_client_pid_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
@@ -222,6 +233,7 @@ public:
 
 private:
   int n_devicehandle_;
+  int n_client_pid_;
   MethodReply objreply_;
 };
 

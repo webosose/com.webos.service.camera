@@ -67,6 +67,9 @@ public:
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
   int getCameraId(int);
   int getCameraHandle(int);
+  
+  bool registerClientPid(int,int,int,std::string&);
+  bool unregisterClientPid(int,int,std::string&);
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/

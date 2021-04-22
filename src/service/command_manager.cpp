@@ -335,3 +335,31 @@ int CommandManager::getCameraHandle(int devid)
   }
   return n_invalid_id;
 }
+
+bool CommandManager::registerClientPid(int devhandle, int n_client_pid, int n_client_sig, std::string & outmsg)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "registerClientPid : %d\n", n_client_pid);
+  
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->registerClient(n_client_pid, n_client_sig, outmsg);
+  }
+  outmsg = "No virtual device manager available for registering the client of pid " 
+         + std::to_string(n_client_pid);
+  return false;
+}
+
+bool CommandManager::unregisterClientPid(int devhandle, int n_client_pid, std::string & outmsg)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "unregisterClientPid : %d\n", n_client_pid);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->unregisterClient(n_client_pid, outmsg);
+  }
+  outmsg = "No virtual device manager available for unregistering the client of pid " 
+         + std::to_string(n_client_pid);
+  return false;
+}

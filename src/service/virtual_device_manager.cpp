@@ -24,6 +24,9 @@
 
 #include <algorithm>
 
+#include <unistd.h>
+
+
 VirtualDeviceManager::VirtualDeviceManager()
     : virtualhandle_map_(), handlepriority_map_(), bpreviewinprogress_(false),
       bcaptureinprogress_(false), shmkey_(0), sformat_()
@@ -718,4 +721,15 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMA
     PMLOG_INFO(CONST_MODULE_VDM, "getFormat : Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
+}
+
+
+bool VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig, std::string & outmsg)
+{
+  return objdevicecontrol_.registerClient((pid_t)n_client_pid, n_client_sig, outmsg);
+}
+
+bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string & outmsg)
+{
+  return objdevicecontrol_.unregisterClient((pid_t)n_client_pid, outmsg);
 }

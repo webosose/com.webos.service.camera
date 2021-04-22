@@ -86,6 +86,16 @@ const char *openSchema = "{ \
       \"title\": \"The Priority Schema\", \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
+    }, \
+    \"pid\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Client Process Id Schema\", \
+      \"default\": -1 \
+    }, \
+    \"sig\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Signal Number\", \
+      \"defalut\": 10 \
     } \
   } \
 }";
@@ -263,6 +273,11 @@ const char *stopCapturePreviewCloseSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
+    }, \
+    \"pid\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Client Id Schema\", \
+      \"default\": -1 \
     } \
   } \
 }";
