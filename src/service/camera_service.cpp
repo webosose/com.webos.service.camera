@@ -217,6 +217,29 @@ bool CameraService::open(LSMessage &message)
       PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
       open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       open.setDeviceHandle(ndevice_handle);
+
+      // add the client process Id to client pid pool if the pid is valid
+      int n_client_pid = open.getClientProcessId();
+      if (n_client_pid > 0)
+      {
+        int n_client_sig = open.getClientSignal();
+        if (n_client_sig != -1)
+        {
+          PMLOG_INFO(CONST_MODULE_LUNA, "Try register client process Id %d with signal number %d ...", n_client_pid, n_client_sig);
+          std::string outmsg;
+          bool bRetVal = CommandManager::getInstance().registerClientPid(ndevice_handle, n_client_pid, n_client_sig, outmsg);
+          if (bRetVal == true)
+          {
+            PMLOG_INFO(CONST_MODULE_LUNA, outmsg.c_str());
+            open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> ::" + outmsg);
+          }
+          else // opened camera itself is valid! 
+          {
+            PMLOG_INFO(CONST_MODULE_LUNA, outmsg.c_str());
+            open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> :: " + outmsg);           
+          }
+        }
+      }
     }
   }
 
@@ -250,19 +273,54 @@ bool CameraService::close(LSMessage &message)
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::close ndevhandle : %d\n", ndevhandle);
-    // close device here
-    err_id = CommandManager::getInstance().close(ndevhandle);
-
-    if (DEVICE_OK != err_id)
+    int n_client_pid = obj_close.getClientProcessId();
+    if (n_client_pid > 0)
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
-      obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+      PMLOG_INFO(CONST_MODULE_LUNA, "Try to unregister the client of pid %d\n", n_client_pid);
+      
+      // first try remove the client pid from the client pid pool if the pid is valid  
+      std::string pid_msg;
+      bool bRetVal;
+      bRetVal = CommandManager::getInstance().unregisterClientPid(ndevhandle, n_client_pid, pid_msg);
+      if (bRetVal == false)
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, pid_msg.c_str());
+        obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, 0, pid_msg);
+      } 
+      else // if successul then close device here
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::close ndevhandle : %d\n", ndevhandle);
+
+        err_id = CommandManager::getInstance().close(ndevhandle);
+        if (DEVICE_OK != err_id)
+        {
+          PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
+          obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);           
+        }
+        else
+        {
+          PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
+          obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);          
+        }
+      }
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
-      obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::close ndevhandle : %d\n", ndevhandle);
+
+      // close device here
+      err_id = CommandManager::getInstance().close(ndevhandle);
+
+      if (DEVICE_OK != err_id)
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
+        obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+      }
+      else
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
+        obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+      }
     }
   }
 

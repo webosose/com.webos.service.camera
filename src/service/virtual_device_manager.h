@@ -69,6 +69,9 @@ public:
   DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
+
+  bool registerClient(int, int, std::string&);
+  bool unregisterClient(int, std::string&);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/
