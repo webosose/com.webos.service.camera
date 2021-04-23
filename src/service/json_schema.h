@@ -95,7 +95,7 @@ const char *openSchema = "{ \
     \"sig\": { \
       \"type\": \"integer\", \
       \"title\": \"The Signal Number\", \
-      \"defalut\": 10 \
+      \"default\": 10 \
     } \
   } \
 }";

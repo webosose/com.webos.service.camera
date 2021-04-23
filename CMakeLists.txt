@@ -155,3 +155,5 @@ endif()
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 webos_build_system_bus_files()
 webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCONFDIR systemd/system)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/test_smsync)
