@@ -453,8 +453,10 @@ DEVICE_RETURN_CODE_T DeviceControl::stopCapture(void *handle)
   PMLOG_INFO(CONST_MODULE_DC, "stopCapture started !\n");
 
   // if capture thread is running, stop capture
-  if (b_iscontinuous_capture_)
+  if (b_iscontinuous_capture_) {
     b_iscontinuous_capture_ = false;
+    tidCapture.join();
+  }
   else
     return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
 
