@@ -19,6 +19,7 @@
 
 #include "PmLogLib.h"
 #include "camera_hal_types.h"
+#include "camera_hal_if_types.h"
 #include "constants.h"
 #include "luna-service2/lunaservice.h"
 
@@ -146,65 +147,52 @@ enum class CameraDeviceState
 };
 
 /*Structures*/
-typedef struct
+struct CAMERA_FORMAT
 {
   int nWidth;
   int nHeight;
   int nFps;
   camera_format_t eFormat;
-} CAMERA_FORMAT;
+  bool operator != (const CAMERA_FORMAT &);
+} ;
 
 struct CAMERA_PROPERTIES_T
 {
-  int nZoom;
-  int nGridZoomX;
-  int nGridZoomY;
+  int nAutoWhiteBalance;
+  int nBrightness;
+  int nContrast;
+  int nSaturation;
+  int nHue;
+  int nGamma;
+  int nGain;
+  int nFrequency;
+  int nWhiteBalanceTemperature;
+  int nSharpness;
+  int nBacklightCompensation;
+  int nAutoExposure;
+  int nExposure;
   int nPan;
   int nTilt;
-  int nContrast;
-  int nBrightness;
-  int nSaturation;
-  int nSharpness;
-  int nHue;
-  int nWhiteBalanceTemperature;
-  int nGain;
-  int nGamma;
-  int nFrequency;
-  int bMirror;
-  int nExposure;
-  int bAutoExposure;
-  int bAutoWhiteBalance;
-  int nBitrate;
-  int nFramerate;
-  int ngopLength;
-  int bLed;
-  int bYuvMode;
-  int nIllumination;
-  int bBacklightCompensation;
+  int nFocusAbsolute;
+  int nAutoFocus;
+  int nZoomAbsolute;
 
-  int nMicMaxGain;
-  int nMicMinGain;
-  int nMicGain;
-  int bMicMute;
-  camera_resolution_t st_resolution;
+  camera_queryctrl_t stGetData;
+  camera_resolution_t stResolution;
+
+  bool operator != (const CAMERA_PROPERTIES_T &);
+
   CAMERA_PROPERTIES_T()
-      : nZoom(CONST_VARIABLE_INITIALIZE), nGridZoomX(CONST_VARIABLE_INITIALIZE),
-        nGridZoomY(CONST_VARIABLE_INITIALIZE), nPan(CONST_VARIABLE_INITIALIZE),
-        nTilt(CONST_VARIABLE_INITIALIZE), nContrast(CONST_VARIABLE_INITIALIZE),
-        nBrightness(CONST_VARIABLE_INITIALIZE), nSaturation(CONST_VARIABLE_INITIALIZE),
-        nSharpness(CONST_VARIABLE_INITIALIZE), nHue(CONST_VARIABLE_INITIALIZE),
-        nWhiteBalanceTemperature(CONST_VARIABLE_INITIALIZE), nGain(CONST_VARIABLE_INITIALIZE),
-        nGamma(CONST_VARIABLE_INITIALIZE), nFrequency(CONST_VARIABLE_INITIALIZE),
-        bMirror(CONST_VARIABLE_INITIALIZE), nExposure(CONST_VARIABLE_INITIALIZE),
-        bAutoExposure(CONST_VARIABLE_INITIALIZE), bAutoWhiteBalance(CONST_VARIABLE_INITIALIZE),
-        nBitrate(CONST_VARIABLE_INITIALIZE), nFramerate(CONST_VARIABLE_INITIALIZE),
-        ngopLength(CONST_VARIABLE_INITIALIZE), bLed(CONST_VARIABLE_INITIALIZE),
-        bYuvMode(CONST_VARIABLE_INITIALIZE), nIllumination(CONST_VARIABLE_INITIALIZE),
-        bBacklightCompensation(CONST_VARIABLE_INITIALIZE), nMicMaxGain(CONST_VARIABLE_INITIALIZE),
-        nMicMinGain(CONST_VARIABLE_INITIALIZE), nMicGain(CONST_VARIABLE_INITIALIZE),
-        bMicMute(CONST_VARIABLE_INITIALIZE), st_resolution()
-  {
-  }
+      : nAutoWhiteBalance(CONST_PARAM_DEFAULT_VALUE), nBrightness(CONST_PARAM_DEFAULT_VALUE),
+        nContrast(CONST_PARAM_DEFAULT_VALUE), nSaturation(CONST_PARAM_DEFAULT_VALUE),
+        nHue(CONST_PARAM_DEFAULT_VALUE), nGamma(CONST_PARAM_DEFAULT_VALUE),
+        nGain(CONST_PARAM_DEFAULT_VALUE), nFrequency(CONST_PARAM_DEFAULT_VALUE),
+        nWhiteBalanceTemperature(CONST_PARAM_DEFAULT_VALUE), nSharpness(CONST_PARAM_DEFAULT_VALUE),
+        nBacklightCompensation(CONST_PARAM_DEFAULT_VALUE), nAutoExposure(CONST_PARAM_DEFAULT_VALUE),
+        nExposure(CONST_PARAM_DEFAULT_VALUE), nPan(CONST_PARAM_DEFAULT_VALUE),
+        nTilt(CONST_PARAM_DEFAULT_VALUE), nFocusAbsolute(CONST_PARAM_DEFAULT_VALUE),
+        nAutoFocus(CONST_PARAM_DEFAULT_VALUE), nZoomAbsolute(CONST_PARAM_DEFAULT_VALUE),
+        stGetData(), stResolution() { }
 };
 
 typedef struct

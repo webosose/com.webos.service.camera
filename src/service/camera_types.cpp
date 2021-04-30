@@ -245,3 +245,37 @@ std::string getResolutionString(camera_format_t eformat)
   }
   return str_resolution;
 }
+
+bool CAMERA_PROPERTIES_T::operator != (const CAMERA_PROPERTIES_T &new_property)
+{
+  if ((this->nFocusAbsolute != new_property.nFocusAbsolute) ||
+      (this->nAutoFocus != new_property.nAutoFocus) ||
+      (this->nZoomAbsolute != new_property.nZoomAbsolute) ||
+      (this->nPan != new_property.nPan) ||
+      (this->nTilt != new_property.nTilt) ||
+      (this->nContrast != new_property.nContrast) ||
+      (this->nBrightness != new_property.nBrightness) ||
+      (this->nSaturation != new_property.nSaturation) ||
+      (this->nSharpness != new_property.nSharpness) ||
+      (this->nHue != new_property.nHue) ||
+      (this->nWhiteBalanceTemperature != new_property.nWhiteBalanceTemperature) ||
+      (this->nGain != new_property.nGain) ||
+      (this->nGamma != new_property.nGamma) ||
+      (this->nFrequency != new_property.nFrequency) ||
+      (this->nExposure != new_property.nExposure) ||
+      (this->nAutoExposure != new_property.nAutoExposure) ||
+      (this->nAutoWhiteBalance != new_property.nAutoWhiteBalance) ||
+      (this->nBacklightCompensation != new_property.nBacklightCompensation))
+         return true;
+  else
+    return false;
+}
+
+bool CAMERA_FORMAT::operator != (const CAMERA_FORMAT &new_format)
+{
+  if ((this->eFormat != new_format.eFormat) || (this->nFps != new_format.nFps) ||
+      (this->nHeight != new_format.nHeight) || (this->nWidth != new_format.nWidth))
+         return true;
+  else
+    return false;
+}

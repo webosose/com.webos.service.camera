@@ -25,10 +25,7 @@
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define CONST_MODULE_HAL "HAL"
 
-#define variable_initialize -999
-#define max_index 30
-#define max_format 5
-#define max_string_length 256
+#define CONST_PARAM_DEFAULT_VALUE -999
 
 typedef enum
 {
@@ -61,58 +58,11 @@ typedef enum
 
 typedef enum
 {
-  /* YUV */
-  CAMERA_PIXEL_FORMAT_NV12 = 0x0000,
-  CAMERA_PIXEL_FORMAT_NV21,
-  CAMERA_PIXEL_FORMAT_I420,
-  CAMERA_PIXEL_FORMAT_YV12,
-  CAMERA_PIXEL_FORMAT_YUYV,
-  CAMERA_PIXEL_FORMAT_UYVY,
-
-  /* RGB */
-  CAMERA_PIXEL_FORMAT_BGRA8888,
-  CAMERA_PIXEL_FORMAT_ARGB8888,
-
-  /* ENCODED */
-  CAMERA_PIXEL_FORMAT_JPEG,
-  CAMERA_PIXEL_FORMAT_H264,
-
-  /* MAX */
-  CAMERA_PIXEL_FORMAT_MAX
-} camera_pixel_format_t;
-
-typedef enum
-{
-  IOMODE_UNKNOWN = -1,
-  IOMODE_READ = 0,
-  IOMODE_MMAP,
-  IOMODE_USERPTR,
-  IOMODE_DMABUF
-} io_mode_t;
-
-typedef enum
-{
   CAMERA_HAL_STATE_UNKNOWN = 0,
   CAMERA_HAL_STATE_INIT,
   CAMERA_HAL_STATE_OPEN,
   CAMERA_HAL_STATE_STREAMING
 } camera_hal_state_t;
-
-typedef enum
-{
-  DEVICE_TYPE_UNDEFINED = -1,
-  DEVICE_TYPE_CAMERA = 1,
-  DEVICE_TYPE_MICROPHONE,
-  DEVICE_TYPE_OTHER
-} device_t;
-
-typedef enum
-{
-  CAMERA_FORMAT_UNDEFINED = -1,
-  CAMERA_FORMAT_YUV = 1,
-  CAMERA_FORMAT_H264ES = 2,
-  CAMERA_FORMAT_JPEG = 4,
-} camera_format_t;
 
 /*Structures*/
 
@@ -126,73 +76,6 @@ typedef struct
   int current_state;
   pthread_mutex_t lock;
 } camera_handle_t;
-
-typedef struct
-{
-  camera_pixel_format_t pixel_format;
-  int stream_width;
-  int stream_height;
-  int stream_fps;
-  int stream_rotation;
-  int stream_purpose;
-  int capture_quality;
-  unsigned int buffer_size;
-} stream_format_t;
-
-typedef struct
-{
-  void *start;
-  unsigned long length;
-  int index;
-  int fd;
-} buffer_t;
-
-typedef struct
-{
-  int n_width[max_format][max_index];
-  int n_height[max_format][max_index];
-  char c_res[max_index][max_string_length];
-  camera_format_t e_format[max_format];
-  int n_frameindex[max_format];
-  int n_formatindex;
-} camera_resolution_t;
-
-typedef struct
-{
-  int nBrightness;
-  int nContrast;
-  int nSaturation;
-  int nHue;
-  int nAutoWhiteBalance;
-  int nGamma;
-  int nGain;
-  int nFrequency;
-  int nWhiteBalanceTemperature;
-  int nSharpness;
-  int nBacklightCompensation;
-  int nAutoExposure;
-  int nExposure;
-  int nPan;
-  int nTilt;
-  int nFocusAbsolute;
-  int nAutoFocus;
-  int nZoomAbsolute;
-  camera_resolution_t st_resolution;
-} camera_properties_t;
-
-typedef struct
-{
-  char str_devicename[max_string_length];
-  device_t n_devicetype;
-  int b_builtin;
-  int n_maxvideowidth;
-  int n_maxvideoheight;
-  int n_maxpicturewidth;
-  int n_maxpictureheight;
-  int n_format;
-  int n_samplingrate;
-  int n_codec;
-} camera_device_info_t;
 
 static PmLogContext getHALLunaPmLogContext()
 {

@@ -109,7 +109,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/hal/v4l2)
 
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if.h DESTINATION
 ${WEBOS_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if_types.h DESTINATION
 ${WEBOS_INSTALL_INCLUDEDIR})
 
 #cameraservice project exe

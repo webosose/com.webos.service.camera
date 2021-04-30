@@ -22,7 +22,7 @@ extern "C"
 {
 #endif
 
-#include "camera_hal_types.h"
+#include "camera_hal_if_types.h"
 
   int camera_hal_if_init(void **, const char *);
   int camera_hal_if_deinit(void *);

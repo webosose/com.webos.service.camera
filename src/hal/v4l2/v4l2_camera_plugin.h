@@ -51,8 +51,9 @@ extern "C"
     virtual int getInfo(camera_device_info_t *, std::string) override;
 
   private:
+    int findQueryId(int value);
     int setV4l2Property(std::map <int,int>);
-    int getV4l2Property(struct v4l2_queryctrl, int *);
+    int getV4l2Property(struct v4l2_queryctrl, int * value, int *);
     void getCameraFormatProperty(struct v4l2_fmtdesc, camera_properties_t *);
     void getResolutionProperty(camera_properties_t *);
 

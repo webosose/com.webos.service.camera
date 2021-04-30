@@ -18,6 +18,7 @@
 #define CAMERA_BASE_WRAPPER
 
 #include "camera_hal_types.h"
+#include "camera_hal_if_types.h"
 
 #ifdef __cplusplus
 extern "C"

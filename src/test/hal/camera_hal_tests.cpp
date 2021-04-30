@@ -14,7 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <camera_hal_if.h>
+#include "camera_hal_if.h"
+#include "camera_hal_types.h"
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@ void PrintCameraProperties(const camera_properties_t& params)
   HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.nFrequency);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    white balance temp : %d\n", params.nWhiteBalanceTemperature);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    sharpness : %d\n", params.nSharpness);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n", params.nSharpness);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n", params.nBacklightCompensation);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    auto exposure : %d\n", params.nAutoExposure);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    exposure : %d\n", params.nExposure);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    pan : %d\n", params.nPan);
