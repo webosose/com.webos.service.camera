@@ -325,8 +325,7 @@ public:
     {
       ro_camproperties_.stResolution.e_format[n] = rin_info.stResolution.e_format[n];
       ro_camproperties_.stResolution.n_frameindex[n] = rin_info.stResolution.n_frameindex[n];
-      ro_camproperties_.stResolution.n_framecount[n] = rin_info.stResolution.n_framecount[n];
-      for (int count = 0; count < rin_info.stResolution.n_framecount[n]; count++)
+      for (int count = 0; count < rin_info.stResolution.n_frameindex[n]; count++)
       {
         ro_camproperties_.stResolution.n_height[n][count] =
             rin_info.stResolution.n_height[n][count];

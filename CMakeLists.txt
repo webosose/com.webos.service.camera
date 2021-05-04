@@ -156,7 +156,4 @@ install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 webos_build_system_bus_files()
 webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCONFDIR systemd/system)
 
-set(SHMEM_TEST TRUE CACHE BOOL "Set to TRUE to enable shared memory synchronization test compilation")
-if (SHMEM_TEST)
-    add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_smsync)
-endif()
+add_subdirectory(${CMAKE_SOURCE_DIR}/test_smsync)

@@ -632,9 +632,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   {
     oparams->stResolution.e_format[n] = out_params.stResolution.e_format[n];
     oparams->stResolution.n_frameindex[n] = out_params.stResolution.n_frameindex[n];
-    out_params.stResolution.n_framecount[n] = out_params.stResolution.n_frameindex[n] + 1;
-    oparams->stResolution.n_framecount[n] = out_params.stResolution.n_framecount[n];
-    for (int count = 0; count < out_params.stResolution.n_framecount[n]; count++)
+    for (int count = 0; count < out_params.stResolution.n_frameindex[n]; count++)
     {
       oparams->stResolution.n_height[n][count] = out_params.stResolution.n_height[n][count];
       oparams->stResolution.n_width[n][count] = out_params.stResolution.n_width[n][count];
