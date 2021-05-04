@@ -128,6 +128,7 @@ typedef struct
   char c_res[CONST_MAX_INDEX][CONST_MAX_STRING_LENGTH];
   camera_format_t e_format[CONST_MAX_FORMAT];
   int n_frameindex[CONST_MAX_FORMAT];
+  int n_framecount[CONST_MAX_FORMAT];
   int n_formatindex;
 } camera_resolution_t;
 

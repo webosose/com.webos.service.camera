@@ -489,7 +489,7 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
       for (int nformat = 0; nformat < rGetCameraProperties().stResolution.n_formatindex; nformat++)
       {
         jvalue_ref json_resolutionarray = jarray_create(0);
-        for (int count = 0; count < rGetCameraProperties().stResolution.n_frameindex[nformat];
+        for (int count = 0; count < rGetCameraProperties().stResolution.n_framecount[nformat];
              count++)
         {
           jarray_append(json_resolutionarray,
@@ -1475,7 +1475,7 @@ void createGetPropertiesOutputParamJsonString(const std::string strparam,
     for (int nformat = 0; nformat < properties->stResolution.n_formatindex; nformat++)
     {
       jvalue_ref json_resolutionarray = jarray_create(0);
-      for (int count = 0; count < properties->stResolution.n_frameindex[nformat]; count++)
+      for (int count = 0; count < properties->stResolution.n_framecount[nformat]; count++)
       {
         jarray_append(json_resolutionarray, jstring_create(properties->stResolution.c_res[count]));
       }
