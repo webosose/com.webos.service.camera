@@ -332,10 +332,10 @@ public:
             rin_info.stResolution.n_height[n][count];
         ro_camproperties_.stResolution.n_width[n][count] =
             rin_info.stResolution.n_width[n][count];
-        memset(ro_camproperties_.stResolution.c_res[count], '\0',
-               sizeof(ro_camproperties_.stResolution.c_res[count]));
-        strncpy(ro_camproperties_.stResolution.c_res[count], rin_info.stResolution.c_res[count],
-                sizeof(ro_camproperties_.stResolution.c_res[count])-1);
+        memset(ro_camproperties_.stResolution.c_res[n][count], '\0',
+               sizeof(ro_camproperties_.stResolution.c_res[n][count]));
+        strncpy(ro_camproperties_.stResolution.c_res[n][count], rin_info.stResolution.c_res[n][count],
+                sizeof(ro_camproperties_.stResolution.c_res[n][count])-1);
       }
     }
   }

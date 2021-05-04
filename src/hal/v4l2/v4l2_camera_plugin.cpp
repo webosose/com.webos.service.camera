@@ -694,17 +694,17 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
         fival.height = frmsize.discrete.height;
         while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMEINTERVALS, &fival)))
         {
-          snprintf(cam_out_params->stResolution.c_res[frmsize.index], 20, "%d,%d,%d",
+          snprintf(cam_out_params->stResolution.c_res[ncount][frmsize.index], 20, "%d,%d,%d",
                    frmsize.discrete.width, frmsize.discrete.height, fival.discrete.denominator);
           HAL_LOG_INFO(CONST_MODULE_HAL, "getResolutionProperty c_res %s \n",
-                       cam_out_params->stResolution.c_res[frmsize.index]);
+                       cam_out_params->stResolution.c_res[ncount][frmsize.index]);
           cam_out_params->stResolution.n_frameindex[ncount] = frmsize.index;
           break;
         }
       }
       else if (V4L2_FRMSIZE_TYPE_STEPWISE == frmsize.type)
       {
-        snprintf(cam_out_params->stResolution.c_res[frmsize.index], 10, "%d,%d",
+        snprintf(cam_out_params->stResolution.c_res[ncount][frmsize.index], 10, "%d,%d",
                  frmsize.stepwise.max_width, frmsize.stepwise.max_height);
       }
       frmsize.index++;
