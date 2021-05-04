@@ -89,6 +89,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/pdm_client.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/whitelist_checker.cpp
     )
 
 add_executable(${PROJECT_NAME}
@@ -160,3 +161,6 @@ set(SHMEM_TEST TRUE CACHE BOOL "Set to TRUE to enable shared memory synchronizat
 if (SHMEM_TEST)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_smsync)
 endif()
+
+message(STATUS "Using default whitelist file for webOS")
+webos_build_configured_file(files/conf/whitelist/whitelist.conf SYSCONFDIR com.webos.service.camera)

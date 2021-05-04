@@ -20,6 +20,7 @@
 #include "libudev.h"
 #include <glib.h>
 #include <pbnjson.hpp>
+#include "whitelist_checker.h"
 
 DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
 pdmhandlercb subscribeToDeviceInfoCb_;
@@ -203,6 +204,11 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
       PMLOG_INFO(CONST_MODULE_LUNA, "deviceStateCb camcount : %d \n", camcount);
 
       DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
+
+      if(nCamEvent==DEVICE_EVENT_STATE_PLUGGED) {
+        WhitelistChecker::getInstance().check(lsHandle, dev_info_[camcount-1].strVendorName, dev_info_[camcount-1].strDeviceSubtype);
+      }
+
     }
     j_release(&jin_obj);
 
