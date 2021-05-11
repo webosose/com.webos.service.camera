@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -135,6 +135,15 @@ extern "C"
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
       return camera_base->getInfo(cam_info, devicenode);
+    else
+      return CAMERA_ERROR_UNKNOWN;
+  }
+
+  int get_buffer_fd(camera_handle_t *h, int *buf_fd, int * count)
+  {
+    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+    if (NULL != camera_base)
+      return camera_base->getBufferFd(buf_fd, count);
     else
       return CAMERA_ERROR_UNKNOWN;
   }

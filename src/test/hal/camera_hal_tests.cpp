@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <camera_hal_if.h>
+#include "camera_hal_if.h"
+#include "camera_hal_types.h"
 #include <poll.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@ void PrintCameraProperties(const camera_properties_t& params)
   HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.nFrequency);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    white balance temp : %d\n", params.nWhiteBalanceTemperature);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    sharpness : %d\n", params.nSharpness);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n", params.nSharpness);
+  HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n", params.nBacklightCompensation);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    auto exposure : %d\n", params.nAutoExposure);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    exposure : %d\n", params.nExposure);
   HAL_LOG_INFO(CONST_MODULE_HAL, "    pan : %d\n", params.nPan);
@@ -69,7 +70,7 @@ void writeImageToFile(const void *p, int size)
   char image_name[100] = {};
 
   snprintf(image_name, 100, "/tmp/Picture%d.yuv", random_value++);
-  if ((fp = fopen(image_name, "wb")) == NULL)
+  if (nullptr == (fp = fopen(image_name, "wb")))
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "fopen failed\n");
     return;

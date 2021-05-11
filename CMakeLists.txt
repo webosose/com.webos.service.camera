@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2020 LG Electronics, Inc.
+# Copyright (c) 2019-2021 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -45,26 +45,10 @@ pkg_check_modules(UDEV REQUIRED libudev)
 include_directories(${UDEV_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${UDEV_CFLAGS})
 
-if(WEBOS_TARGET_MACHINE STREQUAL "raspberrypi3")
-add_definitions(-DPLATFORM_RASPBERRYPI3)
-endif()
-
-if(WEBOS_TARGET_MACHINE STREQUAL "sa8155")
-add_definitions(-DPLATFORM_QUALCOMM_SA8155)
-endif()
-
-if(WEBOS_TARGET_MACHINE STREQUAL "raspberrypi4")
-add_definitions(-DPLATFORM_RASPBERRYPI4)
-endif()
-
-if(WEBOS_TARGET_MACHINE STREQUAL "qemux86")
-add_definitions(-DPLATFORM_QEMUX86)
-endif()
-
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -Werror=return-type")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -lrt -Werror=return-type")
 
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/files/)
@@ -88,7 +72,9 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/pdm_client.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/cam_posixshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/whitelist_checker.cpp
     )
 
 add_executable(${PROJECT_NAME}
@@ -109,7 +95,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/hal/v4l2)
 
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if.h DESTINATION
 ${WEBOS_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if_types.h DESTINATION
 ${WEBOS_INSTALL_INCLUDEDIR})
 
 #cameraservice project exe
@@ -156,4 +142,10 @@ install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 webos_build_system_bus_files()
 webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCONFDIR systemd/system)
 
-add_subdirectory(${CMAKE_SOURCE_DIR}/test_smsync)
+set(SHMEM_TEST TRUE CACHE BOOL "Set to TRUE to enable shared memory synchronization test compilation")
+if (SHMEM_TEST)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_smsync)
+endif()
+
+message(STATUS "Using default whitelist file for webOS")
+webos_build_configured_file(files/conf/whitelist/whitelist.conf SYSCONFDIR com.webos.service.camera)

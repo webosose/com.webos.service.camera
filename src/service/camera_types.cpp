@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,17 +14,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-/** @file camera_types.c
- *
- * camera service's handler
- * this file is related by luna bus interface.
- */
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
-#include <fstream>
 #include <map>
+#include <string.h>
+#include <fstream>
 
 const std::string error_outof_range = "error code is out of range";
 
@@ -75,8 +71,10 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
     {DEVICE_ERROR_CANNOT_WRITE, "Cannot write at specified location"},
     {DEVICE_OK, "No error"},
-    {DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE, "Unsupported Memory Type"}
-};
+    {DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE, "Unsupported Memory Type"},
+    {DEVICE_ERROR_HANDLE_NOT_EXIST, "Wrong handle"},
+    {DEVICE_ERROR_PREVIEW_NOT_STARTED, "Preview not started"},
+    {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"}};
 
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},
@@ -144,7 +142,7 @@ void getFormatString(int nFormat, char *pFormats)
     }
   }
 
-  if (strstr(pFormats, "|") == NULL)
+  if (!strstr(pFormats, "|"))
     strncat(pFormats, "Format is out of range", 100);
 
   return;
@@ -152,7 +150,7 @@ void getFormatString(int nFormat, char *pFormats)
 
 char *getTypeString(device_t etype)
 {
-  char *pszRetString = NULL;
+  char *pszRetString = nullptr;
 
   switch (etype)
   {
@@ -244,4 +242,38 @@ std::string getResolutionString(camera_format_t eformat)
     break;
   }
   return str_resolution;
+}
+
+bool CAMERA_PROPERTIES_T::operator != (const CAMERA_PROPERTIES_T &new_property)
+{
+  if ((this->nFocusAbsolute != new_property.nFocusAbsolute) ||
+      (this->nAutoFocus != new_property.nAutoFocus) ||
+      (this->nZoomAbsolute != new_property.nZoomAbsolute) ||
+      (this->nPan != new_property.nPan) ||
+      (this->nTilt != new_property.nTilt) ||
+      (this->nContrast != new_property.nContrast) ||
+      (this->nBrightness != new_property.nBrightness) ||
+      (this->nSaturation != new_property.nSaturation) ||
+      (this->nSharpness != new_property.nSharpness) ||
+      (this->nHue != new_property.nHue) ||
+      (this->nWhiteBalanceTemperature != new_property.nWhiteBalanceTemperature) ||
+      (this->nGain != new_property.nGain) ||
+      (this->nGamma != new_property.nGamma) ||
+      (this->nFrequency != new_property.nFrequency) ||
+      (this->nExposure != new_property.nExposure) ||
+      (this->nAutoExposure != new_property.nAutoExposure) ||
+      (this->nAutoWhiteBalance != new_property.nAutoWhiteBalance) ||
+      (this->nBacklightCompensation != new_property.nBacklightCompensation))
+         return true;
+  else
+    return false;
+}
+
+bool CAMERA_FORMAT::operator != (const CAMERA_FORMAT &new_format)
+{
+  if ((this->eFormat != new_format.eFormat) || (this->nFps != new_format.nFps) ||
+      (this->nHeight != new_format.nHeight) || (this->nWidth != new_format.nWidth))
+         return true;
+  else
+    return false;
 }

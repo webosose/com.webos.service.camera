@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,11 +34,7 @@ private:
   EventNotification objevent_;
 
   int getId(std::string);
-  bool isPropertiesChanged(void *, void *);
-  bool isFormatChanged(void *, void *);
   void createEventMessage(EventType, void *, int);
-  void createPropertiesEventMessage(int, void *);
-  void createFormatEventMessage(int, void *);
 
 public:
   CameraService();
@@ -60,6 +56,7 @@ public:
   bool startCapture(LSMessage &);
   bool stopCapture(LSMessage &);
   bool getEventNotification(LSMessage &);
+  bool getFd(LSMessage &);
 };
 
 #endif /*CAMERA_SERVICE_H_*/

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,10 +31,6 @@ static void updateDeviceList(DEVICE_LIST_T *st_dev_list)
             CONST_MAX_STRING_LENGTH - 1);
     st_dev_info_[i].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-    strncpy(st_dev_info_[i].strSerialNumber, st_dev_list[i].strSerialNumber,
-            CONST_MAX_STRING_LENGTH - 1);
-    st_dev_info_[i].strSerialNumber[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
     strncpy(st_dev_info_[i].strDeviceType, st_dev_list[i].strDeviceType,
             CONST_MAX_STRING_LENGTH - 1);
     st_dev_info_[i].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
@@ -57,7 +53,7 @@ static void updateDeviceList(DEVICE_LIST_T *st_dev_list)
   }
 }
 
-void Notifier::addNotifier(NotifierClient client)
+void Notifier::addNotifier(NotifierClient client, GMainLoop *loop)
 {
   PMLOG_INFO(CONST_MODULE_LUNA, "addNotifier client : %d\n", (int)client);
 
@@ -67,15 +63,15 @@ void Notifier::addNotifier(NotifierClient client)
     if (nullptr != p_client_notifier_)
     {
       p_client_notifier_->setLSHandle(lshandle_);
-      registerCallback(updateDeviceList);
+      registerCallback(updateDeviceList, loop);
     }
   }
 }
 
-void Notifier::registerCallback(handlercb deviceinfo)
+void Notifier::registerCallback(handlercb deviceinfo, GMainLoop *loop)
 {
   if (nullptr != p_client_notifier_)
-    p_client_notifier_->subscribeToClient(deviceinfo);
+        p_client_notifier_->subscribeToClient(deviceinfo, loop);
 }
 
 void Notifier::setLSHandle(LSHandle *handle) { lshandle_ = handle; }

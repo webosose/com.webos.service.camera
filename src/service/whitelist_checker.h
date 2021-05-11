@@ -14,30 +14,27 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef PDM_CLIENT
-#define PDM_CLIENT
+#pragma once
 
-#include "camera_types.h"
-#include "device_notifier.h"
-#include <functional>
-#include <luna-service2/lunaservice.hpp>
+#include <pbnjson.hpp>
 
-static bool deviceStateCb(LSHandle *, LSMessage *, void *);
-
-using pdmhandlercb = std::function<void(DEVICE_LIST_T *)>;
-
-class PDMClient : public DeviceNotifier
+/// WhitelistChecker class for camera whitelist from json file.
+class WhitelistChecker
 {
-private:
-  static bool subscribeToPdmService(LSHandle *sh,
-                const char *serviceName, bool connected, void *ctx);
-  LSHandle *lshandle_;
-
 public:
-  PDMClient() { lshandle_ = nullptr; }
-  virtual ~PDMClient() {}
-  virtual void subscribeToClient(pdmhandlercb, GMainLoop *loop) override;
-  void setLSHandle(LSHandle *);
-};
+    WhitelistChecker();
+    static WhitelistChecker &getInstance()
+    {
+        static WhitelistChecker obj;
+        return obj;
+    }
+    ~WhitelistChecker();
+    bool check(LSHandle *, const std::string &, const std::string &);
 
-#endif
+ private:
+    bool createToast(LSHandle *,    const std::string &);
+    pbnjson::JValue getListFromConfigd();
+
+    /// whitelist file path
+    std::string confPath_;
+};

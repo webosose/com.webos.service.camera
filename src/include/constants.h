@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@
 
 #include <string>
 
-#define CONST_VARIABLE_INITIALIZE -999
+#define CONST_PARAM_DEFAULT_VALUE -999
 #define CONST_MAX_STRING_LENGTH 256
 #define CONST_PARAM_VALUE_FALSE 0
 #define CONST_PARAM_VALUE_TRUE 1
@@ -44,12 +44,13 @@
 #define CONST_PARAM_NAME_SOURCE "source"
 #define CONST_PARAM_NAME_AUTOEXPOSURE "autoExposure"
 #define CONST_PARAM_NAME_AUTOWHITEBALANCE "autoWhiteBalance"
+#define CONST_PARAM_NAME_AUTOFOCUS "autoFocus"
+#define CONST_PARAM_NAME_FOCUS_ABSOLUTE "focusAbsolute"
 #define CONST_PARAM_NAME_BACKLIGHT_COMPENSATION "backlightCompensation"
 #define CONST_PARAM_NAME_BIRGHTNESS "brightness"
 #define CONST_PARAM_NAME_BITRATE "bitrate"
 #define CONST_PARAM_NAME_BUILTIN "builtin"
 #define CONST_PARAM_NAME_DETAILS "details"
-#define CONST_PARAM_NAME_COL "col"
 #define CONST_PARAM_NAME_CONTRAST "contrast"
 #define CONST_PARAM_NAME_FORMAT "format"
 #define CONST_PARAM_NAME_MODE "mode"
@@ -75,7 +76,6 @@
 #define CONST_PARAM_NAME_PARAMS "params"
 #define CONST_PARAM_NAME_PICTURE "picture"
 #define CONST_PARAM_NAME_PAN "pan"
-#define CONST_PARAM_NAME_ROW "row"
 #define CONST_PARAM_NAME_SATURATION "saturation"
 #define CONST_PARAM_NAME_SHARPNESS "sharpness"
 #define CONST_PARAM_NAME_TILT "tilt"
@@ -83,10 +83,11 @@
 #define CONST_PARAM_NAME_APP_PRIORITY "mode"
 #define CONST_PARAM_NAME_WIDTH "width"
 #define CONST_PARAM_NAME_VIDEO "video"
-#define CONST_PARAM_NAME_ZOOM "zoom"
+#define CONST_PARAM_NAME_ZOOM_ABSOLUTE "zoomAbsolute"
 #define CONST_PARAM_NAME_WHITEBALANCETEMPERATURE "whiteBalanceTemperature"
 #define CONST_PARAM_NAME_YUVMODE "yuvMode"
 #define CONST_PARAM_NAME_ILLUMINATION "illumination"
+#define CONST_PARAM_NAME_DEVICE_LIST_INFO "deviceListInfo"
 #define CONST_PARAM_NAME_NON_STORAGE_DEVICE_LIST "nonStorageDeviceList"
 #define CONST_PARAM_NAME_DEVICE_NUM "deviceNum"
 #define CONST_PARAM_NAME_USB_PORT_NUM "usbPortNum"
@@ -105,6 +106,12 @@
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
 #define CONST_CLIENT_PROCESS_ID "pid"
 #define CONST_CLIENT_SIGNAL_NUM "sig"
+#define CONST_PARAM_NAME_MAX "max"
+#define CONST_PARAM_NAME_MIN "min"
+#define CONST_PARAM_NAME_STEP "step"
+#define CONST_PARAM_NAME_DEFAULT_VALUE "default"
+#define CONST_PARAM_NAME_VALUE "value"
+#define CONST_PARAM_NAME_NOTSUPPORT "not support"
 
 const int n_invalid_id = -1;
 const int frame_count = 8;

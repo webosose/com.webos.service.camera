@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 
 #include "PmLogLib.h"
 #include "camera_hal_types.h"
+#include "camera_hal_if_types.h"
 #include "constants.h"
 #include "luna-service2/lunaservice.h"
 
@@ -30,6 +31,7 @@
 #define MAX_DEVICE_COUNT 10
 
 const std::string kMemtypeShmem = "sharedmemory";
+const std::string kMemtypePosixshm = "posixshm";
 
 /*-----------------------------------------------------------------------------
  (Type Definitions)
@@ -61,6 +63,8 @@ typedef enum
   DEVICE_ERROR_DEVICE_IS_NOT_STARTED,
   DEVICE_ERROR_NODEVICE,
   DEVICE_ERROR_MAX_LIMIT_REACHED,
+  DEVICE_ERROR_PREVIEW_NOT_STARTED,
+  DEVICE_ERROR_NOT_POSIXSHM,
   // session
   DEVICE_ERROR_SESSION_ERROR,
   DEVICE_ERROR_SESSION_NOT_OWNER,
@@ -98,6 +102,7 @@ typedef enum
   DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE,
   DEVICE_ERROR_CANNOT_WRITE,
   DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE,
+  DEVICE_ERROR_HANDLE_NOT_EXIST,
 } DEVICE_RETURN_CODE_T;
 
 typedef enum
@@ -123,6 +128,13 @@ typedef enum
   CAMERA_TYPE_OMX = 2,
 } CAMERA_TYPE_T;
 
+typedef enum
+{
+  SHMEME_UNKNOWN = -1,
+  SHMEM_SYSTEMV  =  0,
+  SHMEM_POSIX
+}SHMEM_TYPE_T;
+
 enum class NotifierClient
 {
   NOTIFIER_CLIENT_PDM = 0,
@@ -146,65 +158,52 @@ enum class CameraDeviceState
 };
 
 /*Structures*/
-typedef struct
+struct CAMERA_FORMAT
 {
   int nWidth;
   int nHeight;
   int nFps;
   camera_format_t eFormat;
-} CAMERA_FORMAT;
+  bool operator != (const CAMERA_FORMAT &);
+} ;
 
 struct CAMERA_PROPERTIES_T
 {
-  int nZoom;
-  int nGridZoomX;
-  int nGridZoomY;
+  int nAutoWhiteBalance;
+  int nBrightness;
+  int nContrast;
+  int nSaturation;
+  int nHue;
+  int nGamma;
+  int nGain;
+  int nFrequency;
+  int nWhiteBalanceTemperature;
+  int nSharpness;
+  int nBacklightCompensation;
+  int nAutoExposure;
+  int nExposure;
   int nPan;
   int nTilt;
-  int nContrast;
-  int nBrightness;
-  int nSaturation;
-  int nSharpness;
-  int nHue;
-  int nWhiteBalanceTemperature;
-  int nGain;
-  int nGamma;
-  int nFrequency;
-  int bMirror;
-  int nExposure;
-  int bAutoExposure;
-  int bAutoWhiteBalance;
-  int nBitrate;
-  int nFramerate;
-  int ngopLength;
-  int bLed;
-  int bYuvMode;
-  int nIllumination;
-  int bBacklightCompensation;
+  int nFocusAbsolute;
+  int nAutoFocus;
+  int nZoomAbsolute;
 
-  int nMicMaxGain;
-  int nMicMinGain;
-  int nMicGain;
-  int bMicMute;
-  camera_resolution_t st_resolution;
+  camera_queryctrl_t stGetData;
+  camera_resolution_t stResolution;
+
+  bool operator != (const CAMERA_PROPERTIES_T &);
+
   CAMERA_PROPERTIES_T()
-      : nZoom(CONST_VARIABLE_INITIALIZE), nGridZoomX(CONST_VARIABLE_INITIALIZE),
-        nGridZoomY(CONST_VARIABLE_INITIALIZE), nPan(CONST_VARIABLE_INITIALIZE),
-        nTilt(CONST_VARIABLE_INITIALIZE), nContrast(CONST_VARIABLE_INITIALIZE),
-        nBrightness(CONST_VARIABLE_INITIALIZE), nSaturation(CONST_VARIABLE_INITIALIZE),
-        nSharpness(CONST_VARIABLE_INITIALIZE), nHue(CONST_VARIABLE_INITIALIZE),
-        nWhiteBalanceTemperature(CONST_VARIABLE_INITIALIZE), nGain(CONST_VARIABLE_INITIALIZE),
-        nGamma(CONST_VARIABLE_INITIALIZE), nFrequency(CONST_VARIABLE_INITIALIZE),
-        bMirror(CONST_VARIABLE_INITIALIZE), nExposure(CONST_VARIABLE_INITIALIZE),
-        bAutoExposure(CONST_VARIABLE_INITIALIZE), bAutoWhiteBalance(CONST_VARIABLE_INITIALIZE),
-        nBitrate(CONST_VARIABLE_INITIALIZE), nFramerate(CONST_VARIABLE_INITIALIZE),
-        ngopLength(CONST_VARIABLE_INITIALIZE), bLed(CONST_VARIABLE_INITIALIZE),
-        bYuvMode(CONST_VARIABLE_INITIALIZE), nIllumination(CONST_VARIABLE_INITIALIZE),
-        bBacklightCompensation(CONST_VARIABLE_INITIALIZE), nMicMaxGain(CONST_VARIABLE_INITIALIZE),
-        nMicMinGain(CONST_VARIABLE_INITIALIZE), nMicGain(CONST_VARIABLE_INITIALIZE),
-        bMicMute(CONST_VARIABLE_INITIALIZE), st_resolution()
-  {
-  }
+      : nAutoWhiteBalance(CONST_PARAM_DEFAULT_VALUE), nBrightness(CONST_PARAM_DEFAULT_VALUE),
+        nContrast(CONST_PARAM_DEFAULT_VALUE), nSaturation(CONST_PARAM_DEFAULT_VALUE),
+        nHue(CONST_PARAM_DEFAULT_VALUE), nGamma(CONST_PARAM_DEFAULT_VALUE),
+        nGain(CONST_PARAM_DEFAULT_VALUE), nFrequency(CONST_PARAM_DEFAULT_VALUE),
+        nWhiteBalanceTemperature(CONST_PARAM_DEFAULT_VALUE), nSharpness(CONST_PARAM_DEFAULT_VALUE),
+        nBacklightCompensation(CONST_PARAM_DEFAULT_VALUE), nAutoExposure(CONST_PARAM_DEFAULT_VALUE),
+        nExposure(CONST_PARAM_DEFAULT_VALUE), nPan(CONST_PARAM_DEFAULT_VALUE),
+        nTilt(CONST_PARAM_DEFAULT_VALUE), nFocusAbsolute(CONST_PARAM_DEFAULT_VALUE),
+        nAutoFocus(CONST_PARAM_DEFAULT_VALUE), nZoomAbsolute(CONST_PARAM_DEFAULT_VALUE),
+        stGetData(), stResolution() { }
 };
 
 typedef struct
@@ -213,7 +212,6 @@ typedef struct
   int nPortNum;
   char strVendorName[CONST_MAX_STRING_LENGTH];
   char strProductName[CONST_MAX_STRING_LENGTH];
-  char strSerialNumber[CONST_MAX_STRING_LENGTH];
   char strDeviceType[CONST_MAX_STRING_LENGTH];
   char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
   int isPowerOnConnect;
