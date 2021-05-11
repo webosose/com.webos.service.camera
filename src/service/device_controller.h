@@ -70,6 +70,8 @@ private:
   std::map<pid_t, int> client_map_;
   void broadcast_();
 
+  void try_auto_clean_shared_memory_();
+
 public:
   DeviceControl();
   DEVICE_RETURN_CODE_T open(void *, std::string);
@@ -91,6 +93,8 @@ public:
 
   bool registerClient(pid_t, int, std::string& outmsg);
   bool unregisterClient(pid_t, std::string& outmsg);
+
+  void handleCrash(void*);
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

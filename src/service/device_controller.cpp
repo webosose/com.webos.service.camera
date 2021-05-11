@@ -30,6 +30,40 @@
 #include <errno.h>
 #include <algorithm>
 
+/**
+ * added for shared memory clean-up when the service crashes 
+ */
+#include <sys/ipc.h>
+
+typedef enum
+{
+  SHMEM_COMM_MARK_NORMAL = 0x0,
+  SHMEM_COMM_MARK_RESET = 0x1,
+  SHMEM_COMM_MARK_TERMINATE = 0x2
+} SHMEM_MARK_T;
+
+typedef struct
+{
+  int shmem_id;
+  int sema_id;
+
+  /*shared memory overhead*/
+  int *write_index;
+  int *read_index;
+  int *unit_size;
+  int *unit_num;
+  SHMEM_MARK_T *mark;
+
+  unsigned int *length_buf;
+  unsigned char *data_buf;
+
+  int *extra_size;
+  unsigned char *extra_buf;
+} SHMEM_COMM_T;
+/**  
+ * end
+ */
+
 
 int DeviceControl::n_imagecount_ = 0;
 
@@ -508,10 +542,13 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
         continue;
       }
     }
-    auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-    if (retshmem != SHMEM_COMM_OK)
-      PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);
-    h_shmsystem_ = NULL;
+    if (h_shmsystem_ != nullptr)
+    {
+        auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+        if (retshmem != SHMEM_COMM_OK)
+            PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);
+        h_shmsystem_ = NULL;
+    }
   }
   return DEVICE_OK;
 }
@@ -916,12 +953,14 @@ void DeviceControl::broadcast_()
         case ESRCH:
           PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d does not exist and will be removed from the pool!!", it->first);
           // remove this pid from the client pool to make ensure no zombie process exists.
-          // TODO: probably able to place a shared memory cleaner code here if legitimate when the client app crashes.
           it = client_map_.erase(it);
+          // try to clean a shared memory here if legitimate when the client app crashes.  
+          try_auto_clean_shared_memory_();
           break;
         case EINVAL:
           PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d was given an invalid signal %d and will be be removed from the pool!!", it->first, it->second);
           it = client_map_.erase(it);
+          break;
         default: // case errno = EPERM
           PMLOG_ERROR(CONST_MODULE_DC, "Unexpected error in sending the signal to the client of pid %d\n", it->first);
           break;
@@ -932,4 +971,34 @@ void DeviceControl::broadcast_()
       ++it;
     }  
   }
+}
+
+void DeviceControl::try_auto_clean_shared_memory_()
+{
+    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)h_shmsystem_;
+    void *shmem_addr = shmem_buffer->write_index;
+    struct shmid_ds shm_stat;
+    if (-1 != shmctl(shmem_buffer->shmem_id, IPC_STAT, &shm_stat))
+    {
+        PMLOG_INFO(CONST_MODULE_DC, "shared memory reference counter = %d\n", (int)shm_stat.shm_nattch);
+        if ((int)shm_stat.shm_nattch == 1)
+        {
+            stopPreview(cam_handle_, SHMEM_SYSTEMV);
+            PMLOG_INFO(CONST_MODULE_DC, "This is no shared memory attached process except for the camera service itself\n");
+            shmdt(shmem_addr);
+            shmctl(shmem_buffer->shmem_id, IPC_RMID, NULL);
+            free(shmem_buffer);
+            shmem_buffer = nullptr;
+            PMLOG_INFO(CONST_MODULE_DC, "shared memory auto-closed and freed by the camera service itself\n");
+            h_shmsystem_ = NULL;
+        }
+    }
+}
+
+void DeviceControl::handleCrash(void * handle)
+{
+   PMLOG_INFO(CONST_MODULE_DC, "crash handling task is about to call stopCapture() \n");
+   stopCapture(handle);
+   PMLOG_INFO(CONST_MODULE_DC, "crash handling task is about to call stopPreview() \n");
+   stopPreview(handle, SHMEM_SYSTEMV);
 }

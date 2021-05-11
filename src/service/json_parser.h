@@ -83,7 +83,11 @@ private:
 class OpenMethod
 {
 public:
-  OpenMethod() { n_devicehandle_ = -1; }
+  OpenMethod() { 
+    n_devicehandle_ = -1; 
+    n_client_pid_ = -1;
+    n_client_sig_ = -1;
+  }
   ~OpenMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }

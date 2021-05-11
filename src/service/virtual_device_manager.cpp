@@ -781,3 +781,16 @@ bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string & outm
 {
   return objdevicecontrol_.unregisterClient((pid_t)n_client_pid, outmsg);
 }
+
+void VirtualDeviceManager::handleCrash(int devhandle)
+{
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid = obj_devstate.ndeviceid_;
+    if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
+    {
+        PMLOG_INFO(CONST_MODULE_VDM,  "[devhandle: %d] about to call crash handling task for abnormal service termination \n", devhandle);
+        void *handle;
+        DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
+        objdevicecontrol_.handleCrash(handle);
+    }
+}

@@ -80,6 +80,8 @@ public:
 
   bool registerClient(int, int, std::string&);
   bool unregisterClient(int, std::string&);
+
+  void handleCrash(int);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

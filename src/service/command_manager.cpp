@@ -376,3 +376,16 @@ bool CommandManager::unregisterClientPid(int devhandle, int n_client_pid, std::s
          + std::to_string(n_client_pid);
   return false;
 }
+
+void CommandManager::handleCrash()
+{
+    PMLOG_INFO(CONST_MODULE_CM, "start freeing resources for abnormal service termination \n");
+   
+    std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
+    while (it != virtualdevmgrobj_map_.end())
+    {
+        Device obj = it->second;
+        obj.ptr->handleCrash(obj.devicehandle);
+        it = virtualdevmgrobj_map_.erase(it);
+    }
+}

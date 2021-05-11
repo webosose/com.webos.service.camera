@@ -71,6 +71,8 @@ public:
   
   bool registerClientPid(int,int,int,std::string&);
   bool unregisterClientPid(int,int,std::string&);
+
+  void handleCrash();
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/

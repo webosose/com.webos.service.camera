@@ -28,6 +28,14 @@
 #include <sstream>
 #include <string>
 
+#include <signal.h>
+
+
+struct sigaction sigact_service_crash;
+void signal_handler_service_crash(int sig);
+void install_handler_service_crash();
+
+
 const std::string service = "com.webos.service.camera2";
 const std::string camerastr  = "camera";
 
@@ -873,6 +881,8 @@ bool CameraService::getFd(LSMessage &message)
 
 int main(int argc, char *argv[])
 {
+  install_handler_service_crash();
+  
   try
   {
     CameraService camerasrv;
@@ -883,4 +893,29 @@ int main(int argc, char *argv[])
     return 1;
   }
   return 0;
+}
+
+
+void signal_handler_service_crash(int sig)
+{
+    CommandManager::getInstance().handleCrash();
+    exit(0);
+}
+
+void install_handler_service_crash()
+{
+    sigact_service_crash.sa_handler = signal_handler_service_crash;
+    sigfillset(&sigact_service_crash.sa_mask);
+    sigact_service_crash.sa_flags = SA_RESTART;
+    for (int i = SIGHUP; i <= SIGSYS; i++)
+    {
+        if (i == SIGKILL || i == SIGSTOP)
+        {
+            continue;
+        }
+        if (sigaction(i, &sigact_service_crash, NULL) == -1)
+        {
+            PMLOG_ERROR(CONST_MODULE_LUNA, "install signal handler for signal %d :: FAIL\n", i);
+        }
+    }
 }
