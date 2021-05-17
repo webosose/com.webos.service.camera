@@ -145,6 +145,7 @@ webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCO
 set(SHMEM_TEST TRUE CACHE BOOL "Set to TRUE to enable shared memory synchronization test compilation")
 if (SHMEM_TEST)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_smsync)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_sync_read)
 endif()
 
 message(STATUS "Using default whitelist file for webOS")

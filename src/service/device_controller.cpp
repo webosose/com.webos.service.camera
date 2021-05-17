@@ -75,6 +75,7 @@ DeviceControl::DeviceControl()
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
       str_shmemname_(""), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG)
 {
+    handle_to_clean_ = -1;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -893,17 +894,17 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
 }
 
 
-bool DeviceControl::registerClient(pid_t pid, int sig, std::string& outmsg)
+bool DeviceControl::registerClient(pid_t pid, int sig, int devhandle, std::string& outmsg)
 {
-  auto it = std::find_if(client_map_.begin(), client_map_.end(), 
-                         [=](const std::pair<const pid_t, int>& p) { 
-                           return p.first == pid;
+  auto it = std::find_if(client_pool_.begin(), client_pool_.end(), 
+                         [=](const CLIENT_INFO_T& p) { 
+                           return p.pid == pid;
                          });
 
-  if (it == client_map_.end())
+  if (it == client_pool_.end())
   {
-    auto p = std::make_pair(pid, sig);
-    client_map_.insert(p);
+    CLIENT_INFO_T p = {pid, sig, devhandle};
+    client_pool_.push_back(p);
     outmsg = "The client of pid " + std::to_string(pid) + " registered with sig " + std::to_string(sig) + " :: OK";
     return true;
   }
@@ -917,14 +918,14 @@ bool DeviceControl::registerClient(pid_t pid, int sig, std::string& outmsg)
 
 bool DeviceControl::unregisterClient(pid_t pid, std::string& outmsg)
 {
-  auto it = std::find_if(client_map_.begin(), client_map_.end(), 
-                         [=](const std::pair<const pid_t, int>& p) {
-                           return p.first == pid;
+  auto it = std::find_if(client_pool_.begin(), client_pool_.end(), 
+                         [=](const CLIENT_INFO_T& p) {
+                           return p.pid == pid;
                          });
 
-  if (it != client_map_.end())
+  if (it != client_pool_.end())
   {
-    client_map_.erase(it);
+    client_pool_.erase(it);
     outmsg = "The client of pid " + std::to_string(pid) + " unregistered :: OK";
     PMLOG_INFO(CONST_MODULE_DC, outmsg.c_str());
     return true;
@@ -939,30 +940,33 @@ bool DeviceControl::unregisterClient(pid_t pid, std::string& outmsg)
 
 void DeviceControl::broadcast_()
 {
-  PMLOG_INFO(CONST_MODULE_DC, "Broadcasting to %u clients\n", client_map_.size());
+  PMLOG_INFO(CONST_MODULE_DC, "Broadcasting to %u clients\n", client_pool_.size());
 
-  auto it = client_map_.begin();
-  while (it != client_map_.end())
+  auto it = client_pool_.begin();
+  while (it != client_pool_.end())
   {
-    PMLOG_INFO(CONST_MODULE_DC, "About to send a signal %d to the client of pid %d ...\n", it->second, it->first);
-    int errid = kill(it->first, it->second);
+  
+    PMLOG_INFO(CONST_MODULE_DC, "About to send a signal %d to the client of pid %d ...\n", it->sig, it->pid);
+    int errid = kill(it->pid, it->sig);
     if (errid == -1)
     {
+      int devhandle = it->handle;
+
       switch (errno)
       {
         case ESRCH:
-          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d does not exist and will be removed from the pool!!", it->first);
+          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d does not exist and will be removed from the pool!!", it->pid);
           // remove this pid from the client pool to make ensure no zombie process exists.
-          it = client_map_.erase(it);
+          it = client_pool_.erase(it);
           // try to clean a shared memory here if legitimate when the client app crashes.  
-          try_auto_clean_shared_memory_();
+          try_auto_clean_shared_memory_(devhandle);
           break;
         case EINVAL:
-          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d was given an invalid signal %d and will be be removed from the pool!!", it->first, it->second);
-          it = client_map_.erase(it);
+          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d was given an invalid signal %d and will be be removed from the pool!!", it->pid, it->sig);
+          it = client_pool_.erase(it);
           break;
         default: // case errno = EPERM
-          PMLOG_ERROR(CONST_MODULE_DC, "Unexpected error in sending the signal to the client of pid %d\n", it->first);
+          PMLOG_ERROR(CONST_MODULE_DC, "Unexpected error in sending the signal to the client of pid %d\n", it->pid);
           break;
       }
     }
@@ -973,32 +977,52 @@ void DeviceControl::broadcast_()
   }
 }
 
-void DeviceControl::try_auto_clean_shared_memory_()
+void DeviceControl::try_auto_clean_shared_memory_(int devhandle)
 {
+    PMLOG_INFO(CONST_MODULE_DC, "start try_auto_clean_shared_memory_()\n");
+
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)h_shmsystem_;
     void *shmem_addr = shmem_buffer->write_index;
     struct shmid_ds shm_stat;
     if (-1 != shmctl(shmem_buffer->shmem_id, IPC_STAT, &shm_stat))
     {
         PMLOG_INFO(CONST_MODULE_DC, "shared memory reference counter = %d\n", (int)shm_stat.shm_nattch);
-        if ((int)shm_stat.shm_nattch == 1)
+
+        if ((int)shm_stat.shm_nattch != 0)
         {
-            stopPreview(cam_handle_, SHMEM_SYSTEMV);
-            PMLOG_INFO(CONST_MODULE_DC, "This is no shared memory attached process except for the camera service itself\n");
-            shmdt(shmem_addr);
-            shmctl(shmem_buffer->shmem_id, IPC_RMID, NULL);
-            free(shmem_buffer);
-            shmem_buffer = nullptr;
-            PMLOG_INFO(CONST_MODULE_DC, "shared memory auto-closed and freed by the camera service itself\n");
-            h_shmsystem_ = NULL;
+            tidCleaner_ = std::thread(&DeviceControl::cleaner_task_, this);
+            tidCleaner_.detach();
+           
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+            if ((int)shm_stat.shm_nattch == 1)
+            {
+                PMLOG_INFO(CONST_MODULE_DC, "This is no shared memory attached process except for the camera service itself\n");
+            }
+
+            std::lock_guard<std::mutex> mlock(cleaner_mutex_);
+            handle_to_clean_ = devhandle;
+            cleaner_trigger_.notify_one();
         }
     }
+
+    PMLOG_INFO(CONST_MODULE_DC, "end try_auto_clean_shared_memory_()\n");
 }
 
-void DeviceControl::handleCrash(void * handle)
+void DeviceControl::cleaner_task_()
 {
-   PMLOG_INFO(CONST_MODULE_DC, "crash handling task is about to call stopCapture() \n");
-   stopCapture(handle);
-   PMLOG_INFO(CONST_MODULE_DC, "crash handling task is about to call stopPreview() \n");
-   stopPreview(handle, SHMEM_SYSTEMV);
+    std::unique_lock<std::mutex> mlock(cleaner_mutex_);
+    cleaner_trigger_.wait(mlock);
+
+    PMLOG_INFO(CONST_MODULE_DC, "start cleaner task.\n");
+
+    if (handle_to_clean_ != -1)
+    {
+        CommandManager::getInstance().stopPreview(handle_to_clean_);
+        CommandManager::getInstance().close(handle_to_clean_);
+        handle_to_clean_ = -1;
+    }
+   
+    PMLOG_INFO(CONST_MODULE_DC, "end cleaner task.\n");
+    return;   
 }

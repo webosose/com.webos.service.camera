@@ -29,7 +29,16 @@
 #include <thread>
 #include <string>
 #include <condition_variable>
-#include <map>
+#include <vector>
+
+
+typedef struct
+{
+    pid_t pid;
+    int sig;
+    int handle;
+} CLIENT_INFO_T;
+
 
 class DeviceControl
 {
@@ -67,10 +76,15 @@ private:
 
   static int n_imagecount_;
 
-  std::map<pid_t, int> client_map_;
+  std::vector<CLIENT_INFO_T> client_pool_;
   void broadcast_();
 
-  void try_auto_clean_shared_memory_();
+  void try_auto_clean_shared_memory_(int);
+  std::mutex cleaner_mutex_;
+  std::condition_variable cleaner_trigger_;
+  std::thread tidCleaner_;
+  void cleaner_task_();
+  int handle_to_clean_;
 
 public:
   DeviceControl();
@@ -91,10 +105,8 @@ public:
   DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
 
-  bool registerClient(pid_t, int, std::string& outmsg);
+  bool registerClient(pid_t, int, int, std::string& outmsg);
   bool unregisterClient(pid_t, std::string& outmsg);
-
-  void handleCrash(void*);
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

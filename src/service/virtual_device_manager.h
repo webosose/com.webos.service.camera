@@ -78,10 +78,8 @@ public:
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
   DEVICE_RETURN_CODE_T getFd(int, int *);
 
-  bool registerClient(int, int, std::string&);
+  bool registerClient(int, int, int, std::string&);
   bool unregisterClient(int, std::string&);
-
-  void handleCrash(int);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/
