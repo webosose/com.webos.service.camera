@@ -909,7 +909,7 @@ int main(int argc, char *argv[])
 void signal_handler_service_crash(int sig)
 {
     CommandManager::getInstance().handleCrash();
-    exit(0);
+    exit(1);
 }
 
 void install_handler_service_crash()
