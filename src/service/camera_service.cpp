@@ -707,25 +707,35 @@ bool CameraService::setProperties(LSMessage &message)
   }
   else
   {
-    // get old properties before setting new
-    CAMERA_PROPERTIES_T old_property;
-    CommandManager::getInstance().getProperty(ndevhandle, &old_property);
-    auto *p_olddata = static_cast<void *>(&old_property);
-    // set properties here
-    CAMERA_PROPERTIES_T oParams = objsetproperties.rGetCameraProperties();
-    PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
-    err_id = CommandManager::getInstance().setProperty(ndevhandle, &oParams);
-    if (DEVICE_OK != err_id)
+    // check params object is empty or not
+    if (objsetproperties.isParamsEmpty(payload, setPropertiesSchema))
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
+      PMLOG_INFO(CONST_MODULE_LUNA, "Params object is empty\n");
+      err_id = DEVICE_ERROR_WRONG_PARAM;
       objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
-      objsetproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
-      // check if new properties are different from saved properties
-      createEventMessage(EventType::EVENT_TYPE_PROPERTIES, p_olddata, ndevhandle);
+      // get old properties before setting new
+      CAMERA_PROPERTIES_T old_property;
+      CommandManager::getInstance().getProperty(ndevhandle, &old_property);
+      auto *p_olddata = static_cast<void *>(&old_property);
+      // set properties here
+      CAMERA_PROPERTIES_T oParams = objsetproperties.rGetCameraProperties();
+      PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+      err_id = CommandManager::getInstance().setProperty(ndevhandle, &oParams);
+      if (DEVICE_OK != err_id)
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
+        objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+      }
+      else
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
+        objsetproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+        // check if new properties are different from saved properties
+        createEventMessage(EventType::EVENT_TYPE_PROPERTIES, p_olddata, ndevhandle);
+      }
     }
   }
 
