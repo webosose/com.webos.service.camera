@@ -26,7 +26,7 @@
 #include <algorithm>
 
 VirtualDeviceManager::VirtualDeviceManager()
-    : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_({0}),
+    : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_(),
       bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), sformat_()
 {
 }

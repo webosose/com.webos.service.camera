@@ -39,7 +39,7 @@ void destroy_handle(void *handle)
 }
 
 V4l2CameraPlugin::V4l2CameraPlugin()
-    : buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_({0}),
+    : buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_(),
       io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_(),stream_format_()
 {
 }

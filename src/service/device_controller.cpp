@@ -694,7 +694,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
       oparams->stResolution.n_width[n][count] = out_params.stResolution.n_width[n][count];
       PMLOG_INFO(CONST_MODULE_DC, "out_params.stResolution.c_res %s\n",
                  out_params.stResolution.c_res[count]);
-      memset(oparams->stResolution.c_res[count], '\0',
+      memset(oparams->stResolution.c_res[count], 0,
              sizeof(oparams->stResolution.c_res[count]));
       strncpy(oparams->stResolution.c_res[count], out_params.stResolution.c_res[count],
               sizeof(oparams->stResolution.c_res[count])-1);
