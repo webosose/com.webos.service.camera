@@ -1,6 +1,7 @@
 {
     "com.webos.service.camera2": [
-        "physicaldevice.query"
+        "physicaldevice.query",
+        "notifications"
     ]
 }
 

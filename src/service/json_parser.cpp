@@ -440,6 +440,26 @@ GetSetPropertiesMethod::GetSetPropertiesMethod()
 {
 }
 
+bool GetSetPropertiesMethod::isParamsEmpty(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  bool paramEmpty = false;
+  int retval = deSerialize(input, schemapath, j_obj);
+  if (0 == retval)
+  {
+     jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
+     if (jobject_size(jobj_params) == 0)
+         paramEmpty = true;
+  }
+  else
+  {
+    setDeviceHandle(n_invalid_id);
+  }
+  j_release(&j_obj);
+  return paramEmpty;
+}
+
+
 void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *schemapath)
 {
   jvalue_ref j_obj;

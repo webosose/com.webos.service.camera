@@ -356,7 +356,7 @@ bool CommandManager::registerClientPid(int devhandle, int n_client_pid, int n_cl
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
   {
-    return ptr->registerClient(n_client_pid, n_client_sig, outmsg);
+    return ptr->registerClient(n_client_pid, n_client_sig, devhandle, outmsg);
   }
   outmsg = "No virtual device manager available for registering the client of pid " 
          + std::to_string(n_client_pid);
@@ -385,7 +385,20 @@ void CommandManager::handleCrash()
     while (it != virtualdevmgrobj_map_.end())
     {
         Device obj = it->second;
-        obj.ptr->handleCrash(obj.devicehandle);
+
+        // send request to stop all and close the device
+        obj.ptr->stopCapture(obj.devicehandle);
+        obj.ptr->stopPreview(obj.devicehandle);
+        obj.ptr->close(obj.devicehandle);
+
+        int count = virtualdevmgrobj_map_.count(it->first);
+        if (count == 1)
+        {
+            delete obj.ptr;
+        }
+
         it = virtualdevmgrobj_map_.erase(it);
     }
+
+    PMLOG_INFO(CONST_MODULE_CM, "end freeing resources for abnormal service termination \n");
 }

@@ -356,6 +356,7 @@ public:
   MethodReply getMethodReply() const { return objreply_; }
 
   void getPropertiesObject(const char *, const char *);
+  bool isParamsEmpty(const char *, const char *);
   void getSetPropertiesObject(const char *, const char *);
   std::string createGetPropertiesObjectJsonString() const;
   std::string createSetPropertiesObjectJsonString() const;

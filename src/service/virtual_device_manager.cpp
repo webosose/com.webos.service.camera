@@ -772,25 +772,13 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
   return DEVICE_OK;
 }
 
-bool VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig, std::string & outmsg)
+
+bool VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig, int devhandle, std::string & outmsg)
 {
-  return objdevicecontrol_.registerClient((pid_t)n_client_pid, n_client_sig, outmsg);
+  return objdevicecontrol_.registerClient((pid_t)n_client_pid, n_client_sig, devhandle, outmsg);
 }
 
 bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string & outmsg)
 {
   return objdevicecontrol_.unregisterClient((pid_t)n_client_pid, outmsg);
-}
-
-void VirtualDeviceManager::handleCrash(int devhandle)
-{
-    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
-    int deviceid = obj_devstate.ndeviceid_;
-    if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
-    {
-        PMLOG_INFO(CONST_MODULE_VDM,  "[devhandle: %d] about to call crash handling task for abnormal service termination \n", devhandle);
-        void *handle;
-        DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
-        objdevicecontrol_.handleCrash(handle);
-    }
 }
