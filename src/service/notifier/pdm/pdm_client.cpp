@@ -167,6 +167,26 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
           PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productname : %s \n",
                      str_productname.c_str());
 
+          std::string str_vendorid;
+          jvalue_ref jstring_obj = jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_ID));
+          if(jstring_obj != jinvalid())
+          {
+              raw_buffer vendor_id = jstring_get_fast(jstring_obj);
+              str_vendorid = vendor_id.m_str;
+          }
+          PMLOG_INFO(CONST_MODULE_PDMCLIENT, "deviceStateCb str_vendorid : %s \n",
+                     str_vendorid.c_str());
+
+          std::string str_productid;
+          jstring_obj = jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_ID));
+          if(jstring_obj != jinvalid())
+          {
+              raw_buffer product_id = jstring_get_fast(jstring_obj);
+              str_productid = product_id.m_str;
+          }
+          PMLOG_INFO(CONST_MODULE_PDMCLIENT, "deviceStateCb str_productid : %s \n",
+                     str_productid.c_str());
+
           if (cstr_cam == str_devicetype)
           {
             PMLOG_INFO(CONST_MODULE_PDMCLIENT, "received cam device\n");
@@ -180,6 +200,14 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
             strncpy(dev_info_[camcount].strProductName, str_productname.c_str(),
                     CONST_MAX_STRING_LENGTH - 1);
             dev_info_[camcount].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+            strncpy(dev_info_[camcount].strVendorID, str_vendorid.c_str(),
+                    CONST_MAX_STRING_LENGTH - 1);
+            dev_info_[camcount].strVendorID[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+            strncpy(dev_info_[camcount].strProductID, str_productid.c_str(),
+                    CONST_MAX_STRING_LENGTH - 1);
+            dev_info_[camcount].strProductID[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
             strncpy(dev_info_[camcount].strDeviceType, str_devicetype.c_str(),
                     CONST_MAX_STRING_LENGTH - 1);
