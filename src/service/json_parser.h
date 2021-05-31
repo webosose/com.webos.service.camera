@@ -214,7 +214,11 @@ private:
 class StopPreviewCaptureCloseMethod
 {
 public:
-  StopPreviewCaptureCloseMethod() { n_devicehandle_ = -1; }
+  StopPreviewCaptureCloseMethod() 
+  { 
+    n_devicehandle_ = -1; 
+    n_client_pid_ = -1;
+  }
   ~StopPreviewCaptureCloseMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }

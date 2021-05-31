@@ -7,7 +7,7 @@
 ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
 {
     int fd[2];
-    ret_val_t val; 
+    ret_val_t val = {0, 0}; 
 
     // create pipe descriptors
     pipe(fd);
@@ -20,7 +20,7 @@ ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
     int child = fork();
     if (child < 0)
     {
-        printf("fork error: %d\n");
+        printf("fork error\n");
         val = {-1, -1};
         return val;
     }
@@ -61,7 +61,10 @@ ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
             close(fd[1]);
 
             // read the data
-	        read(fd[0], &val, sizeof(val));
+	        if (0 == read(fd[0], &val, sizeof(val)))
+            {
+                printf("pipe empty\n");
+            }
 
 	        // close the read-descriptor
 	        close(fd[0]);

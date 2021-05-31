@@ -1001,8 +1001,10 @@ void DeviceControl::try_auto_clean_shared_memory_(int devhandle)
             }
 
             std::lock_guard<std::mutex> mlock(cleaner_mutex_);
-            handle_to_clean_ = devhandle;
-            cleaner_trigger_.notify_one();
+            {
+                handle_to_clean_ = devhandle;
+                cleaner_trigger_.notify_one();
+            }
         }
     }
 
@@ -1012,17 +1014,20 @@ void DeviceControl::try_auto_clean_shared_memory_(int devhandle)
 void DeviceControl::cleaner_task_()
 {
     std::unique_lock<std::mutex> mlock(cleaner_mutex_);
-    cleaner_trigger_.wait(mlock);
-
-    PMLOG_INFO(CONST_MODULE_DC, "start cleaner task.\n");
-
-    if (handle_to_clean_ != -1)
     {
-        CommandManager::getInstance().stopPreview(handle_to_clean_);
-        CommandManager::getInstance().close(handle_to_clean_);
-        handle_to_clean_ = -1;
-    }
+        cleaner_trigger_.wait(mlock);
+    
+
+        PMLOG_INFO(CONST_MODULE_DC, "start cleaner task.\n");
+
+        if (handle_to_clean_ != -1)
+        {
+            CommandManager::getInstance().stopPreview(handle_to_clean_);
+            CommandManager::getInstance().close(handle_to_clean_);
+            handle_to_clean_ = -1;
+        }
    
-    PMLOG_INFO(CONST_MODULE_DC, "end cleaner task.\n");
+        PMLOG_INFO(CONST_MODULE_DC, "end cleaner task.\n");
+    }
     return;   
 }
