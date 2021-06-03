@@ -227,7 +227,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
   int framesize =
       streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
-  int timeout = 2000;
+  int timeout = 10000;
   buffer_t frame_buffer;
   for (int i = 1; i <= ncount; i++)
   {
