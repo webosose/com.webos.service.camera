@@ -206,8 +206,8 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
       HAL_LOG_INFO(CONST_MODULE_HAL, "getBuffer : VIDIOC_DQBUF failed %d, %s\n", errno,
                    strerror(errno));
     }
-    memcpy(outbuf->start, buffers_[buf.index].start, buf.length);
-    outbuf->length = buf.length;
+    memcpy(outbuf->start, buffers_[buf.index].start, buf.bytesused);
+    outbuf->length = buf.bytesused;
     outbuf->index = buf.index;
     break;
   }

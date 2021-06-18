@@ -71,6 +71,7 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE, "Already another device opened as primary"},
     {DEVICE_ERROR_CANNOT_WRITE, "Cannot write at specified location"},
     {DEVICE_OK, "No error"},
+    {DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE, "Unsupported Memory Type"},
     {DEVICE_ERROR_HANDLE_NOT_EXIST, "Wrong handle"},
     {DEVICE_ERROR_PREVIEW_NOT_STARTED, "Preview not started"},
     {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"}};

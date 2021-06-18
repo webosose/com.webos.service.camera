@@ -274,18 +274,27 @@ bool CameraService::startPreview(LSMessage &message)
     int key = 0;
 
     memType = obj_startpreview.rGetParams();
-    err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key);
-
-    if (DEVICE_OK != err_id)
+    if ( (memType.str_memorytype == kMemtypeShmem) || (memType.str_memorytype == kMemtypePosixshm) )
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
-      obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+        err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key);
+
+        if (DEVICE_OK != err_id)
+        {
+          PMLOG_INFO(CONST_MODULE_LUNA, "err_id != DEVICE_OK\n");
+          obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+        }
+        else
+        {
+          PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
+          obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+          obj_startpreview.setKeyValue(key);
+        }
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
-      obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
-      obj_startpreview.setKeyValue(key);
+        PMLOG_INFO(CONST_MODULE_LUNA, "memory type is not supported\n");
+        err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
+        obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
   }
 
