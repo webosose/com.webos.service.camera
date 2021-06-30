@@ -256,6 +256,8 @@ public:
   void setCameraInfo(const camera_device_info_t& r_ininfo)
   {
     strncpy(ro_info_.str_devicename, r_ininfo.str_devicename, 32);
+    strncpy(ro_info_.str_vendorid, r_ininfo.str_vendorid, 32);
+    strncpy(ro_info_.str_productid, r_ininfo.str_productid, 32);
     ro_info_.b_builtin = r_ininfo.b_builtin;
     ro_info_.n_codec = r_ininfo.n_codec;
     ro_info_.n_format = r_ininfo.n_format;

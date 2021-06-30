@@ -169,7 +169,11 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
           std::string str_vendorid;
           jvalue_ref jstring_obj = jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_ID));
-          if(jstring_obj != jinvalid())
+          if(jstring_obj == jinvalid())
+          {
+              str_vendorid = str_vendorname;
+          }
+          else
           {
               raw_buffer vendor_id = jstring_get_fast(jstring_obj);
               str_vendorid = vendor_id.m_str;
@@ -179,7 +183,11 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
           std::string str_productid;
           jstring_obj = jobject_get(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_ID));
-          if(jstring_obj != jinvalid())
+          if(jstring_obj == jinvalid())
+          {
+              str_productid = str_devicesubtype;
+          }
+          else
           {
               raw_buffer product_id = jstring_get_fast(jstring_obj);
               str_productid = product_id.m_str;

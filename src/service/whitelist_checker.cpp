@@ -35,40 +35,17 @@ bool WhitelistChecker::check(LSHandle *lsHandle, const std::string &vendor, cons
 {
     PMLOG_INFO(CONST_MODULE_WLIST, "%s", __func__);
 
-    // get the JDOM tree from Confid
-    auto root = getListFromConfigd();
-    if (root.isObject()) {
-        PMLOG_INFO(CONST_MODULE_WLIST, "Reading Configd : OK");
-    }
-    else {
-        // get the JDOM tree from configuration file
-        root = pbnjson::JDomParser::fromFile(confPath_.c_str());
-        if (!root.isObject()) {
-            PMLOG_ERROR(CONST_MODULE_WLIST, "configuration file parsing error! need to check %s", confPath_.c_str());
-            return false;
-        }
-        PMLOG_INFO(CONST_MODULE_WLIST, "Reading default configuration  : OK");
+    bool retValue = isSupportedCamera(vendor, subtype);
+
+    if(retValue)
+    {
+        createToast(lsHandle, subtype);
+    } else
+    {
+        createToast(lsHandle, "Unsupported camera");
     }
 
-    // check cameraWhilteList field
-    if (!root.hasKey("cameraWhilteList")) {
-        PMLOG_ERROR(CONST_MODULE_WLIST, "Can't find cameraWhilteList field. need to check it!");
-        return false;
-    }
-
-    // get the whitelist from cameraWhilteList field
-    auto whiteList = root["cameraWhilteList"];
-
-    for (int idx = 0; idx < whiteList.arraySize(); idx++) {
-        auto wlist = whiteList[idx];
-        if(wlist["vendorName"].asString().compare(vendor)==0 && wlist["deviceSubtype"].asString().compare(subtype)==0) {
-            createToast(lsHandle, subtype);
-            return true;
-        }
-    }
-
-    createToast(lsHandle, "Unsupported camera");
-    return false;
+    return retValue;
 }
 
 
@@ -103,5 +80,46 @@ pbnjson::JValue WhitelistChecker::getListFromConfigd()
 {
     PMLOG_INFO(CONST_MODULE_WLIST, "%s not implemented", __func__);
     return NULL;
+}
+
+bool WhitelistChecker::isSupportedCamera(std::string vendor, std::string subtype)
+{
+    PMLOG_INFO(CONST_MODULE_WLIST, "%s [%s] [%s]", __func__, vendor.c_str(), subtype.c_str());
+
+    bool retValue = false;
+
+    // get the JDOM tree from Confid
+    auto root = getListFromConfigd();
+    if (root.isObject()) {
+        PMLOG_INFO(CONST_MODULE_WLIST, "Reading Configd : OK");
+    }
+    else {
+        // get the JDOM tree from configuration file
+        root = pbnjson::JDomParser::fromFile(confPath_.c_str());
+        if (!root.isObject()) {
+            PMLOG_ERROR(CONST_MODULE_WLIST, "configuration file parsing error! need to check %s", confPath_.c_str());
+            return false;
+        }
+        PMLOG_INFO(CONST_MODULE_WLIST, "Reading default configuration  : OK");
+    }
+
+    // check cameraWhilteList field
+    if (!root.hasKey("cameraWhilteList")) {
+        PMLOG_ERROR(CONST_MODULE_WLIST, "Can't find cameraWhilteList field. need to check it!");
+        return false;
+    }
+
+    // get the whitelist from cameraWhilteList field
+    auto whiteList = root["cameraWhilteList"];
+
+    for (int idx = 0; idx < whiteList.arraySize(); idx++) {
+        auto wlist = whiteList[idx];
+        if(wlist["vendorName"].asString().compare(vendor)==0 && wlist["deviceSubtype"].asString().compare(subtype)==0) {
+            retValue = true;
+        }
+    }
+
+    PMLOG_INFO(CONST_MODULE_WLIST, "isSupported : %d", retValue);
+    return retValue;
 }
 

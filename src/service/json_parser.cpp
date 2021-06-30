@@ -18,6 +18,7 @@
 #include "constants.h"
 #include <iostream>
 #include <signal.h>
+#include "whitelist_checker.h"
 
 bool GetCameraListMethod::getCameraListObject(const char *input, const char *schemapath)
 {
@@ -395,6 +396,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
   if (objreply.bGetReturnValue())
   {
     char strformat[CONST_MAX_STRING_LENGTH];
+    bool supported = WhitelistChecker::getInstance().isSupportedCamera(rGetCameraInfo().str_vendorid, rGetCameraInfo().str_productid);
+
     getFormatString(rGetCameraInfo().n_format, strformat);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(objreply.bGetReturnValue()));
@@ -405,6 +408,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
                 jstring_create(getTypeString(rGetCameraInfo().n_devicetype)));
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BUILTIN),
                 jboolean_create(rGetCameraInfo().b_builtin));
+    jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUPPORTED),
+                jboolean_create(supported));
 
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
                 jnumber_create_i32(rGetCameraInfo().n_maxvideowidth));

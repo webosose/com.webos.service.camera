@@ -53,6 +53,7 @@
 #define CONST_PARAM_NAME_BIRGHTNESS "brightness"
 #define CONST_PARAM_NAME_BITRATE "bitrate"
 #define CONST_PARAM_NAME_BUILTIN "builtin"
+#define CONST_PARAM_NAME_SUPPORTED "supported"
 #define CONST_PARAM_NAME_DETAILS "details"
 #define CONST_PARAM_NAME_CONTRAST "contrast"
 #define CONST_PARAM_NAME_FORMAT "format"
