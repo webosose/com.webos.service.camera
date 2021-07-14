@@ -592,7 +592,7 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
   return ret;
 }
 
-int V4l2CameraPlugin::setV4l2Property(std::map <int, int> gIdWithPropertyValue)
+int V4l2CameraPlugin::setV4l2Property(std::map <int, int> &gIdWithPropertyValue)
 {
   struct v4l2_queryctrl queryctrl;
   struct v4l2_control control;
