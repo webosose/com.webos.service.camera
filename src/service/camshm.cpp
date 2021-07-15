@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2021 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -134,6 +134,8 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
 
   *pShmemBuffer->unit_size = unitSize;
   *pShmemBuffer->unit_num = unitNum;
+  pShmemBuffer->extra_size = nullptr;
+  pShmemBuffer->extra_buf = nullptr;
 
   pShmemBuffer->data_buf =
       pSharedmem + SHMEM_HEADER_SIZE + SHMEM_LENGTH_SIZE * (*pShmemBuffer->unit_num);
@@ -159,11 +161,6 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
           (pSharedmem + SHMEM_HEADER_SIZE +
            (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
            sizeof(int));
-    }
-    else
-    {
-      pShmemBuffer->extra_size = nullptr;
-      pShmemBuffer->extra_buf = nullptr;
     }
   }
 

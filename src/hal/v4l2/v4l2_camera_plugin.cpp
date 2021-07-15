@@ -377,7 +377,7 @@ int V4l2CameraPlugin::setProperties(const camera_properties_t *cam_in_params)
 {
   int retVal = CAMERA_ERROR_NONE;
 
-  std::map <int, int> gIdWithPropertyValue;
+  std::map <int, int> gIdWithPropertyValue = {};
 
   gIdWithPropertyValue[V4L2_CID_BRIGHTNESS] = cam_in_params->nBrightness;
   gIdWithPropertyValue[V4L2_CID_CONTRAST] = cam_in_params->nContrast;
