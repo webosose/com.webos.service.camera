@@ -80,7 +80,7 @@ typedef struct
 SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pShmemKey,
                                                int unitSize, int unitNum, int extraSize)
 {
-  *phShmem = (SHMEM_HANDLE)malloc(sizeof(SHMEM_COMM_T));
+  *phShmem = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
   SHMEM_COMM_T *pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
 
   DEBUG_PRINT("hShmem = %p, pKey = %p, unitSize=%d, unitNum=%d\n", *phShmem,
