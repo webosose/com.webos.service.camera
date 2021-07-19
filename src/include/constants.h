@@ -96,10 +96,12 @@
 #define CONST_PARAM_NAME_DEVICE_NUM "deviceNum"
 #define CONST_PARAM_NAME_USB_PORT_NUM "usbPortNum"
 #define CONST_PARAM_NAME_VENDOR_NAME "vendorName"
+#define CONST_PARAM_NAME_VIDEO_DEVICE_LIST "videoDeviceList"
 #define CONST_PARAM_NAME_PRODUCT_NAME "productName"
 #define CONST_PARAM_NAME_VENDOR_ID "vendorID"
 #define CONST_PARAM_NAME_PRODUCT_ID "productID"
 #define CONST_PARAM_NAME_SERIAL_NUMBER "serialNumber"
+#define CONST_PARAM_NAME_SUB_DEVICE_LIST "subDeviceList"
 #define CONST_PARAM_NAME_DEVICE_TYPE "deviceType"
 #define CONST_PARAM_NAME_DEVICE_SUBTYPE "deviceSubtype"
 #define CONST_PARAM_NAME_EVENT "eventType"
@@ -110,6 +112,9 @@
 #define CONST_PARAM_NAME_FPS "fps"
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
+#define CONST_PARAM_NAME_CAPABILITIES "capabilities"
+#define CONST_PARAM_NAME_SUBSYSTEM "SUBSYSTEM"
+#define CONST_PARAM_NAME_KERNEL "KERNEL"
 #define CONST_CLIENT_PROCESS_ID "pid"
 #define CONST_CLIENT_SIGNAL_NUM "sig"
 #define CONST_PARAM_NAME_MAX "max"
@@ -129,9 +134,10 @@ const int n_invalid_sig = -1;
 const std::string cstr_empty = "";
 const std::string cstr_pdmclient = "com.webos.service.pdmclient";
 const std::string cstr_uri = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
-const std::string cstr_payload = "{\"subscribe\":true}";
+const std::string cstr_payload = "{\"subscribe\":true,\"category\":\"Video\"}";
 const std::string cstr_powerstatus = "powerStatus";
 const std::string cstr_cam = "CAM";
+const std::string cstr_capture = ":capture:";
 const std::string cstr_invaliddeviceid = "-1";
 const std::string cstr_yuvformat = "YUV";
 const std::string cstr_h264esformat = "H264ES";

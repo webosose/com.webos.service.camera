@@ -41,10 +41,6 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
-pkg_check_modules(UDEV REQUIRED libudev)
-include_directories(${UDEV_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${UDEV_CFLAGS})
-
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
@@ -86,7 +82,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${PBNJSON_CPP_LDFLAGS}
                       ${LS2++_LDFLAGS}
                       ${PMLOGLIB_LDFLAGS}
-                      ${UDEV_LDFLAGS}
                       pthread
                       camera_hal)
 
