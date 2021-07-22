@@ -36,6 +36,13 @@ private:
   int getId(std::string);
   void createEventMessage(EventType, void *, int);
 
+  std::map<int, std::string> cameraHandleMap;
+  std::map<std::string, void*> cameraHandleInfo;
+
+  void printMap();
+  bool addClientWatcher(LSHandle* handle, LSMessage* message, int ndevice_handle);
+  bool eraseWatcher(LSMessage* message, int ndevhandle);
+
 public:
   CameraService();
 

@@ -223,6 +223,10 @@ bool CameraService::open(LSMessage &message)
           }
         }
       }
+      else
+      {
+        addClientWatcher(this->get(), &message, ndevice_handle);
+      }
     }
   }
 
@@ -301,6 +305,7 @@ bool CameraService::close(LSMessage &message)
       }
       else
       {
+        eraseWatcher(&message, ndevhandle);
         PMLOG_INFO(CONST_MODULE_LUNA, "err_id == DEVICE_OK\n");
         obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       }
@@ -889,6 +894,123 @@ bool CameraService::getFd(LSMessage &message)
   return true;
 }
 
+
+void CameraService::printMap()
+{
+  std::string sName = "";
+  for(auto it = cameraHandleMap.begin(); it != cameraHandleMap.end(); ++it)
+  {
+    sName = it->second;
+    PMLOG_INFO(CONST_MODULE_LUNA, "printMap current cameraHandleMap Name: %s, handle %d\n", sName.c_str(), it->first);
+  }
+}
+
+bool CameraService::eraseWatcher(LSMessage* message, int ndevhandle)
+{
+  const char * clientName  = LSMessageGetSenderServiceName(message);
+
+  if(clientName != NULL)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "eraseWatcher: clientName: %s\n", clientName);
+
+    if (strstr(clientName, "com.webos.lunasend-") != NULL)
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "eraseWatcher: can not add: %s\n", clientName);
+      return false;
+    }
+  }
+
+  auto info = cameraHandleMap.find(ndevhandle);
+  if (info == cameraHandleMap.end()) {
+    PMLOG_INFO(CONST_MODULE_LUNA, "eraseWatcher: can not find cameraHandleMap: %d \n", ndevhandle );
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "eraseWatcher: erase cameraHandleMap: %d \n", ndevhandle );
+    cameraHandleMap.erase(ndevhandle);
+  }
+
+  printMap();
+
+  return true;
+}
+
+bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int ndevice_handle)
+{
+  const char * clientName  = LSMessageGetSenderServiceName(message);
+  const char * unique_client_id = LSMessageGetSender(message);
+
+  if (clientName != NULL) {
+    PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher clientName: %s\n", clientName);
+    if (strstr(clientName, "com.webos.lunasend-") != NULL)
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher can not add: %s\n", clientName);
+      return false;
+    }
+  }
+
+  PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher unique_client_id: %s\n", unique_client_id);
+
+  cameraHandleMap.insert(std::make_pair(ndevice_handle, unique_client_id));
+
+  if (cameraHandleInfo.find(unique_client_id) != cameraHandleInfo.end()) {
+     PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher already watched: %s \n", unique_client_id );
+     return false;
+  }
+
+  auto info = cameraHandleInfo.insert(std::make_pair(unique_client_id, nullptr));
+
+  printMap();
+
+  auto func = [](LSHandle * handle, const char * service_name, bool connected, void * ctx)->bool {
+    CameraService * self = static_cast<CameraService *>(ctx);
+    auto info = self->cameraHandleInfo.find(service_name);
+
+    if (info == self->cameraHandleInfo.end()) {
+      PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher can not find service_name: %s \n", service_name);
+      return true;
+    }
+
+    if (!connected) {
+      std::string name = service_name;
+      DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+      PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher disconnect:%s\n", service_name);
+
+      for(auto it = self->cameraHandleMap.begin(); it != self->cameraHandleMap.end(); ++it)
+      {
+        if(name.compare(it->second) == 0)
+        {
+          PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher disconnect erase HandleMap service_name: %s, ndevice_handle %d\n", name.c_str(), it->first);
+          if(CommandManager::getInstance().stopPreview(it->first) != DEVICE_OK)
+          {
+            PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher stoppreview err_id != DEVICE_OK\n");
+          }
+
+          if (CommandManager::getInstance().close(it->first) != DEVICE_OK )
+          {
+            PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher close err_id != DEVICE_OK\n");
+          }
+          self->cameraHandleMap.erase(it->first);
+        }
+      }
+
+      LSCancelServerStatus(handle, info->second, nullptr);
+      self->cameraHandleInfo.erase(service_name);
+    }
+    else
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher connect:%s\n", service_name);
+    }
+    return true;
+  };
+
+  if(!LSRegisterServerStatusEx(handle, unique_client_id, func, this, &info.first->second, nullptr) )
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "addClientWatcher error LSRegisterServerStatusEx\n");
+  }
+
+  return true;
+}
 int main(int argc, char *argv[])
 {
   install_handler_service_crash();
