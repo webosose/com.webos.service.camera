@@ -48,20 +48,20 @@ DeviceManager::DeviceManager() : ndevcount_(0) {}
 int DeviceManager::findDevNum(int ndevicehandle)
 {
   int nDeviceID = n_invalid_id;
-  PMLOG_INFO(CONST_MODULE_DM, "find_devnum : ndevcount_: %d \n", ndevcount_);
+  PMLOG_DEBUG("find_devnum : ndevcount_: %d \n", ndevcount_);
 
   for (int i = 0; i < ndevcount_; i++)
   {
-    PMLOG_INFO(CONST_MODULE_DM, "find_devnum : gdev_status[%d].nDevIndex : %d \n", i,
+    PMLOG_DEBUG("find_devnum : gdev_status[%d].nDevIndex : %d \n", i,
                gdev_status[i].nDevIndex);
-    PMLOG_INFO(CONST_MODULE_DM, "find_devnum : gdev_status[%d].nDeviceID : %d \n", i,
+    PMLOG_DEBUG("find_devnum : gdev_status[%d].nDeviceID : %d \n", i,
                gdev_status[i].nDeviceID);
-    PMLOG_INFO(CONST_MODULE_DM, "find_devnum : ndevicehandle : %d \n", ndevicehandle);
+    PMLOG_DEBUG("find_devnum : ndevicehandle : %d \n", ndevicehandle);
 
     if ((gdev_status[i].nDevIndex == ndevicehandle) || (gdev_status[i].nDeviceID == ndevicehandle))
     {
       nDeviceID = i;
-      PMLOG_INFO(CONST_MODULE_DM, "dev_num is :%d\n", i);
+      PMLOG_DEBUG("dev_num is :%d\n", i);
     }
   }
 
@@ -70,9 +70,9 @@ int DeviceManager::findDevNum(int ndevicehandle)
 
 bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool status)
 {
-  PMLOG_INFO(CONST_MODULE_LUNA, "deviceStatus : deviceID %d status : %d \n!!", deviceID, status);
+  PMLOG_INFO(CONST_MODULE_DM, "deviceID %d status : %d \n!!", deviceID, status);
   int dev_num = findDevNum(deviceID);
-  PMLOG_INFO(CONST_MODULE_LUNA, "deviceStatus : dev_num : %d \n!!", dev_num);
+  PMLOG_INFO(CONST_MODULE_DM, "dev_num : %d \n!!", dev_num);
 
   if (n_invalid_id == dev_num)
     return CONST_PARAM_VALUE_FALSE;
@@ -92,7 +92,7 @@ bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool statu
 
 bool DeviceManager::isDeviceOpen(int *deviceID)
 {
-  PMLOG_INFO(CONST_MODULE_LUNA, "DeviceManager::isDeviceOpen !!\n");
+  PMLOG_INFO(CONST_MODULE_DM, "started!");
   int dev_num = findDevNum(*deviceID);
   if (n_invalid_id == dev_num)
   {
@@ -100,13 +100,13 @@ bool DeviceManager::isDeviceOpen(int *deviceID)
     return CONST_PARAM_VALUE_FALSE;
   }
 
-  PMLOG_INFO(CONST_MODULE_LUNA, "isDeviceOpen :  *deviceID : %d\n", *deviceID);
-  PMLOG_INFO(CONST_MODULE_LUNA, "isDeviceOpen :  *gdev_status[%d].nDeviceID : %d\n", dev_num,
+  PMLOG_DEBUG("isDeviceOpen :  *deviceID : %d\n", *deviceID);
+  PMLOG_DEBUG("isDeviceOpen :  *gdev_status[%d].nDeviceID : %d\n", dev_num,
              gdev_status[dev_num].nDeviceID);
 
   if (*deviceID == gdev_status[dev_num].nDeviceID)
   {
-    PMLOG_INFO(CONST_MODULE_LUNA, "isDeviceOpen : gdev_status[%d].isDeviceOpen : %d\n", dev_num,
+    PMLOG_DEBUG("isDeviceOpen : gdev_status[%d].isDeviceOpen : %d\n", dev_num,
                gdev_status[dev_num].isDeviceOpen);
     if (gdev_status[dev_num].isDeviceOpen)
     {
@@ -181,7 +181,7 @@ int DeviceManager::getDeviceId(int *device_id)
 DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
                                             int *pMicSupport) const
 {
-  PMLOG_INFO(CONST_MODULE_DM, "DeviceManager::getList!!\n");
+  PMLOG_INFO(CONST_MODULE_DM, "started!");
 
   int devCount = ndevcount_;
   DEVICE_LIST_T pList[devCount];
@@ -213,7 +213,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
                                                DEVICE_EVENT_STATE_T *pCamEvent,
                                                DEVICE_EVENT_STATE_T *pMicEvent)
 {
-  PMLOG_INFO(CONST_MODULE_DM, "DeviceManager::updateList started! nDevCount : %d \n", nDevCount);
+  PMLOG_INFO(CONST_MODULE_DM, "started! nDevCount : %d \n", nDevCount);
 
   int nCamDev = 0;
   int nMicDev = 0;
@@ -269,7 +269,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
 
 DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p_info)
 {
-  PMLOG_INFO(CONST_MODULE_DM, "getInfo started ! ndev_id : %d \n", ndev_id);
+  PMLOG_INFO(CONST_MODULE_DM, "started ! ndev_id : %d \n", ndev_id);
 
   int ncam_id = findDevNum(ndev_id);
   if (n_invalid_id == ncam_id)
@@ -303,7 +303,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
 
 DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
 {
-  PMLOG_INFO(CONST_MODULE_DM, "updateHandle ! deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d \n", deviceid);
   int devicehandle = getRandomNumber();
   int dev_num = findDevNum(deviceid);
   if (n_invalid_id == dev_num)

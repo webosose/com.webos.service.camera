@@ -29,7 +29,9 @@
 #define CONST_MODULE_VDM "VirtualDeviceManager"
 #define CONST_MODULE_CM "CommandHandler"
 #define CONST_MODULE_DC "DeviceController"
-#define CONST_MODULE_LUNA "service"
+#define CONST_MODULE_LUNA "Service"
+#define CONST_MODULE_NOTIFIER "Notifier"
+#define CONST_MODULE_PDMCLIENT "PDMClient"
 
 #define CONST_DEVICE_NAME_CAMERA "camera"
 #define CONST_DEVICE_HANDLE "handle"
