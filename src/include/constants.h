@@ -32,6 +32,7 @@
 #define CONST_MODULE_LUNA "Service"
 #define CONST_MODULE_NOTIFIER "Notifier"
 #define CONST_MODULE_PDMCLIENT "PDMClient"
+#define CONST_MODULE_SHM "SHM_API"
 
 #define CONST_DEVICE_NAME_CAMERA "camera"
 #define CONST_DEVICE_HANDLE "handle"

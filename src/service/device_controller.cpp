@@ -287,7 +287,7 @@ camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)
 
 void DeviceControl::captureThread()
 {
-  PMLOG_INFO(CONST_MODULE_DC, "captureThread started\n");
+  PMLOG_INFO(CONST_MODULE_DC, "started\n");
 
   // run capture thread until stopCapture received
   while (b_iscontinuous_capture_)
@@ -304,11 +304,13 @@ void DeviceControl::captureThread()
   b_iscontinuous_capture_ = false;
   tidCapture.detach();
   n_imagecount_ = 0;
+  PMLOG_INFO(CONST_MODULE_DC, "ended\n");
   return;
 }
 
 void DeviceControl::previewThread()
 {
+  PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) start!", cam_handle_);
   // poll for data on buffers and save captured image
   // lock so that if stop preview is called, first this cycle should complete
   std::lock_guard<std::mutex> guard(tMutex);
@@ -380,6 +382,7 @@ void DeviceControl::previewThread()
   b_isposhmwritedone_ = true;
   tCondVar.notify_one();
   tidPreview.detach();
+  PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) end!", cam_handle_);
   return;
 }
 
