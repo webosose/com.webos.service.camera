@@ -75,7 +75,6 @@ DeviceControl::DeviceControl()
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
       str_shmemname_(""), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG)
 {
-    handle_to_clean_ = -1;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -952,16 +951,12 @@ void DeviceControl::broadcast_()
     int errid = kill(it->pid, it->sig);
     if (errid == -1)
     {
-      int devhandle = it->handle;
-
       switch (errno)
       {
         case ESRCH:
           PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d does not exist and will be removed from the pool!!", it->pid);
           // remove this pid from the client pool to make ensure no zombie process exists.
           it = client_pool_.erase(it);
-          // try to clean a shared memory here if legitimate when the client app crashes.  
-          try_auto_clean_shared_memory_(devhandle);
           break;
         case EINVAL:
           PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d was given an invalid signal %d and will be be removed from the pool!!", it->pid, it->sig);
@@ -977,59 +972,4 @@ void DeviceControl::broadcast_()
       ++it;
     }  
   }
-}
-
-void DeviceControl::try_auto_clean_shared_memory_(int devhandle)
-{
-    PMLOG_INFO(CONST_MODULE_DC, "start");
-
-    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)h_shmsystem_;
-    void *shmem_addr = shmem_buffer->write_index;
-    struct shmid_ds shm_stat;
-    if (-1 != shmctl(shmem_buffer->shmem_id, IPC_STAT, &shm_stat))
-    {
-        PMLOG_INFO(CONST_MODULE_DC, "shared memory reference counter = %d\n", (int)shm_stat.shm_nattch);
-
-        if ((int)shm_stat.shm_nattch != 0)
-        {
-            tidCleaner_ = std::thread(&DeviceControl::cleaner_task_, this);
-            tidCleaner_.detach();
-           
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-
-            if ((int)shm_stat.shm_nattch == 1)
-            {
-                PMLOG_INFO(CONST_MODULE_DC, "This is no shared memory attached process except for the camera service itself\n");
-            }
-
-            std::lock_guard<std::mutex> mlock(cleaner_mutex_);
-            {
-                handle_to_clean_ = devhandle;
-                cleaner_trigger_.notify_one();
-            }
-        }
-    }
-
-    PMLOG_INFO(CONST_MODULE_DC, "end");
-}
-
-void DeviceControl::cleaner_task_()
-{
-    std::unique_lock<std::mutex> mlock(cleaner_mutex_);
-    {
-        cleaner_trigger_.wait(mlock);
-    
-
-        PMLOG_INFO(CONST_MODULE_DC, "start cleaner task.\n");
-
-        if (handle_to_clean_ != -1)
-        {
-            CommandManager::getInstance().stopPreview(handle_to_clean_);
-            CommandManager::getInstance().close(handle_to_clean_);
-            handle_to_clean_ = -1;
-        }
-   
-        PMLOG_INFO(CONST_MODULE_DC, "end cleaner task.\n");
-    }
-    return;   
 }

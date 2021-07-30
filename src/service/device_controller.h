@@ -79,12 +79,6 @@ private:
   std::vector<CLIENT_INFO_T> client_pool_;
   void broadcast_();
 
-  void try_auto_clean_shared_memory_(int);
-  std::mutex cleaner_mutex_;
-  std::condition_variable cleaner_trigger_;
-  std::thread tidCleaner_;
-  void cleaner_task_();
-  int handle_to_clean_;
 
 public:
   DeviceControl();

@@ -202,6 +202,8 @@ bool CameraService::open(LSMessage &message)
       open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       open.setDeviceHandle(ndevice_handle);
 
+      addClientWatcher(this->get(), &message, ndevice_handle);
+
       // add the client process Id to client pid pool if the pid is valid
       int n_client_pid = open.getClientProcessId();
       if (n_client_pid > 0)
@@ -223,10 +225,6 @@ bool CameraService::open(LSMessage &message)
             open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> :: " + outmsg);           
           }
         }
-      }
-      else
-      {
-        addClientWatcher(this->get(), &message, ndevice_handle);
       }
     }
   }
