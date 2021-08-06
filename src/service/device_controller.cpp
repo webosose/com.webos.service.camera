@@ -782,60 +782,24 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
   PMLOG_INFO(CONST_MODULE_DC, "started!\n");
 
   camera_properties_t in_params;
-
-  if (inparams->nFocusAbsolute != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nFocusAbsolute = inparams->nFocusAbsolute;
-
-  if (inparams->nAutoFocus != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nAutoFocus = inparams->nAutoFocus;
-
-  if (inparams->nZoomAbsolute != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nZoomAbsolute = inparams->nZoomAbsolute;
-
-  if (inparams->nPan != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nPan = inparams->nPan;
-
-  if (inparams->nTilt != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nTilt = inparams->nTilt;
-
-  if (inparams->nContrast != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nContrast = inparams->nContrast;
-
-  if (inparams->nBrightness != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nBrightness = inparams->nBrightness;
-
-  if (inparams->nSaturation != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nSaturation = inparams->nSaturation;
-
-  if (inparams->nSharpness != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nSharpness = inparams->nSharpness;
-
-  if (inparams->nHue != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nHue = inparams->nHue;
-
-  if (inparams->nAutoExposure != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nAutoExposure = inparams->nAutoExposure;
-
-  if (inparams->nAutoWhiteBalance != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nAutoWhiteBalance = inparams->nAutoWhiteBalance;
-
-  if (inparams->nExposure != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nExposure = inparams->nExposure;
-
-  if (inparams->nWhiteBalanceTemperature != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nWhiteBalanceTemperature = inparams->nWhiteBalanceTemperature;
-
-  if (inparams->nGain != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nGain = inparams->nGain;
-
-  if (inparams->nGamma != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nGamma = inparams->nGamma;
-
-  if (inparams->nFrequency != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nFrequency = inparams->nFrequency;
-
-  if (inparams->nBacklightCompensation != CONST_PARAM_DEFAULT_VALUE)
-    in_params.nBacklightCompensation = inparams->nBacklightCompensation;
+  in_params.nFocusAbsolute = inparams->nFocusAbsolute;
+  in_params.nAutoFocus = inparams->nAutoFocus;
+  in_params.nZoomAbsolute = inparams->nZoomAbsolute;
+  in_params.nPan = inparams->nPan;
+  in_params.nTilt = inparams->nTilt;
+  in_params.nContrast = inparams->nContrast;
+  in_params.nBrightness = inparams->nBrightness;
+  in_params.nSaturation = inparams->nSaturation;
+  in_params.nSharpness = inparams->nSharpness;
+  in_params.nHue = inparams->nHue;
+  in_params.nAutoExposure = inparams->nAutoExposure;
+  in_params.nAutoWhiteBalance = inparams->nAutoWhiteBalance;
+  in_params.nExposure = inparams->nExposure;
+  in_params.nWhiteBalanceTemperature = inparams->nWhiteBalanceTemperature;
+  in_params.nGain = inparams->nGain;
+  in_params.nGamma = inparams->nGamma;
+  in_params.nFrequency = inparams->nFrequency;
+  in_params.nBacklightCompensation = inparams->nBacklightCompensation;
 
   camera_hal_if_set_properties(handle, &in_params);
 
