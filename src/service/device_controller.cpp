@@ -323,6 +323,10 @@ void DeviceControl::previewThread()
   int framesize =
       streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
+  int debug_counter = 0;
+  int debug_interval = 100; // frames
+  auto tic = std::chrono::steady_clock::now();
+
   while (b_isstreamon_)
   {
     buffer_t frame_buffer;
@@ -373,6 +377,16 @@ void DeviceControl::previewThread()
     {
       PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
       break;
+    }
+
+    if (++debug_counter >= debug_interval)
+    {
+      auto toc = std::chrono::steady_clock::now();
+      auto us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
+      PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%u)",
+                 cam_handle_, debug_interval * 1000000.0f / us, client_pool_.size());
+      tic = toc;
+      debug_counter = 0;
     }
   }
 
@@ -905,13 +919,13 @@ bool DeviceControl::unregisterClient(pid_t pid, std::string& outmsg)
 
 void DeviceControl::broadcast_()
 {
-  PMLOG_INFO(CONST_MODULE_DC, "Broadcasting to %u clients\n", client_pool_.size());
+  PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
 
   auto it = client_pool_.begin();
   while (it != client_pool_.end())
   {
   
-    PMLOG_INFO(CONST_MODULE_DC, "About to send a signal %d to the client of pid %d ...\n", it->sig, it->pid);
+    PMLOG_DEBUG("About to send a signal %d to the client of pid %d ...\n", it->sig, it->pid);
     int errid = kill(it->pid, it->sig);
     if (errid == -1)
     {
