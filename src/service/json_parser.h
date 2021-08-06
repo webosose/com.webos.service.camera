@@ -465,6 +465,6 @@ void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, void *, jvalue_ref &);
 void mappingPropertieswithConstValues(std::map<std::string,int> &, CAMERA_PROPERTIES_T *);
 void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
                                               jvalue_ref &);
-void createGetPropertiesOutputJsonString(const std::string, int, jvalue_ref &);
+void createGetPropertiesOutputJsonString(const std::string, CAMERA_PROPERTIES_T *, jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/
