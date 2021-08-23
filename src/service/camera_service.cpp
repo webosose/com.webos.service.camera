@@ -282,12 +282,13 @@ bool CameraService::close(LSMessage &message)
         if (DEVICE_OK != err_id)
         {
           PMLOG_DEBUG("err_id != DEVICE_OK\n");
-          obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);           
+          obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);
         }
         else
         {
+          eraseWatcher(&message, ndevhandle);
           PMLOG_DEBUG("err_id == DEVICE_OK\n");
-          obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);          
+          obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);
         }
       }
     }
