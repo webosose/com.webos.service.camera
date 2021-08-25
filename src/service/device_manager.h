@@ -20,14 +20,28 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ------------------------------------------------------------------------------*/
+#include <map>
+#include <vector>
 #include "camera_hal_types.h"
 #include "camera_types.h"
+
+typedef struct _DEVICE_STATUS
+{
+  // Device
+  int nDeviceID;  // devicehandle - random number
+  int nDevIndex;  // index
+  int nDevCount;  // device count (# of device)
+  void *pcamhandle; // HAL handle
+  bool isDeviceOpen; // open or close
+  DEVICE_TYPE_T devType;  // CAM or MIC
+  DEVICE_LIST_T stList;   // name, id, node ...
+  std::vector<int> handleList;
+} DEVICE_STATUS;
 
 class DeviceManager
 {
 private:
-  int ndevcount_;
-
+  std::map<int, DEVICE_STATUS> deviceMap_;
   int findDevNum(int);
 
 public:
@@ -43,6 +57,10 @@ public:
   void getDeviceNode(int *, std::string &);
   void getDeviceHandle(int *, void **);
   int getDeviceId(int *);
+  bool addVirtualHandle(int devid, int virtualHandle);
+  bool eraseVirtualHandle(int deviceId, int virtualHandle);
+  bool addDevice(DEVICE_LIST_T *pList);
+  bool removeDevice(int devid);
 
   DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *) const;
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
