@@ -376,15 +376,40 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
       {
         if (iter->second.isDeviceOpen && iter->second.handleList.size() > 0)
         {
-          PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
+          struct UsrData {
+            int devhandle[MAX_DEVICE_COUNT];
+            int devhandle_count;
+            int devidx;
+          };
+          UsrData* udata = new UsrData;
           for (int i = 0 ; i<iter->second.handleList.size() ; i++)
-          {
-            CommandManager::getInstance().stopPreview(iter->second.handleList[i]);
-            CommandManager::getInstance().close(iter->second.handleList[i]);
-          }
-          PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");
+            udata->devhandle[i] = iter->second.handleList[i];
+          udata->devhandle_count = iter->second.handleList.size();
+          udata->devidx = iter->first;
+
+          g_idle_add(+[](gpointer data){
+            UsrData* udata = (UsrData*)data;
+
+            PMLOG_INFO(CONST_MODULE_DM, "start clear device, devhandle_count : %d, devidx : %d",
+                        udata->devhandle_count, udata->devidx);
+            for (int i=0 ; i<udata->devhandle_count ; i++)
+            {
+              CommandManager::getInstance().stopPreview(udata->devhandle[i]);
+              CommandManager::getInstance().close(udata->devhandle[i]);
+            }
+            DeviceManager::getInstance().removeDevice(udata->devidx);
+
+            PMLOG_INFO(CONST_MODULE_DM, "end cleaner task.\n");
+
+            delete udata;
+            return FALSE;
+          }, udata);
+          iter++;
         }
-        removeDevice(iter++->first);
+        else
+        {
+          removeDevice(iter++->first);
+        }
       }
       else
       {
