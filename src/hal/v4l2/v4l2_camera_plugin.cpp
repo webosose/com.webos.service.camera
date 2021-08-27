@@ -39,8 +39,8 @@ void destroy_handle(void *handle)
 }
 
 V4l2CameraPlugin::V4l2CameraPlugin()
-    : stream_format_(), buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_(),
-      io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_()
+    : buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_(),
+      io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_(),stream_format_()
 {
 }
 
@@ -843,7 +843,7 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer)
 
 int V4l2CameraPlugin::releaseMmapBuffers()
 {
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     if (CAMERA_ERROR_UNKNOWN == munmap(buffers_[i].start, buffers_[i].length))
     {
@@ -860,7 +860,7 @@ int V4l2CameraPlugin::releaseMmapBuffers()
 
 int V4l2CameraPlugin::releaseUserptrBuffers()
 {
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     free(buffers_[i].start);
     buffers_[i].start = NULL;
@@ -872,7 +872,7 @@ int V4l2CameraPlugin::releaseUserptrBuffers()
 
 int V4l2CameraPlugin::releaseDmaBuffersFd()
 {
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     close(dmafd_[i]);
     dmafd_[i] = -1;
@@ -884,7 +884,7 @@ int V4l2CameraPlugin::captureDataMmapMode()
 {
   struct v4l2_buffer buf;
 
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     CLEAR(buf);
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -912,7 +912,7 @@ int V4l2CameraPlugin::captureDataMmapMode()
 
 int V4l2CameraPlugin::captureDataUserptrMode()
 {
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     struct v4l2_buffer buf;
 
@@ -979,7 +979,7 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
                  strerror(errno));
     return CAMERA_ERROR_UNKNOWN;
   }
-  for(unsigned int i = 0; i < req.count; i++)
+  for(int i = 0; i < req.count; i++)
   {
     struct v4l2_buffer qrybuf = {0};
 
@@ -1000,7 +1000,7 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
 int V4l2CameraPlugin::captureDataDmaMode()
 {
   struct v4l2_buffer buf;
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     CLEAR(buf);
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -1031,7 +1031,7 @@ int V4l2CameraPlugin::getBufferFd(int *bufFd, int *count)
   struct v4l2_exportbuffer expbuf;
   *count = 0;
 
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  for (int i = 0; i < n_buffers_; ++i)
   {
     CLEAR(expbuf);
     expbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -1095,7 +1095,7 @@ unsigned long V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camer
   return pixel_format;
 }
 
-camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(unsigned long fourcc_format)
+camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(int fourcc_format)
 {
   camera_pixel_format_t camera_format = CAMERA_PIXEL_FORMAT_YUYV;
 

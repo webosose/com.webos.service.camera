@@ -72,7 +72,7 @@ extern "C"
     void createFourCCPixelFormatMap();
     void createCameraPixelFormatMap();
     unsigned long getFourCCPixelFormat(camera_pixel_format_t);
-    camera_pixel_format_t getCameraPixelFormat(unsigned long);
+    camera_pixel_format_t getCameraPixelFormat(int);
 
     static int xioctl(int, int, void *);
 
