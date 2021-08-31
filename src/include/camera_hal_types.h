@@ -85,6 +85,8 @@ static PmLogContext getHALLunaPmLogContext()
   return usLogContext;
 }
 
-#define HAL_LOG_INFO(module, args...) PmLogMsg(getHALLunaPmLogContext(), Info, module, 0, ##args)
+#define HAL_LOG_INFO(module, FORMAT__, ...) \
+  PmLogInfo(getHALLunaPmLogContext(), \
+  module, 0, "%s():%d " FORMAT__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #endif
