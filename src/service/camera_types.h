@@ -218,6 +218,8 @@ typedef struct
   int nPortNum;
   char strVendorName[CONST_MAX_STRING_LENGTH];
   char strProductName[CONST_MAX_STRING_LENGTH];
+  char strVendorID[CONST_MAX_STRING_LENGTH];
+  char strProductID[CONST_MAX_STRING_LENGTH];
   char strDeviceType[CONST_MAX_STRING_LENGTH];
   char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
   int isPowerOnConnect;
