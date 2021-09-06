@@ -79,6 +79,8 @@ private:
   std::vector<CLIENT_INFO_T> client_pool_;
   void broadcast_();
 
+  bool cancel_preview_;
+  int buf_size_;
 
 public:
   DeviceControl();
@@ -101,6 +103,8 @@ public:
 
   bool registerClient(pid_t, int, int, std::string& outmsg);
   bool unregisterClient(pid_t, std::string& outmsg);
+
+  void requestPreviewCancel();
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

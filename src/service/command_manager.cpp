@@ -402,3 +402,18 @@ void CommandManager::handleCrash()
 
     PMLOG_INFO(CONST_MODULE_CM, "end freeing resources for abnormal service termination \n");
 }
+
+void CommandManager::requestPreviewCancel(int dev_idx)
+{
+    PMLOG_INFO(CONST_MODULE_CM, "requestPreviewCancel() dev_idx : %d\n", dev_idx);
+
+    std::multimap<std::string, Device>::iterator it;
+    for (it = virtualdevmgrobj_map_.begin(); it != virtualdevmgrobj_map_.end(); ++it)
+    {
+        Device obj = it->second;
+        if (dev_idx == obj.deviceid)
+        {
+            obj.ptr->requestPreviewCancel();
+        }
+    }
+}

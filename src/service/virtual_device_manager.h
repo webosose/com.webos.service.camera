@@ -80,6 +80,8 @@ public:
 
   bool registerClient(int, int, int, std::string&);
   bool unregisterClient(int, std::string&);
+
+  void requestPreviewCancel();
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

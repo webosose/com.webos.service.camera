@@ -233,7 +233,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
       {
         // close the actual device
         ret = objdevicecontrol_.close(handle);
-        //if (DEVICE_OK == ret)
+        if (DEVICE_OK == ret)
         {
           DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
           ret = objdevicecontrol_.destroyHandle(handle);
@@ -242,8 +242,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
           // since the device is closed, remove the element from map
           removeHandlePriorityObj(devhandle);
         }
-        //else
-        //  PMLOG_ERROR(CONST_MODULE_VDM, "Failed to close device\n");
+        else
+          PMLOG_ERROR(CONST_MODULE_VDM, "Failed to close device\n");
       }
       else
       {
@@ -407,7 +407,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
         // stop preview
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.stopPreview(handle, memtype);
         // reset preview parameters for camera device
-        //if (DEVICE_OK == ret)
+        if (DEVICE_OK == ret)
         {
           // remove the handle from vector since stopPreview is called
           npreviewhandle_.erase(position);
@@ -788,4 +788,9 @@ bool VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig, in
 bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string & outmsg)
 {
   return objdevicecontrol_.unregisterClient((pid_t)n_client_pid, outmsg);
+}
+
+void VirtualDeviceManager::requestPreviewCancel()
+{
+    objdevicecontrol_.requestPreviewCancel();
 }
