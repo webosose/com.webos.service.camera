@@ -63,20 +63,13 @@ int VirtualDeviceManager::getVirtualDeviceHandle(int devid)
   obj_devstate.ndeviceid_ = DeviceManager::getInstance().getDeviceId(&devid);
   obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
   virtualhandle_map_[virtual_devhandle] = obj_devstate;
-  PMLOG_INFO(CONST_MODULE_VDM, "devid: %d, virtual_devhandle:%d, ndeviceid_:%d",
-    devid, virtual_devhandle, obj_devstate.ndeviceid_);
-  DeviceManager::getInstance().addVirtualHandle(devid, virtual_devhandle);
-  PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %d", virtualhandle_map_.size());
   return virtual_devhandle;
 }
 
 void VirtualDeviceManager::removeVirtualDeviceHandle(int devhandle)
 {
   // remove virtual device handle key value from map
-  int devid = virtualhandle_map_[devhandle].ndeviceid_;
-  DeviceManager::getInstance().eraseVirtualHandle(devid, devhandle);
   virtualhandle_map_.erase(devhandle);
-  PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %d", virtualhandle_map_.size());
 }
 
 std::string VirtualDeviceManager::getAppPriority(int devhandle)
@@ -233,22 +226,22 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
       {
         // close the actual device
         ret = objdevicecontrol_.close(handle);
-        //if (DEVICE_OK == ret)
+        if (DEVICE_OK == ret)
         {
           DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
           ret = objdevicecontrol_.destroyHandle(handle);
           // remove the virtual device
-          removeVirtualDeviceHandle(devhandle);
+          removeVirtualDeviceHandle(deviceid);
           // since the device is closed, remove the element from map
           removeHandlePriorityObj(devhandle);
         }
-        //else
-        //  PMLOG_ERROR(CONST_MODULE_VDM, "Failed to close device\n");
+        else
+          PMLOG_ERROR(CONST_MODULE_VDM, "Failed to close device\n");
       }
       else
       {
         // remove the virtual device
-        removeVirtualDeviceHandle(devhandle);
+        removeVirtualDeviceHandle(deviceid);
         // remove the app from map
         removeHandlePriorityObj(devhandle);
       }
@@ -258,7 +251,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
     else
     {
       // remove the virtual device
-      removeVirtualDeviceHandle(devhandle);
+      removeVirtualDeviceHandle(deviceid);
       // remove the app from map
       removeHandlePriorityObj(devhandle);
       return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
@@ -407,7 +400,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
         // stop preview
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.stopPreview(handle, memtype);
         // reset preview parameters for camera device
-        //if (DEVICE_OK == ret)
+        if (DEVICE_OK == ret)
         {
           // remove the handle from vector since stopPreview is called
           npreviewhandle_.erase(position);
