@@ -75,6 +75,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/cam_posixshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
     ${CMAKE_SOURCE_DIR}/src/service/whitelist_checker.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/event_notification.cpp
     )
 
 add_executable(${PROJECT_NAME}

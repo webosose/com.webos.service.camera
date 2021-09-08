@@ -104,15 +104,12 @@ int CameraService::getId(std::string cameraid)
   return num;
 }
 
-void CameraService::createEventMessage(EventType etype, void *pdata, int devhandle)
+void CameraService::createEventMessage(EventType etype, void *p_old_data, int devhandle)
 {
-  objevent_.setEventType(etype);
 
   int deviceid = CommandManager::getInstance().getCameraId(devhandle);
   std::string cameraid = "camera" + std::to_string(deviceid);
-  objevent_.setCameraId(cameraid);
-
-  std::string output_reply = cstr_empty;
+  event_obj.setCameraId(cameraid);
 
   if(EventType::EVENT_TYPE_FORMAT == etype)
   {
@@ -120,13 +117,12 @@ void CameraService::createEventMessage(EventType etype, void *pdata, int devhand
     CAMERA_FORMAT newformat;
     CommandManager::getInstance().getFormat(devhandle, &newformat);
 
-    auto *p_old_format = static_cast<CAMERA_FORMAT *>(pdata);
+    auto *p_old_format = static_cast<CAMERA_FORMAT *>(p_old_data);
 
     if(*p_old_format != newformat)
     {
-      auto *p_outdata = static_cast<void *>(&newformat);
-      objevent_.setEventData(p_outdata);
-      output_reply = objevent_.createEventObjectJsonString(pdata);
+      auto *p_cur_data = static_cast<void *>(&newformat);
+      event_obj.eventReply(this->get(), CONST_EVENT_NOTIFICATION, p_cur_data, p_old_data, etype);
     }
   }
   else if(EventType::EVENT_TYPE_PROPERTIES == etype)
@@ -135,30 +131,17 @@ void CameraService::createEventMessage(EventType etype, void *pdata, int devhand
     CAMERA_PROPERTIES_T new_property;
     CommandManager::getInstance().getProperty(devhandle, &new_property);
 
-    auto *p_old_property = static_cast<CAMERA_PROPERTIES_T *>(pdata);
+    auto *p_old_property = static_cast<CAMERA_PROPERTIES_T *>(p_old_data);
 
     if(*p_old_property != new_property)
     {
-      auto *p_outdata = static_cast<void *>(&new_property);
-      objevent_.setEventData(p_outdata);
-      output_reply = objevent_.createEventObjectJsonString(pdata);
+      auto *p_cur_data = static_cast<void *>(&new_property);
+      event_obj.eventReply(this->get(), CONST_EVENT_NOTIFICATION, p_cur_data, p_old_data, etype);
     }
   }
   else
   {
     PMLOG_INFO(CONST_MODULE_LUNA, "Unknown Event received\n");
-  }
-
-  if(cstr_empty != output_reply)
-  {
-    LSError error;
-    LSErrorInit(&error);
-    if (!LSSubscriptionReply(this->get(), CONST_EVENT_NOTIFICATION, output_reply.c_str(), &error))
-    {
-      PMLOG_INFO(CONST_MODULE_LUNA, "LSSubscriptionReply failed\n");
-      LSErrorPrint(&error, stderr);
-    }
-    LSErrorFree(&error);
   }
 }
 
@@ -814,38 +797,14 @@ bool CameraService::setFormat(LSMessage &message)
 bool CameraService::getEventNotification(LSMessage &message)
 {
   auto *payload = LSMessageGetPayload(&message);
-  PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
-  LSError error;
-  LSErrorInit(&error);
+  bool returnVal = event_obj.addSubscription(this->get(), CONST_EVENT_NOTIFICATION, message);
 
-  objevent_.getEventObject(payload, getEventNotificationSchema);
-  int ndev_id = getId(objevent_.getCameraId());
+  std::string output_reply = event_obj.subscriptionJsonString(returnVal);
 
-  if (LSMessageIsSubscription(&message))
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA, "getEventNotification LSMessageIsSubscription success\n");
-    if (!LSSubscriptionAdd(this->get(), CONST_EVENT_NOTIFICATION, &message, &error))
-    {
-      PMLOG_INFO(CONST_MODULE_LUNA, "getEventNotification LSSubscriptionAdd failed\n");
-      LSErrorPrint(&error, stderr);
-    }
-  }
-
-  int ndevhandle = CommandManager::getInstance().getCameraHandle(ndev_id);
-  CAMERA_FORMAT format;
-  CommandManager::getInstance().getFormat(ndevhandle, &format);
-
-  CAMERA_PROPERTIES_T property;
-  CommandManager::getInstance().getProperty(ndevhandle, &property);
-
-  // create json string now for reply
-  std::string output_reply = objevent_.createEventObjectSubscriptionJsonString(&format, &property);
   PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
 
   LS::Message request(&message);
   request.respond(output_reply.c_str());
-
-  LSErrorFree(&error);
 
   return true;
 }
