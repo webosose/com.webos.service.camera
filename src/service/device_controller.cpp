@@ -769,12 +769,11 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   //update stGetData
   for (int i = 0; i < PROPERTY_END; i++)
   {
-     for (int j = 0; j < QUERY_END; j++)
-	 {
-          oparams->stGetData.data[i][j] = out_params.stGetData.data[i][j];
-
-		   PMLOG_INFO(CONST_MODULE_DC, "out_params.stGetData[%d][%d]:%d\n", i, j, out_params.stGetData.data[i][j]);
-     }
+    for (int j = 0; j < QUERY_END; j++)
+    {
+      oparams->stGetData.data[i][j] = out_params.stGetData.data[i][j];
+      PMLOG_DEBUG("out_params.stGetData[%d][%d]:%d\n", i, j, out_params.stGetData.data[i][j]);
+    }
   }
 
   // update resolution structure
@@ -789,7 +788,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
     {
       oparams->stResolution.n_height[n][count] = out_params.stResolution.n_height[n][count];
       oparams->stResolution.n_width[n][count] = out_params.stResolution.n_width[n][count];
-      PMLOG_INFO(CONST_MODULE_DC, "out_params.stResolution.c_res %s\n",
+      PMLOG_DEBUG("out_params.stResolution.c_res %s\n",
                  out_params.stResolution.c_res[n][count]);
       memset(oparams->stResolution.c_res[n][count], '\0',
              sizeof(oparams->stResolution.c_res[n][count]));
