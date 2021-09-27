@@ -166,8 +166,8 @@ enum class CameraDeviceState
 /*Structures*/
 struct CAMERA_FORMAT
 {
-  int nWidth;
-  int nHeight;
+  unsigned int nWidth;
+  unsigned int nHeight;
   int nFps;
   camera_format_t eFormat;
   bool operator != (const CAMERA_FORMAT &);
