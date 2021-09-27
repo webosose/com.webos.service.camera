@@ -25,8 +25,6 @@
 #include "luna-service2/lunaservice.hpp"
 #include "pdm_client.h"
 
-static void updateDeviceList(DEVICE_LIST_T *);
-
 class Notifier
 {
 private:

@@ -19,7 +19,6 @@
  (File Inclusions)
  -- ----------------------------------------------------------------------------*/
 #include "camera_service.h"
-#include "camera_hal_types.h"
 #include "camera_types.h"
 #include "command_manager.h"
 #include "json_schema.h"
@@ -219,10 +218,10 @@ bool CameraService::open(LSMessage &message)
             PMLOG_INFO(CONST_MODULE_LUNA, "%s", outmsg.c_str());
             open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> ::" + outmsg);
           }
-          else // opened camera itself is valid! 
+          else // opened camera itself is valid!
           {
             PMLOG_INFO(CONST_MODULE_LUNA, "%s", outmsg.c_str());
-            open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> :: " + outmsg);           
+            open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> :: " + outmsg);
           }
         }
       }
@@ -264,8 +263,8 @@ bool CameraService::close(LSMessage &message)
     if (n_client_pid > 0)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "Try to unregister the client of pid %d\n", n_client_pid);
-      
-      // first try remove the client pid from the client pid pool if the pid is valid  
+
+      // first try remove the client pid from the client pid pool if the pid is valid
       std::string pid_msg;
       bool bRetVal;
       bRetVal = CommandManager::getInstance().unregisterClientPid(ndevhandle, n_client_pid, pid_msg);
@@ -273,7 +272,7 @@ bool CameraService::close(LSMessage &message)
       {
         PMLOG_INFO(CONST_MODULE_LUNA, "%s", pid_msg.c_str());
         obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, 0, pid_msg);
-      } 
+      }
       else // if successul then close device here
       {
         PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
@@ -342,7 +341,7 @@ bool CameraService::startPreview(LSMessage &message)
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() ndevhandle : %d\n");
+    PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() ndevhandle : %d" , ndevhandle);
     // start preview here
     int key = 0;
 
@@ -891,7 +890,7 @@ bool CameraService::getFd(LSMessage &message)
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService:: %s\n", getErrorString(err_id));
+      PMLOG_INFO(CONST_MODULE_LUNA, "CameraService:: %s", getErrorString(err_id).c_str());
       obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
   }
@@ -982,7 +981,7 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
 
     if (!connected) {
       std::string name = service_name;
-      DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+      //DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
       PMLOG_INFO(CONST_MODULE_LUNA, "disconnect:%s\n", service_name);
 
       for(auto it = self->cameraHandleMap.begin(); it != self->cameraHandleMap.end(); ++it)
@@ -1023,7 +1022,7 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
 int main(int argc, char *argv[])
 {
   install_handler_service_crash();
-  
+
   try
   {
     CameraService camerasrv;

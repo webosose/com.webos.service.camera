@@ -68,7 +68,7 @@ static void _device_init(int devicenum, char *devicenode)
           if (nDeviceNumber == devicenum)
           {
             if(strDeviceNode) {
-              PMLOG_INFO(CONST_MODULE_PDMCLIENT,"_device_init  devicenode len = %lu", strlen(strDeviceNode));
+              PMLOG_INFO(CONST_MODULE_PDMCLIENT,"_device_init  devicenode len = %u", strlen(strDeviceNode));
               strncpy(devicenode, strDeviceNode, strlen(strDeviceNode));
               devicenode[strlen(strDeviceNode)] = '\0';
               PMLOG_INFO(CONST_MODULE_PDMCLIENT,"_device_init devicenode is %s", devicenode);

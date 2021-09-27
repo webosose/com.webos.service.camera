@@ -208,7 +208,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
     // check if device state is open then only allow to close
     if (CameraDeviceState::CAM_DEVICE_STATE_OPEN != obj_devstate.ecamstate_)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", obj_devstate.ecamstate_);
+      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
       return DEVICE_ERROR_CAN_NOT_CLOSE;
     }
 
@@ -277,7 +277,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
     // check if device state is open then only allow to start preview
     if (CameraDeviceState::CAM_DEVICE_STATE_OPEN != obj_devstate.ecamstate_)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", obj_devstate.ecamstate_);
+      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
       return DEVICE_ERROR_CAN_NOT_START;
     }
 
@@ -360,7 +360,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
     // check if device state is preview then only allow to stop preview
     if (CameraDeviceState::CAM_DEVICE_STATE_PREVIEW != obj_devstate.ecamstate_)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", obj_devstate.ecamstate_);
+      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
       return DEVICE_ERROR_CAN_NOT_STOP;
     }
 

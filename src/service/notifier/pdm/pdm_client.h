@@ -22,8 +22,6 @@
 #include <functional>
 #include <luna-service2/lunaservice.hpp>
 
-static bool deviceStateCb(LSHandle *, LSMessage *, void *);
-
 using pdmhandlercb = std::function<void(DEVICE_LIST_T *)>;
 
 class PDMClient : public DeviceNotifier

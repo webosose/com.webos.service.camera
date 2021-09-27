@@ -18,7 +18,6 @@
 #define CAMERA_TYPES_H_
 
 #include "PmLogLib.h"
-#include "camera_hal_types.h"
 #include "camera_hal_if_types.h"
 #include "constants.h"
 #include "luna-service2/lunaservice.h"
@@ -238,7 +237,16 @@ typedef struct
   void *pdata;
 } event_notification_t;
 
-PmLogContext getCameraLunaPmLogContext();
+static inline PmLogContext getCameraLunaPmLogContext()
+{
+  static PmLogContext usLogContext = 0;
+  if (0 == usLogContext)
+  {
+    PmLogGetContext("camera", &usLogContext);
+  }
+  return usLogContext;
+}
+
 void getFormatString(int, char *);
 char *getTypeString(device_t);
 int getRandomNumber();

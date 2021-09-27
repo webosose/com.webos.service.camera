@@ -87,17 +87,6 @@ std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFIN
                                                           {CAMERA_FORMAT_H264ES, "H264ES"},
                                                           {CAMERA_FORMAT_JPEG, "JPEG"}};
 
-extern PmLogContext getCameraLunaPmLogContext()
-{
-  static PmLogContext usLogContext = 0;
-  if (0 == usLogContext)
-  {
-    PmLogGetContext("camera", &usLogContext);
-  }
-  return usLogContext;
-}
-
-
 int getRandomNumber()
 {
     static unsigned int random_value = 0;

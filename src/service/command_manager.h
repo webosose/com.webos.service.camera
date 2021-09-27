@@ -24,7 +24,6 @@
 #include <map>
 #include <string>
 
-#include "camera_hal_types.h"
 #include "virtual_device_manager.h"
 
 class Device
@@ -68,7 +67,7 @@ public:
   DEVICE_RETURN_CODE_T getFd(int, int *);
   int getCameraId(int);
   int getCameraHandle(int);
-  
+
   bool registerClientPid(int,int,int,std::string&);
   bool unregisterClientPid(int,int,std::string&);
 
