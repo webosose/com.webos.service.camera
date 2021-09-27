@@ -106,8 +106,8 @@ typedef enum
 typedef struct
 {
   camera_pixel_format_t pixel_format;
-  int stream_width;
-  int stream_height;
+  unsigned int stream_width;
+  unsigned int stream_height;
   int stream_fps;
   unsigned int buffer_size;
 } stream_format_t;
