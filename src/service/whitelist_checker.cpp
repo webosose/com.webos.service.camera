@@ -33,7 +33,7 @@ WhitelistChecker::~WhitelistChecker()
 
 bool WhitelistChecker::check(LSHandle *lsHandle, const std::string &vendor, const std::string &subtype)
 {
-    PMLOG_INFO(CONST_MODULE_WLIST, "%s", __func__);
+    PMLOG_INFO(CONST_MODULE_WLIST, "vendor=[%s], subtype=[%s]", vendor.c_str(), subtype.c_str());
 
     bool retValue = isSupportedCamera(vendor, subtype);
 
@@ -51,7 +51,7 @@ bool WhitelistChecker::check(LSHandle *lsHandle, const std::string &vendor, cons
 
 bool WhitelistChecker::createToast(    LSHandle *lsHandle, const std::string &message)
 {
-    PMLOG_INFO(CONST_MODULE_WLIST, "%s %s", __func__, message.c_str());
+    PMLOG_INFO(CONST_MODULE_WLIST, "message=[%s]",  message.c_str());
 
     LSError lserror;
     LSErrorInit(&lserror);
@@ -78,13 +78,13 @@ bool WhitelistChecker::createToast(    LSHandle *lsHandle, const std::string &me
 
 pbnjson::JValue WhitelistChecker::getListFromConfigd()
 {
-    PMLOG_INFO(CONST_MODULE_WLIST, "%s not implemented", __func__);
+    PMLOG_INFO(CONST_MODULE_WLIST, "not implemented");
     return NULL;
 }
 
 bool WhitelistChecker::isSupportedCamera(std::string vendor, std::string subtype)
 {
-    PMLOG_INFO(CONST_MODULE_WLIST, "%s [%s] [%s]", __func__, vendor.c_str(), subtype.c_str());
+    PMLOG_INFO(CONST_MODULE_WLIST, "vendor=[%s], subtype=[%s]", vendor.c_str(), subtype.c_str());
 
     bool retValue = false;
 
@@ -114,6 +114,11 @@ bool WhitelistChecker::isSupportedCamera(std::string vendor, std::string subtype
 
     for (int idx = 0; idx < whiteList.arraySize(); idx++) {
         auto wlist = whiteList[idx];
+
+        PMLOG_ERROR(CONST_MODULE_WLIST, "whiteList[%d] ==========", idx);
+        PMLOG_ERROR(CONST_MODULE_WLIST, "deviceSubtype: %s", wlist["deviceSubtype"].asString().c_str());
+        PMLOG_ERROR(CONST_MODULE_WLIST, "vendorName: %s", wlist["vendorName"].asString().c_str());
+
         if(wlist["vendorName"].asString().compare(vendor)==0 && wlist["deviceSubtype"].asString().compare(subtype)==0) {
             retValue = true;
         }
