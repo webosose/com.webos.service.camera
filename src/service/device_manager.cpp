@@ -430,15 +430,12 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
   memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
   strncpy(p_info->str_devicename, deviceMap_[ncam_id].stList.strProductName,
           sizeof(p_info->str_devicename)-1);
-  //TODO : add this code after str_vendorid and str_productid defined
-  /*
   memset(p_info->str_vendorid, '\0', sizeof(p_info->str_vendorid));
   strncpy(p_info->str_vendorid, deviceMap_[ncam_id].stList.strVendorID,
           sizeof(p_info->str_vendorid)-1);
   memset(p_info->str_productid, '\0', sizeof(p_info->str_productid));
   strncpy(p_info->str_productid, deviceMap_[ncam_id].stList.strProductID,
           sizeof(p_info->str_productid)-1);
-  */
 
   return ret;
 }
