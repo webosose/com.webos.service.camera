@@ -77,6 +77,7 @@ private:
   static int n_imagecount_;
 
   std::vector<CLIENT_INFO_T> client_pool_;
+  std::mutex client_pool_mutex_;
   void broadcast_();
 
   bool cancel_preview_;

@@ -875,79 +875,88 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
 
 bool DeviceControl::registerClient(pid_t pid, int sig, int devhandle, std::string& outmsg)
 {
-  auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                         [=](const CLIENT_INFO_T& p) {
-                           return p.pid == pid;
-                         });
+  std::lock_guard<std::mutex> mlock(client_pool_mutex_);
+  {
+    auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
+                           [=](const CLIENT_INFO_T& p) {
+                             return p.pid == pid;
+                           });
 
-  if (it == client_pool_.end())
-  {
-    CLIENT_INFO_T p = {pid, sig, devhandle};
-    client_pool_.push_back(p);
-    outmsg = "The client of pid " + std::to_string(pid) + " registered with sig " + std::to_string(sig) + " :: OK";
-    return true;
-  }
-  else
-  {
-    outmsg = "The client of pid " + std::to_string(pid) + " is already registered :: ignored";
-    PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
-    return false;
+    if (it == client_pool_.end())
+    {
+      CLIENT_INFO_T p = {pid, sig, devhandle};
+      client_pool_.push_back(p);
+      outmsg = "The client of pid " + std::to_string(pid) + " registered with sig " + std::to_string(sig) + " :: OK";
+      return true;
+    }
+    else
+    {
+      outmsg = "The client of pid " + std::to_string(pid) + " is already registered :: ignored";
+      PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
+      return false;
+    }
   }
 }
 
 bool DeviceControl::unregisterClient(pid_t pid, std::string& outmsg)
 {
-  auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                         [=](const CLIENT_INFO_T& p) {
-                           return p.pid == pid;
-                         });
+  std::lock_guard<std::mutex> mlock(client_pool_mutex_);
+  {
+    auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
+                           [=](const CLIENT_INFO_T& p) {
+                             return p.pid == pid;
+                           });
 
-  if (it != client_pool_.end())
-  {
-    client_pool_.erase(it);
-    outmsg = "The client of pid " + std::to_string(pid) + " unregistered :: OK";
-    PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
-    return true;
-  }
-  else
-  {
-    outmsg = "No client of pid " + std::to_string(pid) + " exists :: ignored";
-    PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
-    return false;
+    if (it != client_pool_.end())
+    {
+      client_pool_.erase(it);
+      outmsg = "The client of pid " + std::to_string(pid) + " unregistered :: OK";
+      PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
+      return true;
+    }
+    else
+    {
+      outmsg = "No client of pid " + std::to_string(pid) + " exists :: ignored";
+      PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
+      return false;
+    }
   }
 }
 
 void DeviceControl::broadcast_()
 {
-  PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
-
-  auto it = client_pool_.begin();
-  while (it != client_pool_.end())
+  std::lock_guard<std::mutex> mlock(client_pool_mutex_);
   {
+    PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
+    
+    auto it = client_pool_.begin();
+    while (it != client_pool_.end())
+    {
 
-    PMLOG_DEBUG("About to send a signal %d to the client of pid %d ...\n", it->sig, it->pid);
-    int errid = kill(it->pid, it->sig);
-    if (errid == -1)
-    {
-      switch (errno)
+      PMLOG_DEBUG("About to send a signal %d to the client of pid %d ...\n", it->sig, it->pid);
+      int errid = kill(it->pid, it->sig);
+      if (errid == -1)
       {
-        case ESRCH:
-          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d does not exist and will be removed from the pool!!", it->pid);
-          // remove this pid from the client pool to make ensure no zombie process exists.
-          it = client_pool_.erase(it);
-          break;
-        case EINVAL:
-          PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d was given an invalid signal %d and will be be removed from the pool!!", it->pid, it->sig);
-          it = client_pool_.erase(it);
-          break;
-        default: // case errno = EPERM
-          PMLOG_ERROR(CONST_MODULE_DC, "Unexpected error in sending the signal to the client of pid %d\n", it->pid);
-          break;
+        switch (errno)
+        {
+          case ESRCH:
+            PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d does not exist and will be removed from the pool!!", it->pid);
+            // remove this pid from the client pool to make ensure no zombie process exists.
+            it = client_pool_.erase(it);
+            break;
+          case EINVAL:
+            PMLOG_ERROR(CONST_MODULE_DC, "The client of pid %d was given an invalid signal %d and will be be removed from the pool!!", it->pid, it->sig);
+            it = client_pool_.erase(it);
+            break;
+          default: // case errno = EPERM
+            PMLOG_ERROR(CONST_MODULE_DC, "Unexpected error in sending the signal to the client of pid %d\n", it->pid);
+            break;
+        }
       }
-    }
-    else
-    {
-      ++it;
+      else
+      {
+        ++it;
+      }
     }
   }
 }
