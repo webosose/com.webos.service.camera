@@ -46,7 +46,7 @@ V4l2CameraPlugin::V4l2CameraPlugin()
 
 int V4l2CameraPlugin::openDevice(string devname)
 {
-  fd_ = open(devname.c_str(), O_RDWR);
+  fd_ = open(devname.c_str(), O_RDWR | O_NONBLOCK);
   if (CAMERA_ERROR_UNKNOWN == fd_)
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "cannot open : %s , %d, %s", devname.c_str(),
