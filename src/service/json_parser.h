@@ -434,9 +434,36 @@ private:
   MethodReply objreply_;
 };
 
+class EventNotification
+{
+public:
+  EventNotification()
+  {
+    etype_ = EventType::EVENT_TYPE_NONE;
+    pdata_ = nullptr;
+    b_issubscribed_ = false;
+  }
+  ~EventNotification() {}
+
+  void getEventObject(const char *, const char *);
+  std::string createEventObjectJsonString(void *) const;
+  std::string createEventObjectSubscriptionJsonString(CAMERA_FORMAT *, CAMERA_PROPERTIES_T *) const;
+  void setEventType(EventType etype) { etype_ = etype; }
+  void setEventData(void *data) { pdata_ = data; }
+  void setCameraId(const std::string& camid) { strcamid_ = camid; }
+  std::string getCameraId() { return strcamid_; }
+
+private:
+  EventType etype_;
+  void *pdata_;
+  bool b_issubscribed_;
+  std::string strcamid_;
+  void outputObjectFormat(CAMERA_FORMAT *, jvalue_ref &)const;
+  void outputObjectProperties(CAMERA_PROPERTIES_T *, jvalue_ref &)const;
+};
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
-void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, CAMERA_PROPERTIES_T *, jvalue_ref &);
+void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, void *, jvalue_ref &);
 void mappingPropertieswithConstValues(std::map<std::string,int> &, CAMERA_PROPERTIES_T *);
 void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
                                               jvalue_ref &);

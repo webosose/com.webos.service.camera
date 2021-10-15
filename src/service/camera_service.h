@@ -23,7 +23,6 @@
 #include "camera_types.h"
 #include "json_parser.h"
 #include "luna-service2/lunaservice.hpp"
-#include "event_notification.h"
 #include <glib.h>
 
 class CameraService : public LS::Handle
@@ -32,7 +31,7 @@ private:
   using mainloop = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
   mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
 
-  EventNotification event_obj;
+  EventNotification objevent_;
 
   int getId(std::string);
   void createEventMessage(EventType, void *, int);

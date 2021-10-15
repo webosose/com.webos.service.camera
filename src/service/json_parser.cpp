@@ -509,9 +509,8 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
     {
       CAMERA_PROPERTIES_T obj = rGetCameraProperties();
       CAMERA_PROPERTIES_T default_obj;
-
-      createGetPropertiesJsonString(&obj, &default_obj, json_outobjparams);
-
+      void *data = (void *)&default_obj;
+      createGetPropertiesJsonString(&obj, data, json_outobjparams);
       // add resolution structure
       jvalue_ref json_resolutionobj = jobject_create();
       for (int nformat = 0; nformat < rGetCameraProperties().stResolution.n_formatindex; nformat++)
@@ -714,10 +713,207 @@ void createJsonStringFailure(MethodReply obj_reply, jvalue_ref &json_outobj)
   return;
 }
 
-void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *properties, CAMERA_PROPERTIES_T *old_property,
->>>>>>> 4ee9090... add event notification(device connect/disconnect)
+void EventNotification::getEventObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    jboolean_get(jobject_get(j_obj, J_CSTR_TO_BUF("subscribe")), (bool *)&b_issubscribed_);
+  }
+  else
+  {
+    b_issubscribed_ = false;
+  }
+  j_release(&j_obj);
+}
+
+std::string EventNotification::createEventObjectJsonString(void *pdata) const
+{
+  jvalue_ref json_outobj = jobject_create();
+  std::string strreply;
+
+  // return value
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+              jboolean_create(b_issubscribed_));
+
+  // event type
+  std::string event = getEventNotificationString(etype_);
+
+  if (cstr_format == event)
+  {
+    if (nullptr != pdata_)
+    {
+      // camera id
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ID),
+                  jstring_create(strcamid_.c_str()));
+      // eventType
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EVENT),
+                  jstring_create(event.c_str()));
+
+      CAMERA_FORMAT *format = static_cast<CAMERA_FORMAT *>(pdata_);
+      jvalue_ref json_outobjparams = jobject_create();
+
+      CAMERA_FORMAT *old_format = static_cast<CAMERA_FORMAT *>(pdata);
+      int nWidth = (int)format->nWidth;
+      int nHeight = (int)format->nHeight;
+
+      if (old_format->nWidth != format->nWidth)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
+                    jnumber_create_i32(nWidth));
+      if (old_format->nHeight != format->nHeight)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
+                    jnumber_create_i32(nHeight));
+      if (old_format->nFps != format->nFps)
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
+                    jnumber_create_i32(format->nFps));
+
+      if (old_format->eFormat != format->eFormat)
+      {
+        std::string strformat = getFormatStringFromCode(format->eFormat);
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
+                    jstring_create(strformat.c_str()));
+      }
+
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMATINFO), json_outobjparams);
+    }
+  }
+  else if (cstr_properties == event)
+  {
+    if (nullptr != pdata_)
+    {
+      // camera id
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ID),
+                  jstring_create(strcamid_.c_str()));
+      // eventType
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EVENT),
+                  jstring_create(event.c_str()));
+
+      jvalue_ref json_outobjparams = jobject_create();
+      CAMERA_PROPERTIES_T *properties = static_cast<CAMERA_PROPERTIES_T *>(pdata_);
+
+      createGetPropertiesJsonString(properties, pdata, json_outobjparams);
+
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PROPERTIESINFO), json_outobjparams);
+    }
+  }
+
+  strreply = jvalue_stringify(json_outobj);
+  PMLOG_INFO(CONST_MODULE_LUNA, "createEventObjectJsonString strreply %s\n", strreply.c_str());
+  j_release(&json_outobj);
+
+  return strreply;
+}
+
+void EventNotification::outputObjectFormat(CAMERA_FORMAT *pFormat, jvalue_ref &json_outobj)const
+{
+  jvalue_ref json_outobjformat = jobject_create();
+  int nWidth = (int)pFormat->nWidth;
+  int nHeight = (int)pFormat->nHeight;
+
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
+                    jnumber_create_i32(nWidth));
+
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
+                    jnumber_create_i32(nHeight));
+
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
+                    jnumber_create_i32(pFormat->nFps));
+
+  std::string strformat = getFormatStringFromCode(pFormat->eFormat);
+  jobject_put(json_outobjformat, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
+                    jstring_create(strformat.c_str()));
+
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMATINFO), json_outobjformat);
+}
+
+void EventNotification::outputObjectProperties(CAMERA_PROPERTIES_T *pProperties, jvalue_ref &json_outobj)const
+{
+  jvalue_ref json_outobjproperties = jobject_create();
+
+  std::map<std::string,int> gPropertyMap;
+
+  mappingPropertieswithConstValues(gPropertyMap,pProperties);
+
+  std::map<std::string,int>::iterator it;
+
+  std::string sProperty = "";
+  for (it = gPropertyMap.begin(); it != gPropertyMap.end(); ++it)
+  {
+    sProperty = it->first;
+    if(it->second == CONST_PARAM_DEFAULT_VALUE)
+    {
+      jobject_put(json_outobjproperties, jstring_create(sProperty.c_str()),
+          jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
+    }
+    else
+    {
+      jobject_put(json_outobjproperties, jstring_create(sProperty.c_str()),
+          jnumber_create_i32(it->second));
+    }
+  }
+
+  jvalue_ref json_resolutionobj = jobject_create();
+  for (int nformat = 0; nformat < pProperties->stResolution.n_formatindex; nformat++)
+  {
+    jvalue_ref json_resolutionarray = jarray_create(0);
+    for (int count = 0; count < pProperties->stResolution.n_framecount[nformat]; count++)
+    {
+      jarray_append(json_resolutionarray,
+                    jstring_create(pProperties->stResolution.c_res[nformat][count]));
+    }
+    jobject_put(
+        json_resolutionobj,
+        jstring_create(
+            getResolutionString(pProperties->stResolution.e_format[nformat]).c_str()),
+        json_resolutionarray);
+  }
+  jobject_put(json_outobjproperties, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
+              json_resolutionobj);
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PROPERTIESINFO),
+              json_outobjproperties);
+}
+
+std::string
+EventNotification::createEventObjectSubscriptionJsonString(CAMERA_FORMAT *pFormat,
+                                                           CAMERA_PROPERTIES_T *pProperties) const
+{
+  jvalue_ref json_outobj = jobject_create();
+  std::string strreply;
+
+  // return value
+  jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+              jboolean_create(b_issubscribed_));
+
+  if (b_issubscribed_)
+  {
+    if (!strcamid_.empty())
+    {
+      // camera id
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ID),
+                  jstring_create(strcamid_.c_str()));
+
+      if (nullptr != pFormat)
+        outputObjectFormat(pFormat, json_outobj);
+
+      if (nullptr != pProperties)
+        outputObjectProperties(pProperties, json_outobj);
+    }
+  }
+  strreply = jvalue_stringify(json_outobj);
+  PMLOG_INFO(CONST_MODULE_LUNA, "createEventObjectSubscriptionJsonString strreply %s\n",
+             strreply.c_str());
+  j_release(&json_outobj);
+
+  return strreply;
+}
+
+void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *properties, void *pdata,
                                    jvalue_ref &json_outobjparams)
 {
+  CAMERA_PROPERTIES_T *old_property = static_cast<CAMERA_PROPERTIES_T *>(pdata);
+
   if (nullptr != old_property)
   {
     if (properties->nContrast != old_property->nContrast)
