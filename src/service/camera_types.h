@@ -231,11 +231,7 @@ typedef struct
   std::string str_memorysource;
 } camera_memory_source_t;
 
-typedef struct
-{
-  EventType event;
-  void *pdata;
-} event_notification_t;
+
 
 static inline PmLogContext getCameraLunaPmLogContext()
 {
