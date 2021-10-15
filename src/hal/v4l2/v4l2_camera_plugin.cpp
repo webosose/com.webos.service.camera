@@ -73,19 +73,6 @@ int V4l2CameraPlugin::closeDevice()
 
 int V4l2CameraPlugin::setFormat(stream_format_t stream_format)
 {
-  // first set framerate
-  struct v4l2_streamparm parm;
-  CLEAR(parm);
-  parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  parm.parm.capture.timeperframe.numerator = 1;
-  parm.parm.capture.timeperframe.denominator = stream_format.stream_fps;
-
-  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_PARM, &parm))
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_S_PARM failed");
-    return CAMERA_ERROR_UNKNOWN;
-  }
-
   // set width, height and pixel format
   struct v4l2_format fmt;
   CLEAR(fmt);
@@ -117,6 +104,20 @@ int V4l2CameraPlugin::setFormat(stream_format_t stream_format)
     stream_format.stream_width = fmt.fmt.pix.width;
     stream_format.stream_height = fmt.fmt.pix.height;
   }
+
+  //set framerate
+  struct v4l2_streamparm parm;
+  CLEAR(parm);
+  parm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  parm.parm.capture.timeperframe.numerator = 1;
+  parm.parm.capture.timeperframe.denominator = stream_format.stream_fps;
+
+  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_PARM, &parm))
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "setFormat : VIDIOC_S_PARM failed\n");
+    return CAMERA_ERROR_UNKNOWN;
+  }
+
   stream_format_.stream_width = stream_format.stream_width;
   stream_format_.stream_height = stream_format.stream_height;
   stream_format_.pixel_format = stream_format.pixel_format;
