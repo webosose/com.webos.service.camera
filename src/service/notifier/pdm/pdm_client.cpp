@@ -21,8 +21,6 @@
 #include <glib.h>
 #include <pbnjson.hpp>
 #include "whitelist_checker.h"
-#include "event_notification.h"
-
 
 DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
 pdmhandlercb subscribeToDeviceInfoCb_;
@@ -254,17 +252,6 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
       PMLOG_INFO(CONST_MODULE_PDMCLIENT, "camcount : %d \n", camcount);
 
       DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
-
-      if(nCamEvent==DEVICE_EVENT_STATE_PLUGGED) {
-        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "PLUGGED CamEvent type: %d \n", nCamEvent);
-        EventNotification obj;
-        obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_CONNECT);
-      }
-      else if(nCamEvent==DEVICE_EVENT_STATE_UNPLUGGED) {
-      PMLOG_INFO(CONST_MODULE_PDMCLIENT, "UNPLUGGED CamEvent type: %d \n", nCamEvent);
-        EventNotification obj;
-        obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_DISCONNECT);
-      }
 
       if(nCamEvent==DEVICE_EVENT_STATE_PLUGGED) {
         WhitelistChecker::getInstance().check(lsHandle, dev_info_[camcount-1].strVendorName, dev_info_[camcount-1].strDeviceSubtype);
