@@ -15,7 +15,11 @@
                 "com.webos.service.camera2/startCapture",
                 "com.webos.service.camera2/stopCapture",
                 "com.webos.service.camera2/getEventNotification",
-                "com.webos.service.camera2/getFd"
+                "com.webos.service.camera2/getFd",
+                "com.webos.service.camera2/getSupportedSolutionInfo",
+                "com.webos.service.camera2/enableCameraSolution",
+                "com.webos.service.camera2/disableCameraSolution"
+
         ]
 }
 

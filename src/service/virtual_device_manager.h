@@ -82,6 +82,11 @@ public:
   bool unregisterClient(int, std::string&);
 
   void requestPreviewCancel();
+
+  std::string getSupportedCameraSolutionInfo();
+  std::string enableCameraSolutionInfo(const char *enabledSolutionList);
+  std::string disableCameraSolutionInfo(const char *disabledSolutionList);
+
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

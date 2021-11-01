@@ -24,6 +24,7 @@
 #include <map>
 #include <string>
 
+#include "camera_hal_types.h"
 #include "virtual_device_manager.h"
 
 class Device
@@ -65,6 +66,10 @@ public:
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
   DEVICE_RETURN_CODE_T getFd(int, int *);
+  std::string getSupportedCameraSolutionInfo(int devhandle);
+  std::string enableCameraSolutionInfo(int devhandle, const char *enabledSolutionList);
+  std::string disableCameraSolutionInfo(int devhandle, const char *disabledSolutionList);
+
   int getCameraId(int);
   int getCameraHandle(int);
 

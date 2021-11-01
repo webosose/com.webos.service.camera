@@ -312,4 +312,61 @@ const char *getFdSchema = "{ \
   } \
 }";
 
+const char *getSupportedSolutionInfoSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"handle\" \
+  ], \
+  \"properties\": { \
+    \"handle\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Handle Schema\", \
+      \"default\": 0 \
+    } \
+  } \
+}";
+
+const char *enableSolutionSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"handle\", \
+    \"solutions\" \
+  ], \
+  \"properties\": { \
+    \"handle\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Handle Schema\", \
+      \"default\": 0 \
+    }, \
+    \"solutions\": { \
+      \"type\": \"string\", \
+      \"title\": \"The solutions Schema\", \
+      \"pattern\": \"^(.*)$\" \
+    } \
+  } \
+}";
+
+const char *disableSolutionSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"handle\", \
+    \"solutions\" \
+  ], \
+  \"properties\": { \
+    \"handle\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Handle Schema\", \
+      \"default\": 0 \
+    }, \
+    \"solutions\": { \
+      \"type\": \"string\", \
+      \"title\": \"The solutions Schema\", \
+      \"pattern\": \"^(.*)$\" \
+    } \
+  } \
+}";
+
 #endif /*SRC_SERVICE_JSON_SCHEMA_H_*/

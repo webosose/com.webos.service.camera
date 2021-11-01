@@ -85,6 +85,7 @@ private:
 
 public:
   DeviceControl();
+  virtual ~DeviceControl();
   DEVICE_RETURN_CODE_T open(void *, std::string);
   DEVICE_RETURN_CODE_T close(void *);
   DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *);
@@ -101,6 +102,16 @@ public:
   DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
+
+  DEVICE_RETURN_CODE_T cameraSolutionOpen();
+  DEVICE_RETURN_CODE_T cameraSolutionClose();
+  DEVICE_RETURN_CODE_T cameraSolutionInitializeForSolution(stream_format_t streamformat, int key);
+  DEVICE_RETURN_CODE_T cameraSolutionReleaseForSolution();
+  DEVICE_RETURN_CODE_T cameraSolutionProcessForSnapshot(void* frame_buffer, stream_format_t streamformat);
+  DEVICE_RETURN_CODE_T cameraSolutionProcessForPreview(void* frame_buffer, stream_format_t streamformat);
+  std::string getSupportedCameraSolutionInfo();
+  std::string enableCameraSolutionInfo(const char *enabledSolutionList);
+  std::string disableCameraSolutionInfo(const char *disabledSolutionList);
 
   bool registerClient(pid_t, int, int, std::string& outmsg);
   bool unregisterClient(pid_t, std::string& outmsg);

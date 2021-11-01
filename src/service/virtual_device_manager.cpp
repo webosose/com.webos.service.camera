@@ -794,3 +794,26 @@ void VirtualDeviceManager::requestPreviewCancel()
 {
     objdevicecontrol_.requestPreviewCancel();
 }
+
+
+std::string VirtualDeviceManager::getSupportedCameraSolutionInfo()
+{
+    printf("getSupportedCameraSolutionInfo : E \n");
+
+    return objdevicecontrol_.getSupportedCameraSolutionInfo();
+}
+
+std::string VirtualDeviceManager::enableCameraSolutionInfo(const char *enabledSolutionList)
+{
+    PMLOG_INFO(CONST_MODULE_CM, "VirtualDeviceManager enableCameraSolutionInfo E\n");
+
+    return objdevicecontrol_.enableCameraSolutionInfo(enabledSolutionList);
+}
+
+std::string VirtualDeviceManager::disableCameraSolutionInfo(const char *disabledSolutionList)
+{
+    PMLOG_INFO(CONST_MODULE_CM, "VirtualDeviceManager disableCameraSolutionInfo E\n");
+
+    return objdevicecontrol_.disableCameraSolutionInfo(disabledSolutionList);
+}
+

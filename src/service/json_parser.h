@@ -83,8 +83,8 @@ private:
 class OpenMethod
 {
 public:
-  OpenMethod() { 
-    n_devicehandle_ = -1; 
+  OpenMethod() {
+    n_devicehandle_ = -1;
     n_client_pid_ = -1;
     n_client_sig_ = -1;
   }
@@ -214,16 +214,16 @@ private:
 class StopPreviewCaptureCloseMethod
 {
 public:
-  StopPreviewCaptureCloseMethod() 
-  { 
-    n_devicehandle_ = -1; 
+  StopPreviewCaptureCloseMethod()
+  {
+    n_devicehandle_ = -1;
     n_client_pid_ = -1;
   }
   ~StopPreviewCaptureCloseMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
-  
+
   void setClientProcessId(int pid) { n_client_pid_ = pid; }
   int getClientProcessId() const { return n_client_pid_; }
 
@@ -435,11 +435,88 @@ private:
 };
 
 
+class GetSolutionInfoMethod
+{
+public:
+  GetSolutionInfoMethod() { n_devicehandle_ = -1; };
+  ~GetSolutionInfoMethod() {}
+
+  void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+  int getDeviceHandle() const { return n_devicehandle_; }
+
+  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  {
+    objreply_.setReturnValue(returnvalue);
+    objreply_.setErrorCode(errorcode);
+    objreply_.setErrorText(errortext);
+  }
+  MethodReply getMethodReply() const { return objreply_; }
+
+  void getObject(const char *, const char *);
+  std::string createObjectJsonString() const;
+
+private:
+  int n_devicehandle_;
+  MethodReply objreply_;
+};
+
+class EnableCameraSolutionMethod
+{
+public:
+  EnableCameraSolutionMethod() { n_devicehandle_ = -1; };
+  ~EnableCameraSolutionMethod() {}
+
+  void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+  int getDeviceHandle() const { return n_devicehandle_; }
+
+  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  {
+    objreply_.setReturnValue(returnvalue);
+    objreply_.setErrorCode(errorcode);
+    objreply_.setErrorText(errortext);
+  }
+  MethodReply getMethodReply() const { return objreply_; }
+
+  void getObject(const char *, const char *);
+  std::string createObjectJsonString() const;
+
+private:
+  int n_devicehandle_;
+  MethodReply objreply_;
+};
+
+class DisableCameraSolutionMethod
+{
+public:
+  DisableCameraSolutionMethod() { n_devicehandle_ = -1; };
+  ~DisableCameraSolutionMethod() {}
+
+  void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+  int getDeviceHandle() const { return n_devicehandle_; }
+
+  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  {
+    objreply_.setReturnValue(returnvalue);
+    objreply_.setErrorCode(errorcode);
+    objreply_.setErrorText(errortext);
+  }
+  MethodReply getMethodReply() const { return objreply_; }
+
+  void getObject(const char *, const char *);
+  std::string createObjectJsonString() const;
+
+private:
+  int n_devicehandle_;
+  MethodReply objreply_;
+};
+
 void createJsonStringFailure(MethodReply, jvalue_ref &);
 void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, CAMERA_PROPERTIES_T *, jvalue_ref &);
 void mappingPropertieswithConstValues(std::map<std::string,int> &, CAMERA_PROPERTIES_T *);
 void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
                                               jvalue_ref &);
 void createGetPropertiesOutputJsonString(const std::string, CAMERA_PROPERTIES_T *, jvalue_ref &);
+
+
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/

@@ -42,11 +42,19 @@ public:
   SHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
   SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);
 
+  SHMEM_STATUS_T OpenShmem(SHMEM_HANDLE *phShmem, key_t shmemKey);
+  SHMEM_STATUS_T ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize);
+
   IPCSharedMemory (IPCSharedMemory const &)  = delete;
   void operator = (IPCSharedMemory const &)  = delete;
 
 private:
   IPCSharedMemory (){}
+
+  SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
+        int extraSize, int nOpenMode);
+  SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
+        unsigned char **ppExtraData, int *pExtraSize, int readMode);
 };
 
 #endif // CAMSHM_H_
