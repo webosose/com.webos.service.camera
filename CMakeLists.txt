@@ -45,9 +45,6 @@ pkg_check_modules(UDEV REQUIRED libudev)
 include_directories(${UDEV_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${UDEV_CFLAGS})
 
-#pkg_check_modules(OPENCV REQUIRED opencv4)
-#include_directories(${OPENCV_INCLUDE_DIRS})
-
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
@@ -79,10 +76,6 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
     ${CMAKE_SOURCE_DIR}/src/service/whitelist_checker.cpp
     ${CMAKE_SOURCE_DIR}/src/service/event_notification.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/CameraSolutionManager.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/CameraSolution.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/AutoContrast/LGCameraSolutionAutoContrast.cpp
-#    ${CMAKE_SOURCE_DIR}/src/service/solutions/FaceDetection/LGCameraSolutionFaceDetection.cpp
     )
 
 add_executable(${PROJECT_NAME}
@@ -95,9 +88,7 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       ${UDEV_LDFLAGS}
                       pthread
-                      camera_hal
-                      #${OPENCV_LDFLAGS}
-                      )
+                      camera_hal)
 
 #hal
 include_directories(${CMAKE_SOURCE_DIR}/src/hal/)

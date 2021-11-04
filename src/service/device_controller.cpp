@@ -25,7 +25,7 @@
 #include <ctime>
 #include <poll.h>
 #include <sys/time.h>
-#include <solutions/CameraSolutionManager.h>
+
 #include <signal.h>
 #include <errno.h>
 #include <algorithm>
@@ -72,8 +72,6 @@ typedef struct
 
 int DeviceControl::n_imagecount_ = 0;
 
-CameraSolutionManager* pCameraSolution;
-
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
       b_issystemvruning(false), b_isshmwritedone_(true), b_issyshmwritedone_(true),
@@ -82,12 +80,6 @@ DeviceControl::DeviceControl()
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
       str_shmemname_(""), cancel_preview_(false), buf_size_(0)
 {
-    cameraSolutionOpen();
-}
-
-DeviceControl::~DeviceControl()
-{
-    cameraSolutionClose();
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -353,9 +345,6 @@ void DeviceControl::previewThread()
       break;
     }
 
-    //add solution here
-    cameraSolutionProcessForPreview(frame_buffer.start, streamformat);
-
     // keep writing data to shared memory
     unsigned int timestamp = 0;
 
@@ -487,9 +476,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     str_shmemname_ = shmname;
   }
 
-  //add solution here
-  cameraSolutionInitializeForSolution(streamformat, *pkey);
-
   if(b_isstreamon_ == false)
   {
     auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
@@ -530,7 +516,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
     if (tidPreview.joinable())
     {
         tidPreview.join();
-    }
+    }    
 
     if (cancel_preview_ == true)
     {
@@ -539,7 +525,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
         PMLOG_INFO(CONST_MODULE_DC, "releasing camera resources by directly calling base methods has at least been tried.\n");
     }
     else
-    {
+    {  
         auto retval = camera_hal_if_stop_capture(handle);
         if (retval != CAMERA_ERROR_NONE)
         {
@@ -569,7 +555,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
         }
     }
     else
-    {
+    {   
         b_issystemvruning = false;
         if (h_shmsystem_ != nullptr)
         {
@@ -579,7 +565,6 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
             h_shmsystem_ = NULL;
         }
     }
-  cameraSolutionReleaseForSolution();
 
     return DEVICE_OK;
 }
@@ -943,7 +928,7 @@ void DeviceControl::broadcast_()
   std::lock_guard<std::mutex> mlock(client_pool_mutex_);
   {
     PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
-
+    
     auto it = client_pool_.begin();
     while (it != client_pool_.end())
     {
@@ -980,78 +965,3 @@ void DeviceControl::requestPreviewCancel()
 {
      cancel_preview_ = true;
 }
-
-
-DEVICE_RETURN_CODE_T DeviceControl::cameraSolutionOpen()
-{
-    PMLOG_INFO(CONST_MODULE_DC, "Open");
-
-    pCameraSolution = new CameraSolutionManager;
-    if (!pCameraSolution) {
-        PMLOG_INFO(CONST_MODULE_DC, "webOSCameraSolutionManager Creation fail");
-        return DEVICE_ERROR_CAN_NOT_OPEN;
-    }
-    return DEVICE_OK;
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::cameraSolutionClose()
-{
-    PMLOG_INFO(CONST_MODULE_DC, "Close");
-
-    if (pCameraSolution != NULL) {
-        delete pCameraSolution;
-    }
-    pCameraSolution = NULL;
-
-    return DEVICE_OK;
-
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::cameraSolutionInitializeForSolution(stream_format_t streamformat, int key)
-{
-    pCameraSolution->initializeForSolutions(streamformat, key);
-    return DEVICE_OK;
-
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::cameraSolutionReleaseForSolution()
-{
-    pCameraSolution->releaseForSolutions();
-    return DEVICE_OK;
-
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::cameraSolutionProcessForSnapshot(void* frame_buffer, stream_format_t streamformat)
-{
-    pCameraSolution->processCaptureForSolutions(frame_buffer, streamformat);
-    return DEVICE_OK;
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::cameraSolutionProcessForPreview(void* frame_buffer, stream_format_t streamformat)
-{
-    pCameraSolution->processPreviewForSolutions(frame_buffer, streamformat);
-    return DEVICE_OK;
-
-}
-
-std::string DeviceControl::getSupportedCameraSolutionInfo()
-{
-    printf("getSupportedCameraSolutionInfo : E \n");
-
-    return pCameraSolution->getSupportedSolutionInfo();
-}
-
-std::string DeviceControl::enableCameraSolutionInfo(const char *enabledSolutionList)
-{
-    PMLOG_INFO(CONST_MODULE_CM, "DeviceControl enableCameraSolutionInfo E\n");
-
-    return pCameraSolution->enableCameraSolutionInfo(enabledSolutionList);
-}
-
-std::string DeviceControl::disableCameraSolutionInfo(const char *disabledSolutionList)
-{
-    PMLOG_INFO(CONST_MODULE_CM, "DeviceControl disableCameraSolutionInfo E\n");
-
-    return pCameraSolution->disableCameraSolutionInfo(disabledSolutionList);
-}
-
