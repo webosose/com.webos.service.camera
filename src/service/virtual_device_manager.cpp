@@ -52,7 +52,7 @@ bool VirtualDeviceManager::checkAppPriorityMap()
   {
     if (cstr_primary == it->second)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "devhandle = %d, mode = %s", it->first, it->second);
+      PMLOG_INFO(CONST_MODULE_VDM, "devhandle = %d, mode = %s", it->first, it->second.c_str());
       return true;
     }
   }
