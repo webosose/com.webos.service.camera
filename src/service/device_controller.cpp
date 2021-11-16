@@ -78,7 +78,7 @@ DeviceControl::DeviceControl()
       b_isposhmwritedone_(true), cam_handle_(NULL), shmemfd_(-1), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG),
       tMutex(), tCondVar(), h_shmsystem_(NULL), h_shmposix_(NULL),
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
-      str_shmemname_(""), cancel_preview_(false), buf_size_(0)
+      str_shmemname_(""), native_handle_(0), cancel_preview_(false), buf_size_(0)
 {
 }
 
@@ -336,6 +336,9 @@ void DeviceControl::previewThread()
   {
     buffer_t frame_buffer;
     frame_buffer.start = malloc(framesize);
+
+    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+
     auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
     if (retval != CAMERA_ERROR_NONE)
     {
@@ -398,8 +401,7 @@ void DeviceControl::previewThread()
   b_isshmwritedone_ = true;
   b_issyshmwritedone_ = true;
   b_isposhmwritedone_ = true;
-  tCondVar.notify_one();
-  tidPreview.detach();
+
   PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) end!", cam_handle_);
   return;
 }
@@ -496,6 +498,9 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
     // create thread that will continuously capture images until stopcapture received
     tidPreview = std::thread{[this]() { this->previewThread(); }};
+
+    // We need this if cancel requested!!
+    native_handle_ = tidPreview.native_handle();
   }
   if(memtype == kMemtypePosixshm)
   {
@@ -513,19 +518,17 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
     PMLOG_INFO(CONST_MODULE_DC, "started !\n");
 
     b_isstreamon_ = false;
-    if (tidPreview.joinable())
-    {
-        tidPreview.join();
-    }    
 
     if (cancel_preview_ == true)
     {
-        stop_capture((camera_handle_t*)cam_handle_);
-        destroy_buffer((camera_handle_t*)cam_handle_);
-        PMLOG_INFO(CONST_MODULE_DC, "releasing camera resources by directly calling base methods has at least been tried.\n");
+        cancelPreviewThreadIfApplicable_();
     }
     else
-    {  
+    {
+        if (tidPreview.joinable())
+        {
+            tidPreview.join();
+        }
         auto retval = camera_hal_if_stop_capture(handle);
         if (retval != CAMERA_ERROR_NONE)
         {
@@ -964,4 +967,30 @@ void DeviceControl::broadcast_()
 void DeviceControl::requestPreviewCancel()
 {
      cancel_preview_ = true;
+}
+
+void DeviceControl::cancelPreviewThreadIfApplicable_()
+{
+    if (cancel_preview_ == false)
+    {
+        return;
+    }
+
+    if (native_handle_ == 0)
+    {
+        PMLOG_INFO(CONST_MODULE_DC, "native thread handle is empty!!");
+        return;
+    }
+    if (-1 == pthread_cancel(native_handle_))
+    {
+        PMLOG_INFO(CONST_MODULE_DC, "cannot cancel non-existing thread!!\n");
+        return;
+    }
+
+    tidPreview.detach();
+    PMLOG_INFO(CONST_MODULE_DC, "preview thread cancelled: OK!!\n");
+
+    stop_capture((camera_handle_t*)cam_handle_);
+    destroy_buffer((camera_handle_t*)cam_handle_);
+    PMLOG_INFO(CONST_MODULE_DC, "releasing camera resources by directly calling base methods has at least been tried.\n");
 }

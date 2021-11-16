@@ -30,6 +30,7 @@
 #include <string>
 #include <condition_variable>
 #include <vector>
+#include <pthread.h>
 
 
 typedef struct
@@ -80,7 +81,9 @@ private:
   std::mutex client_pool_mutex_;
   void broadcast_();
 
+  pthread_t native_handle_;
   bool cancel_preview_;
+  void cancelPreviewThreadIfApplicable_();
   int buf_size_;
 
 public:
