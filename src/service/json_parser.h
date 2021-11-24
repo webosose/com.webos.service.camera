@@ -83,8 +83,8 @@ private:
 class OpenMethod
 {
 public:
-  OpenMethod() { 
-    n_devicehandle_ = -1; 
+  OpenMethod() {
+    n_devicehandle_ = -1;
     n_client_pid_ = -1;
     n_client_sig_ = -1;
   }
@@ -214,16 +214,16 @@ private:
 class StopPreviewCaptureCloseMethod
 {
 public:
-  StopPreviewCaptureCloseMethod() 
-  { 
-    n_devicehandle_ = -1; 
+  StopPreviewCaptureCloseMethod()
+  {
+    n_devicehandle_ = -1;
     n_client_pid_ = -1;
   }
   ~StopPreviewCaptureCloseMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
-  
+
   void setClientProcessId(int pid) { n_client_pid_ = pid; }
   int getClientProcessId() const { return n_client_pid_; }
 
@@ -266,6 +266,7 @@ public:
     ro_info_.n_maxpicturewidth = r_ininfo.n_maxpicturewidth;
     ro_info_.n_maxvideoheight = r_ininfo.n_maxvideoheight;
     ro_info_.n_maxvideowidth = r_ininfo.n_maxvideowidth;
+    ro_info_.n_cur_fps = r_ininfo.n_cur_fps;
     ro_info_.n_samplingrate = r_ininfo.n_samplingrate;
   }
 

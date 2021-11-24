@@ -415,7 +415,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
                 jnumber_create_i32(rGetCameraInfo().n_maxvideowidth));
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXHEIGHT),
                 jnumber_create_i32(rGetCameraInfo().n_maxvideoheight));
-    jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE), jnumber_create_i32(30));
+    jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
+                jnumber_create_i32(rGetCameraInfo().n_cur_fps));
     jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT), jstring_create(strformat));
 
     jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),

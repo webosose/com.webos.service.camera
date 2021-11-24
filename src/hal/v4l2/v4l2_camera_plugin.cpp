@@ -547,6 +547,24 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
                  strerror(errno));
     ret = CAMERA_ERROR_UNKNOWN;
   }
+
+  //get fps
+  struct v4l2_streamparm streamparm;
+  CLEAR(streamparm);
+  streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+  if (CAMERA_ERROR_NONE != xioctl(fd, VIDIOC_G_PARM, &streamparm))
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_G_PARM failed %d, %s\n", errno,
+                 strerror(errno));
+    ret = CAMERA_ERROR_UNKNOWN;
+  }
+  else
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_G_PARM fps (%d / %d) \n",  streamparm.parm.capture.timeperframe.numerator, streamparm.parm.capture.timeperframe.denominator);
+    cam_info->n_cur_fps = streamparm.parm.capture.timeperframe.denominator/streamparm.parm.capture.timeperframe.numerator;
+  }
+
   if (CAMERA_ERROR_NONE != xioctl(fd, VIDIOC_G_FMT, &fmt))
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_G_FMT failed %d, %s", errno,
