@@ -137,7 +137,7 @@ int V4l2CameraPlugin::getFormat(stream_format_t *stream_format)
     HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_G_PARM failed");
     return CAMERA_ERROR_UNKNOWN;
   }
-  stream_format->stream_fps = streamparm.parm.capture.timeperframe.denominator;
+  stream_format->stream_fps = streamparm.parm.capture.timeperframe.denominator/streamparm.parm.capture.timeperframe.numerator;
 
   struct v4l2_format fmt;
   CLEAR(fmt);
@@ -721,7 +721,7 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
         while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMEINTERVALS, &fival)))
         {
           snprintf(cam_out_params->stResolution.c_res[ncount][frmsize.index], 20, "%d,%d,%d",
-                   frmsize.discrete.width, frmsize.discrete.height, fival.discrete.denominator);
+                   frmsize.discrete.width, frmsize.discrete.height, fival.discrete.denominator/fival.discrete.numerator);
           HAL_LOG_INFO(CONST_MODULE_HAL, "c_res %s ",
                        cam_out_params->stResolution.c_res[ncount][frmsize.index]);
           cam_out_params->stResolution.n_frameindex[ncount] = frmsize.index;
