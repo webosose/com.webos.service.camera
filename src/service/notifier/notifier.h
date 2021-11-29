@@ -28,23 +28,22 @@
 class Notifier
 {
 private:
-  using handlercb = std::function<void(DEVICE_LIST_T *)>;
 
-  PDMClient pdm_;
-  LSHandle *lshandle_;
-  DeviceNotifier *p_client_notifier_;
+    PDMClient pdm_;
+    LSHandle *lshandle_;
+    DeviceNotifier *p_client_notifier_;
 
 public:
-  Notifier()
-  {
-    lshandle_ = nullptr;
-    p_client_notifier_ = nullptr;
-  }
-  virtual ~Notifier() {}
+    Notifier()
+    {
+        lshandle_ = nullptr;
+        p_client_notifier_ = nullptr;
+    }
+    virtual ~Notifier() {}
 
-  void addNotifier(NotifierClient, GMainLoop *loop);
-  void registerCallback(handlercb, GMainLoop *loop);
-  void setLSHandle(LSHandle *);
+    void addNotifier(NotifierClient, GMainLoop *loop);
+    void registerCallback(GMainLoop *loop);
+    void setLSHandle(LSHandle *);
 };
 
 #endif /* NOTIFIER_H_ */

@@ -22,9 +22,7 @@
 #include "whitelist_checker.h"
 #include "event_notification.h"
 
-
 DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
-pdmhandlercb subscribeToDeviceInfoCb_;
 
 void getDevPaths(jvalue_ref &array_obj, std::vector<std::string> &devPaths)
 {
@@ -36,31 +34,34 @@ void getDevPaths(jvalue_ref &array_obj, std::vector<std::string> &devPaths)
     {
         int subdevice_count = 0;
         subdevice_count = jarray_size(jin_subdevice_list_obj);
-        for (int i=0 ; i < subdevice_count ; i++)
+        for (int i = 0; i < subdevice_count; i++)
         {
             jvalue_ref jin_subdevice_obj = jarray_get(jin_subdevice_list_obj, i);
 
             jvalue_ref jin_obj_capabilities;
             bool is_capabilities = jobject_get_exists(jin_subdevice_obj,
-                                                 J_CSTR_TO_BUF(CONST_PARAM_NAME_CAPABILITIES),
-                                                 &jin_obj_capabilities);
+                                                      J_CSTR_TO_BUF(CONST_PARAM_NAME_CAPABILITIES),
+                                                      &jin_obj_capabilities);
             PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for is_capabilities in the received JSON - %d", is_capabilities);
             if (!is_capabilities)
-              continue;
-
+            {
+                continue;
+            }
             raw_buffer capabilities = jstring_get_fast(jin_obj_capabilities);
             std::string str_capabilities = capabilities.m_str;
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "capabilities : %s \n",  str_capabilities.c_str());
+            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "capabilities : %s \n", str_capabilities.c_str());
             if (str_capabilities != cstr_capture)
-              continue;
-
-            bool is_devPath = jobject_get_exists(jin_subdevice_obj,
-                                               J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_PATH),
-                                               &jin_obj_devPath);
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for devPath in the received JSON - %d", is_devPath);
-            if(!is_devPath)
+            {
                 continue;
-
+            }
+            bool is_devPath = jobject_get_exists(jin_subdevice_obj,
+                                                 J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_PATH),
+                                                 &jin_obj_devPath);
+            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for devPath in the received JSON - %d", is_devPath);
+            if (!is_devPath)
+            {
+                continue;
+            }
             devPath = jstring_get_fast(jin_obj_devPath);
             devPaths.push_back(devPath.m_str);
         }
@@ -78,230 +79,237 @@ void getDevPaths(jvalue_ref &array_obj, std::vector<std::string> &devPaths)
 
 static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
-  jerror *error = NULL;
-  const char *payload = LSMessageGetPayload(message);
-  PMLOG_INFO(CONST_MODULE_PDMCLIENT, "payload : %s \n", payload);
-  jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
+    jerror *error = NULL;
+    const char *payload = LSMessageGetPayload(message);
+    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "payload : %s \n", payload);
+    jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
 
-  if (jis_valid(jin_obj))
-  {
-    bool retvalue;
-    int camcount = 0;
-    jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
-    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "retvalue : %d \n", retvalue);
-    if (retvalue)
+    if (jis_valid(jin_obj))
     {
-      jvalue_ref jin_obj_devlistinfo;
-      bool is_devlistinfo = jobject_get_exists(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO), &jin_obj_devlistinfo);
-      PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for deviceListInfo in the received JSON - %d", is_devlistinfo);
-      int devlistsize = 0, devlistindex=0;
-      if (is_devlistinfo)
-      {
-        jin_obj_devlistinfo = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO));
-        devlistsize = jarray_size(jin_obj_devlistinfo);
-        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "devlist array size  : %d \n", devlistsize);
-      }
-
-      do {
-        jvalue_ref jin_obj_child;
-        if (is_devlistinfo)
+        bool retvalue;
+        int camcount = 0;
+        jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
+        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "retvalue : %d \n", retvalue);
+        if (retvalue)
         {
-          jvalue_ref jin_array_devinfo_obj = jarray_get(jin_obj_devlistinfo, devlistindex++);
-          jin_obj_child = jobject_get(jin_array_devinfo_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VIDEO_DEVICE_LIST));
-        }
-        else
-          jin_obj_child = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VIDEO_DEVICE_LIST));
-
-        int listcount = jarray_size(jin_obj_child);
-        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "listcount : %d \n", listcount);
-
-        for (int i = 0; i < listcount; i++)
-        {
-          jvalue_ref jin_array_obj = jarray_get(jin_obj_child, i);
-
-          // deviceType
-          jvalue_ref jin_obj_devicetype;
-          std::string str_devicetype;
-          if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE), &jin_obj_devicetype))
-          {
-            raw_buffer device_type = jstring_get_fast(jin_obj_devicetype);
-            str_devicetype = device_type.m_str;
-          }
-          else
-          {
-            jvalue_ref jin_obj_subsystem;
-            if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SUBSYSTEM), &jin_obj_subsystem))
+            jvalue_ref jin_obj_devlistinfo;
+            bool is_devlistinfo = jobject_get_exists(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO), &jin_obj_devlistinfo);
+            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for deviceListInfo in the received JSON - %d", is_devlistinfo);
+            int devlistsize = 0, devlistindex = 0;
+            if (is_devlistinfo)
             {
-              raw_buffer subsystem = jstring_get_fast(jin_obj_subsystem);
-              if(strcmp(subsystem.m_str, "video4linux") == 0)
-              {
-                str_devicetype = cstr_cam;
-              }
+                jin_obj_devlistinfo = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO));
+                devlistsize = jarray_size(jin_obj_devlistinfo);
+                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "devlist array size  : %d \n", devlistsize);
             }
-          }
-          PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_devicetype : %s \n", str_devicetype.c_str());
-          if (str_devicetype != cstr_cam)
-            continue;
 
-          // vendorName
-          jvalue_ref jin_obj_vendorname;
-          if (!jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_NAME), &jin_obj_vendorname))
-            continue;
-          raw_buffer vendor_name = jstring_get_fast(jin_obj_vendorname);
-          std::string str_vendorname = vendor_name.m_str;
-          PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorname : %s \n", str_vendorname.c_str());
+            do
+            {
+                jvalue_ref jin_obj_child;
+                if (is_devlistinfo)
+                {
+                    jvalue_ref jin_array_devinfo_obj = jarray_get(jin_obj_devlistinfo, devlistindex++);
+                    jin_obj_child = jobject_get(jin_array_devinfo_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VIDEO_DEVICE_LIST));
+                }
+                else
+                {
+                    jin_obj_child = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VIDEO_DEVICE_LIST));
+                }
+                int listcount = jarray_size(jin_obj_child);
+                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "listcount : %d \n", listcount);
 
-          // productName
-          jvalue_ref jin_obj_productname;
-          if (!jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_NAME), &jin_obj_productname))
-            continue;
-          raw_buffer product_name = jstring_get_fast(jin_obj_productname);
-          std::string str_productname = product_name.m_str;
-          PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productname : %s \n", str_productname.c_str());
+                for (int i = 0; i < listcount; i++)
+                {
+                    jvalue_ref jin_array_obj = jarray_get(jin_obj_child, i);
 
-          // vendorID
-          jvalue_ref jin_obj_vendorid;
-          std::string str_vendorid;
-          if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_ID), &jin_obj_vendorid))
-          {
-              raw_buffer vendor_id = jstring_get_fast(jin_obj_vendorid);
-              str_vendorid = vendor_id.m_str;
-          }
-          PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorid : %s \n", str_vendorid.c_str());
+                    // deviceType
+                    jvalue_ref jin_obj_devicetype;
+                    std::string str_devicetype;
+                    if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE), &jin_obj_devicetype))
+                    {
+                        raw_buffer device_type = jstring_get_fast(jin_obj_devicetype);
+                        str_devicetype = device_type.m_str;
+                    }
+                    else
+                    {
+                        jvalue_ref jin_obj_subsystem;
+                        if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SUBSYSTEM), &jin_obj_subsystem))
+                        {
+                            raw_buffer subsystem = jstring_get_fast(jin_obj_subsystem);
+                            if (strcmp(subsystem.m_str, "video4linux") == 0)
+                            {
+                                str_devicetype = cstr_cam;
+                            }
+                        }
+                    }
+                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_devicetype : %s \n", str_devicetype.c_str());
+                    if (str_devicetype != cstr_cam)
+                    {
+                        continue;
+                    }
+                    // vendorName
+                    jvalue_ref jin_obj_vendorname;
+                    if (!jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_NAME), &jin_obj_vendorname))
+                    {
+                        continue;
+                    }
 
-          // productID
-          jvalue_ref jin_obj_productid;
-          std::string str_productid;
-          if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_ID), &jin_obj_productid))
-          {
-              raw_buffer product_id = jstring_get_fast(jin_obj_productid);
-              str_productid = product_id.m_str;
-          }
-          PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productid : %s \n", str_productid.c_str());
+                    raw_buffer vendor_name = jstring_get_fast(jin_obj_vendorname);
+                    std::string str_vendorname = vendor_name.m_str;
+                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorname : %s \n", str_vendorname.c_str());
 
-          // devPath
-          std::vector<std::string> str_devPaths;
-          getDevPaths(jin_array_obj, str_devPaths);
-          for (auto str_devPath : str_devPaths)
-          {
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "devPath : %s \n",  str_devPath.c_str());
-            strncpy(dev_info_[camcount].strDeviceNode, str_devPath.c_str(), CONST_MAX_STRING_LENGTH - 1);
+                    // productName
+                    jvalue_ref jin_obj_productname;
+                    if (!jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_NAME), &jin_obj_productname))
+                        continue;
+                    raw_buffer product_name = jstring_get_fast(jin_obj_productname);
+                    std::string str_productname = product_name.m_str;
+                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productname : %s \n", str_productname.c_str());
 
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "received cam device\n");
-            dev_info_[camcount].nDeviceNum = 0; // TBD
-            dev_info_[camcount].nPortNum = 0;   // TBD
-            dev_info_[camcount].isPowerOnConnect = false; // TBD
+                    // vendorID
+                    jvalue_ref jin_obj_vendorid;
+                    std::string str_vendorid;
+                    if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_ID), &jin_obj_vendorid))
+                    {
+                        raw_buffer vendor_id = jstring_get_fast(jin_obj_vendorid);
+                        str_vendorid = vendor_id.m_str;
+                    }
+                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorid : %s \n", str_vendorid.c_str());
 
-            strncpy(dev_info_[camcount].strVendorName, str_vendorname.c_str(),
-                    CONST_MAX_STRING_LENGTH - 1);
-            dev_info_[camcount].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
+                    // productID
+                    jvalue_ref jin_obj_productid;
+                    std::string str_productid;
+                    if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_ID), &jin_obj_productid))
+                    {
+                        raw_buffer product_id = jstring_get_fast(jin_obj_productid);
+                        str_productid = product_id.m_str;
+                    }
+                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productid : %s \n", str_productid.c_str());
 
-            strncpy(dev_info_[camcount].strProductName, str_productname.c_str(),
-                    CONST_MAX_STRING_LENGTH - 1);
-            dev_info_[camcount].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
+                    // devPath
+                    std::vector<std::string> str_devPaths;
+                    getDevPaths(jin_array_obj, str_devPaths);
+                    for (auto str_devPath : str_devPaths)
+                    {
+                        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "devPath : %s \n", str_devPath.c_str());
+                        strncpy(dev_info_[camcount].strDeviceNode, str_devPath.c_str(), CONST_MAX_STRING_LENGTH - 1);
 
-            strncpy(dev_info_[camcount].strVendorID, str_vendorid.c_str(),
-                    CONST_MAX_STRING_LENGTH - 1);
-            dev_info_[camcount].strVendorID[CONST_MAX_STRING_LENGTH - 1] = '\0';
+                        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "received cam device\n");
+                        dev_info_[camcount].nDeviceNum = 0;           // TBD
+                        dev_info_[camcount].nPortNum = 0;             // TBD
+                        dev_info_[camcount].isPowerOnConnect = false; // TBD
 
-            strncpy(dev_info_[camcount].strProductID, str_productid.c_str(),
-                    CONST_MAX_STRING_LENGTH - 1);
-            dev_info_[camcount].strProductID[CONST_MAX_STRING_LENGTH - 1] = '\0';
+                        strncpy(dev_info_[camcount].strVendorName, str_vendorname.c_str(),
+                                CONST_MAX_STRING_LENGTH - 1);
+                        dev_info_[camcount].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-            strncpy(dev_info_[camcount].strDeviceType, str_devicetype.c_str(),
-                    CONST_MAX_STRING_LENGTH - 1);
-            dev_info_[camcount].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
+                        strncpy(dev_info_[camcount].strProductName, str_productname.c_str(),
+                                CONST_MAX_STRING_LENGTH - 1);
+                        dev_info_[camcount].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-            strncpy(dev_info_[camcount].strDeviceSubtype, str_productname.c_str(),  // TBD
-                    CONST_MAX_STRING_LENGTH - 1);
-            dev_info_[camcount].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] = '\0';
+                        strncpy(dev_info_[camcount].strVendorID, str_vendorid.c_str(),
+                                CONST_MAX_STRING_LENGTH - 1);
+                        dev_info_[camcount].strVendorID[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
-            camcount++;
-          }
+                        strncpy(dev_info_[camcount].strProductID, str_productid.c_str(),
+                                CONST_MAX_STRING_LENGTH - 1);
+                        dev_info_[camcount].strProductID[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+                        strncpy(dev_info_[camcount].strDeviceType, str_devicetype.c_str(),
+                                CONST_MAX_STRING_LENGTH - 1);
+                        dev_info_[camcount].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+                        strncpy(dev_info_[camcount].strDeviceSubtype, str_productname.c_str(), // TBD
+                                CONST_MAX_STRING_LENGTH - 1);
+                        dev_info_[camcount].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] = '\0';
+
+                        camcount++;
+                    }
+                }
+            } while ((devlistsize > 0) && (devlistindex < devlistsize));
+
+            DEVICE_EVENT_STATE_T nCamEvent = DEVICE_EVENT_NONE;
+            DEVICE_EVENT_STATE_T nMicEvent = DEVICE_EVENT_NONE;
+            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "camcount : %d \n", camcount);
+
+            DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
+
+            if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
+            {
+                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "PLUGGED CamEvent type: %d \n", nCamEvent);
+                EventNotification obj;
+                obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_CONNECT);
+            }
+            else if (nCamEvent == DEVICE_EVENT_STATE_UNPLUGGED)
+            {
+                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "UNPLUGGED CamEvent type: %d \n", nCamEvent);
+                EventNotification obj;
+                obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_DISCONNECT);
+            }
+
+            if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
+            {
+                WhitelistChecker::getInstance().check(lsHandle, dev_info_[camcount - 1].strVendorName, dev_info_[camcount - 1].strDeviceSubtype);
+            }
         }
-      } while((devlistsize > 0) && (devlistindex < devlistsize));
-
-      DEVICE_EVENT_STATE_T nCamEvent = DEVICE_EVENT_NONE;
-      DEVICE_EVENT_STATE_T nMicEvent = DEVICE_EVENT_NONE;
-      PMLOG_INFO(CONST_MODULE_PDMCLIENT, "camcount : %d \n", camcount);
-
-      DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
-
-      if(nCamEvent==DEVICE_EVENT_STATE_PLUGGED) {
-        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "PLUGGED CamEvent type: %d \n", nCamEvent);
-        EventNotification obj;
-        obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_CONNECT);
-      }
-      else if(nCamEvent==DEVICE_EVENT_STATE_UNPLUGGED) {
-      PMLOG_INFO(CONST_MODULE_PDMCLIENT, "UNPLUGGED CamEvent type: %d \n", nCamEvent);
-        EventNotification obj;
-        obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_DISCONNECT);
-      }
-
-      if(nCamEvent==DEVICE_EVENT_STATE_PLUGGED) {
-        WhitelistChecker::getInstance().check(lsHandle, dev_info_[camcount-1].strVendorName, dev_info_[camcount-1].strDeviceSubtype);
-      }
-
+        j_release(&jin_obj);
     }
-    j_release(&jin_obj);
 
-    if (NULL != subscribeToDeviceInfoCb_)
-      subscribeToDeviceInfoCb_(dev_info_);
-  }
-
-  return true;
+    return true;
 }
 
-void PDMClient::subscribeToClient(pdmhandlercb cb, GMainLoop *loop)
+void PDMClient::subscribeToClient(GMainLoop *loop)
 {
-  LSError lsregistererror;
-  LSErrorInit(&lsregistererror);
+    LSError lsregistererror;
+    LSErrorInit(&lsregistererror);
 
-  // register to PDM luna service with cb to be called
-  subscribeToDeviceInfoCb_ = cb;
-  bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
-                                         subscribeToPdmService, loop, NULL, &lsregistererror);
-  if (!result)
-  {
-    PMLOG_INFO(CONST_MODULE_PDMCLIENT,"LSRegister Server Status failed");
-  }
+    // register to PDM luna service with cb to be called
+    bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
+                                           subscribeToPdmService, loop, NULL, &lsregistererror);
+    if (!result)
+    {
+        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "LSRegister Server Status failed");
+    }
 }
 
-void PDMClient::setLSHandle(LSHandle *handle) { lshandle_ = handle; }
+void PDMClient::setLSHandle(LSHandle *handle)
+{
+    lshandle_ = handle;
+}
 
 bool PDMClient::subscribeToPdmService(LSHandle *sh,
-                                    const char *serviceName,
-                                    bool connected,
-                                    void *ctx)
+                                      const char *serviceName,
+                                      bool connected,
+                                      void *ctx)
 {
-  int retval = 0;
-  int ret = 0;
+    int retval = 0;
+    int ret = 0;
 
-  LSError lserror;
-  LSErrorInit(&lserror);
+    LSError lserror;
+    LSErrorInit(&lserror);
 
-  PMLOG_INFO(CONST_MODULE_PDMCLIENT, "connected status:%d \n", connected);
-  if (connected)
-  {
-    // get camera service handle and register cb function with pdm
-    retval = LSCall(sh, cstr_uri.c_str(), cstr_payload.c_str(), deviceStateCb, NULL, NULL,
-                    &lserror);
-    if (!retval)
+    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "connected status:%d \n", connected);
+    if (connected)
     {
-      PMLOG_INFO(CONST_MODULE_PDMCLIENT,"PDM client Unable to unregister service\n");
-      ret = -1;
+        // get camera service handle and register cb function with pdm
+        retval = LSCall(sh, cstr_uri.c_str(), cstr_payload.c_str(), deviceStateCb, NULL, NULL,
+                        &lserror);
+        if (!retval)
+        {
+            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "PDM client Unable to unregister service\n");
+            ret = -1;
+        }
     }
-  }
-  else
-  {
-    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "connected value is false");
-  }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "connected value is false");
+    }
 
-  if (LSErrorIsSet(&lserror))
-  {
-    LSErrorPrint(&lserror, stderr);
-  }
-  LSErrorFree(&lserror);
+    if (LSErrorIsSet(&lserror))
+    {
+        LSErrorPrint(&lserror, stderr);
+    }
+    LSErrorFree(&lserror);
 
-  return ret;
+    return ret;
 }
