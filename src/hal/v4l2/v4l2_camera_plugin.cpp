@@ -46,7 +46,7 @@ V4l2CameraPlugin::V4l2CameraPlugin()
 
 int V4l2CameraPlugin::openDevice(string devname)
 {
-  fd_ = open(devname.c_str(), O_RDWR);
+  fd_ = open(devname.c_str(), O_RDWR | O_NONBLOCK);
   if (CAMERA_ERROR_UNKNOWN == fd_)
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "cannot open : %s , %d, %s", devname.c_str(),
@@ -190,6 +190,22 @@ int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode)
 int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
 {
   int retVal = -1;
+  struct pollfd fds;
+
+  fds.fd = fd_;
+  fds.events = POLLIN;
+  retVal = poll(&fds, 1, 2000);
+  if (0 == retVal)
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "POLL timeout!");
+    return CAMERA_ERROR_UNKNOWN;
+  }
+  else if (0 > retVal)
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "POLL failed %d, %s",
+                 errno, strerror(errno));
+    return CAMERA_ERROR_UNKNOWN;
+  }
 
   switch (io_mode_)
   {
