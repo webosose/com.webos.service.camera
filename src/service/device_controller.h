@@ -81,16 +81,19 @@ private:
   std::mutex client_pool_mutex_;
   void broadcast_();
 
-  pthread_t native_handle_;
   bool cancel_preview_;
-  void cancelPreviewThreadIfApplicable_();
   int buf_size_;
+
+  LSHandle *sh_;
+  std::string subskey_;
+  int camera_id_;
+  void notifyDeviceFault_();
 
 public:
   DeviceControl();
-  DEVICE_RETURN_CODE_T open(void *, std::string);
+  DEVICE_RETURN_CODE_T open(void *, std::string, int);
   DEVICE_RETURN_CODE_T close(void *);
-  DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *);
+  DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(void *, int);
   DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(void *);

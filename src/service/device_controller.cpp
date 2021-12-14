@@ -78,7 +78,8 @@ DeviceControl::DeviceControl()
       b_isposhmwritedone_(true), cam_handle_(NULL), shmemfd_(-1), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG),
       tMutex(), tCondVar(), h_shmsystem_(NULL), h_shmposix_(NULL),
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
-      str_shmemname_(""), native_handle_(0), cancel_preview_(false), buf_size_(0)
+      str_shmemname_(""), cancel_preview_(false), buf_size_(0),
+      sh_(nullptr), subskey_(""), camera_id_(-1)
 {
 }
 
@@ -183,7 +184,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
        memtype = SHMEM_POSIX;
     stopPreview(handle, memtype);
     close(handle);
-    open(handle, strdevicenode_);
+    open(handle, strdevicenode_, camera_id_);
 
     // set format again
     stream_format_t newstreamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
@@ -208,7 +209,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
 
     // allocate buffers and stream on again
     int key = 0;
-    ret = startPreview(handle, str_memtype_, &key);
+    ret = startPreview(handle, str_memtype_, &key, sh_, subskey_.c_str());
   }
 
   return ret;
@@ -337,14 +338,13 @@ void DeviceControl::previewThread()
     buffer_t frame_buffer;
     frame_buffer.start = malloc(framesize);
 
-    pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-
     auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
     if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
       free(frame_buffer.start);
       frame_buffer.start = nullptr;
+      notifyDeviceFault_();
       break;
     }
 
@@ -384,6 +384,7 @@ void DeviceControl::previewThread()
     if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
+      notifyDeviceFault_();
       break;
     }
 
@@ -406,11 +407,12 @@ void DeviceControl::previewThread()
   return;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode)
+DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode, int ndev_id)
 {
   PMLOG_INFO(CONST_MODULE_DC, "started\n");
 
   strdevicenode_ = devicenode;
+  camera_id_ = ndev_id;
 
   // open camera device
   auto ret = camera_hal_if_open_device(handle, devicenode.c_str());
@@ -444,12 +446,14 @@ DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memtype,
-                                                 int *pkey)
+                                                 int *pkey, LSHandle *sh, const char *subskey)
 {
   PMLOG_INFO(CONST_MODULE_DC, "started !\n");
 
   cam_handle_  = handle;
   str_memtype_ = memtype;
+  sh_ = sh;
+  subskey_ = subskey;
 
   // get current saved format for device
   stream_format_t streamformat;
@@ -498,9 +502,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
     // create thread that will continuously capture images until stopcapture received
     tidPreview = std::thread{[this]() { this->previewThread(); }};
-
-    // We need this if cancel requested!!
-    native_handle_ = tidPreview.native_handle();
   }
   if(memtype == kMemtypePosixshm)
   {
@@ -519,16 +520,18 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
 
     b_isstreamon_ = false;
 
+    if (tidPreview.joinable())
+    {
+        tidPreview.join();
+    }
+
     if (cancel_preview_ == true)
     {
-        cancelPreviewThreadIfApplicable_();
+        stop_capture((camera_handle_t*)handle);
+	destroy_buffer((camera_handle_t*)handle);
     }
     else
     {
-        if (tidPreview.joinable())
-        {
-            tidPreview.join();
-        }
         auto retval = camera_hal_if_stop_capture(handle);
         if (retval != CAMERA_ERROR_NONE)
         {
@@ -558,7 +561,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
         }
     }
     else
-    {   
+    {
         b_issystemvruning = false;
         if (h_shmsystem_ != nullptr)
         {
@@ -735,7 +738,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   out_params.nZoomAbsolute = CONST_PARAM_DEFAULT_VALUE;
   out_params.nFocusAbsolute =CONST_PARAM_DEFAULT_VALUE;
   out_params.nAutoFocus = CONST_PARAM_DEFAULT_VALUE;
-
 
   camera_hal_if_get_properties(handle, &out_params);
 
@@ -969,28 +971,34 @@ void DeviceControl::requestPreviewCancel()
      cancel_preview_ = true;
 }
 
-void DeviceControl::cancelPreviewThreadIfApplicable_()
+void DeviceControl::notifyDeviceFault_()
 {
-    if (cancel_preview_ == false)
-    {
-        return;
-    }
+    int num_subscribers = 0;
+    std::string reply;
+    LSError lserror;
+    LSErrorInit(&lserror);
 
-    if (native_handle_ == 0)
+    if (subskey_ != "")
     {
-        PMLOG_INFO(CONST_MODULE_DC, "native thread handle is empty!!");
-        return;
-    }
-    if (-1 == pthread_cancel(native_handle_))
-    {
-        PMLOG_INFO(CONST_MODULE_DC, "cannot cancel non-existing thread!!\n");
-        return;
-    }
+        num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
+        int fd = -1;
+        camera_hal_if_get_fd(cam_handle_, &fd);
+        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying device fault ... \n", fd, num_subscribers);
 
-    tidPreview.detach();
-    PMLOG_INFO(CONST_MODULE_DC, "preview thread cancelled: OK!!\n");
-
-    stop_capture((camera_handle_t*)cam_handle_);
-    destroy_buffer((camera_handle_t*)cam_handle_);
-    PMLOG_INFO(CONST_MODULE_DC, "releasing camera resources by directly calling base methods has at least been tried.\n");
+        if (num_subscribers > 0)
+        {
+            reply = "{\"returnValue\": true, \"eventType\": \""
+                  + getEventNotificationString(EventType::EVENT_TYPE_DEVICE_FAULT) + "\", \"id\": \"camera"
+                  + std::to_string(camera_id_) +"\"}";
+            if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
+            {
+                LSErrorPrint(&lserror, stderr);
+                LSErrorFree(&lserror);
+                PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] subscription reply failed\n", fd);
+                return;
+            }
+            PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notified device fault event !!\n", fd);
+        }
+    }
+    LSErrorFree(&lserror);
 }
