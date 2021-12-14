@@ -741,6 +741,11 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
 
   camera_hal_if_get_properties(handle, &out_params);
 
+  if (CAMERA_ERROR_NONE != camera_hal_if_get_properties(handle, &out_params))
+  {
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
   oparams->nPan = out_params.nPan;
   oparams->nTilt = out_params.nTilt;
   oparams->nContrast = out_params.nContrast;
@@ -933,7 +938,7 @@ void DeviceControl::broadcast_()
   std::lock_guard<std::mutex> mlock(client_pool_mutex_);
   {
     PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
-    
+
     auto it = client_pool_.begin();
     while (it != client_pool_.end())
     {
