@@ -211,7 +211,8 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey)
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey,
+                                                  LSHandle *sh, const char *subskey)
 {
   PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
 
@@ -221,7 +222,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string mem
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start preview
-    return ptr->startPreview(devhandle, memtype, pkey);
+    return ptr->startPreview(devhandle, memtype, pkey, sh, subskey);
   else
     return DEVICE_ERROR_UNKNOWN;
 }

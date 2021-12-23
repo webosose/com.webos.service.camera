@@ -117,7 +117,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
   PMLOG_INFO(CONST_MODULE_VDM, "handle : %p \n", handle);
 
   // open the camera here
-  ret = objdevicecontrol_.open(handle, devnode);
+  ret = objdevicecontrol_.open(handle, devnode, devid);
   if (DEVICE_OK != ret)
     PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
   else
@@ -269,7 +269,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::string memtype,
-                                                        int *pkey)
+                                                        int *pkey, LSHandle *sh, const char *subskey)
 {
   PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d \n", devhandle);
 
@@ -294,7 +294,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
       void *handle;
       DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
       // start preview
-      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startPreview(handle, memtype, pkey);
+      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startPreview(handle, memtype, pkey, sh, subskey);
       if (DEVICE_OK == ret)
       {
         //Increament preview count by 1

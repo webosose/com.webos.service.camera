@@ -331,7 +331,8 @@ bool CameraService::startPreview(LSMessage &message)
     memType = obj_startpreview.rGetParams();
     if (memType.str_memorytype == kMemtypeShmem)
     {
-        err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key);
+        err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key,
+                                                            this->get(), CONST_EVENT_NOTIFICATION);
 
         if (DEVICE_OK != err_id)
         {

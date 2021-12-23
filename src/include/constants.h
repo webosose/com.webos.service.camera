@@ -151,5 +151,6 @@ const std::string cstr_burst = "MODE_BURST";
 const std::string cstr_continuous = "MODE_CONTINUOUS";
 const std::string cstr_connect = "device_connect";
 const std::string cstr_disconnect = "device_disconnect";
+const std::string cstr_devicefault = "device_fault";
 
 #endif /*CAMERA_CONST_H_*/
