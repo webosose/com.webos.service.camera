@@ -25,10 +25,12 @@
 #include <sys/sem.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "camera_types.h"
 
+#define SHMEM_COMM_DEBUG
 #ifdef SHMEM_COMM_DEBUG
 #define DEBUG_PRINT(fmt, args...)                                                                  \
-  printf("\x1b[1;40;32m[SHM_API:%s] " fmt "\x1b[0m\r\n", __FUNCTION__, ##args)
+  PMLOG_INFO(CONST_MODULE_SHM, fmt, ##args)
 #else
 #define DEBUG_PRINT(fmt, args...)
 #endif
@@ -80,7 +82,7 @@ typedef struct
 SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pShmemKey,
                                                int unitSize, int unitNum, int extraSize)
 {
-  *phShmem = (SHMEM_HANDLE)malloc(sizeof(SHMEM_COMM_T));
+  *phShmem = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
   SHMEM_COMM_T *pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
 
   DEBUG_PRINT("hShmem = %p, pKey = %p, unitSize=%d, unitNum=%d\n", *phShmem,
@@ -99,7 +101,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
                 extraSize * unitNum;
   shmemMode |= IPC_CREAT | IPC_EXCL;
 
-  DEBUG_PRINT("shmem_key=%d\r\n", shmemKey);
+  DEBUG_PRINT("shmem_key=%d\n", shmemKey);
 
   pShmemBuffer->shmem_id = shmget((key_t)shmemKey, shmemSize, shmemMode);
   if (pShmemBuffer->shmem_id == -1)

@@ -79,24 +79,14 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},
     {EventType::EVENT_TYPE_PROPERTIES, cstr_properties},
-    {EventType::EVENT_TYPE_CONNECT, "DEVICE_CONNECT_EVENT"},
-    {EventType::EVENT_TYPE_DISCONNECT, "DEVICE_DISCONNECT_EVENT"}};
+    {EventType::EVENT_TYPE_CONNECT, cstr_connect},
+    {EventType::EVENT_TYPE_DISCONNECT, cstr_disconnect},
+    {EventType::EVENT_TYPE_DEVICE_FAULT, cstr_devicefault}};
 
 std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
                                                           {CAMERA_FORMAT_YUV, "YUV"},
                                                           {CAMERA_FORMAT_H264ES, "H264ES"},
                                                           {CAMERA_FORMAT_JPEG, "JPEG"}};
-
-extern PmLogContext getCameraLunaPmLogContext()
-{
-  static PmLogContext usLogContext = 0;
-  if (0 == usLogContext)
-  {
-    PmLogGetContext("camera", &usLogContext);
-  }
-  return usLogContext;
-}
-
 
 int getRandomNumber()
 {

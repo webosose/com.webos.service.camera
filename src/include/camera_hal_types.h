@@ -13,6 +13,7 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
+/*Only Use for HAL*/
 
 #ifndef CAMERA_HAL_TYPES
 #define CAMERA_HAL_TYPES
@@ -25,36 +26,6 @@
 #define CONST_MODULE_HAL "HAL"
 
 #define CONST_PARAM_DEFAULT_VALUE -999
-
-typedef enum
-{
-  CAMERA_ERROR_UNKNOWN = -1,
-  CAMERA_ERROR_NONE = 0,
-  CAMERA_ERROR_INVALID_PARAMETER,
-  CAMERA_ERROR_INVALID_STATE,
-  CAMERA_ERROR_DEVICE_OPEN,
-  CAMERA_ERROR_DEVICE_CLOSE,
-  CAMERA_ERROR_DEVICE_NOT_FOUND,
-  CAMERA_ERROR_PLUGIN_NOT_FOUND,
-  CAMERA_ERROR_CREATE_HANDLE,
-  CAMERA_ERROR_DESTROY_HANDLE,
-  CAMERA_ERROR_SET_FORMAT,
-  CAMERA_ERROR_GET_FORMAT,
-  CAMERA_ERROR_SET_BUFFER,
-  CAMERA_ERROR_GET_BUFFER,
-  CAMERA_ERROR_RELEASE_BUFFER,
-  CAMERA_ERROR_DESTROY_BUFFER,
-  CAMERA_ERROR_START_CAPTURE,
-  CAMERA_ERROR_STOP_CAPTURE,
-  CAMERA_ERROR_GET_IMAGE,
-  CAMERA_ERROR_SET_PROPERTIES,
-  CAMERA_ERROR_GET_PROPERTIES,
-  CAMERA_ERROR_GET_INFO,
-  CAMERA_ERROR_SET_CALLBACK,
-  CAMERA_ERROR_REMOVE_CALLBACK,
-  CAMERA_ERROR_NO_DEVICE,
-  CAMERA_ERROR_GET_BUFFER_FD
-} camera_error_t;
 
 typedef enum
 {
@@ -75,7 +46,7 @@ typedef struct
   std::mutex lock;
 } camera_handle_t;
 
-static PmLogContext getHALLunaPmLogContext()
+static inline PmLogContext getHALLunaPmLogContext()
 {
   static PmLogContext usLogContext = 0;
   if (0 == usLogContext)
@@ -85,6 +56,8 @@ static PmLogContext getHALLunaPmLogContext()
   return usLogContext;
 }
 
-#define HAL_LOG_INFO(module, args...) PmLogMsg(getHALLunaPmLogContext(), Info, module, 0, ##args)
+#define HAL_LOG_INFO(module, FORMAT__, ...) \
+  PmLogInfo(getHALLunaPmLogContext(), \
+  module, 0, "%s():%d " FORMAT__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
 
 #endif

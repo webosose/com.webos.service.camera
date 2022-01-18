@@ -33,7 +33,60 @@ WhitelistChecker::~WhitelistChecker()
 
 bool WhitelistChecker::check(LSHandle *lsHandle, const std::string &vendor, const std::string &subtype)
 {
-    PMLOG_INFO(CONST_MODULE_WLIST, "%s", __func__);
+    PMLOG_INFO(CONST_MODULE_WLIST, "vendor=[%s], subtype=[%s]", vendor.c_str(), subtype.c_str());
+
+    bool retValue = isSupportedCamera(vendor, subtype);
+
+    if(retValue)
+    {
+        createToast(lsHandle, subtype);
+    } else
+    {
+        createToast(lsHandle, "Unsupported camera");
+    }
+
+    return retValue;
+}
+
+
+bool WhitelistChecker::createToast(    LSHandle *lsHandle, const std::string &message)
+{
+    PMLOG_INFO(CONST_MODULE_WLIST, "message=[%s]",  message.c_str());
+
+    LSError lserror;
+    LSErrorInit(&lserror);
+    bool retValue = false;
+
+    pbnjson::JObject params = pbnjson::JObject();
+    params.put("message", pbnjson::JValue(message));
+    params.put("sourceId", "com.webos.service.camera");
+
+    retValue = LSCallOneReply( lsHandle,
+        "luna://com.webos.notification/createToast",
+        params.stringify().c_str(),
+        NULL, NULL, NULL, &lserror);
+
+    if(!retValue)
+    {
+        PMLOG_ERROR(CONST_MODULE_WLIST, "Notification: %s line : %d error on LSCallOneReply for createToast",__FUNCTION__, __LINE__);
+        LSErrorPrint(&lserror, stderr);
+        LSErrorFree(&lserror);
+    }
+
+    return retValue;
+}
+
+pbnjson::JValue WhitelistChecker::getListFromConfigd()
+{
+    PMLOG_INFO(CONST_MODULE_WLIST, "not implemented");
+    return NULL;
+}
+
+bool WhitelistChecker::isSupportedCamera(std::string vendor, std::string subtype)
+{
+    PMLOG_INFO(CONST_MODULE_WLIST, "vendor=[%s], subtype=[%s]", vendor.c_str(), subtype.c_str());
+
+    bool retValue = false;
 
     // get the JDOM tree from Confid
     auto root = getListFromConfigd();
@@ -61,47 +114,17 @@ bool WhitelistChecker::check(LSHandle *lsHandle, const std::string &vendor, cons
 
     for (int idx = 0; idx < whiteList.arraySize(); idx++) {
         auto wlist = whiteList[idx];
+
+        PMLOG_ERROR(CONST_MODULE_WLIST, "whiteList[%d] ==========", idx);
+        PMLOG_ERROR(CONST_MODULE_WLIST, "deviceSubtype: %s", wlist["deviceSubtype"].asString().c_str());
+        PMLOG_ERROR(CONST_MODULE_WLIST, "vendorName: %s", wlist["vendorName"].asString().c_str());
+
         if(wlist["vendorName"].asString().compare(vendor)==0 && wlist["deviceSubtype"].asString().compare(subtype)==0) {
-            createToast(lsHandle, subtype);
-            return true;
+            retValue = true;
         }
     }
 
-    createToast(lsHandle, "Unsupported camera");
-    return false;
-}
-
-
-bool WhitelistChecker::createToast(    LSHandle *lsHandle, const std::string &message)
-{
-    PMLOG_INFO(CONST_MODULE_WLIST, "%s %s", __func__, message.c_str());
-
-    LSError lserror;
-    LSErrorInit(&lserror);
-    bool retValue = false;
-
-    pbnjson::JObject params = pbnjson::JObject();
-    params.put("message", pbnjson::JValue(message));
-    params.put("sourceId", "com.webos.service.camera");
-
-    retValue = LSCallOneReply( lsHandle,
-        "luna://com.webos.notification/createToast",
-        params.stringify().c_str(),
-        NULL, NULL, NULL, &lserror);
-
-    if(!retValue)
-    {
-        PMLOG_ERROR(CONST_MODULE_WLIST, "Notification: %s line : %d error on LSCallOneReply for createToast",__FUNCTION__, __LINE__);
-        LSErrorPrint(&lserror, stderr);
-        LSErrorFree(&lserror);
-    }
-
+    PMLOG_INFO(CONST_MODULE_WLIST, "isSupported : %d", retValue);
     return retValue;
-}
-
-pbnjson::JValue WhitelistChecker::getListFromConfigd()
-{
-    PMLOG_INFO(CONST_MODULE_WLIST, "%s not implemented", __func__);
-    return NULL;
 }
 

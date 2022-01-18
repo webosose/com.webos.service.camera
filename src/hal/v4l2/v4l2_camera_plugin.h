@@ -53,7 +53,7 @@ extern "C"
 
   private:
     int findQueryId(int value);
-    int setV4l2Property(std::map <int,int>);
+    int setV4l2Property(std::map <int,int> &);
     int getV4l2Property(struct v4l2_queryctrl, int * value, int *);
     void getCameraFormatProperty(struct v4l2_fmtdesc, camera_properties_t *);
     void getResolutionProperty(camera_properties_t *);
@@ -72,7 +72,7 @@ extern "C"
     void createFourCCPixelFormatMap();
     void createCameraPixelFormatMap();
     unsigned long getFourCCPixelFormat(camera_pixel_format_t);
-    camera_pixel_format_t getCameraPixelFormat(int);
+    camera_pixel_format_t getCameraPixelFormat(unsigned long);
 
     static int xioctl(int, int, void *);
 

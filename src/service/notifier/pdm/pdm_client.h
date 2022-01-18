@@ -22,22 +22,18 @@
 #include <functional>
 #include <luna-service2/lunaservice.hpp>
 
-static bool deviceStateCb(LSHandle *, LSMessage *, void *);
-
-using pdmhandlercb = std::function<void(DEVICE_LIST_T *)>;
-
 class PDMClient : public DeviceNotifier
 {
 private:
-  static bool subscribeToPdmService(LSHandle *sh,
-                const char *serviceName, bool connected, void *ctx);
-  LSHandle *lshandle_;
+    static bool subscribeToPdmService(LSHandle *sh,
+                  const char *serviceName, bool connected, void *ctx);
+    LSHandle *lshandle_;
 
 public:
-  PDMClient() { lshandle_ = nullptr; }
-  virtual ~PDMClient() {}
-  virtual void subscribeToClient(pdmhandlercb, GMainLoop *loop) override;
-  void setLSHandle(LSHandle *);
+    PDMClient() { lshandle_ = nullptr; }
+    virtual ~PDMClient() {}
+    virtual void subscribeToClient(GMainLoop *loop) override;
+    void setLSHandle(LSHandle *);
 };
 
 #endif

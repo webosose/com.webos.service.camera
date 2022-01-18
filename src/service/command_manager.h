@@ -24,7 +24,6 @@
 #include <map>
 #include <string>
 
-#include "camera_hal_types.h"
 #include "virtual_device_manager.h"
 
 class Device
@@ -59,7 +58,7 @@ public:
   DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
-  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(int);
@@ -68,11 +67,13 @@ public:
   DEVICE_RETURN_CODE_T getFd(int, int *);
   int getCameraId(int);
   int getCameraHandle(int);
-  
+
   bool registerClientPid(int,int,int,std::string&);
   bool unregisterClientPid(int,int,std::string&);
 
   void handleCrash();
+
+  void requestPreviewCancel(int);
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/

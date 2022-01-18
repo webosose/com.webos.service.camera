@@ -19,7 +19,7 @@
 
 #include "pbnjson.h"
 
-static int deSerialize(const char *strInput, const char *inputSchema, jvalue_ref &objJson)
+static inline int deSerialize(const char *strInput, const char *inputSchema, jvalue_ref &objJson)
 {
   jerror *error = NULL;
   jschema_ref schema = jschema_create(j_cstr_to_buffer(inputSchema), &error);

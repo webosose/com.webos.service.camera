@@ -18,14 +18,19 @@
 #define CAMERA_TYPES_H_
 
 #include "PmLogLib.h"
-#include "camera_hal_types.h"
 #include "camera_hal_if_types.h"
 #include "constants.h"
 #include "luna-service2/lunaservice.h"
 
 #define PMLOG_ERROR(module, args...) PmLogMsg(getCameraLunaPmLogContext(), Error, module, 0, ##args)
-#define PMLOG_INFO(module, args...) PmLogMsg(getCameraLunaPmLogContext(), Info, module, 0, ##args)
-#define PMLOG_DEBUG(args...) PmLogMsg(getCameraLunaPmLogContext(), Debug, NULL, 0, ##args)
+#define PMLOG_INFO(module, FORMAT__, ...) \
+  PmLogInfo(getCameraLunaPmLogContext(), \
+  module, 0, "%s():%d " FORMAT__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define PMLOG_DEBUG(FORMAT__, ...) \
+  PmLogDebug(getCameraLunaPmLogContext(), \
+  "[%s:%d]" FORMAT__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+
 
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
@@ -147,7 +152,8 @@ enum class EventType
   EVENT_TYPE_FORMAT = 0,
   EVENT_TYPE_PROPERTIES,
   EVENT_TYPE_CONNECT,
-  EVENT_TYPE_DISCONNECT
+  EVENT_TYPE_DISCONNECT,
+  EVENT_TYPE_DEVICE_FAULT,
 };
 
 enum class CameraDeviceState
@@ -160,8 +166,8 @@ enum class CameraDeviceState
 /*Structures*/
 struct CAMERA_FORMAT
 {
-  int nWidth;
-  int nHeight;
+  unsigned int nWidth;
+  unsigned int nHeight;
   int nFps;
   camera_format_t eFormat;
   bool operator != (const CAMERA_FORMAT &);
@@ -212,6 +218,8 @@ typedef struct
   int nPortNum;
   char strVendorName[CONST_MAX_STRING_LENGTH];
   char strProductName[CONST_MAX_STRING_LENGTH];
+  char strVendorID[CONST_MAX_STRING_LENGTH];
+  char strProductID[CONST_MAX_STRING_LENGTH];
   char strDeviceType[CONST_MAX_STRING_LENGTH];
   char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
   int isPowerOnConnect;
@@ -224,13 +232,18 @@ typedef struct
   std::string str_memorysource;
 } camera_memory_source_t;
 
-typedef struct
-{
-  EventType event;
-  void *pdata;
-} event_notification_t;
 
-PmLogContext getCameraLunaPmLogContext();
+
+static inline PmLogContext getCameraLunaPmLogContext()
+{
+  static PmLogContext usLogContext = 0;
+  if (0 == usLogContext)
+  {
+    PmLogGetContext("camera", &usLogContext);
+  }
+  return usLogContext;
+}
+
 void getFormatString(int, char *);
 char *getTypeString(device_t);
 int getRandomNumber();

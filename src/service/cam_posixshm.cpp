@@ -35,8 +35,6 @@
 #include <sys/mman.h>
 #include "camera_types.h"
 
-#define PMLOG_INFO(module, args...) PmLogMsg(getCameraLunaPmLogContext(), Info, module, 0, ##args)
-
 #ifdef SHMEM_COMM_DEBUG
 #define DEBUG_PRINT(fmt, args...)                                                                  \
   printf("\x1b[1;40;32m[SHM_API:%s] " fmt "\x1b[0m\r\n", __FUNCTION__, ##args)

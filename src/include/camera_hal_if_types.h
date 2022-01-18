@@ -26,6 +26,36 @@
 
 typedef enum
 {
+  CAMERA_ERROR_UNKNOWN = -1,
+  CAMERA_ERROR_NONE = 0,
+  CAMERA_ERROR_INVALID_PARAMETER,
+  CAMERA_ERROR_INVALID_STATE,
+  CAMERA_ERROR_DEVICE_OPEN,
+  CAMERA_ERROR_DEVICE_CLOSE,
+  CAMERA_ERROR_DEVICE_NOT_FOUND,
+  CAMERA_ERROR_PLUGIN_NOT_FOUND,
+  CAMERA_ERROR_CREATE_HANDLE,
+  CAMERA_ERROR_DESTROY_HANDLE,
+  CAMERA_ERROR_SET_FORMAT,
+  CAMERA_ERROR_GET_FORMAT,
+  CAMERA_ERROR_SET_BUFFER,
+  CAMERA_ERROR_GET_BUFFER,
+  CAMERA_ERROR_RELEASE_BUFFER,
+  CAMERA_ERROR_DESTROY_BUFFER,
+  CAMERA_ERROR_START_CAPTURE,
+  CAMERA_ERROR_STOP_CAPTURE,
+  CAMERA_ERROR_GET_IMAGE,
+  CAMERA_ERROR_SET_PROPERTIES,
+  CAMERA_ERROR_GET_PROPERTIES,
+  CAMERA_ERROR_GET_INFO,
+  CAMERA_ERROR_SET_CALLBACK,
+  CAMERA_ERROR_REMOVE_CALLBACK,
+  CAMERA_ERROR_NO_DEVICE,
+  CAMERA_ERROR_GET_BUFFER_FD
+} camera_error_t;
+
+typedef enum
+{
   /* YUV */
   CAMERA_PIXEL_FORMAT_NV12 = 0x0000,
   CAMERA_PIXEL_FORMAT_NV21,
@@ -76,8 +106,8 @@ typedef enum
 typedef struct
 {
   camera_pixel_format_t pixel_format;
-  int stream_width;
-  int stream_height;
+  unsigned int stream_width;
+  unsigned int stream_height;
   int stream_fps;
   unsigned int buffer_size;
 } stream_format_t;
@@ -166,8 +196,11 @@ typedef struct
 typedef struct
 {
   char str_devicename[CONST_MAX_STRING_LENGTH];
+  char str_vendorid[CONST_MAX_STRING_LENGTH];
+  char str_productid[CONST_MAX_STRING_LENGTH];
   device_t n_devicetype;
   int b_builtin;
+  int n_cur_fps;            //fps currently set in camera(v4l2)
   int n_maxvideowidth;
   int n_maxvideoheight;
   int n_maxpicturewidth;

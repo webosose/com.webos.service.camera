@@ -30,6 +30,7 @@
 #include <string>
 #include <condition_variable>
 #include <vector>
+#include <pthread.h>
 
 
 typedef struct
@@ -77,20 +78,22 @@ private:
   static int n_imagecount_;
 
   std::vector<CLIENT_INFO_T> client_pool_;
+  std::mutex client_pool_mutex_;
   void broadcast_();
 
-  void try_auto_clean_shared_memory_(int);
-  std::mutex cleaner_mutex_;
-  std::condition_variable cleaner_trigger_;
-  std::thread tidCleaner_;
-  void cleaner_task_();
-  int handle_to_clean_;
+  bool cancel_preview_;
+  int buf_size_;
+
+  LSHandle *sh_;
+  std::string subskey_;
+  int camera_id_;
+  void notifyDeviceFault_();
 
 public:
   DeviceControl();
-  DEVICE_RETURN_CODE_T open(void *, std::string);
+  DEVICE_RETURN_CODE_T open(void *, std::string, int);
   DEVICE_RETURN_CODE_T close(void *);
-  DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *);
+  DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(void *, int);
   DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(void *);
@@ -107,6 +110,8 @@ public:
 
   bool registerClient(pid_t, int, int, std::string& outmsg);
   bool unregisterClient(pid_t, std::string& outmsg);
+
+  void requestPreviewCancel();
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

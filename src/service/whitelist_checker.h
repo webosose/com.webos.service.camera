@@ -30,6 +30,7 @@ public:
     }
     ~WhitelistChecker();
     bool check(LSHandle *, const std::string &, const std::string &);
+    bool isSupportedCamera(std::string, std::string);
 
  private:
     bool createToast(LSHandle *,    const std::string &);
