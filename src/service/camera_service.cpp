@@ -930,7 +930,7 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
 
   printMap();
 
-  auto func = [](LSHandle * handle, const char * service_name, bool connected, void * ctx)->bool {
+  auto func = [](LSHandle * input_handle, const char * service_name, bool connected, void * ctx)->bool {
     CameraService * self = static_cast<CameraService *>(ctx);
     auto info = self->cameraHandleInfo.find(service_name);
 
@@ -962,7 +962,7 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
         }
       }
 
-      LSCancelServerStatus(handle, info->second, nullptr);
+      LSCancelServerStatus(input_handle, info->second, nullptr);
       self->cameraHandleInfo.erase(service_name);
     }
     else

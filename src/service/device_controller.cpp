@@ -988,7 +988,7 @@ void DeviceControl::notifyDeviceFault_()
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
         int fd = -1;
         camera_hal_if_get_fd(cam_handle_, &fd);
-        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying device fault ... \n", fd, num_subscribers);
+        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying device fault ... num_subscribers = %d\n", fd, num_subscribers);
 
         if (num_subscribers > 0)
         {
