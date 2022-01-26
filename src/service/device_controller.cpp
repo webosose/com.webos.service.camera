@@ -741,6 +741,11 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
 
   camera_hal_if_get_properties(handle, &out_params);
 
+  if (CAMERA_ERROR_NONE != camera_hal_if_get_properties(handle, &out_params))
+  {
+    return DEVICE_ERROR_UNKNOWN;
+  }
+
   oparams->nPan = out_params.nPan;
   oparams->nTilt = out_params.nTilt;
   oparams->nContrast = out_params.nContrast;
@@ -764,12 +769,11 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   //update stGetData
   for (int i = 0; i < PROPERTY_END; i++)
   {
-     for (int j = 0; j < QUERY_END; j++)
-	 {
-          oparams->stGetData.data[i][j] = out_params.stGetData.data[i][j];
-
-		   PMLOG_INFO(CONST_MODULE_DC, "out_params.stGetData[%d][%d]:%d\n", i, j, out_params.stGetData.data[i][j]);
-     }
+    for (int j = 0; j < QUERY_END; j++)
+    {
+      oparams->stGetData.data[i][j] = out_params.stGetData.data[i][j];
+      PMLOG_DEBUG("out_params.stGetData[%d][%d]:%d\n", i, j, out_params.stGetData.data[i][j]);
+    }
   }
 
   // update resolution structure
@@ -784,7 +788,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
     {
       oparams->stResolution.n_height[n][count] = out_params.stResolution.n_height[n][count];
       oparams->stResolution.n_width[n][count] = out_params.stResolution.n_width[n][count];
-      PMLOG_INFO(CONST_MODULE_DC, "out_params.stResolution.c_res %s\n",
+      PMLOG_DEBUG("out_params.stResolution.c_res %s\n",
                  out_params.stResolution.c_res[n][count]);
       memset(oparams->stResolution.c_res[n][count], '\0',
              sizeof(oparams->stResolution.c_res[n][count]));
@@ -933,7 +937,7 @@ void DeviceControl::broadcast_()
   std::lock_guard<std::mutex> mlock(client_pool_mutex_);
   {
     PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
-    
+
     auto it = client_pool_.begin();
     while (it != client_pool_.end())
     {
@@ -983,7 +987,7 @@ void DeviceControl::notifyDeviceFault_()
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
         int fd = -1;
         camera_hal_if_get_fd(cam_handle_, &fd);
-        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying device fault ... \n", fd, num_subscribers);
+        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying device fault ... num_subscribers = %d\n", fd, num_subscribers);
 
         if (num_subscribers > 0)
         {

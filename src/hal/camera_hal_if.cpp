@@ -436,8 +436,8 @@ extern "C"
 
     const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
-    // check if HAL state is OPEN
-    if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
+    // check if HAL state is OPEN or STREAMING
+    if (camera_handle->current_state < CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN ");
