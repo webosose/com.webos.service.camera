@@ -304,10 +304,18 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
   devStatus.nDevIndex = devidx;
   PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
 
-  if (strcmp(pList->strDeviceType, "CAM") == 0)
-    devStatus.devType = DEVICE_CAMERA;
-  strncpy(devStatus.stList.strDeviceNode, pList->strDeviceNode,
-          CONST_MAX_STRING_LENGTH - 1);
+  /* double-check device path */ 
+  if (strstr(pList->strDeviceNode, "/dev/video") != NULL)
+  {
+      strncpy(devStatus.stList.strDeviceNode, pList->strDeviceNode,
+              CONST_MAX_STRING_LENGTH - 1);
+  }
+  else if (strstr(pList->strDeviceNode, "video") != NULL)
+  {
+      strncpy(devStatus.stList.strDeviceNode, "/dev/", CONST_MAX_STRING_LENGTH-1);
+      strncat(devStatus.stList.strDeviceNode, pList->strDeviceNode, CONST_MAX_STRING_LENGTH-1);
+  }
+  
   PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
               devStatus.stList.strDeviceNode);
   deviceMap_[devidx] = devStatus;
