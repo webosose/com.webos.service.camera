@@ -24,6 +24,7 @@
 
 #define MAX_TEST_CASES 100
 
+
 bool tc_passed[MAX_TEST_CASES];
 
 int tc_num = 0;
@@ -31,37 +32,39 @@ int tc_num = 0;
 
 int main(int argc, char const *argv[])
 {
-  ret_val_t retval = {0, 0};
+  ret_val_t retval = {0, {0, 0}};
 
 
   // test usual case senario
   std::cout << "\nTC #" << tc_num + 1 << std::endl;
   retval = run_as_child_process(open_start_stop_close, 0);
   std::cout << "use case 1 -- convensional usage test (no sync): retval = {"
-                     << retval.value << ", " << retval.info << "}" << std::endl;
+                     << retval.value << ", {" << retval.info[0] << ", "
+                     << retval.info[1] << "}}" << std::endl;
   if (retval.value == NO_ERROR)
   {
       tc_passed[tc_num] = true;
   }
-  else 
+  else
   {
       tc_passed[tc_num] = false;
-  }  
+  }
   tc_num++;
 
   // test sync case senario 1
   std::cout << "\nTC #" << tc_num + 1 << std::endl;
   retval = run_as_child_process(open_pid_start_stop_close_pid, 0);
-  std::cout << "use case 2 -- synchronous usage test with default signal SIGUSR1: retval = {" 
-                       << retval.value << ", " << retval.info << "}" << std::endl;
+  std::cout << "use case 2 -- synchronous usage test with default signal SIGUSR1: retval = {"
+                       << retval.value << ", {" << retval.info[0] << ", "
+                       << retval.info[1] << "}}" << std::endl;
   if (retval.value == NO_ERROR)
   {
       tc_passed[tc_num] = true;
   }
-  else 
+  else
   {
       tc_passed[tc_num] = false;
-  } 
+  }
   tc_num++;
 
   // test_syn case senario 2
@@ -71,7 +74,8 @@ int main(int argc, char const *argv[])
       std::cout << "\nTC #" << tc_num + 1 << std::endl;
       retval = run_as_child_process(open_pid_sig_start_stop_close_pid, i);
       std::cout << "use case 3 -- synchronous usage test with user specified signal: retval = {"
-                        << retval.value << ", " << retval.value << "}" << std::endl;
+                        << retval.value << ", {" << retval.info[0] << ", "
+                        << retval.info[1] << "}}" << std::endl;
       if (retval.value == NO_ERROR)
       {
          tc_passed[tc_num] = true;
@@ -86,8 +90,8 @@ int main(int argc, char const *argv[])
   // test logic for exception handling leading to safe closing the device.
   std::cout << "\nTC #" << tc_num + 1 << std::endl;
   retval = run_as_child_process(open_pid_sig_start_stop_close_pid, SIGKILL);
-  std::cout << "nexception: retval = {" << retval.value << ", " << retval.info << "}" << std::endl;
-  if (retval.value != 0 && retval.info != 0)
+  std::cout << "use case 3 -- invalid signal: retval = {" << retval.value << ", " << retval.info << "}" << std::endl;
+  if (retval.value != NO_ERROR)
   {
      tc_passed[tc_num] = true;
   }
@@ -97,25 +101,11 @@ int main(int argc, char const *argv[])
   }
   tc_num++;
 
-  if (retval.info != 0)
-  { 
-      std::cout << "\nTC #" << tc_num + 1 << std::endl;
-      retval = run_as_child_process(close_exception_handler, retval.info);
-      std::cout << "nexception handle: retval = {" << retval.value << ", " << retval.info << "}" << std::endl;
-      if (retval.value == NO_ERROR)
-      {
-         tc_passed[tc_num] = true;
-      }
-      else
-      {
-         tc_passed[tc_num] = false;
-      }
-      tc_num++;
-  }
-
+  // test logic for exception handling leading to safe closing the device.
+  std::cout << "\nTC #" << tc_num + 1 << std::endl;
   retval = run_as_child_process(open_pid_sig_start_stop_close_pid, SIGSTOP);
-  std::cout << "nexception: retval = {" << retval.value << ", " << retval.info << "}" << std::endl;
-  if (retval.value != 0 && retval.info != 0)
+  std::cout << "use case 3 -- invalid signal: retval = {" << retval.value << ", " << retval.info << "}" << std::endl;
+  if (retval.value != NO_ERROR)
   {
      tc_passed[tc_num] = true;
   }
@@ -125,21 +115,124 @@ int main(int argc, char const *argv[])
   }
   tc_num++;
 
-  if (retval.info != 0)
-  { 
-     std::cout << "\nTC #" << tc_num + 1 << std::endl;
-     retval = run_as_child_process(close_exception_handler, retval.info);
-     std::cout << "nexception handle: retval = {" << retval.value << ", " << retval.info << "}" << std::endl;
-     if (retval.value == NO_ERROR)
+
+
+
+  // test logic for exception handling leading to safe closing the device.
+  std::cout << "\nTC #" << tc_num + 1 << std::endl;
+  retval = run_as_child_process(open_pid_start_stop_close, 0);
+  std::cout << "use case 4 -- handling close exception >> synchronous usage test with default signal SIGUSR1: retval = {"
+                       << retval.value << ", {" << retval.info[0] << ", "
+                       << retval.info[1] <<"}}" << std::endl;
+  if (retval.value == NO_ERROR)
+  {
+      tc_passed[tc_num] = false;
+  }
+  else
+  {
+     if (retval.info[0] != 0 && retval.info[1] != 0)
      {
-        tc_passed[tc_num] = true;
+        retval = close_with_pid(retval.info[0], retval.info[1]);
+        if (retval.value == NO_ERROR)
+        {
+           tc_passed[tc_num] = true;
+        }
+        else
+        {
+           tc_passed[tc_num] = false;
+        }
      }
      else
      {
         tc_passed[tc_num] = false;
      }
-     tc_num++;
   }
+  tc_num++;
+
+
+  // test logic for exception handling leading to safe closing the device.
+  for (int i = SIGHUP; i <= SIGSYS; i++)
+  {
+      if (i == SIGKILL || i == SIGSTOP) continue;
+      std::cout << "\nTC #" << tc_num + 1 << std::endl;
+      retval = run_as_child_process(open_pid_sig_start_stop_close, i);
+      std::cout << "use case 5 -- handling close exception >> synchronous usage test with user specified signal: retval = {"
+                        << retval.value << ", {" << retval.info[0] << ", "
+                        << retval.info[1] <<"}}" << std::endl;
+      if (retval.value == NO_ERROR)
+      {
+         tc_passed[tc_num] = false;
+      }
+      else
+      {
+         if (retval.info[0] != 0 && retval.info[1] != 0)
+         {
+            retval = close_with_pid(retval.info[0], retval.info[1]);
+            if (retval.value == NO_ERROR)
+            {
+               tc_passed[tc_num] = true;
+            }
+            else
+            {
+               tc_passed[tc_num] = false;
+            }
+         }
+         else
+         {
+            tc_passed[tc_num] = false;
+         }
+      }
+      tc_num++;
+  }
+
+  // test logic for exception handling with invalid pid
+  std::cout << "\nTC #" << tc_num + 1 << std::endl;
+  retval = run_as_child_process(open_invalid_pid_close_invalid_pid, 0);
+  std::cout << "use case 6 -- open and close with imvalid pid with default signal SIGUSR1: retval = {"
+                       << retval.value << ", {" << retval.info[0] << ", "
+                       << retval.info[1] <<"}}" << std::endl;
+  if (retval.value == NO_ERROR)
+  {
+      tc_passed[tc_num] = true;
+  }
+  else
+  {
+      tc_passed[tc_num] = false;
+  }
+  tc_num++;
+
+
+  std::cout << "\nTC #" << tc_num + 1 << std::endl;
+  retval = run_as_child_process(open_invalid_pid_start_stop_close_invalid_pid, 0);
+  std::cout << "use case 7 -- open-startpreview-stoppreview-close with invalid pid with default signal SIGUSR1: retval = {"
+                       << retval.value << ", {" << retval.info[0] << ", "
+                       << retval.info[1] <<"}}" << std::endl;
+  if (retval.value == NO_ERROR)
+  {
+      tc_passed[tc_num] = true;
+  }
+  else
+  {
+      tc_passed[tc_num] = false;
+  }
+  tc_num++;
+
+  std::cout << "\nTC #" << tc_num + 1 << std::endl;
+  retval = run_as_child_process(open_invalid_pid_start_stop_close, 0);
+  std::cout << "use case 8 -- open with invalid pid-startpreview-stoppreview-close with default signal SIGUSR1: retval = {"
+                       << retval.value << ", {" << retval.info[0] << ", "
+                       << retval.info[1] <<"}}" << std::endl;
+  if (retval.value == NO_ERROR)
+  {
+      tc_passed[tc_num] = true;
+  }
+  else
+  {
+      tc_passed[tc_num] = false;
+  }
+  tc_num++;
+
+
   std::cout << "--------------------------------------------" << std::endl;
   std::cout << "Test Reports:" << std::endl;
   std::cout << "--------------------------------------------" << std::endl;
@@ -155,7 +248,7 @@ int main(int argc, char const *argv[])
          std::cout << "FAIL" << std::endl;
       }
   }
-  std::cout << "-----------------------------------------------" << std::endl;  
+  std::cout << "-----------------------------------------------" << std::endl;
 
   return 0;
 }

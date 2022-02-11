@@ -109,6 +109,7 @@ public:
 
   bool registerClient(pid_t, int, int, std::string& outmsg);
   bool unregisterClient(pid_t, std::string& outmsg);
+  bool isRegisteredClient(int devhandle);
 
   void requestPreviewCancel();
 };

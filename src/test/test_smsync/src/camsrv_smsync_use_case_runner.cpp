@@ -7,11 +7,11 @@
 ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
 {
     int fd[2];
-    ret_val_t val = {0, 0}; 
+    ret_val_t val = {0, {0, 0}};
 
     // create pipe descriptors
     pipe(fd);
-      
+
     int status_child;
 
     printf("parent pid: %d\n", getpid());
@@ -21,18 +21,18 @@ ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
     if (child < 0)
     {
         printf("fork error\n");
-        val = {-1, -1};
+        val = {-1, {-1, -1}};
         return val;
     }
     else if (child == 0)  // child
     {
-        ret_val_t retval = {0, 0};
+        ret_val_t retval = {0, {0, 0}};
 
         pid_t child_pid = getpid();
         printf("child process: pid = %d\n", child_pid);
-     
 
-        if (task) 
+
+        if (task)
         {
 	        retval = task(child_pid, iparam);
         }
@@ -45,7 +45,7 @@ ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
         close(fd[0]);
 
         // send the value on the write-descriptor.
-        write(fd[1], &retval, sizeof(retval)); 
+        write(fd[1], &retval, sizeof(retval));
 
         // close the write descriptor
         close(fd[1]);
@@ -69,7 +69,8 @@ ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
 	        // close the read-descriptor
 	        close(fd[0]);
 
-            printf("child process finished: ret_val={%d, %d}\n", val.value, val.info);
+            printf("child process finished: ret_val={%d, {%d, %d}}\n",
+                val.value, val.info[0], val.info[1]);
 
             if (WIFEXITED(status_child) != 0)
             {

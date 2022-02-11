@@ -378,6 +378,16 @@ bool CommandManager::unregisterClientPid(int devhandle, int n_client_pid, std::s
   return false;
 }
 
+bool CommandManager::isRegisteredClientPid(int devhandle)
+{
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->isRegisteredClient(devhandle);
+  }
+  return false;
+}
+
 void CommandManager::handleCrash()
 {
     PMLOG_INFO(CONST_MODULE_CM, "start freeing resources for abnormal service termination \n");

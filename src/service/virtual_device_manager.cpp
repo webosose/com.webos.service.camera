@@ -793,6 +793,11 @@ bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string & outm
   return objdevicecontrol_.unregisterClient((pid_t)n_client_pid, outmsg);
 }
 
+bool VirtualDeviceManager::isRegisteredClient(int devhandle)
+{
+  return objdevicecontrol_.isRegisteredClient(devhandle);
+}
+
 void VirtualDeviceManager::requestPreviewCancel()
 {
     objdevicecontrol_.requestPreviewCancel();

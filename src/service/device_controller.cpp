@@ -932,6 +932,19 @@ bool DeviceControl::unregisterClient(pid_t pid, std::string& outmsg)
   }
 }
 
+bool DeviceControl::isRegisteredClient(int devhandle)
+{
+  auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
+                         [=](const CLIENT_INFO_T& p) {
+                           return p.handle == devhandle;
+                         });
+  if (it == client_pool_.end())
+  {
+    return false;
+  }
+  return true;
+}
+
 void DeviceControl::broadcast_()
 {
   std::lock_guard<std::mutex> mlock(client_pool_mutex_);

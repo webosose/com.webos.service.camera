@@ -80,6 +80,7 @@ public:
 
   bool registerClient(int, int, int, std::string&);
   bool unregisterClient(int, std::string&);
+  bool isRegisteredClient(int);
 
   void requestPreviewCancel();
 };

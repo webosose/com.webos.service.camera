@@ -201,11 +201,19 @@ bool CameraService::open(LSMessage &message)
             PMLOG_INFO(CONST_MODULE_LUNA, "%s", outmsg.c_str());
             open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> ::" + outmsg);
           }
-          else // opened camera itself is valid!
+          else // opened camera itself is valid, but close policy is applied.
           {
             PMLOG_INFO(CONST_MODULE_LUNA, "%s", outmsg.c_str());
-            open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> :: " + outmsg);
+            err_id = DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL;
+            CommandManager::getInstance().close(ndevice_handle);
+            open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id) + "\n<pid, sig> :: " + outmsg);
           }
+        }
+        else // opened camera itself is valid, but close policy is applied.
+        {
+          err_id = DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL;
+          CommandManager::getInstance().close(ndevice_handle);
+          open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
         }
       }
     }
@@ -242,55 +250,57 @@ bool CameraService::close(LSMessage &message)
   }
   else
   {
+    bool bRetVal;
     int n_client_pid = obj_close.getClientProcessId();
     if (n_client_pid > 0)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "Try to unregister the client of pid %d\n", n_client_pid);
 
-      // first try remove the client pid from the client pid pool if the pid is valid
+      // First try remove the client pid from the client pid pool if the pid is valid.
       std::string pid_msg;
-      bool bRetVal;
-      bRetVal = CommandManager::getInstance().unregisterClientPid(ndevhandle, n_client_pid, pid_msg);
-      if (bRetVal == false)
-      {
-        PMLOG_INFO(CONST_MODULE_LUNA, "%s", pid_msg.c_str());
-        obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, 0, pid_msg);
-      }
-      else // if successul then close device here
-      {
-        PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+      CommandManager::getInstance().unregisterClientPid(ndevhandle, n_client_pid, pid_msg);
+      PMLOG_INFO(CONST_MODULE_LUNA, "%s", pid_msg.c_str());
 
-        err_id = CommandManager::getInstance().close(ndevhandle);
-        if (DEVICE_OK != err_id)
-        {
-          PMLOG_DEBUG("err_id != DEVICE_OK\n");
-          obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);
-        }
-        else
-        {
-          eraseWatcher(&message, ndevhandle);
-          PMLOG_DEBUG("err_id == DEVICE_OK\n");
-          obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);
-        }
-      }
-    }
-    else
-    {
+      // Even if pid unregistration failed, however, there is no problem in order to proceed to close()!
       PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
-
-      // close device here
       err_id = CommandManager::getInstance().close(ndevhandle);
-
       if (DEVICE_OK != err_id)
       {
         PMLOG_DEBUG("err_id != DEVICE_OK\n");
-        obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+        obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);
       }
       else
       {
         eraseWatcher(&message, ndevhandle);
         PMLOG_DEBUG("err_id == DEVICE_OK\n");
-        obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+        obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id) + "\npid :: " + pid_msg);
+      }
+    }
+    else // handles the exception in which the pid is not input but the pid has been registered when open.
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+
+      if (CommandManager::getInstance().isRegisteredClientPid(ndevhandle))
+      {
+        err_id = DEVICE_ERROR_CLIENT_PID_IS_MISSING;
+        obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+      }
+      else
+      {
+        // close device here
+        err_id = CommandManager::getInstance().close(ndevhandle);
+
+        if (DEVICE_OK != err_id)
+        {
+          PMLOG_DEBUG("err_id != DEVICE_OK\n");
+          obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+        }
+        else
+        {
+          eraseWatcher(&message, ndevhandle);
+          PMLOG_DEBUG("err_id == DEVICE_OK\n");
+          obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+        }
       }
     }
   }
