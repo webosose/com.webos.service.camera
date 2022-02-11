@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "camshm.h"
+#include "camshm_0-cpy.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -108,7 +108,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
   {
     DEBUG_PRINT("Can't open shared memory: %s\n", strerror(errno));
     free(pShmemBuffer);
-    return SHMEM_COMM_FAIL;
+    return SHMEM_FAILED;
   }
 
   DEBUG_PRINT("shared memory created/opened successfully!\n");
@@ -130,7 +130,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     {
       DEBUG_PRINT("Failed to get semaphore : %s\n", strerror(errno));
       free(pShmemBuffer);
-      return SHMEM_COMM_FAIL;
+      return SHMEM_FAILED;
     }
   }
 
@@ -183,68 +183,60 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
 
   DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
               SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
-  return SHMEM_COMM_OK;
+  return SHMEM_IS_OK;
 }
 
-SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
-                                              unsigned char *pExtraData, int extraDataSize)
+SHMEM_STATUS_T IPCSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
+                 int numBuffers, struct buffer pBufs[], struct buffer pBufsExt[])
 {
   SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
   if (!shmem_buffer)
   {
     DEBUG_PRINT("shmem_buffer is NULL\n");
-    return SHMEM_COMM_FAIL;
+    return SHMEM_IS_NULL;
   }
 
-  if (*shmem_buffer->write_index == -1)
+  if (numBuffers != *shmem_buffer->unit_num)
   {
-    *shmem_buffer->write_index = 0;
+    DEBUG_PRINT("posixshm buffer count mismatch\n");
+    return SHMEM_ERROR_COUNT_MISMATCH;
   }
 
-  int mark = *shmem_buffer->mark;
-  int unit_size = *shmem_buffer->unit_size;
-  int unit_num = *shmem_buffer->unit_num;
-  int lwrite_index = *shmem_buffer->write_index;
-  if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
+  for (int i = 0; i < *shmem_buffer->unit_num; i++)
   {
-    DEBUG_PRINT("extraDataSize should be same with extrasize used when open\n");
-    return SHMEM_COMM_FAIL;
+    pBufs[i].start = shmem_buffer->data_buf + i * (*shmem_buffer->unit_size);
+    pBufs[i].length = *shmem_buffer->unit_size;
   }
 
-  if (mark == SHMEM_COMM_MARK_RESET)
+  if (pBufsExt)
   {
-    DEBUG_PRINT("warning - read process isn't reset yet!\n");
+    for (int i = 0; i < *shmem_buffer->unit_num; i++)
+    {
+      pBufsExt->start = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
+      pBufsExt->length = *shmem_buffer->extra_size;
+    }
   }
+  return SHMEM_IS_OK;
+}
 
-  if ((dataSize == 0) || (dataSize > unit_size))
+SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size_t bytesWritten)
+{
+  SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
+  if (!shmem_buffer)
   {
-    DEBUG_PRINT("size error(%d > %d)!\n", dataSize, unit_size);
-    return SHMEM_COMM_FAIL;
+    DEBUG_PRINT("shmem_buffer is NULL\n");
+    return SHMEM_IS_NULL;
   }
-
-  // Once the writer writes the last buffer, it is made to point to the first
-  // buffer again
-  if (lwrite_index == unit_num)
+  if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
   {
-    DEBUG_PRINT("Overflow write data(write_index = %d, unit_num = %d)!\n", lwrite_index,
-                *shmem_buffer->unit_num);
-    *shmem_buffer->write_index = 0;
-    return SHMEM_COMM_OVERFLOW;
+    DEBUG_PRINT("size error(%d > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
+    return SHMEM_ERROR_RANGE_OUT;
   }
 
-  *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
-  memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
+  *shmem_buffer->write_index = index;
+  *(int *)(shmem_buffer->length_buf + index) = bytesWritten;
 
-  if (pExtraData && extraDataSize > 0)
-  {
-    memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size), pExtraData,
-           extraDataSize);
-  }
-
-  *shmem_buffer->write_index += 1;
-  if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
-    *shmem_buffer->write_index = 0;
-  return SHMEM_COMM_OK;
+  return SHMEM_IS_OK;
 }
 
 SHMEM_STATUS_T IPCSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem)
@@ -255,7 +247,7 @@ SHMEM_STATUS_T IPCSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem)
   if (!shmem_buffer)
   {
     DEBUG_PRINT("shmem_bufer is NULL\n");
-    return SHMEM_COMM_FAIL;
+    return SHMEM_IS_NULL;
   }
 
   void *shmem_addr = shmem_buffer->write_index;
@@ -276,5 +268,5 @@ SHMEM_STATUS_T IPCSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem)
   free(shmem_buffer);
   shmem_buffer = nullptr;
   DEBUG_PRINT("CloseShmemory end");
-  return SHMEM_COMM_OK;
+  return SHMEM_IS_OK;
 }

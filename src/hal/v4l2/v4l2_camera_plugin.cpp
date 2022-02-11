@@ -25,6 +25,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "usrptr_handle.h" // helps zero-copy write to shmem
+
+
 #define CONST_PARAM_DEFAULT_VALUE -999
 
 using namespace std;
@@ -40,7 +43,7 @@ void destroy_handle(void *handle)
 
 V4l2CameraPlugin::V4l2CameraPlugin()
     : stream_format_(), buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_(),
-      io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_()
+      io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_(), husrptr_(nullptr)
 {
 }
 
@@ -241,9 +244,17 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
       HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_DQBUF failed %d, %s", errno,
                    strerror(errno));
     }
-    outbuf->start = (void *)buf.m.userptr;
+
+    // write shmem header
+    write_usrptr_header((usrptr_handle_t*)husrptr_, buf.index, buf.bytesused);
+
+    // in order to transport shared memory key to the upper layers.
+    outbuf->fd = ((usrptr_handle_t*)husrptr_)->shm_key;
+
+    outbuf->start = buffers_[buf.index].start;
     outbuf->length = buf.bytesused;
     outbuf->index = buf.index;
+
     break;
   }
   case IOMODE_DMABUF:
@@ -273,22 +284,53 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
 
 int V4l2CameraPlugin::releaseBuffer(buffer_t inbuf)
 {
-  struct v4l2_buffer buf;
-  CLEAR(buf);
-  buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  buf.memory = V4L2_MEMORY_MMAP;
-  buf.index = inbuf.index;
 
-  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
+  switch (io_mode_)
   {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_QBUF failed %d, %s", errno,
-                 strerror(errno));
-    return CAMERA_ERROR_UNKNOWN;
-  }
+    case IOMODE_USERPTR:
+    {
+      struct v4l2_buffer buf;
+      memset(&buf, 0, sizeof(buf));
+      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+      buf.memory = V4L2_MEMORY_USERPTR;
+      buf.index = inbuf.index;
+      buf.m.userptr = (unsigned long)buffers_[inbuf.index].start;
+      buf.length = buffers_[inbuf.index].length;
 
-  if (IOMODE_DMABUF != io_mode_)
-  {
-    munmap(inbuf.start, inbuf.length);
+      if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
+      {
+        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_QBUF error %d, %s",
+                      errno, strerror(errno));
+        return CAMERA_ERROR_UNKNOWN;
+      }
+
+      break;
+    }
+    case IOMODE_MMAP:
+    case IOMODE_DMABUF:
+    {
+      // moved the whole original code blocks to this place (definately NOT applicable to user pointers!)
+      struct v4l2_buffer buf;
+      CLEAR(buf);
+      buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+      buf.memory = V4L2_MEMORY_MMAP;
+      buf.index = inbuf.index;
+
+      if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
+      {
+        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_QBUF failed %d, %s", errno,
+                     strerror(errno));
+        return CAMERA_ERROR_UNKNOWN;
+      }
+
+      if (IOMODE_DMABUF != io_mode_)
+      {
+        munmap(inbuf.start, inbuf.length);
+      }
+      break;
+    }
+    default:
+      break;
   }
 
   return CAMERA_ERROR_NONE;
@@ -358,6 +400,7 @@ int V4l2CameraPlugin::stopCapture()
 
   switch (io_mode_)
   {
+  case IOMODE_USERPTR:
   case IOMODE_MMAP:
   {
     enum v4l2_buf_type type;
@@ -920,18 +963,23 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer)
     return retVal;
   }
 
+  // user pointer handle to help zero-copy write frame buffers to shared memory.
+  husrptr_ = (void*)create_usrptr_handle(stream_format, num_buffer);
+  if (!husrptr_)
+  {
+    HAL_LOG_INFO(CONST_MODULE_HAL, "fail to get user pointer handle");
+    free(buffers_);
+    buffers_ = nullptr;
+    return CAMERA_ERROR_UNKNOWN;
+  }
+
   for (n_buffers_ = 0; n_buffers_ < req.count; ++n_buffers_)
   {
-    buffers_[n_buffers_].length = stream_format.buffer_size;
-    buffers_[n_buffers_].start = malloc(stream_format.buffer_size);
-
-    if (NULL == buffers_[n_buffers_].start)
-    {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "malloc failed %d, %s", errno,
-                   strerror(errno));
-      return CAMERA_ERROR_UNKNOWN;
-    }
+    // assign user pointer handle's shared memory buffers to user pointer buffers
+    buffers_[n_buffers_].length = ((usrptr_handle_t*)husrptr_)->buffers[n_buffers_].length;
+    buffers_[n_buffers_].start = ((usrptr_handle_t*)husrptr_)->buffers[n_buffers_].start;
   }
+
   return CAMERA_ERROR_NONE;
 }
 
@@ -954,13 +1002,15 @@ int V4l2CameraPlugin::releaseMmapBuffers()
 
 int V4l2CameraPlugin::releaseUserptrBuffers()
 {
-  for (unsigned int i = 0; i < n_buffers_; ++i)
+  if (buffers_)
   {
-    free(buffers_[i].start);
-    buffers_[i].start = NULL;
+    free(buffers_);
+    buffers_ = nullptr;
   }
-  free(buffers_);
-  buffers_ = NULL;
+
+  // free user pointer handle
+  destroy_usrptr_handle((usrptr_handle_t**)&husrptr_);
+
   return CAMERA_ERROR_NONE;
 }
 

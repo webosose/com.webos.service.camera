@@ -22,7 +22,6 @@
 ------------------------------------------------------------------------------*/
 #include "camera_hal_types.h"
 #include "camera_types.h"
-#include "camshm.h"
 #include "cam_posixshm.h"
 #include "constants.h"
 #include <unistd.h>
