@@ -67,7 +67,6 @@ private:
   std::mutex tMutex;
   std::condition_variable tCondVar;
   std::string strdevicenode_;
-  SHMEM_HANDLE h_shmsystem_;
   SHMEM_HANDLE h_shmposix_;
   std::string str_imagepath_;
   std::string str_capturemode_;
