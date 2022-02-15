@@ -18,14 +18,16 @@
 #define CAMSHM_H_
 
 #include <sys/shm.h>
+#include <stddef.h> // size_t
+#include "usrptr_handle.h" // struct buffer
 
 typedef enum
 {
-  SHMEM_COMM_OK = 0x0,
-  SHMEM_COMM_FAIL = -1,
-  SHMEM_COMM_OVERFLOW = -2,
-  SHMEM_COMM_NODATA = -3,
-  SHMEM_COMM_TERMINATE = -4,
+  SHMEM_IS_OK                  = 0x0,
+  SHMEM_FAILED                 = -1,
+  SHMEM_IS_NULL                = -2,
+  SHMEM_ERROR_COUNT_MISMATCH   = -3,
+  SHMEM_ERROR_RANGE_OUT        = -4,
 } SHMEM_STATUS_T;
 
 typedef void *SHMEM_HANDLE;
@@ -39,7 +41,8 @@ public:
     return sharedMemoryInstance;
   }
   SHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, key_t *, int, int, int);
-  SHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
+  SHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, struct buffer[], struct buffer []);
+  SHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
   SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);
 
   IPCSharedMemory (IPCSharedMemory const &)  = delete;

@@ -70,6 +70,7 @@ public:
 
   bool registerClientPid(int,int,int,std::string&);
   bool unregisterClientPid(int,int,std::string&);
+  bool isRegisteredClientPid(int);
 
   void handleCrash();
 

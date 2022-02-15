@@ -85,6 +85,9 @@ extern "C"
     int io_mode_;
     std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
     std::map<unsigned long, camera_pixel_format_t> camera_format_;
+
+    // handle to help zero-copy write to shmem
+    void * husrptr_;
   };
 
 #ifdef __cplusplus
