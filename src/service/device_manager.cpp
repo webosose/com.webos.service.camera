@@ -315,6 +315,11 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
       strncpy(devStatus.stList.strDeviceNode, "/dev/", CONST_MAX_STRING_LENGTH-1);
       strncat(devStatus.stList.strDeviceNode, pList->strDeviceNode, CONST_MAX_STRING_LENGTH-1);
   }
+  else
+  {
+      PMLOG_INFO(CONST_MODULE_DM, "fail to add device:  %s is not a valid device node!!", pList->strDeviceNode);
+      return false;
+  }
   
   PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
               devStatus.stList.strDeviceNode);
