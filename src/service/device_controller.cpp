@@ -199,12 +199,15 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
       streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
   int timeout = 10000;
-  buffer_t frame_buffer;
+  buffer_t frame_buffer = {0}; // now that zero-copy applied to system V shared memory.
   for (int i = 1; i <= ncount; i++)
   {
     if ((retval = poll(poll_set, 1, timeout)) > 0)
     {
-      frame_buffer.start = malloc(framesize);
+      if (str_memtype_ != kMemtypeShmem) // Non-zero copy version kept as is.
+      {
+        frame_buffer.start = malloc(framesize);
+      }
       retval = camera_hal_if_get_buffer(handle, &frame_buffer);
       if (CAMERA_ERROR_NONE != retval)
       {
@@ -219,8 +222,11 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
       if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
         return DEVICE_ERROR_CANNOT_WRITE;
 
-      free(frame_buffer.start);
-      frame_buffer.start = nullptr;
+      if (str_memtype_ != kMemtypeShmem) // Non-zero copy version kept as is.
+      {
+        free(frame_buffer.start);
+        frame_buffer.start = nullptr;
+      }
 
       retval = camera_hal_if_release_buffer(handle, frame_buffer);
       if (retval != CAMERA_ERROR_NONE)
