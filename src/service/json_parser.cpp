@@ -610,7 +610,16 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOEXPOSURE));
         jnumber_get_i32(jparams, &r_camproperties.nAutoExposure);
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOWHITEBALANCE));
-        jnumber_get_i32(jparams, &r_camproperties.nAutoWhiteBalance);
+        if (jis_boolean(jparams))
+        {
+            bool awb = false;
+            jboolean_get(jparams, &awb);
+            r_camproperties.nAutoWhiteBalance = awb ? 1 : 0;
+        }
+        else
+        {
+            jnumber_get_i32(jparams, &r_camproperties.nAutoWhiteBalance);
+        }
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION));
         jnumber_get_i32(jparams, &r_camproperties.nBacklightCompensation);
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_ZOOM_ABSOLUTE));

@@ -69,6 +69,7 @@ install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_singlet
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/)
+include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/appcast/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/solutions/)
 
 set(SRC_LIST
@@ -80,6 +81,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/json_parser.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/pdm_client.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/notifier/appcast/appcast_client.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/cam_posixshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
@@ -205,13 +207,21 @@ set (SRC_V4L2
 add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
 set_target_properties (v4l2-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
 
+#remote-camera-plugin library
+set (SRC_REMOTE
+     ${CMAKE_SOURCE_DIR}/src/hal/remote/remote_camera_plugin.cpp)
+add_library(remote-camera-plugin SHARED ${SRC_REMOTE})
+set_target_properties (remote-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
+
 #link libraries camera_hal and v4l2-camera-plugin
 target_link_libraries(camera_hal
                       v4l2-camera-plugin
+                      remote-camera-plugin
                       ${CMAKE_DL_LIBS}
                       ${PMLOGLIB_LDFLAGS}
                       pthread)
 install(TARGETS v4l2-camera-plugin DESTINATION ${WEBOS_INSTALL_LIBDIR})
+install(TARGETS remote-camera-plugin DESTINATION ${WEBOS_INSTALL_LIBDIR})
 install(TARGETS camera_hal DESTINATION ${WEBOS_INSTALL_LIBDIR})
 
 #haltestapp project exe

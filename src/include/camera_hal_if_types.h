@@ -110,6 +110,7 @@ typedef struct
     unsigned int stream_height;
     int stream_fps;
     unsigned int buffer_size;
+    const char *userdata;
 } stream_format_t;
 
 typedef struct

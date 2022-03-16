@@ -20,6 +20,7 @@
 #include <dlfcn.h>
 #include <new>
 #include <unistd.h>
+#include <cstring>
 
 #ifdef __cplusplus
 extern "C"
@@ -492,7 +493,13 @@ extern "C"
     int camera_hal_if_get_info(const char *devicenode, camera_device_info_t *caminfo)
     {
         void *handle;
-        int retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so");
+        int retVal;
+
+        if (strstr(devicenode, "udpsrc"))
+            retVal = camera_hal_if_init(&handle, "libremote-camera-plugin.so");
+        else
+            retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so");
+
         if (CAMERA_ERROR_NONE != retVal)
         {
             retVal = CAMERA_ERROR_GET_INFO;

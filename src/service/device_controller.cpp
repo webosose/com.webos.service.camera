@@ -427,6 +427,19 @@ DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode, i
     if (ret != CAMERA_ERROR_NONE)
         return DEVICE_ERROR_CAN_NOT_OPEN;
 
+    if (DeviceManager::getInstance().isRemoteCamera(handle))
+    {
+        stream_format_t in_format = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0, 0};
+
+        PMLOG_INFO(CONST_MODULE_DC, "set remote camera data");
+        in_format.userdata =
+            DeviceManager::getInstance().get_appcastclient()->connect_payload.c_str();
+
+        auto ret = camera_hal_if_set_format(handle, in_format);
+        if (ret != CAMERA_ERROR_NONE)
+            return DEVICE_ERROR_UNSUPPORTED_FORMAT;
+    }
+
     return DEVICE_OK;
 }
 

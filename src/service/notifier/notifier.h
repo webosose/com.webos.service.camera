@@ -17,6 +17,7 @@
 #ifndef NOTIFIER_H_
 #define NOTIFIER_H_
 
+#include "appcast_client.h"
 #include "camera_types.h"
 #include "device_notifier.h"
 #include "luna-service2/lunaservice.hpp"
@@ -28,6 +29,7 @@ class Notifier
 {
 private:
     PDMClient pdm_;
+    AppCastClient appcast_;
     LSHandle *lshandle_;
     DeviceNotifier *p_client_notifier_;
 

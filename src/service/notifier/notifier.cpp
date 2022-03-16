@@ -29,6 +29,15 @@ void Notifier::addNotifier(NotifierClient client, GMainLoop *loop)
             registerCallback(loop);
         }
     }
+    else if (client == NotifierClient::NOTIFIER_CLIENT_APPCAST)
+    {
+        p_client_notifier_ = &appcast_; // points to appcast object
+        if (nullptr != p_client_notifier_)
+        {
+            p_client_notifier_->setLSHandle(lshandle_);
+            registerCallback(loop);
+        }
+    }
 }
 
 void Notifier::registerCallback(GMainLoop *loop)

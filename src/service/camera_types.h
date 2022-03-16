@@ -125,7 +125,8 @@ typedef enum
 enum class NotifierClient
 {
     NOTIFIER_CLIENT_PDM = 0,
-    NOTIFIER_CLIENT_UDEV
+    NOTIFIER_CLIENT_UDEV,
+    NOTIFIER_CLIENT_APPCAST,
 };
 
 enum class EventType

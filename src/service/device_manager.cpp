@@ -231,7 +231,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCa
     return DEVICE_OK;
 }
 
-bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
+int DeviceManager::addDevice(DEVICE_LIST_T *pList)
 {
     DEVICE_STATUS devStatus;
     devStatus.devType      = DEVICE_CAMERA;
@@ -284,7 +284,7 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
         }
     }
     if (devidx == 0)
-        return false;
+        return 0;
 
     devStatus.nDevIndex = devidx;
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
@@ -302,14 +302,14 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
     {
         PMLOG_INFO(CONST_MODULE_DM, "fail to add device:  %s is not a valid device node!!",
                    pList->strDeviceNode.c_str());
-        return false;
+        return 0;
     }
 
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
                devStatus.stList.strDeviceNode.c_str());
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
-    return true;
+    return devidx;
 }
 
 bool DeviceManager::removeDevice(int devid)
@@ -332,7 +332,12 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
 {
     PMLOG_INFO(CONST_MODULE_DM, "started! nDevCount : %d \n", nDevCount);
 
-    if (deviceMap_.size() < nDevCount) // Plugged
+    // Find the number of V4L2 cameras
+    int numV4L2Cameras = deviceMap_.size();
+    for (auto iter : deviceMap_)
+      if ( isRemoteCamera(iter.second.stList) ) numV4L2Cameras --;
+
+    if (numV4L2Cameras < nDevCount) // Plugged
     {
         *pCamEvent = DEVICE_EVENT_STATE_PLUGGED;
         for (int i = 0; i < nDevCount; i++)
@@ -354,12 +359,17 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
             }
         }
     }
-    else if (deviceMap_.size() > nDevCount) // Unpluged
+    else if (numV4L2Cameras > nDevCount) // Unpluged
     {
         *pCamEvent = DEVICE_EVENT_STATE_UNPLUGGED;
         for (auto iter = deviceMap_.begin(); iter != deviceMap_.end();)
         {
             bool unplugged = true;
+
+            // Skip remote camera
+            if ( isRemoteCamera(iter->second.stList) )
+              unplugged = false;
+
             // Find out which camera is unplugged
             for (int i = 0; i < nDevCount; i++)
             {
@@ -451,3 +461,105 @@ DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
 
     return DEVICE_OK;
 }
+
+int DeviceManager::addRemoteCamera(deviceInfo_t *deviceInfo, bool fakeCamera)
+{
+    DEVICE_LIST_T devInfo;
+
+    if (!deviceInfo)
+        return 0;
+
+    PMLOG_INFO(CONST_MODULE_DM, "start");
+    devInfo.nDeviceNum       = 0;
+    devInfo.nPortNum         = 0;
+    devInfo.isPowerOnConnect = true;
+    devInfo.strVendorID      = "RemoteCamera";
+    devInfo.strProductID     = "RemoteCamera";
+    devInfo.strVendorName =
+        (!deviceInfo->manufacturer.empty()) ? deviceInfo->manufacturer : "LG Electronics";
+    devInfo.strProductName =
+        (!deviceInfo->modelName.empty()) ? deviceInfo->modelName : "ThinQ WebCam";
+    devInfo.strDeviceType        = "CAM";
+    devInfo.strDeviceSubtype     = "IP-CAM JPEG";
+    std::string remoteDeviceNode = "udpsrc=" + deviceInfo->clientKey;
+    if (fakeCamera)
+        remoteDeviceNode = "udpsrc_fake=" + deviceInfo->clientKey;
+    devInfo.strDeviceNode = remoteDeviceNode;
+    devInfo.strDeviceKey  = deviceInfo->clientKey;
+
+    remoteCamIdx_ = addDevice(&devInfo);
+
+    if (fakeCamera)
+        fakeCamIdx_ = remoteCamIdx_;
+
+    printCameraStatus();
+    return 1;
+}
+
+int DeviceManager::removeRemoteCamera()
+{
+    PMLOG_INFO(CONST_MODULE_DM, "start");
+
+    DEVICE_STATUS *pStatus = &deviceMap_[remoteCamIdx_];
+    if (pStatus->isDeviceOpen && pStatus->handleList.size() > 0)
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
+        CommandManager::getInstance().requestPreviewCancel(remoteCamIdx_);
+        for (int i = pStatus->handleList.size() - 1; i >= 0; i--)
+        {
+            CommandManager::getInstance().stopPreview(pStatus->handleList[i]);
+            CommandManager::getInstance().close(pStatus->handleList[i]);
+        }
+        PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");
+    }
+    removeDevice(remoteCamIdx_);
+
+    if (fakeCamIdx_ == remoteCamIdx_)
+        fakeCamIdx_ = 0;
+    remoteCamIdx_ = 0;
+
+    printCameraStatus();
+    return 1;
+}
+
+int DeviceManager::set_appcastclient(AppCastClient *pData)
+{
+    appCastClient_ = pData;
+    return 1;
+}
+
+AppCastClient *DeviceManager::get_appcastclient() { return appCastClient_; }
+
+bool DeviceManager::isRemoteCamera(DEVICE_LIST_T &deviceList)
+{
+    return (deviceList.strDeviceSubtype == "IP-CAM JPEG");
+}
+
+bool DeviceManager::isRemoteCamera(void *camhandle)
+{
+    for (auto iter : deviceMap_)
+    {
+        if (iter.second.pcamhandle == camhandle)
+        {
+            return isRemoteCamera(iter.second.stList);
+        }
+    }
+
+    return false;
+}
+
+bool DeviceManager::isRemoteCamera(int devid) { return (devid == remoteCamIdx_); }
+
+bool DeviceManager::isFakeCamera(int devid) { return (devid == fakeCamIdx_); }
+
+void DeviceManager::printCameraStatus()
+{
+    // Print the number of cameras
+    int numV4L2Cameras = deviceMap_.size();
+    for (auto iter : deviceMap_)
+        if (isRemoteCamera(iter.second.stList))
+            numV4L2Cameras--;
+    PMLOG_INFO(CONST_MODULE_DM, "total_cameras:%d, usb:%d, remote:%d \n", deviceMap_.size(),
+               numV4L2Cameras, deviceMap_.size() - numV4L2Cameras);
+}
+
