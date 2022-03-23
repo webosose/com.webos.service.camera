@@ -802,3 +802,67 @@ void VirtualDeviceManager::requestPreviewCancel()
 {
     objdevicecontrol_.requestPreviewCancel();
 }
+
+DEVICE_RETURN_CODE_T VirtualDeviceManager::getSupportedCameraSolutionInfo(int devhandle, std::vector<std::string>& solutionsInfo)
+{
+    // get device id for virtual device handle
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid = obj_devstate.ndeviceid_;
+    PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
+
+    if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
+    {
+        // get supported solutions of device opened
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getSupportedCameraSolutionInfo(solutionsInfo);
+        return ret;
+    }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
+        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+    }
+}
+
+DEVICE_RETURN_CODE_T VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+{
+    PMLOG_INFO(CONST_MODULE_VDM, "VirtualDeviceManager enableCameraSolutionInfo E\n");
+
+    // get device id for virtual device handle
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid = obj_devstate.ndeviceid_;
+    PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
+
+    if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
+    {
+        // get enabled solutions of device opened
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions, enabledSolutions);
+        return ret;
+    }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
+        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+    }
+}
+
+DEVICE_RETURN_CODE_T VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+{
+    PMLOG_INFO(CONST_MODULE_VDM, "VirtualDeviceManager disableCameraSolutionInfo E\n");
+
+    // get device id for virtual device handle
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid = obj_devstate.ndeviceid_;
+    PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
+
+    if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
+    {
+        // get disabled solutions of device opened
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.disableCameraSolution(solutions, enabledSolutions);
+        return ret;
+    }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
+        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+    }
+}
