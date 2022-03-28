@@ -456,7 +456,8 @@ DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
     if (n_invalid_id == dev_num)
         return DEVICE_ERROR_NODEVICE;
 
-    deviceMap_[dev_num].nDeviceID  = devicehandle;
+    if (handle)
+        deviceMap_[dev_num].nDeviceID = devicehandle;
     deviceMap_[dev_num].pcamhandle = handle;
 
     return DEVICE_OK;
