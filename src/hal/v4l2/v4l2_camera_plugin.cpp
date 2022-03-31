@@ -454,20 +454,9 @@ int V4l2CameraPlugin::setProperties(const camera_properties_t *cam_in_params)
   gIdWithPropertyValue[PROPERTY_TILT] = cam_in_params->nTilt;
   gIdWithPropertyValue[PROPERTY_AUTOFOCUS] = cam_in_params->nAutoFocus;
   gIdWithPropertyValue[PROPERTY_ZOOMABSOLUTE] = cam_in_params->nZoomAbsolute;
-
-  if (cam_in_params->nAutoWhiteBalance == 0) //set param in manual white balance (0: manual, 1:auto)
-  {
-     gIdWithPropertyValue[PROPERTY_WHITEBALANCETEMPERATURE] =
-                                       cam_in_params->nWhiteBalanceTemperature;
-  }
-  if (cam_in_params->nAutoExposure == 1) //set param in manual exposure (1:manual mode, 3:aperture priority mode)
-  {
-     gIdWithPropertyValue[PROPERTY_EXPOSURE] = cam_in_params->nExposure;
-  }
-  if (cam_in_params->nAutoFocus == 0) //set param in manual focus(0: manual, 1: auto)
-  {
-     gIdWithPropertyValue[PROPERTY_FOCUSABSOLUTE] = cam_in_params->nFocusAbsolute;
-  }
+  gIdWithPropertyValue[PROPERTY_WHITEBALANCETEMPERATURE] = cam_in_params->nWhiteBalanceTemperature;
+  gIdWithPropertyValue[PROPERTY_EXPOSURE] = cam_in_params->nExposure;
+  gIdWithPropertyValue[PROPERTY_FOCUSABSOLUTE] = cam_in_params->nFocusAbsolute;
 
   retVal = setV4l2Property(gIdWithPropertyValue);
 
@@ -483,7 +472,7 @@ int V4l2CameraPlugin::findQueryId(int value)
   else if (value == PROPERTY_SATURATION)
     return V4L2_CID_SATURATION;
   else if (value == PROPERTY_HUE)
-    return V4L2_CID_SATURATION;
+    return V4L2_CID_HUE;
   else if (value == PROPERTY_AUTOWHITEBALANCE)
     return V4L2_CID_AUTO_WHITE_BALANCE;
   else if (value == PROPERTY_GAMMA)
@@ -743,7 +732,14 @@ int V4l2CameraPlugin::setV4l2Property(std::map <int, int> &gIdWithPropertyValue)
       {
         HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_QUERYCTRL[%d] failed %d, %s", (int)(queryctrl.id), errno,
                  strerror(errno));
-        return CAMERA_ERROR_UNKNOWN;
+        if(errno == EINVAL)
+        {
+          continue;
+        }
+        else
+        {
+          return CAMERA_ERROR_UNKNOWN;
+        }
       }
       else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
       {
@@ -760,7 +756,14 @@ int V4l2CameraPlugin::setV4l2Property(std::map <int, int> &gIdWithPropertyValue)
       if (xioctl(fd_, VIDIOC_S_CTRL, &control) != CAMERA_ERROR_NONE)
       {
         HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_S_CTRL[%s] set value:%d, failed %d, %s",queryctrl.name, control.value, errno, strerror(errno));
-        return CAMERA_ERROR_UNKNOWN;
+        if(errno == EINVAL)
+        {
+          continue;
+        }
+        else
+        {
+          return CAMERA_ERROR_UNKNOWN;
+        }
       }
     }
   }
