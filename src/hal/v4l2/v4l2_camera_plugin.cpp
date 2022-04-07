@@ -851,14 +851,15 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
         frmsize.index        = 0;
         struct v4l2_frmivalenum fival;
         CLEAR(fival);
+        int res_index = 0;
 
         while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMESIZES, &frmsize)))
         {
             if (V4L2_FRMSIZE_TYPE_DISCRETE == frmsize.type)
             {
-                cam_out_params->stResolution.n_height[ncount][frmsize.index] =
+                cam_out_params->stResolution.n_height[ncount][res_index] =
                     frmsize.discrete.height;
-                cam_out_params->stResolution.n_width[ncount][frmsize.index] =
+                cam_out_params->stResolution.n_width[ncount][res_index] =
                     frmsize.discrete.width;
                 fival.index        = 0;
                 fival.pixel_format = frmsize.pixel_format;
@@ -866,20 +867,36 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
                 fival.height       = frmsize.discrete.height;
                 while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMEINTERVALS, &fival)))
                 {
-                    snprintf(cam_out_params->stResolution.c_res[ncount][frmsize.index], 20,
+                    snprintf(cam_out_params->stResolution.c_res[ncount][res_index], 20,
                              "%d,%d,%d", frmsize.discrete.width, frmsize.discrete.height,
                              fival.discrete.denominator / fival.discrete.numerator);
                     HAL_LOG_INFO(CONST_MODULE_HAL, "c_res %s ",
-                                 cam_out_params->stResolution.c_res[ncount][frmsize.index]);
-                    cam_out_params->stResolution.n_frameindex[ncount] = frmsize.index;
-                    break;
+                                 cam_out_params->stResolution.c_res[ncount][res_index]);
+                    cam_out_params->stResolution.n_frameindex[ncount] = res_index;
+                    fival.index++;
+                    res_index++;
+                    if (res_index >= CONST_MAX_INDEX)
+                    {
+                        HAL_LOG_INFO(CONST_MODULE_HAL, "WARN : Exceeded resolution table size!");
+                        break;
+                    }
                 }
             }
             else if (V4L2_FRMSIZE_TYPE_STEPWISE == frmsize.type)
             {
-                snprintf(cam_out_params->stResolution.c_res[ncount][frmsize.index], 10, "%d,%d",
+                snprintf(cam_out_params->stResolution.c_res[ncount][res_index], 10, "%d,%d",
                          frmsize.stepwise.max_width, frmsize.stepwise.max_height);
+                cam_out_params->stResolution.n_frameindex[ncount] = res_index;
+                res_index++;
+                HAL_LOG_INFO(CONST_MODULE_HAL, "framesize type : V4L2_FRMSIZE_TYPE_STEPWISE");
             }
+            else if (V4L2_FRMSIZE_TYPE_CONTINUOUS == frmsize.type)
+            {
+                HAL_LOG_INFO(CONST_MODULE_HAL, "framesize type : V4L2_FRMSIZE_TYPE_CONTINUOUS");
+            }
+
+            if (res_index >= CONST_MAX_INDEX)
+                break;
             frmsize.index++;
         }
         ncount++;
