@@ -147,14 +147,6 @@ extern "C"
     else
       return CAMERA_ERROR_UNKNOWN;
   }
-  int destroy_dma_fd(camera_handle_t *h)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->destroyBuffer();
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
 
 #ifdef __cplusplus
 }

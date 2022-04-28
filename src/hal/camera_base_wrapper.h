@@ -39,7 +39,6 @@ extern "C"
   int get_properties(camera_handle_t *, camera_properties_t *);
   int get_info(camera_handle_t *, camera_device_info_t *, const char *);
   int get_buffer_fd(camera_handle_t *, int *, int *);
-  int destroy_dma_fd(camera_handle_t *);
 
 #ifdef __cplusplus
 }

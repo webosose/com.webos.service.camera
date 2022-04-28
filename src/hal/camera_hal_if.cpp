@@ -31,15 +31,15 @@ extern "C"
     camera_handle_t *camera_handle = new (std::nothrow) camera_handle_t();
     if (!camera_handle)
     {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle is NULL\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle is NULL");
       return CAMERA_ERROR_CREATE_HANDLE;
     }
-    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle : %p\n", camera_handle);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle : %p", camera_handle);
 
     camera_handle->h_plugin = dlopen(subsystem, RTLD_LAZY);
     if (!camera_handle->h_plugin)
     {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : dlopen failed for : %s\n", subsystem);
+      HAL_LOG_INFO(CONST_MODULE_HAL, "dlopen failed for : %s", subsystem);
       delete camera_handle;
       return CAMERA_ERROR_PLUGIN_NOT_FOUND;
     }
@@ -50,13 +50,13 @@ extern "C"
 
     if (!pf_create_handle)
     {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : dlsym failed \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "dlsym failed ");
       delete camera_handle;
       return CAMERA_ERROR_CREATE_HANDLE;
     }
 
     camera_handle->handle = (void *)pf_create_handle();
-    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_init : camera_handle->handle : %p \n",
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle->handle : %p ",
                  camera_handle->handle);
     camera_handle->current_state = CAMERA_HAL_STATE_INIT;
 
@@ -70,18 +70,18 @@ extern "C"
     camera_handle_t *camera_handle = (camera_handle_t *)h;
     if (!camera_handle)
     {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_deinit : camera_handle is NULL\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle is NULL");
       return CAMERA_ERROR_DESTROY_HANDLE;
     }
 
-    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_deinit : camera_handle : %p \n", camera_handle);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle : %p ", camera_handle);
 
     typedef void (*pfn_destroy_handle)(void *);
     pfn_destroy_handle pf_destroy_handle =
         (pfn_destroy_handle)dlsym(camera_handle->h_plugin, "destroy_handle");
     if (!pf_destroy_handle)
     {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_deinit : dlsym failed \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "dlsym failed ");
       return CAMERA_ERROR_DESTROY_HANDLE;
     }
 
@@ -101,18 +101,18 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
     if (!*dev)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : device node is empty \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "device node is empty ");
       return retVal;
     }
 
-    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : camera_handle : %p , device : %s\n",
+    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle : %p , device : %s",
                  camera_handle, dev);
 
     const std::lock_guard<std::mutex> lock(camera_handle->lock);
@@ -121,17 +121,17 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : Camera HAL State not INIT \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not INIT ");
       return retVal;
     }
 
     camera_handle->fd = open_device(camera_handle, dev);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : fd : %d \n", camera_handle->fd);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "fd : %d ", camera_handle->fd);
 
     if (camera_handle->fd == CAMERA_ERROR_UNKNOWN)
     {
       retVal = CAMERA_ERROR_DEVICE_OPEN;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_open_device : fd invalid \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "fd invalid ");
     }
     else
     {
@@ -148,7 +148,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -158,14 +158,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device : Camera HAL State not OPEN\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == close_device(camera_handle))
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_close_device :close_device failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "close_device failed");
     }
     else
     {
@@ -182,7 +182,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -192,14 +192,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : Camera HAL State not OPEN\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == set_format(camera_handle, stream_format))
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_format : set_format failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "set_format failed");
     }
     return retVal;
   }
@@ -212,7 +212,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_format : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -222,15 +222,14 @@ extern "C"
     if (camera_handle->current_state == CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
-      HAL_LOG_INFO(CONST_MODULE_HAL,
-                   "camera_hal_if_get_format : Camera HAL State not OPEN or STREAMING \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN or STREAMING ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == get_format(camera_handle, stream_format))
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_format : get_format failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "get_format failed");
     }
     return retVal;
   }
@@ -243,7 +242,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -253,14 +252,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : Camera HAL State not OPEN \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == set_buffer(camera_handle, NoBuffer, IOMode))
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_buffer : set_buffer failed \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "set_buffer failed ");
     }
     return retVal;
   }
@@ -273,7 +272,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -283,15 +282,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL,
-                   "camera_hal_if_get_buffer : Camera HAL State not STREAMING \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not STREAMING ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == get_buffer(camera_handle, buf))
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer : get_buffer failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "get_buffer failed");
     }
     return retVal;
   }
@@ -304,7 +302,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_release_buffer : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -314,15 +312,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL,
-                   "camera_hal_if_release_buffer : Camera HAL State not STREAMING \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not STREAMING ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == release_buffer(camera_handle, buf))
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_release_buffer : release_buffer failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "release_buffer failed");
     }
     return retVal;
   }
@@ -335,7 +332,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -345,14 +342,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : Camera HAL State not OPEN \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == destroy_buffer(camera_handle))
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_buffer : destroy_buffer failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "destroy_buffer failed");
     }
     return retVal;
   }
@@ -365,7 +362,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -375,14 +372,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : Camera HAL State not OPEN \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == start_capture(camera_handle))
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_start_capture : start_capture failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "start_capture failed");
     }
     else
     {
@@ -399,7 +396,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_stop_capture : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -409,15 +406,14 @@ extern "C"
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
-      HAL_LOG_INFO(CONST_MODULE_HAL,
-                   "camera_hal_if_stop_capture : Camera HAL State not STREAMING \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not STREAMING ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == stop_capture(camera_handle))
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_stop_capture : stop_capture failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "stop_capture failed");
     }
     else
     {
@@ -434,24 +430,24 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
     const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
-    // check if HAL state is OPEN
-    if (camera_handle->current_state != CAMERA_HAL_STATE_OPEN)
+    // check if HAL state is OPEN or STREAMING
+    if (camera_handle->current_state < CAMERA_HAL_STATE_OPEN)
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : Camera HAL State not OPEN \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN ");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == set_properties(camera_handle, cam_in_params))
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_set_properties : set_properties failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "set_properties failed");
     }
     return retVal;
   }
@@ -464,7 +460,7 @@ extern "C"
     if (!camera_handle)
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_properties : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
 
@@ -473,15 +469,14 @@ extern "C"
     if (camera_handle->current_state == CAMERA_HAL_STATE_INIT)
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
-      HAL_LOG_INFO(CONST_MODULE_HAL,
-                   "camera_hal_if_get_properties : Camera HAL State not OPEN or STREAMING\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "Camera HAL State not OPEN or STREAMING");
       return retVal;
     }
 
     if (CAMERA_ERROR_UNKNOWN == get_properties(camera_handle, cam_out_params))
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_properties : get_properties failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "get_properties failed");
     }
     return retVal;
   }
@@ -503,7 +498,7 @@ extern "C"
     if (CAMERA_ERROR_NONE != retVal)
     {
       retVal = CAMERA_ERROR_GET_INFO;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_info : camera_handle NULL \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle NULL ");
       return retVal;
     }
     camera_handle_t *camera_handle = (camera_handle_t *)handle;
@@ -512,7 +507,7 @@ extern "C"
     if (CAMERA_ERROR_UNKNOWN == retVal)
     {
       retVal = CAMERA_ERROR_GET_INFO;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_info : get_info failed\n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "get_info failed");
     }
 
     camera_hal_if_deinit(handle);
@@ -531,37 +526,13 @@ extern "C"
       if (retVal == CAMERA_ERROR_UNKNOWN)
       {
         retVal = CAMERA_ERROR_GET_BUFFER_FD;
-        HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer_fd failed \n");
+        HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_ERROR_UNKNOWN failed ");
       }
     }
     else
     {
       retVal = CAMERA_ERROR_GET_BUFFER_FD;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_get_buffer_fd : camera handle NULL  \n");
-    }
-    return retVal;
-  }
-
-
-  int camera_hal_if_destroy_dmafd(void *h)
-  {
-    int retVal = -1;
-    camera_handle_t *camera_handle = (camera_handle_t *)h;
-    if (camera_handle)
-    {
-      const std::lock_guard<std::mutex> lock(camera_handle->lock);
-
-      retVal = destroy_dma_fd(camera_handle);
-      if (retVal == CAMERA_ERROR_UNKNOWN)
-      {
-        retVal = CAMERA_ERROR_GET_BUFFER_FD;
-        HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_dmafd failed \n");
-      }
-    }
-    else
-    {
-      retVal = CAMERA_ERROR_GET_BUFFER_FD;
-      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_dmafd : camera handle NULL  \n");
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera handle NULL  ");
     }
     return retVal;
   }

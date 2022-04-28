@@ -25,6 +25,9 @@
 #include <fstream>
 #include <algorithm>
 
+#include <unistd.h>
+
+
 VirtualDeviceManager::VirtualDeviceManager()
     : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_(),
       bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), sformat_()
@@ -48,7 +51,10 @@ bool VirtualDeviceManager::checkAppPriorityMap()
   for (it = handlepriority_map_.begin(); it != handlepriority_map_.end(); ++it)
   {
     if (cstr_primary == it->second)
+    {
+      PMLOG_INFO(CONST_MODULE_VDM, "devhandle = %d, mode = %s", it->first, it->second.c_str());
       return true;
+    }
   }
   return false;
 }
@@ -60,13 +66,20 @@ int VirtualDeviceManager::getVirtualDeviceHandle(int devid)
   obj_devstate.ndeviceid_ = DeviceManager::getInstance().getDeviceId(&devid);
   obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
   virtualhandle_map_[virtual_devhandle] = obj_devstate;
+  PMLOG_INFO(CONST_MODULE_VDM, "devid: %d, virtual_devhandle:%d, ndeviceid_:%d",
+    devid, virtual_devhandle, obj_devstate.ndeviceid_);
+  DeviceManager::getInstance().addVirtualHandle(devid, virtual_devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %d", virtualhandle_map_.size());
   return virtual_devhandle;
 }
 
 void VirtualDeviceManager::removeVirtualDeviceHandle(int devhandle)
 {
   // remove virtual device handle key value from map
+  int devid = virtualhandle_map_[devhandle].ndeviceid_;
+  DeviceManager::getInstance().eraseVirtualHandle(devid, devhandle);
   virtualhandle_map_.erase(devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %d", virtualhandle_map_.size());
 }
 
 std::string VirtualDeviceManager::getAppPriority(int devhandle)
@@ -93,23 +106,23 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
       objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin.so");
   if (DEVICE_OK != ret)
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "openDevice : Failed to create handle\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Failed to create handle\n");
     return DEVICE_ERROR_CAN_NOT_OPEN;
   }
   DeviceManager::getInstance().updateHandle(devid, p_cam_handle);
   std::string devnode;
   // get the device node of requested camera to be opened
   DeviceManager::getInstance().getDeviceNode(&devid, devnode);
-  PMLOG_INFO(CONST_MODULE_VDM, "openDevice : devnode : %s \n", devnode.c_str());
+  PMLOG_INFO(CONST_MODULE_VDM, "devnode : %s \n", devnode.c_str());
 
   void *handle;
   DeviceManager::getInstance().getDeviceHandle(&devid, &handle);
-  PMLOG_INFO(CONST_MODULE_VDM, "openDevice : handle : %p \n", handle);
+  PMLOG_INFO(CONST_MODULE_VDM, "handle : %p \n", handle);
 
   // open the camera here
-  ret = objdevicecontrol_.open(handle, devnode);
+  ret = objdevicecontrol_.open(handle, devnode, devid);
   if (DEVICE_OK != ret)
-    PMLOG_INFO(CONST_MODULE_VDM, "openDevice : Failed to open device\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
   else
     DeviceManager::getInstance().deviceStatus(devid, DEVICE_CAMERA, TRUE);
 
@@ -121,15 +134,15 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string apppriority)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "open ! deviceid : %d \n", devid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", devid);
 
   // check if priortiy is not set by user
   if (cstr_empty == apppriority)
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "open ! empty app priority\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "empty app priority\n");
     if (true == checkAppPriorityMap())
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "open : Already an app is registered as primary\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "Already an app is registered as primary\n");
       apppriority = cstr_secondary;
     }
     else
@@ -141,7 +154,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
   {
     if (true == checkAppPriorityMap())
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "open : Already an app has registered as primary device\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "Already an app has registered as primary device\n");
       return DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE;
     }
   }
@@ -152,14 +165,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
     // check if deviceid requested is there in connected device list
     if (n_invalid_id == devid)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "open : Device is invalid\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "Device is invalid\n");
       return DEVICE_ERROR_NODEVICE;
     }
     else
     {
       // device is already opened, hence return virtual handle for device
       *devhandle = getVirtualDeviceHandle(devid);
-      PMLOG_INFO(CONST_MODULE_VDM, "open : Device is already opened! Handle : %d \n", *devhandle);
+      PMLOG_INFO(CONST_MODULE_VDM, "Device is already opened! Handle : %d \n", *devhandle);
       // add handle with priority to map
       handlepriority_map_.insert(std::make_pair(*devhandle, apppriority));
 
@@ -181,31 +194,31 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "close : devhandle : %d \n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d \n", devhandle);
 
   // check if app has already closed device
   if (false == checkDeviceOpen(devhandle))
   {
     // app already closed device
-    PMLOG_INFO(CONST_MODULE_VDM, "close : App has already closed the device\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "App has already closed the device\n");
     return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
   }
 
   // get number of elements in map
   int nelements = handlepriority_map_.size();
-  PMLOG_INFO(CONST_MODULE_VDM, "close : nelements : %d \n", nelements);
+  PMLOG_INFO(CONST_MODULE_VDM, "nelements : %d \n", nelements);
 
   if (1 <= nelements)
   {
     // if there are elements in the map, get device id for device handle
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
     int deviceid = obj_devstate.ndeviceid_;
-    PMLOG_INFO(CONST_MODULE_VDM, "close : deviceid : %d \n", deviceid);
+    PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
     // check if device state is open then only allow to close
     if (CameraDeviceState::CAM_DEVICE_STATE_OPEN != obj_devstate.ecamstate_)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "close : Camera State : %d \n", obj_devstate.ecamstate_);
+      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
       return DEVICE_ERROR_CAN_NOT_CLOSE;
     }
 
@@ -216,7 +229,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 
       void *handle;
       DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
-      PMLOG_INFO(CONST_MODULE_VDM, "close : handle : %p \n", handle);
+      PMLOG_INFO(CONST_MODULE_VDM, "handle : %p \n", handle);
 
       // close the device only if its the last app to request for close
       if (1 == nelements)
@@ -228,7 +241,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
           DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
           ret = objdevicecontrol_.destroyHandle(handle);
           // remove the virtual device
-          removeVirtualDeviceHandle(deviceid);
+          removeVirtualDeviceHandle(devhandle);
           // since the device is closed, remove the element from map
           removeHandlePriorityObj(devhandle);
         }
@@ -238,7 +251,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
       else
       {
         // remove the virtual device
-        removeVirtualDeviceHandle(deviceid);
+        removeVirtualDeviceHandle(devhandle);
         // remove the app from map
         removeHandlePriorityObj(devhandle);
       }
@@ -248,7 +261,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
     else
     {
       // remove the virtual device
-      removeVirtualDeviceHandle(deviceid);
+      removeVirtualDeviceHandle(devhandle);
       // remove the app from map
       removeHandlePriorityObj(devhandle);
       return DEVICE_ERROR_DEVICE_IS_ALREADY_CLOSED;
@@ -259,14 +272,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::string memtype,
-                                                        int *pkey)
+                                                        int *pkey, LSHandle *sh, const char *subskey)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "startPreview : devhandle : %d \n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d \n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "startPreview : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   // check if device is opened
   if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
@@ -274,7 +287,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
     // check if device state is open then only allow to start preview
     if (CameraDeviceState::CAM_DEVICE_STATE_OPEN != obj_devstate.ecamstate_)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "startPreview : Camera State : %d \n", obj_devstate.ecamstate_);
+      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
       return DEVICE_ERROR_CAN_NOT_START;
     }
 
@@ -284,7 +297,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
       void *handle;
       DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
       // start preview
-      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startPreview(handle, memtype, pkey);
+      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startPreview(handle, memtype, pkey, sh, subskey);
       if (DEVICE_OK == ret)
       {
         //Increament preview count by 1
@@ -310,7 +323,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "startPreview : preview already started by other app \n");
+      PMLOG_INFO(CONST_MODULE_VDM, "preview already started by other app \n");
       if(memtype == kMemtypeShmem)
           *pkey = shmkey_;
       else
@@ -336,20 +349,20 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "startPreview : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "stopPreview : devhandle : %d \n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d \n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
   int memtype = obj_devstate.shmemtype;
-  PMLOG_INFO(CONST_MODULE_VDM, "stopPreview : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   // check if device is opened
   if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
@@ -357,12 +370,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
     // check if device state is preview then only allow to stop preview
     if (CameraDeviceState::CAM_DEVICE_STATE_PREVIEW != obj_devstate.ecamstate_)
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "stopPreview : Camera State : %d \n", obj_devstate.ecamstate_);
+      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
       return DEVICE_ERROR_CAN_NOT_STOP;
     }
 
     int size = npreviewhandle_.size();
-    PMLOG_INFO(CONST_MODULE_VDM, "stopPreview : size : %d \n", size);
+    PMLOG_INFO(CONST_MODULE_VDM, "size : %d \n", size);
     if (1 < shmempreview_count_[memtype])
     {
       // remove the handle from vector since stopPreview is called
@@ -381,7 +394,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
       }
       else
       {
-        PMLOG_INFO(CONST_MODULE_VDM, "stopPreview : device has already called stopPreview\n");
+        PMLOG_INFO(CONST_MODULE_VDM, "device has already called stopPreview\n");
         return DEVICE_ERROR_NODEVICE;
       }
     }
@@ -419,19 +432,19 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
       }
       else
       {
-        PMLOG_INFO(CONST_MODULE_VDM, "stopPreview : device has already called stopPreview\n");
+        PMLOG_INFO(CONST_MODULE_VDM, "device has already called stopPreview\n");
         return DEVICE_ERROR_NODEVICE;
       }
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "stopPreview : device has already stopped preview\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "device has already stopped preview\n");
       return DEVICE_ERROR_NODEVICE;
     }
   }
   else
   {
-    PMLOG_ERROR(CONST_MODULE_CM, "stopPreview : Device not open\n");
+    PMLOG_ERROR(CONST_MODULE_CM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
@@ -441,12 +454,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
                                                         const std::string& imagepath,
                                                         const std::string& mode)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "captureImage : devhandle : %d ncount : %d \n", devhandle, ncount);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d ncount : %d \n", devhandle, ncount);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "captureImage : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   // check if there is any change in format
   updateFormat( sformat,devhandle);
@@ -462,28 +475,28 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "captureImage : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
 
 void VirtualDeviceManager::updateFormat(CAMERA_FORMAT &sformat,int devhandle)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "VirtualDeviceManager updateFormat\n");
+  PMLOG_INFO(CONST_MODULE_VDM, "start!");
   // check if there is any change in format
   if ((sformat.eFormat != sformat_.eFormat) || (sformat.nHeight != sformat_.nHeight) ||
       (sformat.nWidth != sformat_.nWidth))
   {
     // check if the app requesting startCapture is secondary then do not change settings
     std::string priority = getAppPriority(devhandle);
-    PMLOG_INFO(CONST_MODULE_VDM, "updateFormat : priority : %s\n", priority.c_str());
+    PMLOG_INFO(CONST_MODULE_VDM, "priority : %s\n", priority.c_str());
     if (cstr_primary != priority)
     {
       // check if there exists any app with primary priority
       if (true == checkAppPriorityMap())
       {
         PMLOG_INFO(CONST_MODULE_VDM,
-                   "updateFormat : Already an app exists with primary priority\n");
+                   "Already an app exists with primary priority\n");
         sformat.eFormat = sformat_.eFormat;
         sformat.nHeight = sformat_.nHeight;
         sformat.nWidth = sformat_.nWidth;
@@ -491,7 +504,7 @@ void VirtualDeviceManager::updateFormat(CAMERA_FORMAT &sformat,int devhandle)
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "updateFormat : Save the format\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "Save the format\n");
       sformat_.eFormat = sformat.eFormat;
       sformat_.nHeight = sformat.nHeight;
       sformat_.nWidth = sformat.nWidth;
@@ -502,12 +515,12 @@ void VirtualDeviceManager::updateFormat(CAMERA_FORMAT &sformat,int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
                                                         const std::string& imagepath)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "startCapture : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d\n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "startCapture : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   // check if there is any change in format
   updateFormat( sformat,devhandle);
@@ -530,7 +543,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "startCapture : capture already in progress\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "capture already in progress\n");
       // add to vector the app
       ncapturehandle_.push_back(devhandle);
       return DEVICE_OK;
@@ -538,25 +551,25 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "startCapture : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "stopCapture : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d\n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "stopCapture : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
   {
     int size = ncapturehandle_.size();
 
-    PMLOG_INFO(CONST_MODULE_VDM, "stopCapture : size : %d \n", size);
+    PMLOG_INFO(CONST_MODULE_VDM, "size : %d \n", size);
     if (1 < size)
     {
       // remove the handle from vector since stopCapture is called
@@ -569,7 +582,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
       }
       else
       {
-        PMLOG_INFO(CONST_MODULE_VDM, "stopCapture : device has already stopped capture\n");
+        PMLOG_INFO(CONST_MODULE_VDM, "device has already stopped capture\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
       }
     }
@@ -595,19 +608,19 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
       }
       else
       {
-        PMLOG_INFO(CONST_MODULE_VDM, "stopCapture : device has already stopped capture\n");
+        PMLOG_INFO(CONST_MODULE_VDM, "device has already stopped capture\n");
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
       }
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "stopCapture : device has already stopped capture\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "device has already stopped capture\n");
       return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
     }
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "stopCapture : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
@@ -615,12 +628,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::getProperty(int devhandle,
                                                        CAMERA_PROPERTIES_T *devproperty)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "getProperty : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d\n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "getProperty : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
   {
@@ -632,30 +645,30 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getProperty(int devhandle,
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "getProperty : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::setProperty(int devhandle, CAMERA_PROPERTIES_T *oInfo)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "setProperty : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d\n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "setProperty : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   // check if the app requesting setProperty is secondary then do not change settings
   std::string priority = getAppPriority(devhandle);
-  PMLOG_INFO(CONST_MODULE_VDM, "setProperty : priority : %s\n", priority.c_str());
+  PMLOG_INFO(CONST_MODULE_VDM, "priority : %s\n", priority.c_str());
   if (cstr_primary != priority)
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "setProperty : Check if any primary app exists\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Check if any primary app exists\n");
     // check if there exists any app with primary priority
     if (true == checkAppPriorityMap())
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "setProperty : Cannot change property as not a primary app\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "Cannot change property as not a primary app\n");
       return DEVICE_ERROR_CAN_NOT_SET;
     }
   }
@@ -670,29 +683,29 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setProperty(int devhandle, CAMERA_PRO
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "setProperty : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::setFormat(int devhandle, CAMERA_FORMAT oformat)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "setFormat : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d\n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "setFormat : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   // check if the app requesting setFormat is secondary then do not change settings
   std::string priority = getAppPriority(devhandle);
-  PMLOG_INFO(CONST_MODULE_VDM, "setFormat : priority : %s\n", priority.c_str());
+  PMLOG_INFO(CONST_MODULE_VDM, "priority : %s\n", priority.c_str());
   if (cstr_primary != priority)
   {
     // check if there exists any app with primary priority
     if (true == checkAppPriorityMap())
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "setFormat : Cannot change format as not a primary app\n");
+      PMLOG_INFO(CONST_MODULE_VDM, "Cannot change format as not a primary app\n");
       return DEVICE_ERROR_CAN_NOT_SET;
     }
   }
@@ -713,19 +726,19 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setFormat(int devhandle, CAMERA_FORMA
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "setFormat : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMAT *oformat)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "getFormat : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d\n", devhandle);
 
   // get device id for virtual device handle
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
   int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "getFormat : deviceid : %d \n", deviceid);
+  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
   if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
   {
@@ -737,14 +750,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMA
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "getFormat : Device not open\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "getFd : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d\n", devhandle);
 
   DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
 
@@ -753,18 +766,39 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
     if(obj_devstate.shmemtype == SHMEM_POSIX)
     {
       *shmfd = poshmkey_;
-      PMLOG_INFO(CONST_MODULE_VDM, "getFd : posix shared memory fd is : %d\n", *shmfd);
+      PMLOG_INFO(CONST_MODULE_VDM, "posix shared memory fd is : %d\n", *shmfd);
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "getFd : handle is not posix shared memory \n");
+      PMLOG_INFO(CONST_MODULE_VDM, "handle is not posix shared memory \n");
       return DEVICE_ERROR_NOT_POSIXSHM ;
     }
   }
   else
   {
-    PMLOG_INFO(CONST_MODULE_VDM, "getFd : Device preview not started\n");
+    PMLOG_INFO(CONST_MODULE_VDM, "Device preview not started\n");
     return DEVICE_ERROR_PREVIEW_NOT_STARTED;
   }
   return DEVICE_OK;
+}
+
+
+bool VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig, int devhandle, std::string & outmsg)
+{
+  return objdevicecontrol_.registerClient((pid_t)n_client_pid, n_client_sig, devhandle, outmsg);
+}
+
+bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string & outmsg)
+{
+  return objdevicecontrol_.unregisterClient((pid_t)n_client_pid, outmsg);
+}
+
+bool VirtualDeviceManager::isRegisteredClient(int devhandle)
+{
+  return objdevicecontrol_.isRegisteredClient(devhandle);
+}
+
+void VirtualDeviceManager::requestPreviewCancel()
+{
+    objdevicecontrol_.requestPreviewCancel();
 }

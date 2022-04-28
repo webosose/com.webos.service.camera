@@ -52,8 +52,9 @@ extern "C"
     virtual int getBufferFd(int *, int *) override;
 
   private:
-    int setV4l2Property(std::map <int,int>);
-    int getV4l2Property(struct v4l2_queryctrl, int *);
+    int findQueryId(int value);
+    int setV4l2Property(std::map <int,int> &);
+    int getV4l2Property(struct v4l2_queryctrl, int * value, int *);
     void getCameraFormatProperty(struct v4l2_fmtdesc, camera_properties_t *);
     void getResolutionProperty(camera_properties_t *);
 
@@ -71,7 +72,7 @@ extern "C"
     void createFourCCPixelFormatMap();
     void createCameraPixelFormatMap();
     unsigned long getFourCCPixelFormat(camera_pixel_format_t);
-    camera_pixel_format_t getCameraPixelFormat(int);
+    camera_pixel_format_t getCameraPixelFormat(unsigned long);
 
     static int xioctl(int, int, void *);
 
@@ -84,6 +85,9 @@ extern "C"
     int io_mode_;
     std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
     std::map<unsigned long, camera_pixel_format_t> camera_format_;
+
+    // handle to help zero-copy write to shmem
+    void * husrptr_;
   };
 
 #ifdef __cplusplus

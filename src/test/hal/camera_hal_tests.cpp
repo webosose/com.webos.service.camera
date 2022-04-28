@@ -25,6 +25,7 @@ const char *subsystem = "libv4l2-camera-plugin.so";
 const char *devname = "/dev/video0";
 
 static unsigned int random_value = 0;
+const int fps_30 = 30;
 
 // default values
 #define DEFAULT_BRIGHTNESS 101
@@ -90,6 +91,7 @@ int main(int argc, char const *argv[])
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = 480;
   streamformat.stream_width = 640;
+  streamformat.stream_fps  = fps_30;
   camera_hal_if_set_format(p_h_camera, streamformat);
   camera_hal_if_get_format(p_h_camera, &streamformat);
   PrintStreamFormat(streamformat);

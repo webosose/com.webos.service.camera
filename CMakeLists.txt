@@ -41,14 +41,10 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
-pkg_check_modules(UDEV REQUIRED libudev)
-include_directories(${UDEV_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${UDEV_CFLAGS})
-
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -lrt -Werror=return-type")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g -lrt -Werror=return-type -Wno-stringop-truncation -Wno-stringop-overflow")
 
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/files/)
@@ -71,9 +67,10 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/json_parser.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/pdm_client.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/camshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/cam_posixshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/whitelist_checker.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/event_notification.cpp
     )
 
 add_executable(${PROJECT_NAME}
@@ -84,7 +81,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${PBNJSON_CPP_LDFLAGS}
                       ${LS2++_LDFLAGS}
                       ${PMLOGLIB_LDFLAGS}
-                      ${UDEV_LDFLAGS}
                       pthread
                       camera_hal)
 
@@ -110,7 +106,10 @@ add_library(camera_hal SHARED ${SRC_HAL})
 set_target_properties (camera_hal PROPERTIES VERSION 1.0 SOVERSION 1)
 
 #v4l2-camera-plugin library
-set (SRC_V4L2 ${CMAKE_SOURCE_DIR}/src/hal/v4l2/v4l2_camera_plugin.cpp)
+set (SRC_V4L2
+    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/v4l2_camera_plugin.cpp
+    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/usrptr_handle.cpp
+    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/camshm_0-cpy.cpp)
 add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
 set_target_properties (v4l2-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
 
@@ -139,3 +138,13 @@ endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 webos_build_system_bus_files()
+webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCONFDIR systemd/system)
+
+set(SHMEM_TEST TRUE CACHE BOOL "Set to TRUE to enable shared memory synchronization test compilation")
+if (SHMEM_TEST)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_smsync)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_sync_read)
+endif()
+
+message(STATUS "Using default whitelist file for webOS")
+webos_build_configured_file(files/conf/whitelist/whitelist.conf SYSCONFDIR com.webos.service.camera)
