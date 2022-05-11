@@ -385,7 +385,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
                 {
                     PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
                     CommandManager::getInstance().requestPreviewCancel(iter->first);
-                    for (int i = 0; i < iter->second.handleList.size(); i++)
+                    for (int i = iter->second.handleList.size() - 1; i >= 0; i--)
                     {
                         CommandManager::getInstance().stopPreview(iter->second.handleList[i]);
                         CommandManager::getInstance().close(iter->second.handleList[i]);
