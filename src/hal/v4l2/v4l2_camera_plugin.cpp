@@ -695,11 +695,14 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
       case V4L2_PIX_FMT_YUYV:
         pixelfmt = pixelfmt | 1;
         break;
+      case V4L2_PIX_FMT_H264:
+        pixelfmt = pixelfmt | 2;
+        break;
       case V4L2_PIX_FMT_MJPEG:
         pixelfmt = pixelfmt | 4;
         break;
-      case V4L2_PIX_FMT_H264:
-        pixelfmt = pixelfmt | 2;
+      case V4L2_PIX_FMT_NV12:
+        pixelfmt = pixelfmt | 8;
         break;
       default:
         HAL_LOG_INFO(CONST_MODULE_HAL, "pixelfmt : %d ", pixelfmt);
@@ -822,6 +825,9 @@ void V4l2CameraPlugin::getCameraFormatProperty(struct v4l2_fmtdesc format, camer
       break;
     case V4L2_PIX_FMT_H264:
       cam_out_params->stResolution.e_format[format.index] = CAMERA_FORMAT_H264ES;
+      break;
+    case V4L2_PIX_FMT_NV12:
+      cam_out_params->stResolution.e_format[format.index] = CAMERA_FORMAT_NV12;
       break;
     default:
       HAL_LOG_INFO(CONST_MODULE_HAL, "format.pixelformat:%d", format.pixelformat);

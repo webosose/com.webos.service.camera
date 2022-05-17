@@ -88,7 +88,8 @@ std::map<EventType, std::string> g_event_string = {
 std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
                                                           {CAMERA_FORMAT_YUV, "YUV"},
                                                           {CAMERA_FORMAT_H264ES, "H264ES"},
-                                                          {CAMERA_FORMAT_JPEG, "JPEG"}};
+                                                          {CAMERA_FORMAT_JPEG, "JPEG"},
+                                                          {CAMERA_FORMAT_NV12, "NV12"},};
 
 int getRandomNumber()
 {
@@ -128,6 +129,9 @@ void getFormatString(int nFormat, char *pFormats)
       break;
     case CAMERA_FORMAT_JPEG:
       strncat(pFormats, "JPEG|", 5);
+      break;
+    case CAMERA_FORMAT_NV12:
+      strncat(pFormats, "NV12|", 5);
       break;
     default:
       break;
@@ -184,6 +188,8 @@ void convertFormatToCode(std::string format, camera_format_t *pformatcode)
     *pformatcode = CAMERA_FORMAT_H264ES;
   else if (format == cstr_jpegformat)
     *pformatcode = CAMERA_FORMAT_JPEG;
+  else if (format == cstr_nv12format)
+    *pformatcode = CAMERA_FORMAT_NV12;
   else
     *pformatcode = CAMERA_FORMAT_UNDEFINED;
 }
@@ -229,6 +235,9 @@ std::string getResolutionString(camera_format_t eformat)
     break;
   case CAMERA_FORMAT_H264ES:
     str_resolution = cstr_h264esformat;
+    break;
+  case CAMERA_FORMAT_NV12:
+    str_resolution = cstr_nv12format;
     break;
   default:
     break;

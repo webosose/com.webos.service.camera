@@ -90,6 +90,7 @@ typedef enum
   CAMERA_FORMAT_YUV = 1,
   CAMERA_FORMAT_H264ES = 2,
   CAMERA_FORMAT_JPEG = 4,
+  CAMERA_FORMAT_NV12 = 8,
 } camera_format_t;
 
 typedef enum

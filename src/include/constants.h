@@ -142,6 +142,7 @@ const std::string cstr_invaliddeviceid = "-1";
 const std::string cstr_yuvformat = "YUV";
 const std::string cstr_h264esformat = "H264ES";
 const std::string cstr_jpegformat = "JPEG";
+const std::string cstr_nv12format = "NV12";
 const std::string cstr_primary = "primary";
 const std::string cstr_secondary = "secondary";
 const std::string cstr_format = "format";

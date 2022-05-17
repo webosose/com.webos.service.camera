@@ -438,6 +438,7 @@ bool CameraService::startCapture(LSMessage &message)
   else
   {
     if ((CAMERA_FORMAT_JPEG != obj_startcapture.rGetParams().eFormat) &&
+        (CAMERA_FORMAT_NV12 != obj_startcapture.rGetParams().eFormat) &&
         (CAMERA_FORMAT_YUV != obj_startcapture.rGetParams().eFormat))
     {
       err_id = DEVICE_ERROR_UNSUPPORTED_FORMAT;

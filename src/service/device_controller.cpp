@@ -62,7 +62,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
   std::size_t position = path.find_last_of(".");
   std::string extension = path.substr(position + 1);
 
-  if ((extension == "yuv") || (extension == "jpeg") || (extension == "h264"))
+  if ((extension == "yuv") || (extension == "jpeg") || (extension == "h264") || (extension == "nv12"))
   {
     if (cstr_burst == str_capturemode_ || cstr_continuous == str_capturemode_)
     {
@@ -83,7 +83,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
     gettimeofday(&tmnow, NULL);
 
     // create file to save data based on format
-    if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV)
+    if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV || epixelformat_ == CAMERA_PIXEL_FORMAT_NV12)
       snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.yuv", timePtr->tm_mday,
                (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
                (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
@@ -258,6 +258,10 @@ camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)
   {
     return CAMERA_PIXEL_FORMAT_JPEG;
   }
+  else if (eformat == CAMERA_FORMAT_NV12)
+  {
+    return CAMERA_PIXEL_FORMAT_NV12;
+  }
   //error case
   return CAMERA_PIXEL_FORMAT_MAX;
 }
@@ -325,7 +329,7 @@ void DeviceControl::previewThread()
        }
        broadcast_();
        b_issyshmwritedone_ = true;
-       
+
        retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
        if (retval != CAMERA_ERROR_NONE)
        {
@@ -358,7 +362,7 @@ void DeviceControl::previewThread()
        }
        b_isposhmwritedone_ = true;
        free(frame_buffer.start);
-       frame_buffer.start = nullptr;  
+       frame_buffer.start = nullptr;
 
        retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
        if (retval != CAMERA_ERROR_NONE)
@@ -504,10 +508,10 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
         return DEVICE_ERROR_UNKNOWN;
       }
-      
+
       *pkey = shmemfd_ = frame_buffer.fd;
       PMLOG_INFO(CONST_MODULE_DC, "pkey : %d\n", *pkey);
-      
+
       retval = camera_hal_if_release_buffer(handle, frame_buffer);
       if (retval != CAMERA_ERROR_NONE)
       {
@@ -882,6 +886,10 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
   else if (eformat == CAMERA_PIXEL_FORMAT_JPEG)
   {
     return CAMERA_FORMAT_JPEG;
+  }
+  else if (eformat == CAMERA_PIXEL_FORMAT_NV12)
+  {
+    return CAMERA_FORMAT_NV12;
   }
   //error case
   return CAMERA_FORMAT_UNDEFINED;
