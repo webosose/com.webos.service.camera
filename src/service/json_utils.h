@@ -31,6 +31,7 @@ static inline int deSerialize(const char *strInput, const char *inputSchema, jva
   }
 
   objJson = jdom_create(j_cstr_to_buffer(strInput), schema, &error);
+
   jschema_release(&schema);
   if (error)
   {

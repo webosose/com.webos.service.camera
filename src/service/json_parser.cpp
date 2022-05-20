@@ -1379,3 +1379,135 @@ std::string GetFdMethod::createObjectJsonString() const
 
   return str_reply;
 }
+
+void GetSolutionInfoMethod::getObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    int devicehandle = n_invalid_id;
+    jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
+    setDeviceHandle(devicehandle);
+  }
+  else
+  {
+    setDeviceHandle(n_invalid_id);
+  }
+  j_release(&j_obj);
+}
+
+std::string GetSolutionInfoMethod::createObjectJsonString(std::vector<std::string> input) const
+{
+  jvalue_ref json_outobj = jobject_create();
+  jvalue_ref json_solutioninfoarray = jarray_create(0);
+  std::string str_reply;
+
+  MethodReply obj_reply = getMethodReply();
+
+  if (obj_reply.bGetReturnValue())
+  {
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                jboolean_create(obj_reply.bGetReturnValue()));
+
+    if(input.size() == 0)
+    {
+      jarray_append(json_solutioninfoarray,jstring_create("No supported solution"));
+    }
+    else
+    {
+      for(auto solution : input)
+      {
+        jarray_append(json_solutioninfoarray,jstring_create(solution.c_str()));
+      }
+    }
+    jobject_put(json_outobj, J_CSTR_TO_JVAL("SolutionInfo"), json_solutioninfoarray);
+
+  }
+  else
+  {
+    createJsonStringFailure(obj_reply, json_outobj);
+  }
+
+  str_reply = jvalue_stringify(json_outobj);
+  j_release(&json_outobj);
+
+  return str_reply;
+}
+
+CameraSolutionMethod::CameraSolutionMethod(): n_devicehandle_(n_invalid_id), str_solutions_() {}
+
+bool CameraSolutionMethod::isEmpty()
+{
+  bool isEmpty = false;
+  if(0 == str_solutions_.size())
+  {
+    isEmpty = true;
+  }
+  return isEmpty;
+}
+
+void CameraSolutionMethod::getObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    int devicehandle = n_invalid_id;
+    jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
+    setDeviceHandle(devicehandle);
+
+    jvalue_ref solutions = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOLUTION));
+    for (ssize_t i = 0; i != jarray_size(solutions); i++)
+    {
+      raw_buffer strid = jstring_get_fast(jarray_get(solutions, i));
+      setSolutions(strid.m_str);
+    }
+  }
+  else
+  {
+    setDeviceHandle(n_invalid_id);
+  }
+  j_release(&j_obj);
+}
+
+std::string CameraSolutionMethod::createObjectJsonString(std::vector<std::string> input) const
+{
+  jvalue_ref json_outobj = jobject_create();
+  jvalue_ref json_enablesolutionsarray = jarray_create(0);
+  std::string str_reply;
+
+  MethodReply obj_reply = getMethodReply();
+
+  if (obj_reply.bGetReturnValue())
+  {
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                jboolean_create(obj_reply.bGetReturnValue()));
+
+    if(input.size() == 0)
+    {
+      jarray_append(json_enablesolutionsarray,jstring_create("No enabled solution"));
+    }
+    else
+    {
+      for(auto solution : input)
+      {
+        jarray_append(json_enablesolutionsarray,jstring_create(solution.c_str()));
+      }
+    }
+    jobject_put(json_outobj, J_CSTR_TO_JVAL("enabledSolutionList"), json_enablesolutionsarray);
+
+  }
+  else
+  {
+    createJsonStringFailure(obj_reply, json_outobj);
+  }
+
+  str_reply = jvalue_stringify(json_outobj);
+  j_release(&json_outobj);
+
+  return str_reply;
+}
+

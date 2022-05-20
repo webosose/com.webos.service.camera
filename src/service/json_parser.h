@@ -435,6 +435,58 @@ private:
   MethodReply objreply_;
 };
 
+class GetSolutionInfoMethod
+{
+public:
+  GetSolutionInfoMethod() { n_devicehandle_ = -1; };
+  ~GetSolutionInfoMethod() {}
+
+  void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+  int getDeviceHandle() const { return n_devicehandle_; }
+
+  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  {
+    objreply_.setReturnValue(returnvalue);
+    objreply_.setErrorCode(errorcode);
+    objreply_.setErrorText(errortext);
+  }
+  MethodReply getMethodReply() const { return objreply_; }
+
+  void getObject(const char *, const char *);
+  std::string createObjectJsonString(std::vector<std::string> input) const;
+
+private:
+  int n_devicehandle_;
+  MethodReply objreply_;
+};
+
+class CameraSolutionMethod
+{
+public:
+  CameraSolutionMethod();
+  ~CameraSolutionMethod() {}
+
+  void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+  int getDeviceHandle() const { return n_devicehandle_; }
+  void setSolutions(const std::string& solution) { str_solutions_.push_back(solution); }
+  std::vector<std::string> getSolutions() { return str_solutions_; }
+  bool isEmpty();
+  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  {
+    objreply_.setReturnValue(returnvalue);
+    objreply_.setErrorCode(errorcode);
+    objreply_.setErrorText(errortext);
+  }
+  MethodReply getMethodReply() const { return objreply_; }
+
+  void getObject(const char *, const char *);
+  std::string createObjectJsonString(std::vector<std::string> input) const;
+
+private:
+  int n_devicehandle_;
+  std::vector<std::string> str_solutions_;
+  MethodReply objreply_;
+};
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
 void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, CAMERA_PROPERTIES_T *, jvalue_ref &);
