@@ -34,22 +34,21 @@ namespace rj = rapidjson;
 //#define DUMP_ENABLED
 LGCameraSolutionAIFFaceDetection::LGCameraSolutionAIFFaceDetection(CameraSolutionManager *mgr)
         : CameraSolution(mgr),
-          mFaceDetector(nullptr)
+          mFaceDetector(nullptr),
+          mDone(false),
+          isThreadRunning(false),
+          needInputRefresh(false),
+          isInitialized(false),
+          internalBuffer(NULL)
 {
     PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
 
-    mDone = false;
-    //hShm = NULL;
-    isThreadRunning = false;
-    needInputRefresh = false;
-    isInitialized = false;
     srcBuf.pixel_format = CAMERA_PIXEL_FORMAT_JPEG;
     srcBuf.stream_height = srcBuf.stream_width = srcBuf.buffer_size = 0;
     srcBuf.data = NULL;
     solutionProperty = LG_SOLUTION_PREVIEW;
     pthread_mutex_init(&m_fd_lock, NULL);
     pthread_cond_init(&m_fd_cond, NULL);
-    internalBuffer = NULL;
 
 }
 
@@ -351,14 +350,13 @@ int LGCameraSolutionAIFFaceDetection::Draw(void* srcframe, unsigned int buffer_s
 {
     PMLOG_INFO(CONST_MODULE_FD, "Draw face S");
 
-    double rx, ry;
     int width = srcBuf.stream_width;
     int height = srcBuf.stream_height;
     //rx = mFormat.stream_width/320;
     //ry = mFormat.stream_height/240;
 
-    rx = 1;
-    ry = 1;
+    double rx = 1;
+    double ry = 1;
 
     //void* inBuf = srcBuf;
     //int len = buffer_size;
@@ -486,8 +484,8 @@ void LGCameraSolutionAIFFaceDetection::SetFormat(stream_format_t format)
 
     int width = format.stream_width;
     int height = format.stream_height;
-    rx = width/320;
-    ry = height/240;
+    double rx = width/320;
+    double ry = height/240;
     camera_pixel_format_t pixel_format = format.pixel_format;
 
     if(pixel_format == CAMERA_PIXEL_FORMAT_JPEG)

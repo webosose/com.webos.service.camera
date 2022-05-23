@@ -68,8 +68,6 @@ class CameraSolution {
         virtual bool isEnabled() = 0;
         virtual void setSupportStatus(bool supportStatus) = 0;
         virtual void setEnableValue(bool enableValue) = 0;
-        //virtual bool needThread() = 0;
-        //virtual void startThread(stream_format_t streamformat) = 0;
         virtual std::string getSolutionStr() = 0;
         virtual void processForSnapshot(buffer_t inBuf,        stream_format_t streamformat) = 0;
         virtual void processForPreview(buffer_t inBuf, stream_format_t streamformat) = 0;

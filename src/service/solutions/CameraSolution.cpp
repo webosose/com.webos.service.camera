@@ -24,7 +24,8 @@
 
 
 CameraSolution::CameraSolution(CameraSolutionManager* mgr)
-    : m_manager(mgr)
+    : m_manager(mgr),
+    solutionProperty(0)
 {
 
 }
