@@ -45,8 +45,11 @@ DeviceControl::DeviceControl()
       tMutex(), tCondVar(), h_shmposix_(NULL),
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
       str_shmemname_(""), cancel_preview_(false), buf_size_(0),
-      sh_(nullptr), subskey_(""), camera_id_(-1)
+      sh_(nullptr), subskey_(""), camera_id_(-1), pCameraSolution(nullptr)
 {
+
+    pCameraSolution = std::unique_ptr<CameraSolutionManager>(new CameraSolutionManager);
+
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -218,6 +221,12 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
       PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n",
                  frame_buffer.length);
 
+      //[Camera Solution Manager] processing for capture
+      if(pCameraSolution != nullptr)
+      {
+        pCameraSolution->processCaptureForSolutions(frame_buffer, streamformat);
+      }
+
       // write captured image to /tmp only if startCapture request is made
       if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
         return DEVICE_ERROR_CANNOT_WRITE;
@@ -325,7 +334,13 @@ void DeviceControl::previewThread()
        }
        broadcast_();
        b_issyshmwritedone_ = true;
-       
+
+       //[Camera Solution Manager] process for preview
+       if(pCameraSolution != nullptr)
+       {
+         pCameraSolution->processPreviewForSolutions(frame_buffer, streamformat);
+       }
+
        retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
        if (retval != CAMERA_ERROR_NONE)
        {
@@ -358,7 +373,7 @@ void DeviceControl::previewThread()
        }
        b_isposhmwritedone_ = true;
        free(frame_buffer.start);
-       frame_buffer.start = nullptr;  
+       frame_buffer.start = nullptr;
 
        retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
        if (retval != CAMERA_ERROR_NONE)
@@ -457,6 +472,12 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     str_shmemname_ = shmname;
   }
 
+  //[Camera Solution Manager] initialization
+  if(pCameraSolution != nullptr)
+  {
+    pCameraSolution->initializeForSolutions(streamformat);
+  }
+
   if(b_isstreamon_ == false)
   {
     if (memtype == kMemtypePosixshm)
@@ -504,10 +525,10 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
         return DEVICE_ERROR_UNKNOWN;
       }
-      
+
       *pkey = shmemfd_ = frame_buffer.fd;
       PMLOG_INFO(CONST_MODULE_DC, "pkey : %d\n", *pkey);
-      
+
       retval = camera_hal_if_release_buffer(handle, frame_buffer);
       if (retval != CAMERA_ERROR_NONE)
       {
@@ -578,6 +599,11 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
         b_issystemvruning = false;
     }
 
+    //[]Camera Solution Manager] release
+    if(pCameraSolution != nullptr)
+    {
+        pCameraSolution->releaseForSolutions();
+    }
     return DEVICE_OK;
 }
 
@@ -1025,3 +1051,37 @@ void DeviceControl::notifyDeviceFault_()
     }
     LSErrorFree(&lserror);
 }
+
+//[Camera Solution Manager] interfaces start
+DEVICE_RETURN_CODE_T DeviceControl::getSupportedCameraSolutionInfo(std::vector<std::string>& solutionsInfo)
+{
+    if(pCameraSolution != nullptr)
+    {
+        pCameraSolution->getSupportedSolutionInfo(solutionsInfo);
+    }
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::enableCameraSolution(const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+{
+    PMLOG_INFO(CONST_MODULE_DC, "DeviceControl enableCameraSolutionInfo E\n");
+
+    if(pCameraSolution != nullptr)
+    {
+        pCameraSolution->enableCameraSolution(solutions, enabledSolutions);
+    }
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::disableCameraSolution(const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+{
+    PMLOG_INFO(CONST_MODULE_DC, "DeviceControl disableCameraSolutionInfo E\n");
+
+    if(pCameraSolution != nullptr)
+    {
+        pCameraSolution->disableCameraSolution(solutions, enabledSolutions);
+    }
+    return DEVICE_OK;
+}
+//[Camera Solution Manager] interfaces end
+

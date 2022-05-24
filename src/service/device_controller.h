@@ -29,7 +29,7 @@
 #include <string>
 #include <condition_variable>
 #include <vector>
-#include <pthread.h>
+#include <solutions/CameraSolutionManager.h>
 
 
 typedef struct
@@ -87,6 +87,8 @@ private:
   int camera_id_;
   void notifyDeviceFault_();
 
+  std::unique_ptr<CameraSolutionManager> pCameraSolution;
+
 public:
   DeviceControl();
   DEVICE_RETURN_CODE_T open(void *, std::string, int);
@@ -111,6 +113,13 @@ public:
   bool isRegisteredClient(int devhandle);
 
   void requestPreviewCancel();
+
+  //[Camera Solution Manager] integration start
+  DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(std::vector<std::string>&);
+  DEVICE_RETURN_CODE_T enableCameraSolution(const std::vector<std::string>, std::vector<std::string>&);
+  DEVICE_RETURN_CODE_T disableCameraSolution(const std::vector<std::string>, std::vector<std::string>&);
+  //[Camera Solution Manager] integration end
+
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

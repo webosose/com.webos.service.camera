@@ -312,4 +312,45 @@ const char *getFdSchema = "{ \
   } \
 }";
 
+const char *getSupportedSolutionInfoSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"handle\" \
+  ], \
+  \"properties\": { \
+    \"handle\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Handle Schema\", \
+      \"default\": 0 \
+    } \
+  } \
+}";
+
+const char *solutionSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"handle\", \
+    \"solutions\" \
+  ], \
+  \"properties\": { \
+    \"handle\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Handle Schema\", \
+      \"default\": 0 \
+    }, \
+    \"solutions\": { \
+      \"type\": \"array\", \
+      \"title\": \"The Solutions Schema\", \
+      \"items\": { \
+        \"type\": \"string\", \
+        \"title\": \"The Items Schema\",\
+        \"default\": \"\", \
+        \"pattern\": \"^(.*)$\" \
+      }\
+    } \
+  } \
+}";
+
 #endif /*SRC_SERVICE_JSON_SCHEMA_H_*/
