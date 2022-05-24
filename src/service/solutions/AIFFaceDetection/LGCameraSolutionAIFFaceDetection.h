@@ -72,7 +72,6 @@ private:
     bool mDone;
     //SHMEM_HANDLE hShm;
 
-    double rx, ry;
     Scalar green, red;
 
     bool mSupportStatus = false;

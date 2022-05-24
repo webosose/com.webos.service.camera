@@ -59,7 +59,6 @@ private:
     bool isThreadRunning;
     bool needInputRefresh;
     bool processingDone;
-    bool isInitialized;
 
     //cascadeclassifier Ŭ����
     CascadeClassifier face_classifier;
@@ -67,7 +66,6 @@ private:
     std::vector<Rect> mFaces;
     bool mDone;
 
-    double rx, ry;
     Scalar green, red;
 
     bool mSupportStatus = false;

@@ -41,12 +41,7 @@ private:
     void brightnessEnhancement(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, int minY, int maxY, int enhanceLevel);
     void contrastEnhancement(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, int minY, int maxY, int enhanceLevel);
     int dumpFrame(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, char* filename, char* filepath);
-    void *handle;
-    bool mIsDumpEnabled;
-    bool mIsSimulationEnabled;
     // isOutdoor;
-    int input_num;
-    bool isLogEnabled;
     bool mSupportStatus = false;
     bool mEnableStatus = false;
 

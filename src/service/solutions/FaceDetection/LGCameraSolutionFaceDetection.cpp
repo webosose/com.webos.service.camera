@@ -25,21 +25,22 @@
 #define CONST_MODULE_FD "FaceDetector"
 
 LGCameraSolutionFaceDetection::LGCameraSolutionFaceDetection(CameraSolutionManager *mgr)
-        : CameraSolution(mgr)
+        : CameraSolution(mgr),
+        mDone(false),
+        isThreadRunning(false),
+        processingDone(false),
+        needInputRefresh(false),
+        internalBuffer(NULL)
+
 {
     PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
 
     //얼굴 인식 xml 로딩
     face_classifier.load("/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml");
-    mDone = false;
-    isThreadRunning = false;
-    processingDone = false;
-    needInputRefresh = false;
     srcBuf.pixel_format = CAMERA_PIXEL_FORMAT_JPEG;
     srcBuf.stream_height = srcBuf.stream_width = srcBuf.buffer_size = 0;
     srcBuf.data = NULL;
     solutionProperty = LG_SOLUTION_PREVIEW;
-    internalBuffer = NULL;
 
 }
 
@@ -340,8 +341,8 @@ void LGCameraSolutionFaceDetection::SetFormat(stream_format_t format)
 
     int width = format.stream_width;
     int height = format.stream_height;
-    rx = width/320;
-    ry = height/240;
+    double rx = width/320;
+    double ry = height/240;
     camera_pixel_format_t pixel_format = format.pixel_format;
 
     if(pixel_format == CAMERA_PIXEL_FORMAT_JPEG)
