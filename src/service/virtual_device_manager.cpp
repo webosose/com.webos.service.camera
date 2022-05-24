@@ -325,12 +325,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                     shmempreview_count_[SHMEM_POSIX]++;
                     poshmkey_ = *pkey;
                 }
+                // add to vector the app calling startPreview
+                npreviewhandle_.push_back(devhandle);
+                // update state of device to preview
+                obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
+                virtualhandle_map_[devhandle] = obj_devstate;
             }
-            // add to vector the app calling startPreview
-            npreviewhandle_.push_back(devhandle);
-            // update state of device to preview
-            obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
-            virtualhandle_map_[devhandle] = obj_devstate;
             return ret;
         }
         else
