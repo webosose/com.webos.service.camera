@@ -771,8 +771,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
   out_params.nFocusAbsolute =CONST_PARAM_DEFAULT_VALUE;
   out_params.nAutoFocus = CONST_PARAM_DEFAULT_VALUE;
 
-  camera_hal_if_get_properties(handle, &out_params);
-
   if (CAMERA_ERROR_NONE != camera_hal_if_get_properties(handle, &out_params))
   {
     return DEVICE_ERROR_UNKNOWN;
@@ -810,6 +808,8 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
 
   // update resolution structure
   oparams->stResolution.n_formatindex = out_params.stResolution.n_formatindex;
+  memset(oparams->stResolution.c_res, '\0', sizeof(oparams->stResolution.c_res));
+
   for (int n = 0; n < out_params.stResolution.n_formatindex; n++)
   {
     oparams->stResolution.e_format[n] = out_params.stResolution.e_format[n];
@@ -822,8 +822,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
       oparams->stResolution.n_width[n][count] = out_params.stResolution.n_width[n][count];
       PMLOG_DEBUG("out_params.stResolution.c_res %s\n",
                  out_params.stResolution.c_res[n][count]);
-      memset(oparams->stResolution.c_res[n][count], '\0',
-             sizeof(oparams->stResolution.c_res[n][count]));
       strncpy(oparams->stResolution.c_res[n][count], out_params.stResolution.c_res[n][count],
               sizeof(oparams->stResolution.c_res[n][count])-1);
     }

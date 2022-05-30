@@ -331,6 +331,7 @@ public:
 
    // update resolution structure
     ro_camproperties_.stResolution.n_formatindex = rin_info.stResolution.n_formatindex;
+    memset(ro_camproperties_.stResolution.c_res, '\0', sizeof(ro_camproperties_.stResolution.c_res));
     for (int n = 0; n < rin_info.stResolution.n_formatindex; n++)
     {
       ro_camproperties_.stResolution.e_format[n] = rin_info.stResolution.e_format[n];
@@ -342,8 +343,6 @@ public:
             rin_info.stResolution.n_height[n][count];
         ro_camproperties_.stResolution.n_width[n][count] =
             rin_info.stResolution.n_width[n][count];
-        memset(ro_camproperties_.stResolution.c_res[n][count], '\0',
-               sizeof(ro_camproperties_.stResolution.c_res[n][count]));
         strncpy(ro_camproperties_.stResolution.c_res[n][count], rin_info.stResolution.c_res[n][count],
                 sizeof(ro_camproperties_.stResolution.c_res[n][count])-1);
       }
