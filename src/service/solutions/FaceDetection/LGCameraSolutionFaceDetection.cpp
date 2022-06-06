@@ -35,12 +35,12 @@ LGCameraSolutionFaceDetection::LGCameraSolutionFaceDetection(CameraSolutionManag
 {
     PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
 
-    //얼굴 인식 xml 로딩
-    face_classifier.load("/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml");
     srcBuf.pixel_format = CAMERA_PIXEL_FORMAT_JPEG;
     srcBuf.stream_height = srcBuf.stream_width = srcBuf.buffer_size = 0;
     srcBuf.data = NULL;
     solutionProperty = LG_SOLUTION_PREVIEW;
+    pthread_mutex_init(&m_fd_lock, NULL);
+    pthread_cond_init(&m_fd_cond, NULL);
 
 }
 
@@ -51,7 +51,8 @@ LGCameraSolutionFaceDetection::~LGCameraSolutionFaceDetection()
     release();
 }
 
-void LGCameraSolutionFaceDetection::initialize(stream_format_t streamformat) {
+void LGCameraSolutionFaceDetection::initialize(stream_format_t streamformat)
+{
     PMLOG_INFO(CONST_MODULE_FD, "%s : E\n", __func__);
 }
 
@@ -129,7 +130,10 @@ void LGCameraSolutionFaceDetection::release() {
     pthread_mutex_destroy(&m_fd_lock);
     pthread_cond_destroy(&m_fd_cond);
 
-    stopThread();
+    if(isThreadRunning)
+    {
+        stopThread();
+    }
 
     if(internalBuffer != NULL)
     {
@@ -154,6 +158,8 @@ void LGCameraSolutionFaceDetection::stopThread()
 void LGCameraSolutionFaceDetection::faceDetectionProcessing()
 {
     PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
+    //얼굴 인식 xml 로딩
+    face_classifier.load("/usr/share/opencv4/haarcascades/haarcascade_frontalface_default.xml");
 
     time_t now = time(NULL);
     tm *pnow = localtime(&now);

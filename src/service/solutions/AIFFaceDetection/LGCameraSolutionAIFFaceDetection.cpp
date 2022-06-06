@@ -60,11 +60,13 @@ LGCameraSolutionAIFFaceDetection::~LGCameraSolutionAIFFaceDetection()
 
 }
 
-void LGCameraSolutionAIFFaceDetection::initialize(stream_format_t streamformat) {
+void LGCameraSolutionAIFFaceDetection::initialize(stream_format_t streamformat)
+{
     PMLOG_INFO(CONST_MODULE_FD, "%s : E\n", __func__);
 }
 
-std::string LGCameraSolutionAIFFaceDetection::getSolutionStr(){
+std::string LGCameraSolutionAIFFaceDetection::getSolutionStr()
+{
     std::string solutionStr = SOLUTION_AIF_FACEDETECTION;
     return solutionStr;
 }
@@ -138,10 +140,14 @@ void LGCameraSolutionAIFFaceDetection::startThread(stream_format_t streamformat)
     isThreadRunning = true;
 }
 
-void LGCameraSolutionAIFFaceDetection::release() {
+void LGCameraSolutionAIFFaceDetection::release()
+{
     PMLOG_INFO(CONST_MODULE_FD, "%s : E\n", __func__);
 
-    stopThread();
+    if(isThreadRunning)
+    {
+        stopThread();
+    }
 
     pthread_mutex_destroy(&m_fd_lock);
     pthread_cond_destroy(&m_fd_cond);

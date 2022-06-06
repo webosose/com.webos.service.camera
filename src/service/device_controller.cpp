@@ -47,9 +47,8 @@ DeviceControl::DeviceControl()
       str_shmemname_(""), cancel_preview_(false), buf_size_(0),
       sh_(nullptr), subskey_(""), camera_id_(-1), pCameraSolution(nullptr)
 {
-
-    pCameraSolution = std::unique_ptr<CameraSolutionManager>(new CameraSolutionManager);
-
+    //[Camera Solution Manager] make cameraSolutionManager instance
+    pCameraSolution = std::make_unique<CameraSolutionManager>();
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
