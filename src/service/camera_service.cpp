@@ -998,7 +998,7 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
 //[Camera Solution Manager] NEW APIs for Solution Manager - start
 bool CameraService::getSupportedSolutionInfo(LSMessage &message)
 {
-  PMLOG_INFO(CONST_MODULE_LUNA, "%s : E \n",__func__);
+  PMLOG_INFO(CONST_MODULE_LUNA, " E \n");
   auto *payload = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
@@ -1030,9 +1030,10 @@ bool CameraService::getSupportedSolutionInfo(LSMessage &message)
 
   LS::Message request(&message);
   request.respond(output_reply.c_str());
-  PMLOG_INFO(CONST_MODULE_LUNA, "%s : output_reply(%s) \n",__func__,output_reply.c_str());
+  PMLOG_INFO(CONST_MODULE_LUNA, " output_reply(%s) \n",output_reply.c_str());
 
-  PMLOG_INFO(CONST_MODULE_LUNA, "%s : X \n",__func__);
+  PMLOG_INFO(CONST_MODULE_LUNA, " X \n");
+
   return true;
 }
 

@@ -23,21 +23,23 @@
 
 #include "LGCameraSolutionDummy.h"
 
+#define CONST_MODULE_NAME "LGCameraSolutionDummy"
+
 LGCameraSolutionDummy::LGCameraSolutionDummy(CameraSolutionManager *mgr)
         : CameraSolution(mgr)
 {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n");
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
     solutionProperty = LG_SOLUTION_PREVIEW | LG_SOLUTION_VIDEO | LG_SOLUTION_SNAPSHOT;
 }
 
 LGCameraSolutionDummy::~LGCameraSolutionDummy()
 {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
     setEnableValue(false);
 }
 
 void LGCameraSolutionDummy::initialize(stream_format_t streamformat) {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
 }
 
@@ -58,13 +60,13 @@ void LGCameraSolutionDummy::processForPreview(buffer_t inBuf,        stream_form
 
 void LGCameraSolutionDummy::doDummyProcessing(buffer_t inBuf, stream_format_t streamformat)
 {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n");
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
 
-    PMLOG_INFO(CONST_MODULE_SM, " X. /n",__func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " X. /n");
 }
 
 void LGCameraSolutionDummy::release() {
-    PMLOG_INFO(CONST_MODULE_SM, " E. /n",__func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E. /n");
 }
 

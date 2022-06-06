@@ -30,7 +30,7 @@
 
 namespace rj = rapidjson;
 
-#define CONST_MODULE_FD "AIFFaceDetector"
+#define CONST_MODULE_NAME "LGCameraSolutionAIFFaceDetection"
 //#define DUMP_ENABLED
 LGCameraSolutionAIFFaceDetection::LGCameraSolutionAIFFaceDetection(CameraSolutionManager *mgr)
         : CameraSolution(mgr),
@@ -41,7 +41,7 @@ LGCameraSolutionAIFFaceDetection::LGCameraSolutionAIFFaceDetection(CameraSolutio
           isInitialized(false),
           internalBuffer(NULL)
 {
-    PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     srcBuf.pixel_format = CAMERA_PIXEL_FORMAT_JPEG;
     srcBuf.stream_height = srcBuf.stream_width = srcBuf.buffer_size = 0;
@@ -54,7 +54,7 @@ LGCameraSolutionAIFFaceDetection::LGCameraSolutionAIFFaceDetection(CameraSolutio
 
 LGCameraSolutionAIFFaceDetection::~LGCameraSolutionAIFFaceDetection()
 {
-    PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
     setEnableValue(false);
     release();
 
@@ -62,7 +62,7 @@ LGCameraSolutionAIFFaceDetection::~LGCameraSolutionAIFFaceDetection()
 
 void LGCameraSolutionAIFFaceDetection::initialize(stream_format_t streamformat)
 {
-    PMLOG_INFO(CONST_MODULE_FD, "%s : E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 }
 
 std::string LGCameraSolutionAIFFaceDetection::getSolutionStr()
@@ -78,11 +78,11 @@ void LGCameraSolutionAIFFaceDetection::processForSnapshot(buffer_t inBuf,       
 
 void LGCameraSolutionAIFFaceDetection::processForPreview(buffer_t inBuf,        stream_format_t streamformat)
 {
-    PMLOG_INFO(CONST_MODULE_FD, "[%s] S\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     if(needInputRefresh == true)
     {
-        PMLOG_INFO(CONST_MODULE_FD, "%s : input refresh started inBuf.length(%d)\n", __func__,inBuf.length);
+        PMLOG_INFO(CONST_MODULE_NAME, " input refresh started inBuf.length(%d)\n",inBuf.length);
         if(internalBuffer == NULL)
         {
             int framesize =
@@ -91,7 +91,7 @@ void LGCameraSolutionAIFFaceDetection::processForPreview(buffer_t inBuf,        
 
             if(internalBuffer == NULL)
             {
-                PMLOG_ERROR(CONST_MODULE_FD, "%s : alloc failed so return\n", __func__);
+                PMLOG_ERROR(CONST_MODULE_NAME, " alloc failed so return\n");
                 return;
             }
 
@@ -105,7 +105,7 @@ void LGCameraSolutionAIFFaceDetection::processForPreview(buffer_t inBuf,        
         srcBuf.buffer_size = inBuf.length;
         srcBuf.data = internalBuffer;
 
-        PMLOG_INFO(CONST_MODULE_FD, "%s : input refresh finished\n", __func__);
+        PMLOG_INFO(CONST_MODULE_NAME, " input refresh finished\n");
 
         pthread_mutex_lock(&m_fd_lock);
         pthread_cond_signal(&m_fd_cond);
@@ -113,12 +113,12 @@ void LGCameraSolutionAIFFaceDetection::processForPreview(buffer_t inBuf,        
 
     }
 
-    PMLOG_INFO(CONST_MODULE_FD, "%s : srcBuf.pixel_format(%d)\n", __func__,srcBuf.pixel_format);
-    PMLOG_INFO(CONST_MODULE_FD, "%s : srcBuf.stream_height(%d)\n", __func__,srcBuf.stream_height);
-    PMLOG_INFO(CONST_MODULE_FD, "%s : srcBuf.stream_width(%d)\n", __func__,srcBuf.stream_width);
-    PMLOG_INFO(CONST_MODULE_FD, "%s : srcBuf.buffer_size(%d)\n", __func__,srcBuf.buffer_size);
-    PMLOG_INFO(CONST_MODULE_FD, "%s : srcBuf.data(%p)\n", __func__,srcBuf.data);
-    PMLOG_INFO(CONST_MODULE_FD, "%s : isThreadRunning(%d)\n", __func__,isThreadRunning);
+    PMLOG_DEBUG(CONST_MODULE_NAME, " srcBuf.pixel_format(%d)\n", srcBuf.pixel_format);
+    PMLOG_DEBUG(CONST_MODULE_NAME, " srcBuf.stream_height(%d)\n", srcBuf.stream_height);
+    PMLOG_DEBUG(CONST_MODULE_NAME, " srcBuf.stream_width(%d)\n", srcBuf.stream_width);
+    PMLOG_DEBUG(CONST_MODULE_NAME, " srcBuf.buffer_size(%d)\n", srcBuf.buffer_size);
+    PMLOG_DEBUG(CONST_MODULE_NAME, " srcBuf.data(%p)\n", srcBuf.data);
+    PMLOG_DEBUG(CONST_MODULE_NAME, " isThreadRunning(%d)\n", isThreadRunning);
 
     if(needThread()
         && isThreadRunning == false)
@@ -128,12 +128,12 @@ void LGCameraSolutionAIFFaceDetection::processForPreview(buffer_t inBuf,        
 
     //Draw(srcBuf.data, srcBuf.buffer_size);
 
-    PMLOG_INFO(CONST_MODULE_FD, "[%s] E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " X\n");
 }
 
 void LGCameraSolutionAIFFaceDetection::startThread(stream_format_t streamformat)
 {
-    PMLOG_INFO(CONST_MODULE_FD, "[%s] \n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
 
     tidDetect = std::thread( &LGCameraSolutionAIFFaceDetection::faceDetectionProcessing, this);
@@ -142,7 +142,7 @@ void LGCameraSolutionAIFFaceDetection::startThread(stream_format_t streamformat)
 
 void LGCameraSolutionAIFFaceDetection::release()
 {
-    PMLOG_INFO(CONST_MODULE_FD, "%s : E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     if(isThreadRunning)
     {
@@ -161,7 +161,7 @@ void LGCameraSolutionAIFFaceDetection::release()
 
 void LGCameraSolutionAIFFaceDetection::stopThread()
 {
-    PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     mDone = true;
 
@@ -169,14 +169,14 @@ void LGCameraSolutionAIFFaceDetection::stopThread()
         tidDetect.join();
     }
 
-    PMLOG_INFO(CONST_MODULE_FD, "isThreadRunning(%d)", __func__,isThreadRunning);
+    PMLOG_INFO(CONST_MODULE_NAME, "isThreadRunning(%d)", isThreadRunning);
     isThreadRunning = false;
 
 }
 
 void LGCameraSolutionAIFFaceDetection::faceDetectionProcessing()
 {
-    PMLOG_INFO(CONST_MODULE_FD, "%s", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     time_t now = time(NULL);
     tm *pnow = localtime(&now);
@@ -197,25 +197,25 @@ void LGCameraSolutionAIFFaceDetection::faceDetectionProcessing()
 
             needInputRefresh = true;
 
-            PMLOG_INFO(CONST_MODULE_FD, "%s : wait to get new input S\n", __func__);
+            PMLOG_INFO(CONST_MODULE_NAME, " wait to get new input S\n");
 
             int rc = pthread_mutex_lock(&m_fd_lock);
             rc += pthread_cond_wait(&m_fd_cond, &m_fd_lock);
             rc += pthread_mutex_unlock(&m_fd_lock);
 
-            PMLOG_INFO(CONST_MODULE_FD, "%s : wait to get new input E\n", __func__);
+            PMLOG_INFO(CONST_MODULE_NAME, " wait to get new input E\n");
 
             needInputRefresh = false;
 
             if(rc != SOLUTION_MANAGER_NO_ERROR)
             {
-                PMLOG_ERROR(CONST_MODULE_FD, "%s getting input is failed so return", __func__);
+                PMLOG_ERROR(CONST_MODULE_NAME, " getting input is failed so return");
                 continue;
             }
 
             if(srcBuf.data == NULL)
             {
-                PMLOG_ERROR(CONST_MODULE_FD, "%s srcBuf is null so do nothing", __func__);
+                PMLOG_ERROR(CONST_MODULE_NAME, " srcBuf is null so do nothing");
                 continue;
             }
 
@@ -233,7 +233,7 @@ void LGCameraSolutionAIFFaceDetection::faceDetectionProcessing()
             gettimeofday(&tmnow, NULL);
             checkTimeBefore = (int)tmnow.tv_usec;
 
-            PMLOG_INFO(CONST_MODULE_FD, "%s : srcBuf.pixel_format(%d)", __func__,srcBuf.pixel_format);
+            PMLOG_INFO(CONST_MODULE_NAME, " srcBuf.pixel_format(%d)", srcBuf.pixel_format);
             if(srcBuf.pixel_format == CAMERA_PIXEL_FORMAT_JPEG)
             {
                 Mat rawData = Mat(1, srcBuf.buffer_size, CV_8UC1, (void*)srcBuf.data);
@@ -248,12 +248,12 @@ void LGCameraSolutionAIFFaceDetection::faceDetectionProcessing()
             }
             else
             {
-                PMLOG_INFO(CONST_MODULE_FD, "%s : not supported image format(%d)", __func__,srcBuf.pixel_format);
+                PMLOG_INFO(CONST_MODULE_NAME, " not supported image format(%d)", srcBuf.pixel_format);
                 return;
             }
             gettimeofday(&tmnow, NULL);
             checkTimeAfter = (int)tmnow.tv_usec;
-            PMLOG_INFO(CONST_MODULE_FD, "%s : Data converting time(%d)", __func__,checkTimeAfter - checkTimeBefore);
+            PMLOG_INFO(CONST_MODULE_NAME, " Data converting time(%d)", checkTimeAfter - checkTimeBefore);
 
 
             auto foundFaces = std::dynamic_pointer_cast<aif::FaceDescriptor>(descriptor);
@@ -266,8 +266,8 @@ void LGCameraSolutionAIFFaceDetection::faceDetectionProcessing()
 
             gettimeofday(&tmnow, NULL);
             checkTimeAfter = (int)tmnow.tv_usec;
-            PMLOG_INFO(CONST_MODULE_FD, "%s : foundFaces(%d)", __func__,foundFaces->size());
-            PMLOG_INFO(CONST_MODULE_FD, "%s : FD_ProcessingTime(%d)", __func__,checkTimeAfter - checkTimeBefore);
+            PMLOG_INFO(CONST_MODULE_NAME, " : foundFaces(%d)", foundFaces->size());
+            PMLOG_INFO(CONST_MODULE_NAME, " : FD_ProcessingTime(%d)", checkTimeAfter - checkTimeBefore);
             /*
             {
                 "faces": [
@@ -310,22 +310,22 @@ void LGCameraSolutionAIFFaceDetection::faceDetectionProcessing()
                 double score = faces[i]["score"].GetDouble();
                 mScore.push_back(score);
 
-                PMLOG_INFO(CONST_MODULE_FD, "rect.x : %d", rect.x);
-                PMLOG_INFO(CONST_MODULE_FD, "rect.y : %d", rect.y);
-                PMLOG_INFO(CONST_MODULE_FD, "rect.width : %d", rect.width);
-                PMLOG_INFO(CONST_MODULE_FD, "rect.height : %d", rect.height);
-                PMLOG_INFO(CONST_MODULE_FD, "score : %f", (float)score);
+                PMLOG_INFO(CONST_MODULE_NAME, "rect.x : %d", rect.x);
+                PMLOG_INFO(CONST_MODULE_NAME, "rect.y : %d", rect.y);
+                PMLOG_INFO(CONST_MODULE_NAME, "rect.width : %d", rect.width);
+                PMLOG_INFO(CONST_MODULE_NAME, "rect.height : %d", rect.height);
+                PMLOG_INFO(CONST_MODULE_NAME, "score : %f", (float)score);
             }
             mFaces = faceRects;
 
 
         } catch(Exception& e) {
-            PMLOG_INFO(CONST_MODULE_FD, "Exception occurred. face : %s", e.what());
+            PMLOG_INFO(CONST_MODULE_NAME, "Exception occurred. face : %s", e.what());
                 break;
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_FD, "~%s", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " X\n");
 }
 
 void LGCameraSolutionAIFFaceDetection::GetFaces(std::vector<Rect>& dst)
@@ -336,7 +336,7 @@ void LGCameraSolutionAIFFaceDetection::GetFaces(std::vector<Rect>& dst)
 void LGCameraSolutionAIFFaceDetection::print()
 {
     for(int i = 0; i < mFaces.size(); i++){
-        PMLOG_INFO(CONST_MODULE_FD, "print face[%d] (%d %d) %dx%d", i, mFaces[i].x, mFaces[i].y, mFaces[i].width, mFaces[i].height);
+        PMLOG_INFO(CONST_MODULE_NAME, "print face[%d] (%d %d) %dx%d", i, mFaces[i].x, mFaces[i].y, mFaces[i].width, mFaces[i].height);
     }
 
     int cx, cy;
@@ -354,7 +354,7 @@ void LGCameraSolutionAIFFaceDetection::print()
 
 int LGCameraSolutionAIFFaceDetection::Draw(void* srcframe, unsigned int buffer_size)
 {
-    PMLOG_INFO(CONST_MODULE_FD, "Draw face S");
+    PMLOG_INFO(CONST_MODULE_NAME, "Draw face E");
 
     int width = srcBuf.stream_width;
     int height = srcBuf.stream_height;
@@ -384,7 +384,7 @@ int LGCameraSolutionAIFFaceDetection::Draw(void* srcframe, unsigned int buffer_s
         Mat img_small;
 
         #if 0
-        PMLOG_INFO(CONST_MODULE_FD, "%s readShmem start", __func__);
+        PMLOG_INFO(CONST_MODULE_NAME, " readShmem start\n");
         IPCSharedMemory::getInstance().ReadShmem(hShm, &inBuf, &len);
         if(len == 0) return 0;
         #endif
@@ -395,7 +395,7 @@ int LGCameraSolutionAIFFaceDetection::Draw(void* srcframe, unsigned int buffer_s
 
         std::vector<Rect> faces;
         GetFaces(faces);
-        PMLOG_INFO(CONST_MODULE_FD, "faces.size(%d)",faces.size());
+        PMLOG_INFO(CONST_MODULE_NAME, "faces.size(%d)",faces.size());
         green = Scalar(0, 255, 0);
         red   = Scalar(255, 0, 0); //TODO : need to check
 
@@ -406,7 +406,7 @@ int LGCameraSolutionAIFFaceDetection::Draw(void* srcframe, unsigned int buffer_s
             	faces[i].y*ry  + faces[i].height*ry );
             Point tr(faces[i].x*rx , faces[i].y*ry );
 
-            PMLOG_INFO(CONST_MODULE_FD, "Draw face[%d] %d %d %d %d", i, tr.x, tr.y, lb.x - tr.x, lb.y - tr.y);
+            PMLOG_INFO(CONST_MODULE_NAME, "Draw face[%d] %d %d %d %d", i, tr.x, tr.y, lb.x - tr.x, lb.y - tr.y);
             rectangle(frame_original, lb, tr, rec_color, thickness, 4, 0);
 
             //if(faces.size()>1)
@@ -447,7 +447,7 @@ int LGCameraSolutionAIFFaceDetection::Draw(void* srcframe, unsigned int buffer_s
         //frameBuf.length - buff.size();
         buffer_size = buff.size();
     }catch(Exception& e){
-    	PMLOG_INFO(CONST_MODULE_FD, "Exception occurred. face");
+    	PMLOG_INFO(CONST_MODULE_NAME, "Exception occurred. face");
     }
 
 #if 1
@@ -463,24 +463,24 @@ int LGCameraSolutionAIFFaceDetection::Draw(void* srcframe, unsigned int buffer_s
 
 bool LGCameraSolutionAIFFaceDetection::InitFaceDetector()
 {
-    PMLOG_INFO(CONST_MODULE_SM, "%s: E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_SM, " E\n");
 
     mFaceDetector = aif::DetectorFactory::get().getDetector("face_short_range_cpu");
     descriptor = std::make_shared<aif::FaceDescriptor>();
 
     if (mFaceDetector == nullptr) {
-        PMLOG_INFO(CONST_MODULE_SM, "%s: faceDetector create error!\n", __func__);
+        PMLOG_INFO(CONST_MODULE_SM, " faceDetector create error!\n");
         return false;
     }
 
     if (mFaceDetector->init() != aif::kAifOk) {
-        PMLOG_INFO(CONST_MODULE_SM, "%s: faceDetector init error!\n", __func__);
+        PMLOG_INFO(CONST_MODULE_SM, " faceDetector init error!\n");
         return false;
     }
 
     isInitialized = true;
 
-    PMLOG_INFO(CONST_MODULE_SM, "%s: X\n", __func__);
+    PMLOG_INFO(CONST_MODULE_SM, " X\n");
 
     return true;
 }
@@ -517,17 +517,17 @@ int LGCameraSolutionAIFFaceDetection::dumpFrame(unsigned char* inputY, int width
     gettimeofday(&tmnow, NULL);
 
     if(pnow == NULL){
-        PMLOG_INFO(CONST_MODULE_SM,"%s : getting time is failed so do not dump",__func__);
+        PMLOG_INFO(CONST_MODULE_SM," getting time is failed so do not dump");
         return false;
     }
 
     snprintf(buf, 128, "%s/%d_%d_%d_%d_%s_%dx%d.jpg", filepath, pnow->tm_hour, pnow->tm_min, pnow->tm_sec,((int)tmnow.tv_usec) / 1000, filename, width, height);
-    PMLOG_INFO(CONST_MODULE_SM, "%s: path( %s )\n", __func__, buf);
+    PMLOG_INFO(CONST_MODULE_SM, " path( %s )\n", buf);
 
     FILE* file_fd = fopen(buf, "wb");
     if (file_fd == 0)
     {
-        PMLOG_INFO(CONST_MODULE_SM, "%s: cannot open file\n", __func__);
+        PMLOG_INFO(CONST_MODULE_SM, " cannot open file\n");
         return false;
     }
     else
@@ -536,7 +536,7 @@ int LGCameraSolutionAIFFaceDetection::dumpFrame(unsigned char* inputY, int width
     }
     fclose(file_fd);
 
-    PMLOG_INFO(CONST_MODULE_SM, " X",__func__);
+    PMLOG_INFO(CONST_MODULE_SM, " X");
     return true;
 
 }

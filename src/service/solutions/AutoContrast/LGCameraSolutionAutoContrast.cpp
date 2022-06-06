@@ -23,21 +23,23 @@
 
 #include "LGCameraSolutionAutoContrast.h"
 
+#define CONST_MODULE_NAME "LGCameraSolutionAutoContrast"
+
 LGCameraSolutionAutoContrast::LGCameraSolutionAutoContrast(CameraSolutionManager *mgr)
         : CameraSolution(mgr)
 {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n");
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
     solutionProperty = LG_SOLUTION_PREVIEW | LG_SOLUTION_VIDEO | LG_SOLUTION_SNAPSHOT;
 }
 
 LGCameraSolutionAutoContrast::~LGCameraSolutionAutoContrast()
 {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
     setEnableValue(false);
 }
 
 void LGCameraSolutionAutoContrast::initialize(stream_format_t streamformat) {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
 }
 
@@ -62,10 +64,9 @@ void LGCameraSolutionAutoContrast::processForPreview(buffer_t inBuf,        stre
 
 void LGCameraSolutionAutoContrast::doAutoContrastProcessing(buffer_t inBuf, stream_format_t streamformat)
 {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n");
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     uint8_t *Yimage = NULL, *UVimage = NULL;
-    void    *handle = NULL;
     int     retval = 0;
 
     int width = streamformat.stream_width;
@@ -78,21 +79,21 @@ void LGCameraSolutionAutoContrast::doAutoContrastProcessing(buffer_t inBuf, stre
 
     Yimage  = (unsigned char*)inBuf.start;
     UVimage = (unsigned char*)inBuf.start + (stride * scanline);
-    PMLOG_INFO(CONST_MODULE_SM, "%s : width(%d) height(%d) stride(%d) frameSize(%d) pixel_format(%d)\n", __func__, width, height, stride, frameSize, streamformat.pixel_format);
+    PMLOG_INFO(CONST_MODULE_NAME, " width(%d) height(%d) stride(%d) frameSize(%d) pixel_format(%d)\n",  width, height, stride, frameSize, streamformat.pixel_format);
 
     contrastEnhancement(Yimage, UVimage, width, height, stride, frameSize, minY, maxY, 2.0f);
 
     if (retval){
-        PMLOG_INFO(CONST_MODULE_SM, "%s: after AutoContrast_Execute error[%d]\n", __func__, retval);
+        PMLOG_INFO(CONST_MODULE_NAME, " after AutoContrast_Execute error[%d]\n", retval);
     } else {
-        PMLOG_INFO(CONST_MODULE_SM, "%s: after AutoContrast works on snapshot \n", __func__);
+        PMLOG_INFO(CONST_MODULE_NAME, " after AutoContrast works on snapshot \n");
     }
 
-    PMLOG_INFO(CONST_MODULE_SM, " X. /n",__func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " X. /n");
 }
 
 void LGCameraSolutionAutoContrast::brightnessEnhancement(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, int minY, int maxY, int enhanceLevel) {
-    PMLOG_INFO(CONST_MODULE_SM, " E\n");
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     int range = abs(maxY - minY);
     int curveLUT[256];
@@ -150,12 +151,12 @@ void LGCameraSolutionAutoContrast::brightnessEnhancement(unsigned char* inputY, 
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_SM, " X\n");
+    PMLOG_INFO(CONST_MODULE_NAME, " X\n");
 
 }
 
 void LGCameraSolutionAutoContrast::contrastEnhancement(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, int minY, int maxY, int enhanceLevel) {
-    PMLOG_INFO(CONST_MODULE_SM, "Contrast Enhancement working start\n");
+    PMLOG_INFO(CONST_MODULE_NAME, "Contrast Enhancement working start\n");
 
     int   ySize          = stride*height;
     int   uvSize         = ySize / 2;
@@ -171,7 +172,7 @@ void LGCameraSolutionAutoContrast::contrastEnhancement(unsigned char* inputY, un
 
     contrast_level = contrast_level < 1 ? 1 : contrast_level;
     memset(curveLUT, 0, sizeof(curveLUT));
-    PMLOG_INFO(CONST_MODULE_SM, "contrastEnhancement start making LUT table\n");
+    PMLOG_INFO(CONST_MODULE_NAME, "contrastEnhancement start making LUT table\n");
 
     for (int k = 0 ; k <= low2Middle ; k++){
         curveLUT[k] = abs(k - (int)((float)low2Middle-(float)low2Middle*(float)(pow(double(low2Middle-k)/(double)low2Middle,(double)contrast_level))));
@@ -191,7 +192,7 @@ void LGCameraSolutionAutoContrast::contrastEnhancement(unsigned char* inputY, un
             ContrastLUT[k] = CLAMP(k + curveLUT[k - low2Middle + 1],0,255);
     }
 
-    PMLOG_INFO(CONST_MODULE_SM, "Contrast Enhancement working\n");
+    PMLOG_INFO(CONST_MODULE_NAME, "Contrast Enhancement working\n");
 
     #ifdef DUMP_ENABLED
     char filename[30];
@@ -222,13 +223,13 @@ void LGCameraSolutionAutoContrast::contrastEnhancement(unsigned char* inputY, un
     #endif
 
 
-    PMLOG_INFO(CONST_MODULE_SM, "Contrast Enhancement working done\n");
+    PMLOG_INFO(CONST_MODULE_NAME, "Contrast Enhancement working done\n");
 
 }
 
 int LGCameraSolutionAutoContrast::dumpFrame(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, char* filename, char* filepath)
 {
-    PMLOG_INFO(CONST_MODULE_SM,  " E\n");
+    PMLOG_INFO(CONST_MODULE_NAME,  " E\n");
 
     char buf[128];
     time_t now = time(NULL);
@@ -237,17 +238,17 @@ int LGCameraSolutionAutoContrast::dumpFrame(unsigned char* inputY, unsigned char
     gettimeofday(&tmnow, NULL);
 
     if(pnow == NULL){
-        PMLOG_INFO(CONST_MODULE_SM,"%s : getting time is failed so do not dump",__func__);
+        PMLOG_INFO(CONST_MODULE_NAME," getting time is failed so do not dump");
         return false;
     }
 
     snprintf(buf, 128, "%s/%d_%d_%d_%d_%s_%dx%d.yuv", filepath, pnow->tm_hour, pnow->tm_min, pnow->tm_sec,((int)tmnow.tv_usec) / 1000, filename, width, height);
-    PMLOG_INFO(CONST_MODULE_SM,  "%s: path( %s )\n", __func__, buf);
+    PMLOG_INFO(CONST_MODULE_NAME,  " path( %s )\n", buf);
 
     FILE* file_fd = fopen(buf, "wb");
     if (file_fd == 0)
     {
-        PMLOG_INFO(CONST_MODULE_SM,  "%s: cannot open file\n", __func__);
+        PMLOG_INFO(CONST_MODULE_NAME,  " cannot open file\n");
         return false;
     }
     else
@@ -256,13 +257,13 @@ int LGCameraSolutionAutoContrast::dumpFrame(unsigned char* inputY, unsigned char
     }
     fclose(file_fd);
 
-    PMLOG_INFO(CONST_MODULE_SM, " X",__func__);
+    PMLOG_INFO(CONST_MODULE_NAME, " X");
     return true;
 
 }
 
 
 void LGCameraSolutionAutoContrast::release() {
-    PMLOG_INFO(CONST_MODULE_SM,  "%s : E\n", __func__);
+    PMLOG_INFO(CONST_MODULE_NAME,  " E\n");
 }
 
