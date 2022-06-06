@@ -443,14 +443,15 @@ DEVICE_RETURN_CODE_T CommandManager::getSupportedCameraSolutionInfo(int devhandl
     return DEVICE_ERROR_UNKNOWN;
   }
 }
-DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle, const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+
+DEVICE_RETURN_CODE_T CommandManager::getEnabledCameraSolutionInfo(int devhandle, std::vector<std::string>& solutionsInfo)
 {
-  PMLOG_INFO(CONST_MODULE_CM, "enableCameraSolutionInfo : devhandle : %d\n", devhandle);
+  PMLOG_INFO(CONST_MODULE_CM, "getSupportedCameraSolutionInfo : devhandle : %d\n", devhandle);
 
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
   {
-    return ptr->enableCameraSolution(devhandle, solutions, enabledSolutions);
+    return ptr->getEnabledCameraSolutionInfo(devhandle, solutionsInfo);
   }
   else
   {
@@ -458,14 +459,29 @@ DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle, const s
   }
 }
 
-DEVICE_RETURN_CODE_T CommandManager::disableCameraSolution(int devhandle, const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle, const std::vector<std::string> solutions)
 {
   PMLOG_INFO(CONST_MODULE_CM, "enableCameraSolutionInfo : devhandle : %d\n", devhandle);
 
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
   {
-    return ptr->disableCameraSolution(devhandle, solutions, enabledSolutions);
+    return ptr->enableCameraSolution(devhandle, solutions);
+  }
+  else
+  {
+    return DEVICE_ERROR_UNKNOWN;
+  }
+}
+
+DEVICE_RETURN_CODE_T CommandManager::disableCameraSolution(int devhandle, const std::vector<std::string> solutions)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "enableCameraSolutionInfo : devhandle : %d\n", devhandle);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->disableCameraSolution(devhandle, solutions);
   }
   else
   {

@@ -1059,24 +1059,33 @@ DEVICE_RETURN_CODE_T DeviceControl::getSupportedCameraSolutionInfo(std::vector<s
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::enableCameraSolution(const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+DEVICE_RETURN_CODE_T DeviceControl::getEnabledCameraSolutionInfo(std::vector<std::string>& solutionsInfo)
+{
+    if(pCameraSolution != nullptr)
+    {
+        pCameraSolution->getEnabledSolutionInfo(solutionsInfo);
+    }
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::enableCameraSolution(const std::vector<std::string> solutions)
 {
     PMLOG_INFO(CONST_MODULE_DC, "DeviceControl enableCameraSolutionInfo E\n");
 
     if(pCameraSolution != nullptr)
     {
-        pCameraSolution->enableCameraSolution(solutions, enabledSolutions);
+        return pCameraSolution->enableCameraSolution(solutions);
     }
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::disableCameraSolution(const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+DEVICE_RETURN_CODE_T DeviceControl::disableCameraSolution(const std::vector<std::string> solutions)
 {
     PMLOG_INFO(CONST_MODULE_DC, "DeviceControl disableCameraSolutionInfo E\n");
 
     if(pCameraSolution != nullptr)
     {
-        pCameraSolution->disableCameraSolution(solutions, enabledSolutions);
+        return pCameraSolution->disableCameraSolution(solutions);
     }
     return DEVICE_OK;
 }

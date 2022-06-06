@@ -823,7 +823,27 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getSupportedCameraSolutionInfo(int de
     }
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::getEnabledCameraSolutionInfo(int devhandle, std::vector<std::string>& solutionsInfo)
+{
+    // get device id for virtual device handle
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid = obj_devstate.ndeviceid_;
+    PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
+
+    if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
+    {
+        // get enabled solutions of device opened
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getEnabledCameraSolutionInfo(solutionsInfo);
+        return ret;
+    }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
+        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+    }
+}
+
+DEVICE_RETURN_CODE_T VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std::string> solutions)
 {
     PMLOG_INFO(CONST_MODULE_VDM, "VirtualDeviceManager enableCameraSolutionInfo E\n");
 
@@ -834,8 +854,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::enableCameraSolution(int devhandle, c
 
     if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
     {
-        // get enabled solutions of device opened
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions, enabledSolutions);
+
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions);
         return ret;
     }
     else
@@ -845,7 +865,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::enableCameraSolution(int devhandle, c
     }
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std::string> solutions)
 {
     PMLOG_INFO(CONST_MODULE_VDM, "VirtualDeviceManager disableCameraSolutionInfo E\n");
 
@@ -857,7 +877,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::disableCameraSolution(int devhandle, 
     if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
     {
         // get disabled solutions of device opened
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.disableCameraSolution(solutions, enabledSolutions);
+        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.disableCameraSolution(solutions);
         return ret;
     }
     else

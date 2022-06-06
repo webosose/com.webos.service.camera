@@ -218,48 +218,90 @@ void CameraSolutionManager::getSupportedSolutionInfo(std::vector<std::string>& s
     }
 }
 
-void CameraSolutionManager::enableCameraSolution(const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+void CameraSolutionManager::getEnabledSolutionInfo(std::vector<std::string>& solutionsInfo)
 {
-    PMLOG_INFO(CONST_MODULE_SM, "CameraSolutionManager enableCameraSolutionInfo E\n");
+    PMLOG_INFO(CONST_MODULE_SM, "getSupportedSolutionInfo : E");
 
-    //enabled solutions following solution list set by app
+    //check supported solution list
     for (std::list<CameraSolution *>::iterator it = mTotalSolutionList.begin(); it != mTotalSolutionList.end(); ++it)
     {
-        for(std::string solution : solutions)
-        {
-            if(solution.compare((*it)->getSolutionStr()) == 0)
-            {
-                (*it)->setEnableValue(true);
-                PMLOG_INFO(CONST_MODULE_SM, "enabled solutionName %s \n", solution.c_str());
-            }
-        }
-
         if((*it)->isEnabled() == true)
         {
-            enabledSolutions.push_back((*it)->getSolutionStr());
+            solutionsInfo.push_back((*it)->getSolutionStr());
+            PMLOG_INFO(CONST_MODULE_SM, "solution name %s \n",(*it)->getSolutionStr().c_str());
         }
     }
 }
 
-void CameraSolutionManager::disableCameraSolution(const std::vector<std::string> solutions, std::vector<std::string>& enabledSolutions)
+DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const std::vector<std::string> solutions)
 {
-    PMLOG_INFO(CONST_MODULE_SM, "CameraSolutionManager disabledSolutionList E\n");
+    PMLOG_INFO(CONST_MODULE_SM, "CameraSolutionManager enableCameraSolution E\n");
+    std::list<CameraSolution *> mCandidateSolutionList;
 
-    //enabled solutions following solution list set by app
-    for (std::list<CameraSolution *>::iterator it = mTotalSolutionList.begin(); it != mTotalSolutionList.end(); ++it)
+    for(std::string solution : solutions)
     {
-        for(std::string solution : solutions)
+        for (std::list<CameraSolution *>::iterator it = mTotalSolutionList.begin(); it != mTotalSolutionList.end(); ++it)
         {
             if(solution.compare((*it)->getSolutionStr()) == 0)
             {
-                (*it)->setEnableValue(false);
-                PMLOG_INFO(CONST_MODULE_SM, "disabled solutionName %s \n", solution.c_str());
+                mCandidateSolutionList.push_back(*it);
+                PMLOG_INFO(CONST_MODULE_SM, "enabled solutionName %s\n", solution.c_str());
             }
         }
 
-        if((*it)->isEnabled() == true)
+    }
+
+    if(solutions.size() == mCandidateSolutionList.size())
+    {
+        for (std::list<CameraSolution *>::iterator it = mCandidateSolutionList.begin(); it != mCandidateSolutionList.end(); ++it)
         {
-            enabledSolutions.push_back((*it)->getSolutionStr());
+            (*it)->setEnableValue(true);
         }
     }
+    else
+    {
+        if(solutions.size() == 0 )
+        {
+            return DEVICE_ERROR_PARAM_IS_MISSING;
+        }
+        return DEVICE_ERROR_WRONG_PARAM;
+    }
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T CameraSolutionManager::disableCameraSolution(const std::vector<std::string> solutions)
+{
+    PMLOG_INFO(CONST_MODULE_SM, "CameraSolutionManager disabledSolutionList E\n");
+    std::list<CameraSolution *> mCandidateSolutionList;
+
+    for(std::string solution : solutions)
+    {
+        for (std::list<CameraSolution *>::iterator it = mTotalSolutionList.begin(); it != mTotalSolutionList.end(); ++it)
+        {
+            if(solution.compare((*it)->getSolutionStr()) == 0)
+            {
+                mCandidateSolutionList.push_back(*it);
+                PMLOG_INFO(CONST_MODULE_SM, "disabled solutionName %s\n", solution.c_str());
+            }
+        }
+
+    }
+
+    if(solutions.size() == mCandidateSolutionList.size())
+    {
+        for (std::list<CameraSolution *>::iterator it = mCandidateSolutionList.begin(); it != mCandidateSolutionList.end(); ++it)
+        {
+            (*it)->setEnableValue(false);
+        }
+    }
+    else
+    {
+        if(solutions.size() == 0 )
+        {
+            return DEVICE_ERROR_PARAM_IS_MISSING;
+        }
+        return DEVICE_ERROR_WRONG_PARAM;
+    }
+    return DEVICE_OK;
+
 }

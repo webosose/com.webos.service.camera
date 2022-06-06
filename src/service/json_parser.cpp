@@ -1411,18 +1411,14 @@ std::string GetSolutionInfoMethod::createObjectJsonString(std::vector<std::strin
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(obj_reply.bGetReturnValue()));
 
-    if(input.size() == 0)
-    {
-      jarray_append(json_solutioninfoarray,jstring_create("No supported solution"));
-    }
-    else
+    if(input.size() > 0)
     {
       for(auto solution : input)
       {
         jarray_append(json_solutioninfoarray,jstring_create(solution.c_str()));
       }
     }
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("SolutionInfo"), json_solutioninfoarray);
+    jobject_put(json_outobj, J_CSTR_TO_JVAL("SolutionList"), json_solutioninfoarray);
 
   }
   else
@@ -1473,7 +1469,7 @@ void CameraSolutionMethod::getObject(const char *input, const char *schemapath)
   j_release(&j_obj);
 }
 
-std::string CameraSolutionMethod::createObjectJsonString(std::vector<std::string> input) const
+std::string CameraSolutionMethod::createObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   jvalue_ref json_enablesolutionsarray = jarray_create(0);
@@ -1485,19 +1481,6 @@ std::string CameraSolutionMethod::createObjectJsonString(std::vector<std::string
   {
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(obj_reply.bGetReturnValue()));
-
-    if(input.size() == 0)
-    {
-      jarray_append(json_enablesolutionsarray,jstring_create("No enabled solution"));
-    }
-    else
-    {
-      for(auto solution : input)
-      {
-        jarray_append(json_enablesolutionsarray,jstring_create(solution.c_str()));
-      }
-    }
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("enabledSolutionList"), json_enablesolutionsarray);
 
   }
   else

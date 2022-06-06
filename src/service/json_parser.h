@@ -479,7 +479,7 @@ public:
   MethodReply getMethodReply() const { return objreply_; }
 
   void getObject(const char *, const char *);
-  std::string createObjectJsonString(std::vector<std::string> input) const;
+  std::string createObjectJsonString() const;
 
 private:
   int n_devicehandle_;

@@ -67,6 +67,7 @@ public:
   bool getFd(LSMessage &);
 
   bool getSupportedSolutionInfo(LSMessage &message);
+  bool getEnabledSolutionInfo(LSMessage &message);
   bool enableCameraSolution(LSMessage &message);
   bool disableCameraSolution(LSMessage &message);
 };

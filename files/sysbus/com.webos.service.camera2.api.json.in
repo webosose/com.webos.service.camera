@@ -17,6 +17,7 @@
                 "com.webos.service.camera2/getEventNotification",
                 "com.webos.service.camera2/getFd",
                 "com.webos.service.camera2/getSupportedSolutionInfo",
+                "com.webos.service.camera2/getEnabledSolutionInfo",
                 "com.webos.service.camera2/enableCameraSolution",
                 "com.webos.service.camera2/disableCameraSolution"
         ]

@@ -55,6 +55,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   LS_CATEGORY_METHOD(getEventNotification)
   LS_CATEGORY_METHOD(getFd)
   LS_CATEGORY_METHOD(getSupportedSolutionInfo)
+  LS_CATEGORY_METHOD(getEnabledSolutionInfo)
   LS_CATEGORY_METHOD(enableCameraSolution)
   LS_CATEGORY_METHOD(disableCameraSolution)
 
@@ -1032,6 +1033,47 @@ bool CameraService::getSupportedSolutionInfo(LSMessage &message)
   PMLOG_INFO(CONST_MODULE_LUNA, "%s : output_reply(%s) \n",__func__,output_reply.c_str());
 
   PMLOG_INFO(CONST_MODULE_LUNA, "%s : X \n",__func__);
+  return true;
+}
+
+//[Camera Solution Manager] NEW APIs for Solution Manager - start
+bool CameraService::getEnabledSolutionInfo(LSMessage &message)
+{
+  PMLOG_INFO(CONST_MODULE_LUNA, " E \n");
+  auto *payload = LSMessageGetPayload(&message);
+  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+
+  GetSolutionInfoMethod obj_getsolutioninfo;
+  obj_getsolutioninfo.getObject(payload, getSupportedSolutionInfoSchema);
+  int ndevhandle = obj_getsolutioninfo.getDeviceHandle();
+  std::vector<std::string> solutionsInfo;
+
+  if (n_invalid_id == ndevhandle)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING DEVICE_ERROR_JSON_PARSING\n");
+    err_id = DEVICE_ERROR_HANDLE_NOT_EXIST;
+    obj_getsolutioninfo.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
+    obj_getsolutioninfo.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+  }
+
+  err_id = CommandManager::getInstance().getEnabledCameraSolutionInfo(ndevhandle, solutionsInfo);
+  if (DEVICE_OK != err_id)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOT_OK\n");
+    obj_getsolutioninfo.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+  }
+
+  std::string output_reply = obj_getsolutioninfo.createObjectJsonString(solutionsInfo);
+
+  LS::Message request(&message);
+  request.respond(output_reply.c_str());
+  PMLOG_INFO(CONST_MODULE_LUNA, " output_reply(%s) \n",output_reply.c_str());
+
+  PMLOG_INFO(CONST_MODULE_LUNA, " X \n");
 
   return true;
 }
@@ -1045,7 +1087,6 @@ bool CameraService::enableCameraSolution(LSMessage &message)
   CameraSolutionMethod obj_EnableCameraSolution;
   obj_EnableCameraSolution.getObject(payload, solutionSchema);
   int ndevhandle = obj_EnableCameraSolution.getDeviceHandle();
-  std::vector<std::string> enabledSolutions;
 
   if (n_invalid_id == ndevhandle)
   {
@@ -1066,11 +1107,11 @@ bool CameraService::enableCameraSolution(LSMessage &message)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
       std::vector<std::string> str_solutions = obj_EnableCameraSolution.getSolutions();
-      err_id = CommandManager::getInstance().enableCameraSolution(ndevhandle, str_solutions, enabledSolutions);
+      err_id = CommandManager::getInstance().enableCameraSolution(ndevhandle, str_solutions);
 
       if (DEVICE_OK != err_id)
       {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOK\n");
+        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOT_OK\n");
         obj_EnableCameraSolution.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
       }
       else
@@ -1081,7 +1122,7 @@ bool CameraService::enableCameraSolution(LSMessage &message)
     }
   }
 
-  std::string output_reply= obj_EnableCameraSolution.createObjectJsonString(enabledSolutions);
+  std::string output_reply= obj_EnableCameraSolution.createObjectJsonString();
   LS::Message request(&message);
   request.respond(output_reply.c_str());
 
@@ -1096,7 +1137,6 @@ bool CameraService::disableCameraSolution(LSMessage &message)
   CameraSolutionMethod obj_DisableCameraSolution;
   obj_DisableCameraSolution.getObject(payload, solutionSchema);
   int ndevhandle = obj_DisableCameraSolution.getDeviceHandle();
-  std::vector<std::string> enabledSolutions;
 
   if (n_invalid_id == ndevhandle)
   {
@@ -1117,11 +1157,11 @@ bool CameraService::disableCameraSolution(LSMessage &message)
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
       std::vector<std::string> str_solutions = obj_DisableCameraSolution.getSolutions();
-      err_id = CommandManager::getInstance().disableCameraSolution(ndevhandle, str_solutions, enabledSolutions);
+      err_id = CommandManager::getInstance().disableCameraSolution(ndevhandle, str_solutions);
 
       if (DEVICE_OK != err_id)
       {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOK \n");
+        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOT_OK \n");
         obj_DisableCameraSolution.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
       }
       else
@@ -1132,7 +1172,7 @@ bool CameraService::disableCameraSolution(LSMessage &message)
     }
   }
 
-  std::string output_reply= obj_DisableCameraSolution.createObjectJsonString(enabledSolutions);
+  std::string output_reply= obj_DisableCameraSolution.createObjectJsonString();
   LS::Message request(&message);
   request.respond(output_reply.c_str());
 

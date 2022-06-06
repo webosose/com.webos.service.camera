@@ -36,8 +36,9 @@ public:
     void processCaptureForSolutions(buffer_t frame_buffer, stream_format_t streamformat);
     void processPreviewForSolutions(buffer_t frame_buffer, stream_format_t streamformat);
     void getSupportedSolutionInfo(std::vector<std::string>&);
-    void enableCameraSolution(const std::vector<std::string>, std::vector<std::string>&);
-    void disableCameraSolution(const std::vector<std::string>, std::vector<std::string>&);
+    void getEnabledSolutionInfo(std::vector<std::string>& solutionsInfo);
+    DEVICE_RETURN_CODE_T enableCameraSolution(const std::vector<std::string>);
+    DEVICE_RETURN_CODE_T disableCameraSolution(const std::vector<std::string>);
 
 private:
 
