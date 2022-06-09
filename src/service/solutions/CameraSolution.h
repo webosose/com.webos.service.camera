@@ -64,17 +64,17 @@ class CameraSolution {
 
         // interface for snapshot
         virtual void initialize(stream_format_t streamformat) = 0;
-        virtual bool isSupported() = 0;
-        virtual bool isEnabled() = 0;
-        virtual void setSupportStatus(bool supportStatus) = 0;
-        virtual void setEnableValue(bool enableValue) = 0;
         virtual std::string getSolutionStr() = 0;
         virtual void processForSnapshot(buffer_t inBuf,        stream_format_t streamformat) = 0;
         virtual void processForPreview(buffer_t inBuf, stream_format_t streamformat) = 0;
         virtual void release() = 0;
 
+        bool isEnabled(){return mEnableStatus;};
+        void setEnableValue(bool enableValue){        mEnableStatus = enableValue;};
+
         CameraSolutionManager *m_manager;
         int32_t solutionProperty;
+        bool mEnableStatus;
 
     private:
 

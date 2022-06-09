@@ -51,11 +51,6 @@ private:
 
     std::list<CameraSolution *> mTotalSolutionList;
 
-    CameraSolution* mAutoContrast;
-    CameraSolution* mFaceDetection;
-    CameraSolution* mDummy;
-    CameraSolution* mAIFFaceDetection;
-
 };
 
 #endif //__LGCAMERASOLUTIONMANAGER_H__

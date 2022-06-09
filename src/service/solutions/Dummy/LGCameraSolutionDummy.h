@@ -29,11 +29,6 @@ public:
     LGCameraSolutionDummy(CameraSolutionManager *mgr);
     virtual ~LGCameraSolutionDummy();
     void initialize(stream_format_t streamformat);
-    bool isSupported(){return mSupportStatus;};
-    bool isEnabled(){return mEnableStatus;};
-    void setSupportStatus(bool supportStatus){mSupportStatus = supportStatus;};
-    void setEnableValue(bool enableValue){        mEnableStatus = enableValue;};
-
     bool needThread(){return true;};
     void startThread(stream_format_t streamformat){};
     std::string getSolutionStr();

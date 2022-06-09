@@ -33,13 +33,8 @@
 #define LOG_TAG "CameraSolutionManager"
 
 CameraSolutionManager::CameraSolutionManager()
-    : mAutoContrast(NULL),
-      mFaceDetection(NULL),
-      mDummy(NULL),
-      mAIFFaceDetection(NULL)
-
 {
-
+    CameraSolution* solution;
     pbnjson::JValue obj_solutionInfo = nullptr;
 
     bool retValue = loadSolutionList(obj_solutionInfo);
@@ -51,33 +46,29 @@ CameraSolutionManager::CameraSolutionManager()
 
     if(isSolutionSupported(obj_solutionInfo, SOLUTION_AUTOCONTRAST))
     {
-        mAutoContrast = new LGCameraSolutionAutoContrast(this);
-        mAutoContrast->setSupportStatus(true);
-        mTotalSolutionList.push_back(mAutoContrast);
+        solution = new LGCameraSolutionAutoContrast(this);
+        mTotalSolutionList.push_back(solution);
     }
 
     if(isSolutionSupported(obj_solutionInfo, SOLUTION_DUMMY))
     {
-        mDummy = new LGCameraSolutionDummy(this);
-        mDummy->setSupportStatus(true);
-        mTotalSolutionList.push_back(mDummy);
+        solution = new LGCameraSolutionDummy(this);
+        mTotalSolutionList.push_back(solution);
     }
 
 #ifdef FEATURE_LG_OPENCV_FACEDETECTION
     if(isSolutionSupported(obj_solutionInfo, SOLUTION_OPENCV_FACEDETECTION))
     {
-        mFaceDetection = new LGCameraSolutionFaceDetection(this);
-        mFaceDetection->setSupportStatus(true);
-        mTotalSolutionList.push_back(mFaceDetection);
+        solution = new LGCameraSolutionFaceDetection(this);
+        mTotalSolutionList.push_back(solution);
     }
 #endif
 
 #ifdef FEATURE_LG_AIF_FACEDETECTION
     if(isSolutionSupported(obj_solutionInfo, SOLUTION_AIF_FACEDETECTION))
     {
-        mAIFFaceDetection = new LGCameraSolutionAIFFaceDetection(this);
-        mAIFFaceDetection->setSupportStatus(true);
-        mTotalSolutionList.push_back(mAIFFaceDetection);
+        solution = new LGCameraSolutionAIFFaceDetection(this);
+        mTotalSolutionList.push_back(solution);
     }
 #endif
 
@@ -87,29 +78,12 @@ CameraSolutionManager::CameraSolutionManager()
 CameraSolutionManager::~CameraSolutionManager()
 {
 
-    if (mAutoContrast != NULL)
+    for (std::list<CameraSolution *>::iterator it = mTotalSolutionList.begin(); it != mTotalSolutionList.end(); ++it)
     {
-        delete mAutoContrast;
-        mAutoContrast = NULL;
+        delete *it;
     }
 
-    if (mFaceDetection != NULL)
-    {
-        delete mFaceDetection;
-        mFaceDetection = NULL;
-    }
-
-    if (mDummy != NULL)
-    {
-        delete mDummy;
-        mDummy = NULL;
-    }
-
-    if (mAIFFaceDetection != NULL)
-    {
-        delete mAIFFaceDetection;
-        mAIFFaceDetection = NULL;
-    }
+    mTotalSolutionList.clear();
 
 }
 
@@ -172,7 +146,6 @@ void CameraSolutionManager::releaseForSolutions()
         }
     }
 
-    mTotalSolutionList.clear();
 }
 
 void CameraSolutionManager::processCaptureForSolutions(buffer_t frame_buffer, stream_format_t streamformat)

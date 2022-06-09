@@ -25,7 +25,8 @@
 
 CameraSolution::CameraSolution(CameraSolutionManager* mgr)
     : m_manager(mgr),
-    solutionProperty(0)
+    solutionProperty(0),
+    mEnableStatus(false)
 {
 
 }

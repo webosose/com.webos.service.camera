@@ -41,10 +41,6 @@ public:
     LGCameraSolutionAIFFaceDetection(CameraSolutionManager *mgr);
     virtual ~LGCameraSolutionAIFFaceDetection();
     void initialize(stream_format_t streamformat);
-    bool isSupported(){return mSupportStatus;};
-    bool isEnabled(){return mEnableStatus;};
-    void setSupportStatus(bool supportStatus){mSupportStatus = supportStatus;};
-    void setEnableValue(bool enableValue){       mEnableStatus = enableValue;};
     std::string getSolutionStr();
     void processForSnapshot(buffer_t inBuf,        stream_format_t streamformat);
     void processForPreview(buffer_t inBuf, stream_format_t streamformat);
