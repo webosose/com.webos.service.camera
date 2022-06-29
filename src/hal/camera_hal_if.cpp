@@ -234,7 +234,7 @@ extern "C"
     return retVal;
   }
 
-  int camera_hal_if_set_buffer(void *h, int NoBuffer, int IOMode)
+  int camera_hal_if_set_buffer(void *h, int NoBuffer, int IOMode, buffer_t **usrpbufs)
   {
     int retVal = CAMERA_ERROR_NONE;
 
@@ -256,7 +256,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == set_buffer(camera_handle, NoBuffer, IOMode))
+    if (CAMERA_ERROR_UNKNOWN == set_buffer(camera_handle, NoBuffer, IOMode, usrpbufs))
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "set_buffer failed ");

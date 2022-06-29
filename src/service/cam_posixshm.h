@@ -19,15 +19,19 @@
 
 #include <sys/shm.h>
 #include <string>
+#include <stddef.h> // size_t
+#include "camera_hal_if_types.h" // buffer_t
 
 typedef enum
 {
-  POSHMEM_COMM_OK        = 0x0,
-  POSHMEM_COMM_FAIL      = -1,
-  POSHMEM_COMM_OVERFLOW  = -2,
-  POSHMEM_COMM_NODATA    = -3,
-  POSHMEM_COMM_TERMINATE = -4,
-} POSHMEM_STATUS_T;
+    PSHMEM_IS_OK                 = 0x0,
+    PSHMEM_FAILED                = -1,
+    PSHMEM_IS_NULL               = -2,
+    PSHMEM_ERROR_COUNT_MISMATCH  = -3,
+    PSHMEM_ERROR_RANGE_OUT       = -4,
+    PSHMEM_ERROR_MUNMAP_FAIL     = -5,
+    PSHMEM_ERROR_UNLINK_FAIL     = -6
+} PSHMEM_STATUS_T;
 
 typedef void *SHMEM_HANDLE;
 
@@ -39,9 +43,11 @@ public:
     static IPCPosixSharedMemory sharedMemoryInstance;
     return sharedMemoryInstance;
   }
-  POSHMEM_STATUS_T CreatePosixShmemory(SHMEM_HANDLE *, int, int, int, int *, std::string *);
-  POSHMEM_STATUS_T WritePosixShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
-  POSHMEM_STATUS_T ClosePosixShmemory(SHMEM_HANDLE *, int, int, int, std::string, int);
+  PSHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, int, int, int, int *, std::string *);
+  PSHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, buffer_t[], buffer_t[]);
+  PSHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
+  PSHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char*, size_t);
+  PSHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *, int, int, int, std::string, int);
 
   IPCPosixSharedMemory (IPCPosixSharedMemory const &)  = delete;
   void operator = (IPCPosixSharedMemory const &)  = delete;

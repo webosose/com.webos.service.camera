@@ -22,6 +22,7 @@
 ------------------------------------------------------------------------------*/
 #include "camera_hal_types.h"
 #include "camera_types.h"
+#include "camshm.h"
 #include "cam_posixshm.h"
 #include "constants.h"
 #include <unistd.h>
@@ -58,8 +59,11 @@ private:
   bool b_isshmwritedone_;
   bool b_issyshmwritedone_;
   bool b_isposhmwritedone_;
+
   void *cam_handle_;
   int shmemfd_;
+  buffer_t *usrpbufs_;
+
   CAMERA_FORMAT informat_;
   camera_pixel_format_t epixelformat_;
   std::thread tidPreview;
@@ -67,6 +71,7 @@ private:
   std::mutex tMutex;
   std::condition_variable tCondVar;
   std::string strdevicenode_;
+  SHMEM_HANDLE h_shmsystem_;
   SHMEM_HANDLE h_shmposix_;
   std::string str_imagepath_;
   std::string str_capturemode_;

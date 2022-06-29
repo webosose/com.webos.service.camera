@@ -19,7 +19,7 @@
 
 #include <sys/shm.h>
 #include <stddef.h> // size_t
-#include "usrptr_handle.h" // struct buffer
+#include "camera_hal_if_types.h" // buffer_t
 
 typedef enum
 {
@@ -41,8 +41,9 @@ public:
     return sharedMemoryInstance;
   }
   SHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, key_t *, int, int, int);
-  SHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, struct buffer[], struct buffer []);
+  SHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, buffer_t[], buffer_t[]);
   SHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
+  SHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char*, size_t);
   SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);
 
   IPCSharedMemory (IPCSharedMemory const &)  = delete;

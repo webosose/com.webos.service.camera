@@ -58,11 +58,11 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int set_buffer(camera_handle_t *h, int num_buffer, int io_mode)
+  int set_buffer(camera_handle_t *h, int num_buffer, int io_mode, buffer_t **usrpbufs)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
-      return camera_base->setBuffer(num_buffer, io_mode);
+      return camera_base->setBuffer(num_buffer, io_mode, usrpbufs);
     else
       return CAMERA_ERROR_UNKNOWN;
   }

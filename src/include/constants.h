@@ -129,7 +129,7 @@
 const int n_invalid_id = -1;
 const int frame_count = 8;
 const int extra_buffer = 1024;
-const int buffer_count = 4;
+const int buffer_count = 2; // YUY2 buffer count as maximum
 const int n_invalid_pid = -1;
 const int n_invalid_sig = -1;
 

@@ -25,8 +25,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "usrptr_handle.h" // helps zero-copy write to shmem
-
 
 #define CONST_PARAM_DEFAULT_VALUE -999
 
@@ -43,7 +41,7 @@ void destroy_handle(void *handle)
 
 V4l2CameraPlugin::V4l2CameraPlugin()
     : stream_format_(), buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_(),
-      io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_(), husrptr_(nullptr)
+      io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_()
 {
 }
 
@@ -159,7 +157,7 @@ int V4l2CameraPlugin::getFormat(stream_format_t *stream_format)
   return CAMERA_ERROR_NONE;
 }
 
-int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode)
+int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode, buffer_t **usrbufs)
 {
   int retVal = CAMERA_ERROR_NONE;
   io_mode_ = io_mode;
@@ -174,7 +172,7 @@ int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode)
   }
   case IOMODE_USERPTR:
   {
-    retVal = requestUserptrBuffers(num_buffer);
+    retVal = requestUserptrBuffers(num_buffer, usrbufs);
     break;
   }
   case IOMODE_DMABUF:
@@ -244,12 +242,6 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
       HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_DQBUF failed %d, %s", errno,
                    strerror(errno));
     }
-
-    // write shmem header
-    write_usrptr_header((usrptr_handle_t*)husrptr_, buf.index, buf.bytesused);
-
-    // in order to transport shared memory key to the upper layers.
-    outbuf->fd = ((usrptr_handle_t*)husrptr_)->shm_key;
 
     outbuf->start = buffers_[buf.index].start;
     outbuf->length = buf.bytesused;
@@ -933,7 +925,7 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
   return CAMERA_ERROR_NONE;
 }
 
-int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer)
+int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
 {
   struct v4l2_requestbuffers req;
   stream_format_t stream_format;
@@ -966,21 +958,11 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer)
     return retVal;
   }
 
-  // user pointer handle to help zero-copy write frame buffers to shared memory.
-  husrptr_ = (void*)create_usrptr_handle(stream_format, num_buffer);
-  if (!husrptr_)
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "fail to get user pointer handle");
-    free(buffers_);
-    buffers_ = nullptr;
-    return CAMERA_ERROR_UNKNOWN;
-  }
-
   for (n_buffers_ = 0; n_buffers_ < req.count; ++n_buffers_)
   {
-    // assign user pointer handle's shared memory buffers to user pointer buffers
-    buffers_[n_buffers_].length = ((usrptr_handle_t*)husrptr_)->buffers[n_buffers_].length;
-    buffers_[n_buffers_].start = ((usrptr_handle_t*)husrptr_)->buffers[n_buffers_].start;
+    // assign buffers pushed by the user to user pointer buffers
+    buffers_[n_buffers_].length = (*usrbufs)[n_buffers_].length;
+    buffers_[n_buffers_].start = (*usrbufs)[n_buffers_].start;
   }
 
   return CAMERA_ERROR_NONE;
@@ -1010,9 +992,6 @@ int V4l2CameraPlugin::releaseUserptrBuffers()
     free(buffers_);
     buffers_ = nullptr;
   }
-
-  // free user pointer handle
-  destroy_usrptr_handle((usrptr_handle_t**)&husrptr_);
 
   return CAMERA_ERROR_NONE;
 }

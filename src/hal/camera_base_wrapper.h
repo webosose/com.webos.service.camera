@@ -29,7 +29,7 @@ extern "C"
   int close_device(camera_handle_t *);
   int set_format(camera_handle_t *, stream_format_t);
   int get_format(camera_handle_t *, stream_format_t *);
-  int set_buffer(camera_handle_t *, int, int);
+  int set_buffer(camera_handle_t *, int, int, buffer_t**);
   int get_buffer(camera_handle_t *, buffer_t *);
   int release_buffer(camera_handle_t *, buffer_t);
   int destroy_buffer(camera_handle_t *);

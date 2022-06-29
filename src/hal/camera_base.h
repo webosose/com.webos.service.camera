@@ -30,7 +30,7 @@ public:
   virtual int closeDevice() = 0;
   virtual int setFormat(stream_format_t) = 0;
   virtual int getFormat(stream_format_t *) = 0;
-  virtual int setBuffer(int, int) = 0;
+  virtual int setBuffer(int, int, buffer_t**) = 0;
   virtual int getBuffer(buffer_t *) = 0;
   virtual int releaseBuffer(buffer_t) = 0;
   virtual int destroyBuffer() = 0;

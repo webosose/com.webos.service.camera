@@ -85,10 +85,10 @@ typedef struct
   unsigned char *extra_buf;
 } POSHMEM_COMM_T;
 
-POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem,
+PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem,
                  int unitSize, int unitNum, int extraSize, int *fd, std::string *shmemname)
 {
-  *phShmem = (SHMEM_HANDLE)malloc(sizeof(POSHMEM_COMM_T));
+  *phShmem = (SHMEM_HANDLE)calloc(1, sizeof(POSHMEM_COMM_T));
   POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
 
   DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%d\n", *phShmem,
@@ -101,7 +101,7 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
   int shm_fd = -1;
   char poshm_name[100] = {};
 
-  while(TRUE)
+  while (1)
   {
     snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm",(int)pid++);
 
@@ -121,12 +121,18 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
     else
     {
       DEBUG_PRINT("Create failed and error is %s\n", std::strerror(errno));
-      return POSHMEM_COMM_FAIL;
+      free(*phShmem);
+      *phShmem = nullptr;
+      return PSHMEM_FAILED;
     }
   }
   if (ftruncate(shm_fd, shmemSize) == -1)
   {
     DEBUG_PRINT("Failed to set size of shared memory \n");
+    close(shm_fd);
+    free(*phShmem);
+    *phShmem = nullptr;
+    return PSHMEM_FAILED;
   }
   *fd = shm_fd;
 
@@ -137,7 +143,12 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
   if (pSharedmem == MAP_FAILED)
   {
     DEBUG_PRINT("mmap failed \n");
-    return POSHMEM_COMM_FAIL;
+    shm_unlink(poshm_name);
+    close(shm_fd);
+    free(*phShmem);
+    *phShmem = nullptr;
+    *fd = -1;
+    return PSHMEM_FAILED;
   }
 
   pShmemBuffer->write_index = (int *)(pSharedmem);
@@ -158,19 +169,23 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
   if( fstat (shm_fd , &sb) == -1)
   {
     DEBUG_PRINT("Failed to get size of shared memory \n");
-    return POSHMEM_COMM_FAIL;
+    munmap(pShmemBuffer, shmemSize);
+    shm_unlink(poshm_name);
+    close(shm_fd);
+    free(*phShmem);
+    *phShmem = nullptr;
+    *fd = -1;
+    return PSHMEM_FAILED;
   }
     // shared momory size larger than total, we use extra data
-  if (sb.st_size > (SHMEM_HEADER_SIZE + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) *
+  if (sb.st_size > (long int)(SHMEM_HEADER_SIZE + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) *
                                                      (*pShmemBuffer->unit_num)))
   {
-    pShmemBuffer->extra_size =
-        (int *)(pSharedmem + SHMEM_HEADER_SIZE +
+    pShmemBuffer->extra_size = (int *)(pSharedmem + SHMEM_HEADER_SIZE +
                 (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num));
-    pShmemBuffer->extra_buf =
-        (pSharedmem + SHMEM_HEADER_SIZE +
-         (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
-         sizeof(int));
+    pShmemBuffer->extra_buf = (pSharedmem + SHMEM_HEADER_SIZE +
+                (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+                sizeof(int));
   }
   else
   {
@@ -193,72 +208,83 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
   DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
               SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
 
-  return POSHMEM_COMM_OK;
+  return PSHMEM_IS_OK;
 }
 
-POSHMEM_STATUS_T IPCPosixSharedMemory::WritePosixShmemory(SHMEM_HANDLE hShmem,
-                 unsigned char *pData, int dataSize, unsigned char *pExtraData,
-                 int extraDataSize)
+PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
+                 int numBuffers, buffer_t pBufs[], buffer_t pBufsExt[])
 {
-  POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
-  if (!shmem_buffer)
-  {
-    DEBUG_PRINT("shmem_buffer is NULL\n");
-    return POSHMEM_COMM_FAIL;
-  }
-  if (*shmem_buffer->write_index == -1)
-  {
-    *shmem_buffer->write_index = 0;
-  }
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
 
-  int mark = *shmem_buffer->mark;
-  int unit_size = *shmem_buffer->unit_size;
-  int unit_num = *shmem_buffer->unit_num;
-  int lwrite_index = *shmem_buffer->write_index;
+    if (numBuffers != *shmem_buffer->unit_num)
+    {
+        DEBUG_PRINT("posixshm buffer count mismatch\n");
+        return PSHMEM_ERROR_COUNT_MISMATCH;
+    }
 
-  if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
-  {
-    DEBUG_PRINT("extraDataSize should be same with extrasize used when open\n");
-    return POSHMEM_COMM_FAIL;
-  }
-  if (mark == POSHMEM_COMM_MARK_RESET)
-  {
-    DEBUG_PRINT("warning - read process isn't reset yet!\n");
-  }
+    for (int i = 0; i < *shmem_buffer->unit_num; i++)
+    {
+        pBufs[i].start = shmem_buffer->data_buf + i * (*shmem_buffer->unit_size);
+        pBufs[i].length = *shmem_buffer->unit_size;
+    }
 
-  if ((dataSize == 0) || (dataSize > unit_size))
-  {
-    DEBUG_PRINT("size error(%d > %d)!\n", dataSize, unit_size);
-    return POSHMEM_COMM_FAIL;
-  }
+    if (pBufsExt)
+    {
+        for (int i = 0; i < *shmem_buffer->unit_num; i++)
+        {
+            pBufsExt->start = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
+            pBufsExt->length = *shmem_buffer->extra_size;
+        }
+    }
 
-  // Once the writer writes the last buffer, it is made to point to the first
-  // buffer again
-  if (lwrite_index == unit_num)
-  {
-    DEBUG_PRINT("Overflow write data(write_index = %d, unit_num = %d)!\n",
-                lwrite_index, *shmem_buffer->unit_num);
-    *shmem_buffer->write_index = 0;
-    return POSHMEM_COMM_OVERFLOW;
-  }
-  *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
-
-  memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size),
-         pData, dataSize);
-
-  if (pExtraData && extraDataSize > 0)
-  {
-    memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size),
-            pExtraData, extraDataSize);
-  }
-  *shmem_buffer->write_index += 1;
-
-  if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
-    *shmem_buffer->write_index = 0;
-  return POSHMEM_COMM_OK;
+    return PSHMEM_IS_OK;
 }
 
-POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size_t bytesWritten)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+    if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
+    {
+        DEBUG_PRINT("size error(%lu > %lu)!\n", bytesWritten, *shmem_buffer->unit_size);
+        return PSHMEM_ERROR_RANGE_OUT;
+    }
+
+    *shmem_buffer->write_index = index;
+    *(int *)(shmem_buffer->length_buf + index) = bytesWritten;
+
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned char *extraData, size_t extraBytes)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+    if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size))
+    {
+        DEBUG_PRINT("size error(%lu > %lu)!\n\n", extraBytes, *shmem_buffer->extra_size);
+        return PSHMEM_ERROR_RANGE_OUT;
+    }
+    unsigned char *addr = shmem_buffer->extra_buf
+                               + (*shmem_buffer->write_index) * (*shmem_buffer->extra_size);
+    memcpy(addr, extraData, extraBytes);
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem,
                                      int unitNum, int unitSize, int extraSize,
                                      std::string shmemname, int shmemfd)
 {
@@ -268,7 +294,7 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
   if (!shmem_buffer)
   {
     DEBUG_PRINT("shmem_bufer is NULL\n");
-    return POSHMEM_COMM_FAIL;
+    return PSHMEM_IS_NULL;
   }
 
   int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum
@@ -276,19 +302,23 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
 
   void *shmem_addr = shmem_buffer->write_index;
 
+  /* We should try close shmemfd anyway!! */
   if (munmap(shmem_addr, shmemSize) == -1)
   {
-    return POSHMEM_COMM_FAIL;
+    DEBUG_PRINT("munmap failed!!\n");
+    //return PSHMEM_ERROR_MUNMAP_FAIL;
   }
 
   if (shm_unlink(shmemname.c_str()) == -1)
   {
-    return POSHMEM_COMM_FAIL;
+    DEBUG_PRINT("shm_unlink failed!!\n");
+    //return PSHMEM_ERROR_UNLINK_FAIL;
   }
+
   close(shmemfd);
   free(shmem_buffer);
   shmem_buffer = nullptr;
 
   DEBUG_PRINT("CloseShmemory end");
-  return POSHMEM_COMM_OK;
+  return PSHMEM_IS_OK;
 }
