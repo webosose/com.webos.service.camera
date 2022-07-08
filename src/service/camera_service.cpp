@@ -1299,6 +1299,11 @@ int main(int argc, char *argv[])
     {
         CameraService camerasrv;
     }
+    catch (std::bad_cast &err)
+    {
+        std::cerr << err.what() << std::endl;
+        return 1;
+    }
     catch (LS::Error &err)
     {
         LSErrorPrint(err, stdout);
