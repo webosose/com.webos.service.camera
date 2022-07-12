@@ -434,15 +434,16 @@ private:
   MethodReply objreply_;
 };
 
-class GetSolutionInfoMethod
+class GetSolutionsMethod
 {
 public:
-  GetSolutionInfoMethod() { n_devicehandle_ = -1; };
-  ~GetSolutionInfoMethod() {}
+  GetSolutionsMethod() { n_devicehandle_ = -1; };
+  ~GetSolutionsMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
-
+  void setCameraId(const std::string& devid) { str_devid_ = devid; }
+  std::string getCameraId() const { return str_devid_; }
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
     objreply_.setReturnValue(returnvalue);
@@ -452,23 +453,28 @@ public:
   MethodReply getMethodReply() const { return objreply_; }
 
   void getObject(const char *, const char *);
-  std::string createObjectJsonString(std::vector<std::string> input) const;
+  std::string createObjectJsonString(std::vector<std::string> supportedSolutionList,          std::vector<std::string> enabledSolutionList) const;
 
 private:
   int n_devicehandle_;
+  std::string str_devid_;
   MethodReply objreply_;
 };
 
-class CameraSolutionMethod
+class SetSolutionsMethod
 {
 public:
-  CameraSolutionMethod();
-  ~CameraSolutionMethod() {}
+  SetSolutionsMethod();
+  ~SetSolutionsMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
-  void setSolutions(const std::string& solution) { str_solutions_.push_back(solution); }
-  std::vector<std::string> getSolutions() { return str_solutions_; }
+  void setCameraId(const std::string& devid) { str_devid_ = devid; }
+  std::string getCameraId() const { return str_devid_; }
+  void setEnableSolutionList(const std::string& solution) { str_enable_solutions_.push_back(solution); }
+  std::vector<std::string> getEnableSolutionList() { return str_enable_solutions_; }
+  void setDisbleSolutionList(const std::string& solution) { str_disable_solutions_.push_back(solution); }
+  std::vector<std::string> getDisableSolutionList() { return str_disable_solutions_; }
   bool isEmpty();
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
@@ -483,7 +489,9 @@ public:
 
 private:
   int n_devicehandle_;
-  std::vector<std::string> str_solutions_;
+  std::string str_devid_;
+  std::vector<std::string> str_enable_solutions_;
+  std::vector<std::string> str_disable_solutions_;
   MethodReply objreply_;
 };
 
