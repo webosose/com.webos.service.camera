@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 VirtualDeviceManager::VirtualDeviceManager()
-    : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_(),
+    : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_{},
       bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), sformat_()
 {
 }

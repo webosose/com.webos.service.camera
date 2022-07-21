@@ -178,8 +178,9 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
         return PSHMEM_FAILED;
     }
     // shared momory size larger than total, we use extra data
-    if (sb.st_size > (long int)(SHMEM_HEADER_SIZE + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) *
-                                                        (*pShmemBuffer->unit_num)))
+    if ((long unsigned int)sb.st_size >
+        (SHMEM_HEADER_SIZE +
+         (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num)))
     {
         pShmemBuffer->extra_size =
             (int *)(pSharedmem + SHMEM_HEADER_SIZE +
