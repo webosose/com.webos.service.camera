@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,26 +16,9 @@
 
 #pragma once
 
-#include <pbnjson.hpp>
-
-/// WhitelistChecker class for camera whitelist from json file.
 class WhitelistChecker
 {
 public:
-    WhitelistChecker();
-    static WhitelistChecker &getInstance()
-    {
-        static WhitelistChecker obj;
-        return obj;
-    }
-    ~WhitelistChecker();
-    bool check(LSHandle *, const std::string &, const std::string &);
-    bool isSupportedCamera(std::string, std::string);
-
- private:
-    bool createToast(LSHandle *,    const std::string &);
-    pbnjson::JValue getListFromConfigd();
-
-    /// whitelist file path
-    std::string confPath_;
+    static bool check(const std::string &productId, const std::string &vendorId);
+    static bool isSupportedCamera(const std::string &productId, const std::string &vendorId);
 };
