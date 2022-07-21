@@ -20,6 +20,7 @@
 #include "device_manager.h"
 #include "command_manager.h"
 #include "device_controller.h"
+
 #include <fstream>
 #include <string.h>
 
@@ -307,6 +308,7 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
 
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
                devStatus.stList.strDeviceNode.c_str());
+
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
     return devidx;
