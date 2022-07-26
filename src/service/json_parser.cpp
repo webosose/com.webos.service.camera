@@ -1443,7 +1443,7 @@ std::string GetSolutionsMethod::createObjectJsonString(std::vector<std::string> 
           if(enabledSolution == supportedSolution)
           {
               isEnabled = true;
-              break;
+              continue;
           }
         }
 
@@ -1478,8 +1478,7 @@ SetSolutionsMethod::SetSolutionsMethod(): n_devicehandle_(n_invalid_id), str_ena
 bool SetSolutionsMethod::isEmpty()
 {
   bool isEmpty = false;
-  if(0 == str_enable_solutions_.size()
-      && 0 == str_disable_solutions_.size())
+  if(0 == (str_enable_solutions_.size() + str_disable_solutions_.size()))
   {
     isEmpty = true;
   }
