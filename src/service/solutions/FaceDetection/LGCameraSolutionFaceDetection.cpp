@@ -20,11 +20,11 @@
 #include <fcntl.h>
 #include <sys/time.h>
 
-#include "facedetection_opencv.hpp"
+#include "LGCameraSolutionFaceDetection.h"
 
-#define CONST_MODULE_NAME "FaceDetectionOpenCV"
+#define CONST_MODULE_NAME "LGCameraSolutionFaceDetection"
 
-LGCameraSolutionFaceDetection::FaceDetectionOpenCV(CameraSolutionManager *mgr)
+LGCameraSolutionFaceDetection::LGCameraSolutionFaceDetection(CameraSolutionManager *mgr)
         : CameraSolution(mgr),
         mDone(false),
         isThreadRunning(false),
@@ -44,7 +44,7 @@ LGCameraSolutionFaceDetection::FaceDetectionOpenCV(CameraSolutionManager *mgr)
 
 }
 
-LGCameraSolutionFaceDetection::~FaceDetectionOpenCV()
+LGCameraSolutionFaceDetection::~LGCameraSolutionFaceDetection()
 {
     PMLOG_INFO(CONST_MODULE_NAME, " E\n");
     setEnableValue(false);
