@@ -104,7 +104,7 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
       jnum = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_CLIENT_SIGNAL_NUM));
       jnumber_get_i32(jnum, &n_client_sig);
       if ((SIGHUP <= n_client_sig && n_client_sig <= SIGSYS) &&
-	      (n_client_sig != SIGKILL && n_client_sig != SIGSTOP))
+          (n_client_sig != SIGKILL && n_client_sig != SIGSTOP))
 
       {
         setClientSignal(n_client_sig);
@@ -1380,7 +1380,7 @@ std::string GetFdMethod::createObjectJsonString() const
   return str_reply;
 }
 
-void GetSolutionInfoMethod::getObject(const char *input, const char *schemapath)
+void GetSolutionsMethod::getObject(const char *input, const char *schemapath)
 {
   jvalue_ref j_obj;
   int retval = deSerialize(input, schemapath, j_obj);
@@ -1388,8 +1388,23 @@ void GetSolutionInfoMethod::getObject(const char *input, const char *schemapath)
   if (0 == retval)
   {
     int devicehandle = n_invalid_id;
-    jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
+    jvalue_ref j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
+    jnumber_get_i32(j_param_obj, &devicehandle);
+    if(devicehandle == NULL)
+    {
+      devicehandle = n_invalid_id;
+    }
     setDeviceHandle(devicehandle);
+    j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+    raw_buffer str_id = jstring_get_fast(j_param_obj);
+    if(strstr(str_id.m_str, "camera") == NULL)
+    {
+      setCameraId(cstr_invaliddeviceid);
+    }
+    else
+    {
+      setCameraId(str_id.m_str);
+    }
   }
   else
   {
@@ -1398,10 +1413,13 @@ void GetSolutionInfoMethod::getObject(const char *input, const char *schemapath)
   j_release(&j_obj);
 }
 
-std::string GetSolutionInfoMethod::createObjectJsonString(std::vector<std::string> input) const
+std::string GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSolutionList,
+                                                                 std::vector<std::string> enabledSolutionList) const
 {
   jvalue_ref json_outobj = jobject_create();
-  jvalue_ref json_solutioninfoarray = jarray_create(0);
+  jvalue_ref json_solution_obj = jobject_create();
+  jvalue_ref json_supported_solutions_array = jarray_create(0);
+
   std::string str_reply;
 
   MethodReply obj_reply = getMethodReply();
@@ -1411,15 +1429,38 @@ std::string GetSolutionInfoMethod::createObjectJsonString(std::vector<std::strin
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(obj_reply.bGetReturnValue()));
 
-    if(input.size() > 0)
+    if(supportedSolutionList.size() > 0)
     {
-      for(auto solution : input)
+      for(auto supportedSolution : supportedSolutionList)
       {
-        jarray_append(json_solutioninfoarray,jstring_create(solution.c_str()));
-      }
-    }
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("SolutionList"), json_solutioninfoarray);
+        bool isEnabled = false;
+        jvalue_ref json_solution_obj = jobject_create();
 
+        jobject_put(json_solution_obj, J_CSTR_TO_JVAL("name"), jstring_create(supportedSolution.c_str()));
+
+        for(auto enabledSolution : enabledSolutionList)
+        {
+          if(enabledSolution == supportedSolution)
+          {
+              isEnabled = true;
+              continue;
+          }
+        }
+
+        jvalue_ref json_paramsobj = jobject_create();
+        jobject_put(json_paramsobj, J_CSTR_TO_JVAL("enable"), jboolean_create(isEnabled));
+        /* To do: TBD */
+        /*
+        jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_1"), jstring_create(string_value));
+        jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_2"), jnumber_create_i32(num_value));
+        */
+        jobject_put(json_solution_obj, J_CSTR_TO_JVAL("params"), json_paramsobj);
+
+        jarray_append(json_supported_solutions_array, json_solution_obj);
+      }
+
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTION), json_supported_solutions_array);
+    }
   }
   else
   {
@@ -1432,35 +1473,72 @@ std::string GetSolutionInfoMethod::createObjectJsonString(std::vector<std::strin
   return str_reply;
 }
 
-CameraSolutionMethod::CameraSolutionMethod(): n_devicehandle_(n_invalid_id), str_solutions_() {}
+SetSolutionsMethod::SetSolutionsMethod(): n_devicehandle_(n_invalid_id), str_enable_solutions_(), str_disable_solutions_() {}
 
-bool CameraSolutionMethod::isEmpty()
+bool SetSolutionsMethod::isEmpty()
 {
   bool isEmpty = false;
-  if(0 == str_solutions_.size())
+  if(0 == (str_enable_solutions_.size() + str_disable_solutions_.size()))
   {
     isEmpty = true;
   }
   return isEmpty;
 }
 
-void CameraSolutionMethod::getObject(const char *input, const char *schemapath)
+void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
 {
   jvalue_ref j_obj;
+  jvalue_ref j_solutions_obj;
   int retval = deSerialize(input, schemapath, j_obj);
 
   if (0 == retval)
   {
     int devicehandle = n_invalid_id;
-    jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
+    jvalue_ref j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
+    jnumber_get_i32(j_param_obj, &devicehandle);
+    if(devicehandle == NULL)
+    {
+      devicehandle = n_invalid_id;
+    }
     setDeviceHandle(devicehandle);
 
-    jvalue_ref solutions = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOLUTION));
-    for (ssize_t i = 0; i != jarray_size(solutions); i++)
+    j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+    raw_buffer str_id = jstring_get_fast(j_param_obj);
+    if(strstr(str_id.m_str, "camera") == NULL)
     {
-      raw_buffer strid = jstring_get_fast(jarray_get(solutions, i));
-      setSolutions(strid.m_str);
+      setCameraId(cstr_invaliddeviceid);
     }
+    else
+    {
+      setCameraId(str_id.m_str);
+    }
+
+    j_solutions_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOLUTION));
+
+    for (ssize_t i = 0; i != jarray_size(j_solutions_obj); i++)
+    {
+      raw_buffer strid = jstring_get_fast(jobject_get(jarray_get(j_solutions_obj, i), J_CSTR_TO_BUF("name")));
+
+      bool enable = false;
+      jvalue_ref j_param_obj = jobject_get(jarray_get(j_solutions_obj, i), J_CSTR_TO_BUF("params"));
+      jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("enable")), &enable);
+      /* To do: TBD */
+      /*
+      jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key1")), &enable);
+      jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key2")), &enable);
+      */
+
+      if (true == enable)
+      {
+        setEnableSolutionList(strid.m_str);
+      }
+      else
+      {
+        setDisbleSolutionList(strid.m_str);
+      }
+
+    }
+
   }
   else
   {
@@ -1469,7 +1547,7 @@ void CameraSolutionMethod::getObject(const char *input, const char *schemapath)
   j_release(&j_obj);
 }
 
-std::string CameraSolutionMethod::createObjectJsonString() const
+std::string SetSolutionsMethod::createObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   jvalue_ref json_enablesolutionsarray = jarray_create(0);
