@@ -1,5 +1,8 @@
 #ifndef SRC_HAL_UTILS_CAMSHM_H_
 #define SRC_HAL_UTILS_CAMSHM_H_
+
+#include <sys/types.h>
+
 typedef enum _SHMEM_STATUS_T
 {
     SHMEM_COMM_OK = 0x0,

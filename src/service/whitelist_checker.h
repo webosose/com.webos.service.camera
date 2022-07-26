@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include "camera_types.h"
+
 class WhitelistChecker
 {
 public:

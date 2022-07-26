@@ -15,7 +15,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
 #include <pbnjson.hpp>
+#include "camera_types.h"
 
 class EventNotification
 {
