@@ -30,8 +30,7 @@
 #include <string>
 #include <condition_variable>
 #include <vector>
-#include <solutions/CameraSolutionManager.h>
-
+#include "pbnjson.h"
 
 typedef struct
 {
@@ -40,7 +39,7 @@ typedef struct
     int handle;
 } CLIENT_INFO_T;
 
-
+class CameraSolutionManager;
 class DeviceControl
 {
 private:
@@ -92,7 +91,7 @@ private:
   int camera_id_;
   void notifyDeviceFault_();
 
-  std::unique_ptr<CameraSolutionManager> pCameraSolution;
+  std::shared_ptr<CameraSolutionManager> pCameraSolution;
 
 public:
   DeviceControl();

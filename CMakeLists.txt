@@ -57,6 +57,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/include)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/)
+include_directories(${CMAKE_SOURCE_DIR}/src/service/solutions/)
 
 set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/camera_service.cpp
@@ -77,6 +78,7 @@ set(SRC_LIST
 ### SOLUTION feature enable setting Start ###
 set(SOLUTION_AIF_FACEDETECTION FALSE CACHE BOOL "Set to TRUE to enable AIF Face Detection for HAL")
 set(SOLUTION_OPENCV_FACEDETECTION FALSE CACHE BOOL "Set to TRUE to enable OpenCV Face Detection for HAL")
+set(SOLUTION_CNN_FACEDETECTION FALSE CACHE BOOL "Set to TRUE to enable CNN Face Detection for HAL")
 set(SOLUTION_AUTOCONTRAST TRUE CACHE BOOL "Set to TRUE to enable Auto Contrast for HAL")
 set(SOLUTION_DUMMY TRUE CACHE BOOL "Set to TRUE to enable Dummy for HAL")
 ### SOLUTION feature enable setting End ###
@@ -96,7 +98,7 @@ include_directories(${AIFRWK_INCLUDE_DIRS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AIF_FACEDETECTION")
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/AIFFaceDetection/LGCameraSolutionAIFFaceDetection.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
     )
 endif()
 ### SOLUTION_AIF_FACEDETECTION setting End ###
@@ -111,11 +113,31 @@ webos_add_compiler_flags(ALL ${OPENCV_CFLAGS})
 
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/FaceDetection/LGCameraSolutionFaceDetection.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_opencv/face_detection_opencv.cpp
     )
 
 endif()
 ### SOLUTION_OPENCV_FACEDETECTION setting End ###
+
+### SOLUTION_CNN_FACEDETECTION setting Start ###
+if(SOLUTION_CNN_FACEDETECTION)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_CNN_FACEDETECTION")
+
+find_library(FACE_DETECTION_LIBS facedetection)
+find_path(FACE_DETECTION_INCLUDE_DIR NAMES facedetectcnn.h PATH_SUFFIXES facedetection)
+include_directories(${FACE_DETECTION_INCLUDE_DIR})
+
+pkg_check_modules(JPEG REQUIRED libjpeg)
+include_directories(${JPEG_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
+
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_cnn/face_detection_cnn.cpp
+    )
+
+endif()
+### SOLUTION_CNN_FACEDETECTION setting End ###
 
 ### SOLUTION_AUTOCONTRAST setting Start ###
 if(SOLUTION_AUTOCONTRAST)
@@ -123,7 +145,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AUTOCONTRAST")
 
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/AutoContrast/LGCameraSolutionAutoContrast.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/auto_contrast/auto_contrast.cpp
     )
 
 endif()
@@ -135,7 +157,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_DUMMY")
 
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/Dummy/LGCameraSolutionDummy.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/dummy/dummy.cpp
     )
 
 endif()
@@ -146,11 +168,12 @@ endif()
 
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/CameraSolutionManager.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/CameraSolution.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
     )
 message(STATUS "Using json to define supported solutions for variable platform")
-webos_build_configured_file(src/service/solutions/Supported_Solution_Info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
 
 ### SOLUTION MANAGER Main setting End ###
 
@@ -168,6 +191,9 @@ target_link_libraries(${PROJECT_NAME}
                       ${OPENCV_LDFLAGS}
                       ${RAPIDJSON_LDFLAGS}
                       ${AIFRWK_LDFLAGS}
+		      ${FACE_DETECTION_LIBS}
+                      ${JPEG_LDFLAGS}
+
                       )
 
 

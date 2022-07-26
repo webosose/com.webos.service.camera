@@ -21,6 +21,7 @@
 #include "device_controller.h"
 #include "camera_hal_if.h"
 #include "command_manager.h"
+#include "device_manager.h"
 
 #include <ctime>
 #include <poll.h>
@@ -29,6 +30,9 @@
 #include <signal.h>
 #include <errno.h>
 #include <algorithm>
+
+#include "camera_solution_manager.h"
+#include "camera_solution_event.h"
 
 /**
  * need to call directly camera base methods in order to cancel preview when the camera is disconnected.
@@ -46,10 +50,10 @@ DeviceControl::DeviceControl()
       tMutex(), tCondVar(), h_shmsystem_(nullptr), h_shmposix_(nullptr),
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
       str_shmemname_(""), cancel_preview_(false), buf_size_(0),
-      sh_(nullptr), subskey_(""), camera_id_(-1), pCameraSolution(nullptr)
+      sh_(nullptr), subskey_(""), camera_id_(-1)
 {
     //[Camera Solution Manager] make cameraSolutionManager instance
-    pCameraSolution = std::make_unique<CameraSolutionManager>();
+    pCameraSolution = std::make_shared<CameraSolutionManager>();
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -221,7 +225,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
       //[Camera Solution Manager] processing for capture
       if(pCameraSolution != nullptr)
       {
-        pCameraSolution->processCaptureForSolutions(frame_buffer, streamformat);
+        pCameraSolution->processCapture(frame_buffer);
       }
 
       // write captured image to /tmp only if startCapture request is made
@@ -307,6 +311,41 @@ void DeviceControl::previewThread()
     int debug_interval = 100; // frames
     auto tic = std::chrono::steady_clock::now();
 
+    struct MemoryListener : public CameraSolutionEvent {
+      MemoryListener(void) {}
+      virtual ~MemoryListener(void)
+      {
+        if (jsonResult_ != nullptr)
+          j_release(&jsonResult_);
+        jsonResult_ = nullptr;
+      }
+      virtual void onInitialized(void) override
+      {
+        PMLOG_INFO(CONST_MODULE_DC, "It's initialized!!");
+      }
+      virtual void onDone(jvalue_ref jsonObj) override
+      {
+        std::lock_guard<std::mutex> lg(mtxResult_);
+        // TODO : We need to composite more than one results.
+        //        e.g) {"faces":[{...}, {...}], "poses":[{...}, {...}]}
+        j_release(&jsonResult_);
+        jsonResult_ = jvalue_copy(jsonObj);
+        PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jvalue_stringify(jsonResult_));
+      }
+      std::string getResult(void)
+      {
+        std::lock_guard<std::mutex> lg(mtxResult_);
+        if (jsonResult_ == nullptr)
+          return "";
+        else
+          return jvalue_stringify(jsonResult_);
+      }
+      std::mutex mtxResult_;
+      jvalue_ref jsonResult_ {nullptr};
+    } memoryListener;
+
+    pCameraSolution->setEventListener(&memoryListener);
+
     while (b_isstreamon_)
     {
         // keep writing data to shared memory
@@ -336,7 +375,7 @@ void DeviceControl::previewThread()
             //[Camera Solution Manager] process for preview
             if (pCameraSolution != nullptr)
             {
-                pCameraSolution->processPreviewForSolutions(frame_buffer, streamformat);
+                pCameraSolution->processPreview(frame_buffer);
             }
         }
         else if(b_isposixruning)
@@ -367,6 +406,8 @@ void DeviceControl::previewThread()
             debug_counter = 0;
         }
     }
+
+    pCameraSolution->setEventListener(nullptr);
 
     b_isshmwritedone_ = true;
     b_issyshmwritedone_ = true;
@@ -433,6 +474,14 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     // buffer_count = 2 (see "constants.h")
     buf_size_ = streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
+    //[Camera Solution Manager] initialization
+    int32_t meta_size = 0;
+    if(pCameraSolution != nullptr)
+    {
+      pCameraSolution->initialize(streamformat);
+      meta_size = pCameraSolution->getMetaSizeHint();
+    }
+
     if(memtype == kMemtypeShmem)
     {
         // frame_count = 8 (see "constants.h")
@@ -459,12 +508,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
         shmemfd_ = *pkey;
         str_shmemname_ = shmname;
-    }
-
-    //[Camera Solution Manager] initialization
-    if(pCameraSolution != nullptr)
-    {
-        pCameraSolution->initializeForSolutions(streamformat);
     }
 
     if (b_isstreamon_ == false)
@@ -623,7 +666,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
     //[]Camera Solution Manager] release
     if (pCameraSolution != nullptr)
     {
-        pCameraSolution->releaseForSolutions();
+        pCameraSolution->release();
     }
     return DEVICE_OK;
 }

@@ -1,0 +1,13 @@
+{
+  "solutionInfo": [
+    {
+      "AutoContrast": true,
+      "Dummy": true,
+      "FaceDetectionAIF": false,
+      "FaceDetectionOpenCV": false,
+      "FaceDetectionCNN": false
+    }
+  ]
+}
+
+
