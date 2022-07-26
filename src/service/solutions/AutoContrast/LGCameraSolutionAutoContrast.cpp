@@ -6,7 +6,7 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    AutoContrast.cpp
+ * @Filename    LGCameraSolutionAutoContrast.cpp
  * @contact     Multimedia_TP-Camera@lge.com
  *
  * Description  AutoContrast
@@ -14,91 +14,86 @@
  */
 
 #include <math.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/sysinfo.h>
+#include <dlfcn.h>
+#include <fcntl.h>
 #include <sys/time.h>
 
-#include "auto_contrast.hpp"
-#include "camera_types.h"
-#define LOG_TAG "AutoContrast"
-void brightnessEnhancement(unsigned char* inputY, unsigned char* inputUV,
-                            int width, int height, int stride, int frameSize,
-                            int minY, int maxY, int enhanceLevel);
-void contrastEnhancement(unsigned char* inputY, unsigned char* inputUV,
-                            int width, int height, int stride, int frameSize,
-                            int minY, int maxY, int enhanceLevel);
-int dumpFrame(unsigned char* inputY, unsigned char* inputUV,
-                int width, int height, int stride, int frameSize,
-                char* filename, char* filepath);
+#include "LGCameraSolutionAutoContrast.h"
 
-AutoContrast::AutoContrast(void)
+#define CONST_MODULE_NAME "LGCameraSolutionAutoContrast"
+
+LGCameraSolutionAutoContrast::LGCameraSolutionAutoContrast(CameraSolutionManager *mgr)
+        : CameraSolution(mgr)
 {
-    PMLOG_INFO(LOG_TAG, "");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW |
-                                 LG_SOLUTION_VIDEO |
-                                 LG_SOLUTION_SNAPSHOT);
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
+    solutionProperty = LG_SOLUTION_PREVIEW | LG_SOLUTION_VIDEO | LG_SOLUTION_SNAPSHOT;
 }
 
-AutoContrast::~AutoContrast(void)
+LGCameraSolutionAutoContrast::~LGCameraSolutionAutoContrast()
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
     setEnableValue(false);
 }
 
-std::string AutoContrast::getSolutionStr(void)
-{
-    return SOLUTION_AUTOCONTRAST;
+void LGCameraSolutionAutoContrast::initialize(stream_format_t streamformat) {
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
+
 }
 
-void AutoContrast::processForSnapshot(buffer_t inBuf)
-{
-    doAutoContrastProcessing(inBuf);
+std::string LGCameraSolutionAutoContrast::getSolutionStr(){
+    std::string solutionStr = SOLUTION_AUTOCONTRAST;
+    return solutionStr;
 }
 
-void AutoContrast::processForPreview(buffer_t inBuf)
+void LGCameraSolutionAutoContrast::processForSnapshot(buffer_t inBuf,        stream_format_t streamformat)
 {
-    doAutoContrastProcessing(inBuf);
+    doAutoContrastProcessing(inBuf, streamformat);
 }
 
-void AutoContrast::doAutoContrastProcessing(buffer_t inBuf)
+void LGCameraSolutionAutoContrast::processForPreview(buffer_t inBuf,        stream_format_t streamformat)
 {
-    PMLOG_INFO(LOG_TAG, ">");
     //AutoContrast is only working on YUYV format currently
-    if(streamFormat_.pixel_format != CAMERA_PIXEL_FORMAT_YUYV)
-        return;
+    if(streamformat.pixel_format == CAMERA_PIXEL_FORMAT_YUYV)
+    {
+        doAutoContrastProcessing(inBuf, streamformat);
+    }
+}
 
-    int width     = streamFormat_.stream_width;
-    int height    = streamFormat_.stream_height;
-    int stride    = streamFormat_.stream_width;
-    int scanline  = streamFormat_.stream_height;
-    int frameSize = streamFormat_.buffer_size;
+void LGCameraSolutionAutoContrast::doAutoContrastProcessing(buffer_t inBuf, stream_format_t streamformat)
+{
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
+
+    uint8_t *Yimage = NULL, *UVimage = NULL;
+    int     retval = 0;
+
+    int width = streamformat.stream_width;
+    int height = streamformat.stream_height;
+    int stride = streamformat.stream_width;
+    int scanline = streamformat.stream_height;
+    int frameSize = streamformat.buffer_size;
     int minY = 30;
     int maxY = 210;
 
-    uint8_t *Yimage  = (unsigned char*)inBuf.start;
-    uint8_t *UVimage = (unsigned char*)inBuf.start + (stride * scanline);
-    PMLOG_INFO(LOG_TAG, "width(%d) height(%d) stride(%d) frameSize(%d) pixel_format(%d)",
-                width, height, stride, frameSize, streamFormat_.pixel_format);
+    Yimage  = (unsigned char*)inBuf.start;
+    UVimage = (unsigned char*)inBuf.start + (stride * scanline);
+    PMLOG_INFO(CONST_MODULE_NAME, " width(%d) height(%d) stride(%d) frameSize(%d) pixel_format(%d)\n",  width, height, stride, frameSize, streamformat.pixel_format);
 
     contrastEnhancement(Yimage, UVimage, width, height, stride, frameSize, minY, maxY, 2.0f);
 
-    if (0){
-        PMLOG_INFO(LOG_TAG, "after AutoContrast_Execute error[%d]", -1/*retval*/);
+    if (retval){
+        PMLOG_INFO(CONST_MODULE_NAME, " after AutoContrast_Execute error[%d]\n", retval);
     } else {
-        PMLOG_INFO(LOG_TAG, "after AutoContrast works on snapshot");
+        PMLOG_INFO(CONST_MODULE_NAME, " after AutoContrast works on snapshot \n");
     }
 
-    PMLOG_INFO(LOG_TAG, "<");
+    PMLOG_INFO(CONST_MODULE_NAME, " X. /n");
 }
 
-void AutoContrast::release()
-{
-    PMLOG_INFO(LOG_TAG,  "");
-}
-
-void brightnessEnhancement(unsigned char* inputY, unsigned char* inputUV,
-                           int width, int height, int stride, int frameSize,
-                           int minY, int maxY, int enhanceLevel)
-{
-    PMLOG_INFO(LOG_TAG, ">");
+void LGCameraSolutionAutoContrast::brightnessEnhancement(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, int minY, int maxY, int enhanceLevel) {
+    PMLOG_INFO(CONST_MODULE_NAME, " E\n");
 
     int range = abs(maxY - minY);
     int curveLUT[256];
@@ -155,19 +150,18 @@ void brightnessEnhancement(unsigned char* inputY, unsigned char* inputUV,
             inputUV[y * stride + x] = SaturationLUT[inputUV[y * stride + x]];
         }
     }
-    PMLOG_INFO(LOG_TAG, "<");
+
+    PMLOG_INFO(CONST_MODULE_NAME, " X\n");
+
 }
 
-void contrastEnhancement(unsigned char* inputY, unsigned char* inputUV,
-                         int width, int height, int stride, int frameSize,
-                         int minY, int maxY, int enhanceLevel)
-{
-    PMLOG_INFO(LOG_TAG, "Contrast Enhancement working start");
+void LGCameraSolutionAutoContrast::contrastEnhancement(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, int minY, int maxY, int enhanceLevel) {
+    PMLOG_INFO(CONST_MODULE_NAME, "Contrast Enhancement working start\n");
 
-    //int   ySize          = stride*height;
-    //int   uvSize         = ySize / 2;
+    int   ySize          = stride*height;
+    int   uvSize         = ySize / 2;
     int   low2Middle     = 127;
-    //int   middle2End     = 255-low2Middle;
+    int   middle2End     = 255-low2Middle;
     int   curveLUT[256];
     int   ContrastLUT[256];
     float contrast_level = enhanceLevel;
@@ -178,7 +172,7 @@ void contrastEnhancement(unsigned char* inputY, unsigned char* inputUV,
 
     contrast_level = contrast_level < 1 ? 1 : contrast_level;
     memset(curveLUT, 0, sizeof(curveLUT));
-    PMLOG_INFO(LOG_TAG, "contrastEnhancement start making LUT table");
+    PMLOG_INFO(CONST_MODULE_NAME, "contrastEnhancement start making LUT table\n");
 
     for (int k = 0 ; k <= low2Middle ; k++){
         curveLUT[k] = abs(k - (int)((float)low2Middle-(float)low2Middle*(float)(pow(double(low2Middle-k)/(double)low2Middle,(double)contrast_level))));
@@ -198,7 +192,7 @@ void contrastEnhancement(unsigned char* inputY, unsigned char* inputUV,
             ContrastLUT[k] = CLAMP(k + curveLUT[k - low2Middle + 1],0,255);
     }
 
-    PMLOG_INFO(LOG_TAG, "Contrast Enhancement working");
+    PMLOG_INFO(CONST_MODULE_NAME, "Contrast Enhancement working\n");
 
     #ifdef DUMP_ENABLED
     char filename[30];
@@ -228,14 +222,14 @@ void contrastEnhancement(unsigned char* inputY, unsigned char* inputUV,
     dumpFrame(inputY, inputUV, width, height, stride, frameSize, filename, filepath);
     #endif
 
-    PMLOG_INFO(LOG_TAG, "Contrast Enhancement working done");
+
+    PMLOG_INFO(CONST_MODULE_NAME, "Contrast Enhancement working done\n");
+
 }
 
-int dumpFrame(unsigned char* inputY, unsigned char* inputUV,
-              int width, int height, int stride, int frameSize,
-              char* filename, char* filepath)
+int LGCameraSolutionAutoContrast::dumpFrame(unsigned char* inputY, unsigned char* inputUV, int width, int height, int stride, int frameSize, char* filename, char* filepath)
 {
-    PMLOG_INFO(LOG_TAG, ">");
+    PMLOG_INFO(CONST_MODULE_NAME,  " E\n");
 
     char buf[128];
     time_t now = time(NULL);
@@ -244,22 +238,32 @@ int dumpFrame(unsigned char* inputY, unsigned char* inputUV,
     gettimeofday(&tmnow, NULL);
 
     if(pnow == NULL){
-        PMLOG_INFO(LOG_TAG,"getting time is failed so do not dump");
+        PMLOG_INFO(CONST_MODULE_NAME," getting time is failed so do not dump");
         return false;
     }
 
     snprintf(buf, 128, "%s/%d_%d_%d_%d_%s_%dx%d.yuv", filepath, pnow->tm_hour, pnow->tm_min, pnow->tm_sec,((int)tmnow.tv_usec) / 1000, filename, width, height);
-    PMLOG_INFO(LOG_TAG, "path( %s )", buf);
+    PMLOG_INFO(CONST_MODULE_NAME,  " path( %s )\n", buf);
 
     FILE* file_fd = fopen(buf, "wb");
-    if (file_fd == 0) {
-        PMLOG_INFO(LOG_TAG, "cannot open file");
+    if (file_fd == 0)
+    {
+        PMLOG_INFO(CONST_MODULE_NAME,  " cannot open file\n");
         return false;
-    } else {
+    }
+    else
+    {
         fwrite(((unsigned char *)inputY), 1, frameSize, file_fd);
     }
     fclose(file_fd);
 
-    PMLOG_INFO(LOG_TAG, "<");
+    PMLOG_INFO(CONST_MODULE_NAME, " X");
     return true;
+
 }
+
+
+void LGCameraSolutionAutoContrast::release() {
+    PMLOG_INFO(CONST_MODULE_NAME,  " E\n");
+}
+

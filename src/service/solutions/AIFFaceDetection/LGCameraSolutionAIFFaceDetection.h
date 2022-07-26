@@ -6,35 +6,44 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    LGCameraSolutionFaceDetection.h
+ * @Filename    LGCameraSolutionAIFFaceDetection.h
  * @contact     Multimedia_TP-Camera@lge.com
  *
- * Description  OpenCV FaceDetection
+ * Description  AI-Framework FaceDetection
  *
  */
 
-#ifndef _FACE_DETECT_H_
-#define _FACE_DETECT_H_
+#ifndef _AIF_FACE_DETECT_H_
+#define _AIF_FACE_DETECT_H_
 
-#include "camera_solution_async.h"
-#include "camera_solution_manager.h"
+#include "../CameraSolution.h"
+#include "../CameraSolutionManager.h"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui.hpp>
 #include "camera_types.h"
-//#include "posixshm.h"
 #include <thread>
 #include <mutex>
 
+#include <aif/base/DetectorFactory.h>
+#include <aif/base/Detector.h>
+#include <aif/base/Descriptor.h>
+#include <aif/face/FaceDescriptor.h>
+#include <aif/tools/Utils.h>
+#include <aif/log/Logger.h>
+
 using namespace cv;
 
-class FaceDetectionOpenCV : public CameraSolutionAsync {
+#define LOG_TAG "LGCameraSolutionAIFFaceDetection"
+
+class LGCameraSolutionAIFFaceDetection : public CameraSolution {
 public:
-    FaceDetectionOpenCV(CameraSolutionManager *mgr);
-    virtual ~FaceDetectionOpenCV();
+    LGCameraSolutionAIFFaceDetection(CameraSolutionManager *mgr);
+    virtual ~LGCameraSolutionAIFFaceDetection();
+    void initialize(stream_format_t streamformat);
     std::string getSolutionStr();
-    void processForSnapshot(buffer_t inBuf);
-    void processForPreview(buffer_t inBuf);
+    void processForSnapshot(buffer_t inBuf,        stream_format_t streamformat);
+    void processForPreview(buffer_t inBuf, stream_format_t streamformat);
     void release();
 
     bool needThread(){return true;};
@@ -44,19 +53,20 @@ private:
 
     pthread_mutex_t m_fd_lock;
     pthread_cond_t  m_fd_cond;
-    std::mutex m;
-
     Src_frame_data_t srcBuf;
+    std::shared_ptr<aif::Detector> mFaceDetector;
+    std::shared_ptr<aif::Descriptor> descriptor;
 
     bool isThreadRunning;
     bool needInputRefresh;
-    bool processingDone;
+    bool isInitialized;
 
-    //cascadeclassifier Ŭ����
-    CascadeClassifier face_classifier;
     std::thread tidDetect;
     std::vector<Rect> mFaces;
+    std::vector<double> mScore;
+    std::vector<Rect> faceRects;
     bool mDone;
+    //SHMEM_HANDLE hShm;
 
     Scalar green, red;
 
@@ -69,13 +79,14 @@ private:
     int getFaceRectangle(void* inBuf, int len, stream_format_t, std::string);
     void Start(int shm_key, stream_format_t format);
     void stopThread();
-    void GetFaces(std::vector<Rect>&);
-    int  Draw(buffer_t srcBuf, stream_format_t streamformat);
+    void GetFaces(std::vector<Rect>& dst);
+    int  Draw(void* srcBuf, unsigned int buffer_size);
     //int  DetectFaces(buffer_t&, std::string);
     void SetFormat(stream_format_t);
     void faceDetectionProcessing();
     int dumpFrame(unsigned char* inputY, int width, int height, int frameSize, char* filename, char* filepath);
 
+    bool InitFaceDetector();
 
 };
 #endif
