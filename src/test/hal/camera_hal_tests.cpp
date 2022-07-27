@@ -22,10 +22,10 @@
 #include <stdlib.h>
 
 const char *subsystem = "libv4l2-camera-plugin.so";
-const char *devname = "/dev/video0";
+const char *devname   = "/dev/video0";
 
 static unsigned int random_value = 0;
-const int fps_30 = 30;
+const int fps_30                 = 30;
 
 // default values
 #define DEFAULT_BRIGHTNESS 101
@@ -35,106 +35,109 @@ const int fps_30 = 30;
 
 void PrintStreamFormat(stream_format_t streamformat)
 {
-  HAL_LOG_INFO(CONST_MODULE_HAL, "StreamFormat : \n");
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    Pixel Format : %d\n", streamformat.pixel_format);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    Width : %d\n", streamformat.stream_width);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    Height : %d\n", streamformat.stream_height);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "StreamFormat : \n");
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    Pixel Format : %d\n", streamformat.pixel_format);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    Width : %d\n", streamformat.stream_width);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    Height : %d\n", streamformat.stream_height);
 }
 
-void PrintCameraProperties(const camera_properties_t& params)
+void PrintCameraProperties(const camera_properties_t &params)
 {
-  HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_PROPERTIES_T : \n");
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    brightness : %d\n", params.nBrightness);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    contrast : %d\n", params.nContrast);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    saturation : %d\n", params.nSaturation);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    hue : %d\n", params.nHue);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto white balance temp : : %d\n", params.nAutoWhiteBalance);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    gamma : %d\n", params.nGamma);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    gain : %d\n", params.nGain);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.nFrequency);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    white balance temp : %d\n", params.nWhiteBalanceTemperature);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    sharpness : %d\n", params.nSharpness);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n", params.nBacklightCompensation);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto exposure : %d\n", params.nAutoExposure);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    exposure : %d\n", params.nExposure);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    pan : %d\n", params.nPan);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    tilt : %d\n", params.nTilt);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    Absolute focus : %d\n", params.nFocusAbsolute);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    auto focus : %d\n", params.nAutoFocus);
-  HAL_LOG_INFO(CONST_MODULE_HAL, "    zoom : %d\n", params.nZoomAbsolute);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_PROPERTIES_T : \n");
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    brightness : %d\n", params.nBrightness);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    contrast : %d\n", params.nContrast);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    saturation : %d\n", params.nSaturation);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    hue : %d\n", params.nHue);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    auto white balance temp : : %d\n",
+                 params.nAutoWhiteBalance);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    gamma : %d\n", params.nGamma);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    gain : %d\n", params.nGain);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.nFrequency);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    white balance temp : %d\n",
+                 params.nWhiteBalanceTemperature);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    sharpness : %d\n", params.nSharpness);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n",
+                 params.nBacklightCompensation);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    auto exposure : %d\n", params.nAutoExposure);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    exposure : %d\n", params.nExposure);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    pan : %d\n", params.nPan);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    tilt : %d\n", params.nTilt);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    Absolute focus : %d\n", params.nFocusAbsolute);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    auto focus : %d\n", params.nAutoFocus);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    zoom : %d\n", params.nZoomAbsolute);
 }
 
 void writeImageToFile(const void *p, int size)
 {
-  FILE *fp;
-  char image_name[100] = {};
+    FILE *fp;
+    char image_name[100] = {};
 
-  snprintf(image_name, 100, "/tmp/Picture%d.yuv", random_value++);
-  if (nullptr == (fp = fopen(image_name, "wb")))
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "fopen failed\n");
-    return;
-  }
-  fwrite(p, size, 1, fp);
-  fclose(fp);
+    snprintf(image_name, 100, "/tmp/Picture%d.yuv", random_value++);
+    if (nullptr == (fp = fopen(image_name, "wb")))
+    {
+        HAL_LOG_INFO(CONST_MODULE_HAL, "fopen failed\n");
+        return;
+    }
+    fwrite(p, size, 1, fp);
+    fclose(fp);
 }
 
 int main(int argc, char const *argv[])
 {
-  void *p_h_camera;
-  int timeout = 2000;
+    void *p_h_camera;
+    int timeout = 2000;
 
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
 
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = 480;
-  streamformat.stream_width = 640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_get_format(p_h_camera, &streamformat);
-  PrintStreamFormat(streamformat);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format    = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height   = 480;
+    streamformat.stream_width    = 640;
+    streamformat.stream_fps      = fps_30;
+    camera_hal_if_set_format(p_h_camera, streamformat);
+    camera_hal_if_get_format(p_h_camera, &streamformat);
+    PrintStreamFormat(streamformat);
 
-  camera_hal_if_set_buffer(p_h_camera, 4, IOMODE_MMAP, nullptr);
-  camera_hal_if_start_capture(p_h_camera);
+    camera_hal_if_set_buffer(p_h_camera, 4, IOMODE_MMAP, nullptr);
+    camera_hal_if_start_capture(p_h_camera);
 
-  // poll on fd and read data
-  int fd = 0;
-  camera_hal_if_get_fd(p_h_camera, &fd);
-  struct pollfd fds[] = {
-      {.fd = fd, .events = POLLIN},
-  };
-  buffer_t frame_buffer;
-  // just to verify deinit, disabled while loop
-  int ret = poll(fds, 1, timeout);
-  if (ret > 0)
-  {
-    camera_hal_if_get_buffer(p_h_camera, &frame_buffer);
-    writeImageToFile(frame_buffer.start, frame_buffer.length);
-    camera_hal_if_release_buffer(p_h_camera, frame_buffer);
-  }
+    // poll on fd and read data
+    int fd = 0;
+    camera_hal_if_get_fd(p_h_camera, &fd);
+    struct pollfd fds[] = {
+        {.fd = fd, .events = POLLIN},
+    };
+    buffer_t frame_buffer;
+    // just to verify deinit, disabled while loop
+    int ret = poll(fds, 1, timeout);
+    if (ret > 0)
+    {
+        camera_hal_if_get_buffer(p_h_camera, &frame_buffer);
+        writeImageToFile(frame_buffer.start, frame_buffer.length);
+        camera_hal_if_release_buffer(p_h_camera, frame_buffer);
+    }
 
-  camera_hal_if_stop_capture(p_h_camera);
-  camera_hal_if_destroy_buffer(p_h_camera);
+    camera_hal_if_stop_capture(p_h_camera);
+    camera_hal_if_destroy_buffer(p_h_camera);
 
-  camera_properties_t out_params;
-  camera_hal_if_get_properties(p_h_camera, &out_params);
-  PrintCameraProperties(out_params);
+    camera_properties_t out_params;
+    camera_hal_if_get_properties(p_h_camera, &out_params);
+    PrintCameraProperties(out_params);
 
-  camera_properties_t *in_params = &out_params;
-  in_params->nBrightness = DEFAULT_BRIGHTNESS;
-  in_params->nContrast = DEFAULT_CONTRAST;
-  in_params->nSaturation = DEFAULT_SATURATION;
-  in_params->nAutoWhiteBalance = DEFAULT_AUTOWHITEBALANCE;
-  camera_hal_if_set_properties(p_h_camera, in_params);
+    camera_properties_t *in_params = &out_params;
+    in_params->nBrightness         = DEFAULT_BRIGHTNESS;
+    in_params->nContrast           = DEFAULT_CONTRAST;
+    in_params->nSaturation         = DEFAULT_SATURATION;
+    in_params->nAutoWhiteBalance   = DEFAULT_AUTOWHITEBALANCE;
+    camera_hal_if_set_properties(p_h_camera, in_params);
 
-  camera_properties_t out_params_n;
-  camera_hal_if_get_properties(p_h_camera, &out_params_n);
-  PrintCameraProperties(out_params_n);
+    camera_properties_t out_params_n;
+    camera_hal_if_get_properties(p_h_camera, &out_params_n);
+    PrintCameraProperties(out_params_n);
 
-  camera_hal_if_close_device(p_h_camera);
-  camera_hal_if_deinit(p_h_camera);
+    camera_hal_if_close_device(p_h_camera);
+    camera_hal_if_deinit(p_h_camera);
 
-  return 0;
+    return 0;
 }

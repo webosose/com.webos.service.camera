@@ -18,9 +18,9 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include <fstream>
 #include <map>
 #include <string.h>
-#include <fstream>
 
 const std::string error_outof_range = "error code is out of range";
 
@@ -93,12 +93,12 @@ std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFIN
 int getRandomNumber()
 {
     static unsigned int random_value = 0;
-    std::ifstream urandom("/dev/urandom", std::ios::in|std::ios::binary);
-    if(urandom)
+    std::ifstream urandom("/dev/urandom", std::ios::in | std::ios::binary);
+    if (urandom)
     {
-        urandom.read(reinterpret_cast<char*>(&random_value),sizeof(random_value));
+        urandom.read(reinterpret_cast<char *>(&random_value), sizeof(random_value));
 
-        if(urandom)
+        if (urandom)
         {
             random_value = random_value % 10000;
         }
@@ -112,160 +112,156 @@ int getRandomNumber()
 }
 void getFormatString(int nFormat, char *pFormats)
 {
-  int i;
+    int i;
 
-  memset(pFormats, 0, 100);
+    memset(pFormats, 0, 100);
 
-  for (i = 1; i < 8; i++)
-  {
-    switch (CHECK_BIT_POS(nFormat, i))
+    for (i = 1; i < 8; i++)
     {
-    case CAMERA_FORMAT_YUV:
-      strncat(pFormats, "YUV|", 4);
-      break;
-    case CAMERA_FORMAT_H264ES:
-      strncat(pFormats, "H264ES|", 7);
-      break;
-    case CAMERA_FORMAT_JPEG:
-      strncat(pFormats, "JPEG|", 5);
-      break;
-    default:
-      break;
+        switch (CHECK_BIT_POS(nFormat, i))
+        {
+        case CAMERA_FORMAT_YUV:
+            strncat(pFormats, "YUV|", 4);
+            break;
+        case CAMERA_FORMAT_H264ES:
+            strncat(pFormats, "H264ES|", 7);
+            break;
+        case CAMERA_FORMAT_JPEG:
+            strncat(pFormats, "JPEG|", 5);
+            break;
+        default:
+            break;
+        }
     }
-  }
 
-  if (!strstr(pFormats, "|"))
-    strncat(pFormats, "Format is out of range", 100);
+    if (!strstr(pFormats, "|"))
+        strncat(pFormats, "Format is out of range", 100);
 
-  return;
+    return;
 }
 
 char *getTypeString(device_t etype)
 {
-  char *pszRetString = nullptr;
+    char *pszRetString = nullptr;
 
-  switch (etype)
-  {
-  case DEVICE_MICROPHONE:
-    pszRetString = (char*)"microphone";
-    break;
-  case DEVICE_CAMERA:
-    pszRetString = (char*)"camera";
-    break;
-  default:
-    pszRetString = (char*)"type is out of range";
-    break;
-  }
+    switch (etype)
+    {
+    case DEVICE_MICROPHONE:
+        pszRetString = (char *)"microphone";
+        break;
+    case DEVICE_CAMERA:
+        pszRetString = (char *)"camera";
+        break;
+    default:
+        pszRetString = (char *)"type is out of range";
+        break;
+    }
 
-  return pszRetString;
+    return pszRetString;
 }
 
 std::string getErrorString(DEVICE_RETURN_CODE_T error_code)
 {
-  std::string retstring;
-  std::map<DEVICE_RETURN_CODE_T, std::string>::iterator it;
+    std::string retstring;
+    std::map<DEVICE_RETURN_CODE_T, std::string>::iterator it;
 
-  it = g_error_string.find(error_code);
-  if (it != g_error_string.end())
-    retstring = it->second;
-  else
-    retstring = error_outof_range;
+    it = g_error_string.find(error_code);
+    if (it != g_error_string.end())
+        retstring = it->second;
+    else
+        retstring = error_outof_range;
 
-  return retstring;
+    return retstring;
 }
 
 void convertFormatToCode(std::string format, camera_format_t *pformatcode)
 {
-  *pformatcode = CAMERA_FORMAT_UNDEFINED;
-
-  if (format == cstr_yuvformat)
-    *pformatcode = CAMERA_FORMAT_YUV;
-  else if (format == cstr_h264esformat)
-    *pformatcode = CAMERA_FORMAT_H264ES;
-  else if (format == cstr_jpegformat)
-    *pformatcode = CAMERA_FORMAT_JPEG;
-  else
     *pformatcode = CAMERA_FORMAT_UNDEFINED;
+
+    if (format == cstr_yuvformat)
+        *pformatcode = CAMERA_FORMAT_YUV;
+    else if (format == cstr_h264esformat)
+        *pformatcode = CAMERA_FORMAT_H264ES;
+    else if (format == cstr_jpegformat)
+        *pformatcode = CAMERA_FORMAT_JPEG;
+    else
+        *pformatcode = CAMERA_FORMAT_UNDEFINED;
 }
 
 std::string getEventNotificationString(EventType etype)
 {
-  std::string retstring;
-  std::map<EventType, std::string>::iterator it;
+    std::string retstring;
+    std::map<EventType, std::string>::iterator it;
 
-  it = g_event_string.find(etype);
-  if (it != g_event_string.end())
-    retstring = it->second;
-  else
-    retstring = cstr_empty;
+    it = g_event_string.find(etype);
+    if (it != g_event_string.end())
+        retstring = it->second;
+    else
+        retstring = cstr_empty;
 
-  return retstring;
+    return retstring;
 }
 
 std::string getFormatStringFromCode(camera_format_t format)
 {
-  std::string retstring;
-  std::map<camera_format_t, std::string>::iterator it;
+    std::string retstring;
+    std::map<camera_format_t, std::string>::iterator it;
 
-  it = g_format_string.find(format);
-  if (it != g_format_string.end())
-    retstring = it->second;
-  else
-    retstring = cstr_empty;
+    it = g_format_string.find(format);
+    if (it != g_format_string.end())
+        retstring = it->second;
+    else
+        retstring = cstr_empty;
 
-  return retstring;
+    return retstring;
 }
 
 std::string getResolutionString(camera_format_t eformat)
 {
-  std::string str_resolution;
-  switch (eformat)
-  {
-  case CAMERA_FORMAT_YUV:
-    str_resolution = cstr_yuvformat;
-    break;
-  case CAMERA_FORMAT_JPEG:
-    str_resolution = cstr_jpegformat;
-    break;
-  case CAMERA_FORMAT_H264ES:
-    str_resolution = cstr_h264esformat;
-    break;
-  default:
-    break;
-  }
-  return str_resolution;
+    std::string str_resolution;
+    switch (eformat)
+    {
+    case CAMERA_FORMAT_YUV:
+        str_resolution = cstr_yuvformat;
+        break;
+    case CAMERA_FORMAT_JPEG:
+        str_resolution = cstr_jpegformat;
+        break;
+    case CAMERA_FORMAT_H264ES:
+        str_resolution = cstr_h264esformat;
+        break;
+    default:
+        break;
+    }
+    return str_resolution;
 }
 
-bool CAMERA_PROPERTIES_T::operator != (const CAMERA_PROPERTIES_T &new_property)
+bool CAMERA_PROPERTIES_T::operator!=(const CAMERA_PROPERTIES_T &new_property)
 {
-  if ((this->nFocusAbsolute != new_property.nFocusAbsolute) ||
-      (this->nAutoFocus != new_property.nAutoFocus) ||
-      (this->nZoomAbsolute != new_property.nZoomAbsolute) ||
-      (this->nPan != new_property.nPan) ||
-      (this->nTilt != new_property.nTilt) ||
-      (this->nContrast != new_property.nContrast) ||
-      (this->nBrightness != new_property.nBrightness) ||
-      (this->nSaturation != new_property.nSaturation) ||
-      (this->nSharpness != new_property.nSharpness) ||
-      (this->nHue != new_property.nHue) ||
-      (this->nWhiteBalanceTemperature != new_property.nWhiteBalanceTemperature) ||
-      (this->nGain != new_property.nGain) ||
-      (this->nGamma != new_property.nGamma) ||
-      (this->nFrequency != new_property.nFrequency) ||
-      (this->nExposure != new_property.nExposure) ||
-      (this->nAutoExposure != new_property.nAutoExposure) ||
-      (this->nAutoWhiteBalance != new_property.nAutoWhiteBalance) ||
-      (this->nBacklightCompensation != new_property.nBacklightCompensation))
-         return true;
-  else
-    return false;
+    if ((this->nFocusAbsolute != new_property.nFocusAbsolute) ||
+        (this->nAutoFocus != new_property.nAutoFocus) ||
+        (this->nZoomAbsolute != new_property.nZoomAbsolute) || (this->nPan != new_property.nPan) ||
+        (this->nTilt != new_property.nTilt) || (this->nContrast != new_property.nContrast) ||
+        (this->nBrightness != new_property.nBrightness) ||
+        (this->nSaturation != new_property.nSaturation) ||
+        (this->nSharpness != new_property.nSharpness) || (this->nHue != new_property.nHue) ||
+        (this->nWhiteBalanceTemperature != new_property.nWhiteBalanceTemperature) ||
+        (this->nGain != new_property.nGain) || (this->nGamma != new_property.nGamma) ||
+        (this->nFrequency != new_property.nFrequency) ||
+        (this->nExposure != new_property.nExposure) ||
+        (this->nAutoExposure != new_property.nAutoExposure) ||
+        (this->nAutoWhiteBalance != new_property.nAutoWhiteBalance) ||
+        (this->nBacklightCompensation != new_property.nBacklightCompensation))
+        return true;
+    else
+        return false;
 }
 
-bool CAMERA_FORMAT::operator != (const CAMERA_FORMAT &new_format)
+bool CAMERA_FORMAT::operator!=(const CAMERA_FORMAT &new_format)
 {
-  if ((this->eFormat != new_format.eFormat) || (this->nFps != new_format.nFps) ||
-      (this->nHeight != new_format.nHeight) || (this->nWidth != new_format.nWidth))
-         return true;
-  else
-    return false;
+    if ((this->eFormat != new_format.eFormat) || (this->nFps != new_format.nFps) ||
+        (this->nHeight != new_format.nHeight) || (this->nWidth != new_format.nWidth))
+        return true;
+    else
+        return false;
 }

@@ -19,16 +19,17 @@
 #include "camera_solution_async.h"
 #include "camera_solution_manager.h"
 
-#include <opencv2/opencv.hpp>
-#include <opencv2/highgui.hpp>
 #include "camera_types.h"
+#include <opencv2/highgui.hpp>
+#include <opencv2/opencv.hpp>
 //#include "posixshm.h"
-#include <thread>
 #include <mutex>
+#include <thread>
 
 using namespace cv;
 
-class FaceDetectionOpenCV : public CameraSolutionAsync {
+class FaceDetectionOpenCV : public CameraSolutionAsync
+{
 public:
     FaceDetectionOpenCV(CameraSolutionManager *mgr);
     virtual ~FaceDetectionOpenCV();
@@ -37,13 +38,12 @@ public:
     void processForPreview(buffer_t inBuf);
     void release();
 
-    bool needThread(){return true;};
+    bool needThread() { return true; };
     void startThread(stream_format_t streamformat);
 
 private:
-
     pthread_mutex_t m_fd_lock;
-    pthread_cond_t  m_fd_cond;
+    pthread_cond_t m_fd_cond;
     std::mutex m;
 
     Src_frame_data_t srcBuf;
@@ -52,7 +52,7 @@ private:
     bool needInputRefresh;
     bool processingDone;
 
-    //cascadeclassifier Ŭ����
+    // cascadeclassifier Ŭ����
     CascadeClassifier face_classifier;
     std::thread tidDetect;
     std::vector<Rect> mFaces;
@@ -61,22 +61,20 @@ private:
     Scalar green, red;
 
     bool mSupportStatus = false;
-    bool mEnableStatus = false;
+    bool mEnableStatus  = false;
 
-    unsigned char* internalBuffer;
+    unsigned char *internalBuffer;
 
     void print();
-    int getFaceRectangle(void* inBuf, int len, stream_format_t, std::string);
+    int getFaceRectangle(void *inBuf, int len, stream_format_t, std::string);
     void Start(int shm_key, stream_format_t format);
     void stopThread();
-    void GetFaces(std::vector<Rect>&);
-    int  Draw(buffer_t srcBuf, stream_format_t streamformat);
-    //int  DetectFaces(buffer_t&, std::string);
+    void GetFaces(std::vector<Rect> &);
+    int Draw(buffer_t srcBuf, stream_format_t streamformat);
+    // int  DetectFaces(buffer_t&, std::string);
     void SetFormat(stream_format_t);
     void faceDetectionProcessing();
-    int dumpFrame(unsigned char* inputY, int width, int height, int frameSize, char* filename, char* filepath);
-
-
+    int dumpFrame(unsigned char *inputY, int width, int height, int frameSize, char *filename,
+                  char *filepath);
 };
 #endif
-

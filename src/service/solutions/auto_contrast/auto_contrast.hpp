@@ -17,16 +17,19 @@
 
 #include "camera_solution.h"
 
-class AutoContrast : public CameraSolution {
+class AutoContrast : public CameraSolution
+{
 public:
     AutoContrast(void);
     virtual ~AutoContrast(void);
+
 public:
     // interface override
     virtual std::string getSolutionStr(void) override;
     virtual void processForSnapshot(buffer_t inBuf) override;
     virtual void processForPreview(buffer_t inBuf) override;
     virtual void release(void) override;
+
 private:
     void doAutoContrastProcessing(buffer_t inBuf);
 };

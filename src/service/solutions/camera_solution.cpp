@@ -14,8 +14,8 @@
  */
 
 #include "camera_solution.h"
-#include "camera_types.h"
 #include "camera_solution_event.h"
+#include "camera_types.h"
 
 #define LOG_TAG "CameraSolution"
 
@@ -24,5 +24,6 @@ void CameraSolution::initialize(stream_format_t streamFormat)
     PMLOG_INFO(LOG_TAG, "%s", getSolutionStr().c_str());
     streamFormat_ = streamFormat;
 
-    if (pEvent_) (pEvent_.load())->onInitialized();
+    if (pEvent_)
+        (pEvent_.load())->onInitialized();
 }

@@ -39,7 +39,4 @@ void Notifier::registerCallback(GMainLoop *loop)
     }
 }
 
-void Notifier::setLSHandle(LSHandle *handle)
-{
-    lshandle_ = handle;
-}
+void Notifier::setLSHandle(LSHandle *handle) { lshandle_ = handle; }

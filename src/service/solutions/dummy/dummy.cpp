@@ -21,9 +21,7 @@
 Dummy::Dummy(void)
 {
     PMLOG_INFO(LOG_TAG, "");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW |
-                                 LG_SOLUTION_VIDEO |
-                                 LG_SOLUTION_SNAPSHOT);
+    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_VIDEO | LG_SOLUTION_SNAPSHOT);
 }
 
 Dummy::~Dummy(void)
@@ -32,22 +30,10 @@ Dummy::~Dummy(void)
     setEnableValue(false);
 }
 
-std::string Dummy::getSolutionStr(void)
-{
-    return SOLUTION_DUMMY;
-}
+std::string Dummy::getSolutionStr(void) { return SOLUTION_DUMMY; }
 
-void Dummy::processForSnapshot(buffer_t inBuf)
-{
+void Dummy::processForSnapshot(buffer_t inBuf) {}
 
-}
+void Dummy::processForPreview(buffer_t inBuf) {}
 
-void Dummy::processForPreview(buffer_t inBuf)
-{
-
-}
-
-void Dummy::release(void)
-{
-    PMLOG_INFO(LOG_TAG, "");
-}
+void Dummy::release(void) { PMLOG_INFO(LOG_TAG, ""); }

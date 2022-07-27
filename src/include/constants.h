@@ -130,33 +130,33 @@
 #define CONST_PARAM_NAME_NOTSUPPORT "not support"
 #define CONST_PARAM_NAME_SOLUTION "solutions"
 
-const int n_invalid_id = -1;
-const int frame_count = 8;
-const int extra_buffer = 1024;
-const int buffer_count = 2; // YUY2 buffer count as maximum
+const int n_invalid_id  = -1;
+const int frame_count   = 8;
+const int extra_buffer  = 1024;
+const int buffer_count  = 2; // YUY2 buffer count as maximum
 const int n_invalid_pid = -1;
 const int n_invalid_sig = -1;
 
-const std::string cstr_empty = "";
-const std::string cstr_pdmclient = "com.webos.service.pdmclient";
-const std::string cstr_uri = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
-const std::string cstr_payload = "{\"subscribe\":true,\"category\":\"Video\"}";
+const std::string cstr_empty       = "";
+const std::string cstr_pdmclient   = "com.webos.service.pdmclient";
+const std::string cstr_uri         = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
+const std::string cstr_payload     = "{\"subscribe\":true,\"category\":\"Video\"}";
 const std::string cstr_powerstatus = "powerStatus";
-const std::string cstr_cam = "CAM";
-const std::string cstr_capture = ":capture:";
+const std::string cstr_cam         = "CAM";
+const std::string cstr_capture     = ":capture:";
 const std::string cstr_invaliddeviceid = "-1";
-const std::string cstr_yuvformat = "YUV";
-const std::string cstr_h264esformat = "H264ES";
-const std::string cstr_jpegformat = "JPEG";
-const std::string cstr_primary = "primary";
-const std::string cstr_secondary = "secondary";
-const std::string cstr_format = "format";
-const std::string cstr_properties = "properties";
-const std::string cstr_oneshot = "MODE_ONESHOT";
-const std::string cstr_burst = "MODE_BURST";
-const std::string cstr_continuous = "MODE_CONTINUOUS";
-const std::string cstr_connect = "device_connect";
-const std::string cstr_disconnect = "device_disconnect";
-const std::string cstr_devicefault = "device_fault";
+const std::string cstr_yuvformat       = "YUV";
+const std::string cstr_h264esformat    = "H264ES";
+const std::string cstr_jpegformat      = "JPEG";
+const std::string cstr_primary         = "primary";
+const std::string cstr_secondary       = "secondary";
+const std::string cstr_format          = "format";
+const std::string cstr_properties      = "properties";
+const std::string cstr_oneshot         = "MODE_ONESHOT";
+const std::string cstr_burst           = "MODE_BURST";
+const std::string cstr_continuous      = "MODE_CONTINUOUS";
+const std::string cstr_connect         = "device_connect";
+const std::string cstr_disconnect      = "device_disconnect";
+const std::string cstr_devicefault     = "device_fault";
 
 #endif /*CAMERA_CONST_H_*/

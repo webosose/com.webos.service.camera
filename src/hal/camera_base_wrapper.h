@@ -17,28 +17,28 @@
 #ifndef CAMERA_BASE_WRAPPER
 #define CAMERA_BASE_WRAPPER
 
-#include "camera_hal_types.h"
 #include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-  int open_device(camera_handle_t *, const char *);
-  int close_device(camera_handle_t *);
-  int set_format(camera_handle_t *, stream_format_t);
-  int get_format(camera_handle_t *, stream_format_t *);
-  int set_buffer(camera_handle_t *, int, int, buffer_t**);
-  int get_buffer(camera_handle_t *, buffer_t *);
-  int release_buffer(camera_handle_t *, buffer_t);
-  int destroy_buffer(camera_handle_t *);
-  int start_capture(camera_handle_t *);
-  int stop_capture(camera_handle_t *);
-  int set_properties(camera_handle_t *, const camera_properties_t *);
-  int get_properties(camera_handle_t *, camera_properties_t *);
-  int get_info(camera_handle_t *, camera_device_info_t *, const char *);
-  int get_buffer_fd(camera_handle_t *, int *, int *);
+    int open_device(camera_handle_t *, const char *);
+    int close_device(camera_handle_t *);
+    int set_format(camera_handle_t *, stream_format_t);
+    int get_format(camera_handle_t *, stream_format_t *);
+    int set_buffer(camera_handle_t *, int, int, buffer_t **);
+    int get_buffer(camera_handle_t *, buffer_t *);
+    int release_buffer(camera_handle_t *, buffer_t);
+    int destroy_buffer(camera_handle_t *);
+    int start_capture(camera_handle_t *);
+    int stop_capture(camera_handle_t *);
+    int set_properties(camera_handle_t *, const camera_properties_t *);
+    int get_properties(camera_handle_t *, camera_properties_t *);
+    int get_info(camera_handle_t *, camera_device_info_t *, const char *);
+    int get_buffer_fd(camera_handle_t *, int *, int *);
 
 #ifdef __cplusplus
 }

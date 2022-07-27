@@ -1,11 +1,10 @@
 #ifndef _CAMSERV_SHMEM_SYNC_USECASE_H_
 #define _CAMSERV_SHMEM_SYNC_USECASE_H_
 
-
 struct ret_val_t
 {
-   int value;
-   int info[2];
+    int value;
+    int info[2];
 };
 
 // No sync
@@ -26,6 +25,5 @@ ret_val_t close_with_pid(int handle, int pid);
 ret_val_t open_invalid_pid_close_invalid_pid(int dummy_pid, int dummy_sig);
 ret_val_t open_invalid_pid_start_stop_close_invalid_pid(int dummy_pid, int dummy_sig);
 ret_val_t open_invalid_pid_start_stop_close(int dummy_pid, int dummy_sig);
-
 
 #endif

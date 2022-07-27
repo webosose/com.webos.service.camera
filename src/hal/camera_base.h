@@ -17,29 +17,29 @@
 #ifndef CAMERA_BASE
 #define CAMERA_BASE
 
-#include "camera_hal_types.h"
 #include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include <iostream>
 #include <string.h>
 
 class CameraBase
 {
 public:
-  virtual ~CameraBase() {};
-  virtual int openDevice(std::string) = 0;
-  virtual int closeDevice() = 0;
-  virtual int setFormat(stream_format_t) = 0;
-  virtual int getFormat(stream_format_t *) = 0;
-  virtual int setBuffer(int, int, buffer_t**) = 0;
-  virtual int getBuffer(buffer_t *) = 0;
-  virtual int releaseBuffer(buffer_t) = 0;
-  virtual int destroyBuffer() = 0;
-  virtual int startCapture() = 0;
-  virtual int stopCapture() = 0;
-  virtual int setProperties(const camera_properties_t *) = 0;
-  virtual int getProperties(camera_properties_t *) = 0;
-  virtual int getInfo(camera_device_info_t *, std::string) = 0;
-  virtual int getBufferFd(int *, int *) = 0;
+    virtual ~CameraBase(){};
+    virtual int openDevice(std::string)                      = 0;
+    virtual int closeDevice()                                = 0;
+    virtual int setFormat(stream_format_t)                   = 0;
+    virtual int getFormat(stream_format_t *)                 = 0;
+    virtual int setBuffer(int, int, buffer_t **)             = 0;
+    virtual int getBuffer(buffer_t *)                        = 0;
+    virtual int releaseBuffer(buffer_t)                      = 0;
+    virtual int destroyBuffer()                              = 0;
+    virtual int startCapture()                               = 0;
+    virtual int stopCapture()                                = 0;
+    virtual int setProperties(const camera_properties_t *)   = 0;
+    virtual int getProperties(camera_properties_t *)         = 0;
+    virtual int getInfo(camera_device_info_t *, std::string) = 0;
+    virtual int getBufferFd(int *, int *)                    = 0;
 };
 
 #endif

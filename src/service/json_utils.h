@@ -21,25 +21,25 @@
 
 static inline int deSerialize(const char *strInput, const char *inputSchema, jvalue_ref &objJson)
 {
-  jerror *error = NULL;
-  jschema_ref schema = jschema_create(j_cstr_to_buffer(inputSchema), &error);
+    jerror *error      = NULL;
+    jschema_ref schema = jschema_create(j_cstr_to_buffer(inputSchema), &error);
 
-  if (error)
-  {
-    jerror_free(error);
-    return -1;
-  }
+    if (error)
+    {
+        jerror_free(error);
+        return -1;
+    }
 
-  objJson = jdom_create(j_cstr_to_buffer(strInput), schema, &error);
+    objJson = jdom_create(j_cstr_to_buffer(strInput), schema, &error);
 
-  jschema_release(&schema);
-  if (error)
-  {
-    jerror_free(error);
-    return -1;
-  }
+    jschema_release(&schema);
+    if (error)
+    {
+        jerror_free(error);
+        return -1;
+    }
 
-  return 0;
+    return 0;
 }
 
 #endif /*JSON_UTILS_H_*/

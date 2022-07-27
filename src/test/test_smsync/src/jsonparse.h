@@ -6,5 +6,4 @@
 pbnjson::JValue convertStringToJson(const char *rawData);
 std::string convertJsonToString(const pbnjson::JValue json);
 
-
 #endif

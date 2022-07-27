@@ -16,28 +16,27 @@
 
 #pragma once
 
-#include <pbnjson.hpp>
 #include "camera_types.h"
+#include <pbnjson.hpp>
 
 class EventNotification
 {
 public:
-    EventNotification()
-    {
-        strcamid_ = "";
-    }
+    EventNotification() { strcamid_ = ""; }
 
-   ~EventNotification() {}
+    ~EventNotification() {}
 
-    bool addSubscription(LSHandle * lsHandle, const char* key, LSMessage &message);
-    void eventReply(LSHandle * lsHandle, const char* key, void *p_cur_data, void *p_old_data, EventType etype);
+    bool addSubscription(LSHandle *lsHandle, const char *key, LSMessage &message);
+    void eventReply(LSHandle *lsHandle, const char *key, void *p_cur_data, void *p_old_data,
+                    EventType etype);
     std::string subscriptionJsonString(bool issubscribed);
-    void setCameraId(const std::string& camid) { strcamid_ = camid; }
+    void setCameraId(const std::string &camid) { strcamid_ = camid; }
     std::string getCameraId() { return strcamid_; }
 
- private:
+private:
     std::string strcamid_;
-    bool getJsonString(jvalue_ref &json_outobj, void *p_cur_data, void *p_old_data, EventType etype);
-    int getSubscripeCount(LSHandle * lsHandle, const char* key);
-    void subscriptionReply(LSHandle * lsHandle, const char* key, jvalue_ref output_reply);
+    bool getJsonString(jvalue_ref &json_outobj, void *p_cur_data, void *p_old_data,
+                       EventType etype);
+    int getSubscripeCount(LSHandle *lsHandle, const char *key);
+    void subscriptionReply(LSHandle *lsHandle, const char *key, jvalue_ref output_reply);
 };

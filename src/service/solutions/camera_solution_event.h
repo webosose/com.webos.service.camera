@@ -15,11 +15,12 @@
 
 #pragma once
 
-typedef struct jvalue* jvalue_ref;
-struct CameraSolutionEvent {
-  virtual void onInitialized(void) {}
-  virtual void onEnabled(void) {}
-  virtual void onDone(jvalue_ref) {}
-  virtual void onDisabled(void) {}
-  virtual void onReleased(void) {}
+typedef struct jvalue *jvalue_ref;
+struct CameraSolutionEvent
+{
+    virtual void onInitialized(void) {}
+    virtual void onEnabled(void) {}
+    virtual void onDone(jvalue_ref) {}
+    virtual void onDisabled(void) {}
+    virtual void onReleased(void) {}
 };

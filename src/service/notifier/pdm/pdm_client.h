@@ -25,8 +25,8 @@
 class PDMClient : public DeviceNotifier
 {
 private:
-    static bool subscribeToPdmService(LSHandle *sh,
-                  const char *serviceName, bool connected, void *ctx);
+    static bool subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
+                                      void *ctx);
     LSHandle *lshandle_;
 
 public:

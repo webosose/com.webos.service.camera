@@ -17,10 +17,12 @@
 
 #include "camera_solution.h"
 
-class Dummy : public CameraSolution {
+class Dummy : public CameraSolution
+{
 public:
     Dummy(void);
     virtual ~Dummy(void);
+
 public:
     // interface override
     virtual std::string getSolutionStr(void) override;
