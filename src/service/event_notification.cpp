@@ -20,7 +20,6 @@
 #include "command_manager.h"
 #include "event_notification.h"
 
-#define CONST_MODULE_EVENTMANGER "EventManager"
 
 
 bool EventNotification::addSubscription(LSHandle * lsHandle, const char* key, LSMessage &message)
@@ -31,16 +30,16 @@ bool EventNotification::addSubscription(LSHandle * lsHandle, const char* key, LS
 
   if (LSMessageIsSubscription(&message))
   {
-    PMLOG_INFO(CONST_MODULE_EVENTMANGER, "addSubscription LSMessageIsSubscription success\n");
+    PMLOG_INFO(CONST_MODULE_EM, "LSMessageIsSubscription success");
     if (!LSSubscriptionAdd(lsHandle, key, &message, &error))
     {
-      PMLOG_INFO(CONST_MODULE_EVENTMANGER, "addSubscription LSSubscriptionAdd failed\n");
+      PMLOG_INFO(CONST_MODULE_EM, "LSSubscriptionAdd failed");
       LSErrorPrint(&error, stderr);
       LSErrorFree(&error);
       return false;
     }
     cnt = getSubscripeCount(lsHandle, key);
-    PMLOG_INFO(CONST_MODULE_EVENTMANGER, "addSubscription_cnt %d\n", cnt);
+    PMLOG_INFO(CONST_MODULE_EM, "cnt %d", cnt);
     LSErrorFree(&error);
     return true;
   }
@@ -55,12 +54,12 @@ void EventNotification::subscriptionReply(LSHandle *lsHandle, const char* key, j
   LSErrorInit(&error);
   if (!LSSubscriptionReply(lsHandle, key, jvalue_tostring_simple(output_reply), &error))
   {
-    PMLOG_INFO(CONST_MODULE_EVENTMANGER, "subscriptionReply failed\n");
+    PMLOG_INFO(CONST_MODULE_EM, "LSSubscriptionReply failed");
     LSErrorPrint(&error, stderr);
   }
 
   LSErrorFree(&error);
-  PMLOG_INFO(CONST_MODULE_EVENTMANGER, "subscriptionReply end\n");
+  PMLOG_INFO(CONST_MODULE_EM, "end");
 }
 
 int EventNotification::getSubscripeCount(LSHandle * lsHandle, const char* key)
@@ -109,7 +108,7 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
       }
       else
       {
-        PMLOG_INFO(CONST_MODULE_EVENTMANGER, "getJsonString event: %d pdata is null \n", etype);
+        PMLOG_INFO(CONST_MODULE_EM, "event: %d pdata is null", (int)etype);
         resultVal = false;
       }
       break;
@@ -131,7 +130,7 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
       }
       else
       {
-        PMLOG_INFO(CONST_MODULE_EVENTMANGER, "getJsonString event: %d pdata is null \n", etype);
+        PMLOG_INFO(CONST_MODULE_EM, "event: %d pdata is null", (int)etype);
         resultVal = false;
       }
       break;
@@ -151,7 +150,7 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
 
       if (DEVICE_OK != CommandManager::getInstance().getDeviceList(arr_camdev, arr_micdev, arr_camsupport, arr_micsupport))
       {
-          PMLOG_INFO(CONST_MODULE_EVENTMANGER, "getDeviceList returns not OK \n");
+          PMLOG_INFO(CONST_MODULE_EM, "getDeviceList returns not OK \n");
           resultVal = false;
           break;
       }
@@ -190,7 +189,7 @@ void EventNotification::eventReply(LSHandle * lsHandle, const char* key, void *p
   jvalue_ref json_outobj = jobject_create();
   std::string strreply;
 
-  PMLOG_INFO(CONST_MODULE_EVENTMANGER, "eventReply_subsciptionCnt: %d\n", getSubscripeCount(lsHandle, key));
+  PMLOG_INFO(CONST_MODULE_EM, "getSubscripeCount: %d\n", getSubscripeCount(lsHandle, key));
 
   bool rerunVal = getJsonString(json_outobj, p_cur_data, p_old_data, etype);
 
@@ -201,7 +200,7 @@ void EventNotification::eventReply(LSHandle * lsHandle, const char* key, void *p
   subscriptionReply(lsHandle, key, json_outobj);
 
   strreply = jvalue_stringify(json_outobj);
-  PMLOG_INFO(CONST_MODULE_EVENTMANGER, "eventReply strreply %s\n", strreply.c_str());
+  PMLOG_INFO(CONST_MODULE_EM, "strreply %s", strreply.c_str());
   j_release(&json_outobj);
 
 }
@@ -217,8 +216,7 @@ EventNotification::subscriptionJsonString(bool issubscribed)
               jboolean_create(issubscribed));
 
   strreply = jvalue_stringify(json_outobj);
-  PMLOG_INFO(CONST_MODULE_EVENTMANGER, "subscriptionJsonString strreply %s\n",
-             strreply.c_str());
+  PMLOG_INFO(CONST_MODULE_EM, "strreply %s", strreply.c_str());
   j_release(&json_outobj);
 
   return strreply;

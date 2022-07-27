@@ -25,15 +25,19 @@
 #define CONST_PARAM_VALUE_TRUE 1
 #define CONST_MAX_DEVICE_COUNT 10
 
-#define CONST_MODULE_DM "DeviceManager"
-#define CONST_MODULE_VDM "VirtualDeviceManager"
+#define CONST_MODULE_AC "AppCastClient"
 #define CONST_MODULE_CM "CommandHandler"
 #define CONST_MODULE_DC "DeviceController"
+#define CONST_MODULE_DM "DeviceManager"
+#define CONST_MODULE_EM "EventManager"
 #define CONST_MODULE_LUNA "Service"
 #define CONST_MODULE_NOTIFIER "Notifier"
-#define CONST_MODULE_PDMCLIENT "PDMClient"
-#define CONST_MODULE_SHM "SHM_API"
-#define CONST_MODULE_SM "SOLUTION_MANAGER"
+#define CONST_MODULE_PC "PDMClient"
+#define CONST_MODULE_SHM "SharedMemory"
+#define CONST_MODULE_SM "SolutionManager"
+#define CONST_MODULE_RCP "RemoteCameraPlugin"
+#define CONST_MODULE_VDM "VirtualDeviceManager"
+#define CONST_MODULE_WLIST "WhitelistChecker"
 
 #define CONST_DEVICE_NAME_CAMERA "camera"
 #define CONST_DEVICE_HANDLE "handle"

@@ -17,8 +17,6 @@
 #include "camera_types.h"
 #include "whitelist_checker.h"
 
-#define CONST_MODULE_WLIST "WhitelistChecker"
-
 bool WhitelistChecker::check(const std::string &productId, const std::string &vendorId)
 {
     PMLOG_INFO(CONST_MODULE_WLIST, "productId=[%s], vendorId=[%s]", productId.c_str(), vendorId.c_str());

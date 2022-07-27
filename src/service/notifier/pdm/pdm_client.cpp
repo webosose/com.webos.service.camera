@@ -42,14 +42,14 @@ void getDevPaths(jvalue_ref &array_obj, std::vector<std::string> &devPaths)
             bool is_capabilities = jobject_get_exists(jin_subdevice_obj,
                                                       J_CSTR_TO_BUF(CONST_PARAM_NAME_CAPABILITIES),
                                                       &jin_obj_capabilities);
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for is_capabilities in the received JSON - %d", is_capabilities);
+            PMLOG_INFO(CONST_MODULE_PC, "Check for is_capabilities in the received JSON - %d", is_capabilities);
             if (!is_capabilities)
             {
                 continue;
             }
             raw_buffer capabilities = jstring_get_fast(jin_obj_capabilities);
             std::string str_capabilities = capabilities.m_str;
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "capabilities : %s \n", str_capabilities.c_str());
+            PMLOG_INFO(CONST_MODULE_PC, "capabilities : %s \n", str_capabilities.c_str());
             if (str_capabilities != cstr_capture)
             {
                 continue;
@@ -57,7 +57,7 @@ void getDevPaths(jvalue_ref &array_obj, std::vector<std::string> &devPaths)
             bool is_devPath = jobject_get_exists(jin_subdevice_obj,
                                                  J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_PATH),
                                                  &jin_obj_devPath);
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for devPath in the received JSON - %d", is_devPath);
+            PMLOG_INFO(CONST_MODULE_PC, "Check for devPath in the received JSON - %d", is_devPath);
             if (!is_devPath)
             {
                 continue;
@@ -81,7 +81,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 {
     jerror *error = NULL;
     const char *payload = LSMessageGetPayload(message);
-    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "payload : %s \n", payload);
+    PMLOG_INFO(CONST_MODULE_PC, "payload : %s \n", payload);
     jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
 
     if (jis_valid(jin_obj))
@@ -89,18 +89,18 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
         bool retvalue;
         int camcount = 0;
         jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
-        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "retvalue : %d \n", retvalue);
+        PMLOG_INFO(CONST_MODULE_PC, "retvalue : %d \n", retvalue);
         if (retvalue)
         {
             jvalue_ref jin_obj_devlistinfo;
             bool is_devlistinfo = jobject_get_exists(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO), &jin_obj_devlistinfo);
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "Check for deviceListInfo in the received JSON - %d", is_devlistinfo);
+            PMLOG_INFO(CONST_MODULE_PC, "Check for deviceListInfo in the received JSON - %d", is_devlistinfo);
             int devlistsize = 0, devlistindex = 0;
             if (is_devlistinfo)
             {
                 jin_obj_devlistinfo = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_LIST_INFO));
                 devlistsize = jarray_size(jin_obj_devlistinfo);
-                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "devlist array size  : %d \n", devlistsize);
+                PMLOG_INFO(CONST_MODULE_PC, "devlist array size  : %d \n", devlistsize);
             }
 
             do
@@ -116,7 +116,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     jin_obj_child = jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VIDEO_DEVICE_LIST));
                 }
                 int listcount = jarray_size(jin_obj_child);
-                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "listcount : %d \n", listcount);
+                PMLOG_INFO(CONST_MODULE_PC, "listcount : %d \n", listcount);
 
                 for (int i = 0; i < listcount; i++)
                 {
@@ -142,7 +142,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                             }
                         }
                     }
-                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_devicetype : %s \n", str_devicetype.c_str());
+                    PMLOG_INFO(CONST_MODULE_PC, "str_devicetype : %s \n", str_devicetype.c_str());
                     if (str_devicetype != cstr_cam)
                     {
                         continue;
@@ -156,7 +156,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
                     raw_buffer vendor_name = jstring_get_fast(jin_obj_vendorname);
                     std::string str_vendorname = vendor_name.m_str;
-                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorname : %s \n", str_vendorname.c_str());
+                    PMLOG_INFO(CONST_MODULE_PC, "str_vendorname : %s \n", str_vendorname.c_str());
 
                     // productName
                     jvalue_ref jin_obj_productname;
@@ -164,7 +164,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                         continue;
                     raw_buffer product_name = jstring_get_fast(jin_obj_productname);
                     std::string str_productname = product_name.m_str;
-                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productname : %s \n", str_productname.c_str());
+                    PMLOG_INFO(CONST_MODULE_PC, "str_productname : %s \n", str_productname.c_str());
 
                     // vendorID
                     jvalue_ref jin_obj_vendorid;
@@ -174,7 +174,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                         raw_buffer vendor_id = jstring_get_fast(jin_obj_vendorid);
                         str_vendorid = vendor_id.m_str;
                     }
-                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorid : %s \n", str_vendorid.c_str());
+                    PMLOG_INFO(CONST_MODULE_PC, "str_vendorid : %s \n", str_vendorid.c_str());
 
                     // productID
                     jvalue_ref jin_obj_productid;
@@ -184,17 +184,17 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                         raw_buffer product_id = jstring_get_fast(jin_obj_productid);
                         str_productid = product_id.m_str;
                     }
-                    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productid : %s \n", str_productid.c_str());
+                    PMLOG_INFO(CONST_MODULE_PC, "str_productid : %s \n", str_productid.c_str());
 
                     // devPath
                     std::vector<std::string> str_devPaths;
                     getDevPaths(jin_array_obj, str_devPaths);
                     for (auto str_devPath : str_devPaths)
                     {
-                        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "devPath : %s \n", str_devPath.c_str());
+                        PMLOG_INFO(CONST_MODULE_PC, "devPath : %s \n", str_devPath.c_str());
                         strncpy(dev_info_[camcount].strDeviceNode, str_devPath.c_str(), CONST_MAX_STRING_LENGTH - 1);
 
-                        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "received cam device\n");
+                        PMLOG_INFO(CONST_MODULE_PC, "received cam device\n");
                         dev_info_[camcount].nDeviceNum = 0;           // TBD
                         dev_info_[camcount].nPortNum = 0;             // TBD
                         dev_info_[camcount].isPowerOnConnect = false; // TBD
@@ -230,19 +230,19 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
             DEVICE_EVENT_STATE_T nCamEvent = DEVICE_EVENT_NONE;
             DEVICE_EVENT_STATE_T nMicEvent = DEVICE_EVENT_NONE;
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "camcount : %d \n", camcount);
+            PMLOG_INFO(CONST_MODULE_PC, "camcount : %d \n", camcount);
 
             DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
 
             if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
             {
-                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "PLUGGED CamEvent type: %d \n", nCamEvent);
+                PMLOG_INFO(CONST_MODULE_PC, "PLUGGED CamEvent type: %d \n", nCamEvent);
                 EventNotification obj;
                 obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_CONNECT);
             }
             else if (nCamEvent == DEVICE_EVENT_STATE_UNPLUGGED)
             {
-                PMLOG_INFO(CONST_MODULE_PDMCLIENT, "UNPLUGGED CamEvent type: %d \n", nCamEvent);
+                PMLOG_INFO(CONST_MODULE_PC, "UNPLUGGED CamEvent type: %d \n", nCamEvent);
                 EventNotification obj;
                 obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_DISCONNECT);
             }
@@ -268,7 +268,7 @@ void PDMClient::subscribeToClient(GMainLoop *loop)
                                            subscribeToPdmService, loop, NULL, &lsregistererror);
     if (!result)
     {
-        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "LSRegister Server Status failed");
+        PMLOG_INFO(CONST_MODULE_PC, "LSRegister Server Status failed");
     }
 }
 
@@ -288,7 +288,7 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh,
     LSError lserror;
     LSErrorInit(&lserror);
 
-    PMLOG_INFO(CONST_MODULE_PDMCLIENT, "connected status:%d \n", connected);
+    PMLOG_INFO(CONST_MODULE_PC, "connected status:%d \n", connected);
     if (connected)
     {
         // get camera service handle and register cb function with pdm
@@ -296,13 +296,13 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh,
                         &lserror);
         if (!retval)
         {
-            PMLOG_INFO(CONST_MODULE_PDMCLIENT, "PDM client Unable to unregister service\n");
+            PMLOG_INFO(CONST_MODULE_PC, "PDM client Unable to unregister service\n");
             ret = -1;
         }
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_PDMCLIENT, "connected value is false");
+        PMLOG_INFO(CONST_MODULE_PC, "connected value is false");
     }
 
     if (LSErrorIsSet(&lserror))
