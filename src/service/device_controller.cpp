@@ -15,22 +15,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /*-----------------------------------------------------------------------------
- #include
  (File Inclusions)
- ------------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 #include "device_controller.h"
 #include "camera_hal_if.h"
 #include "command_manager.h"
 #include "device_manager.h"
-
 #include <ctime>
 #include <poll.h>
 #include <sys/time.h>
-
 #include <signal.h>
 #include <errno.h>
 #include <algorithm>
-
 #include "camera_solution_manager.h"
 #include "camera_solution_event.h"
 

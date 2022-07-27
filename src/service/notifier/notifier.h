@@ -20,7 +20,6 @@
 #include "camera_types.h"
 #include <functional>
 #include <iostream>
-
 #include "device_notifier.h"
 #include "luna-service2/lunaservice.hpp"
 #include "pdm_client.h"

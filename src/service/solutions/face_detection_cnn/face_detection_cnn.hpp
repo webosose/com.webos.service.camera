@@ -14,6 +14,7 @@
  */
 
 #pragma once
+
 #include "camera_solution_async.h"
 
 class FaceDetectionCNN : public CameraSolutionAsync {

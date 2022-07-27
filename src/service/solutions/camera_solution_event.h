@@ -12,7 +12,9 @@
  * Description  Camera Solution
  *
  */
+
 #pragma once
+
 typedef struct jvalue* jvalue_ref;
 struct CameraSolutionEvent {
   virtual void onInitialized(void) {}

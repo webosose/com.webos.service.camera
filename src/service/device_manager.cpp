@@ -15,13 +15,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /*-----------------------------------------------------------------------------
- #include
  (File Inclusions)
- ------------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 #include "device_manager.h"
 #include "command_manager.h"
 #include "device_controller.h"
-
 #include <string.h>
 #include <fstream>
 

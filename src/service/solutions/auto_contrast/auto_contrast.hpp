@@ -12,7 +12,9 @@
  * Description  AutoContrast
  *
  */
+
 #pragma once
+
 #include "camera_solution.h"
 
 class AutoContrast : public CameraSolution {

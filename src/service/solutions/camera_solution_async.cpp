@@ -17,7 +17,9 @@
 #include <list>
 #include "camera_solution_async.h"
 #include "camera_types.h"
+
 #define LOG_TAG "CameraSolutionAsync"
+
 using namespace std::chrono_literals;
 
 struct PerformanceControl {

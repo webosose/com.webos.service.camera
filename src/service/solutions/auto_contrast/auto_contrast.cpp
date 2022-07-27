@@ -15,10 +15,11 @@
 
 #include <math.h>
 #include <sys/time.h>
-
 #include "auto_contrast.hpp"
 #include "camera_types.h"
+
 #define LOG_TAG "AutoContrast"
+
 void brightnessEnhancement(unsigned char* inputY, unsigned char* inputUV,
                             int width, int height, int stride, int frameSize,
                             int minY, int maxY, int enhanceLevel);

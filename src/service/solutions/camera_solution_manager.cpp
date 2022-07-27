@@ -17,7 +17,6 @@
 #include "camera_solution.h"
 #include "camera_types.h"
 #include <pbnjson.hpp>
-
 #include "auto_contrast/auto_contrast.hpp"
 #include "dummy/dummy.hpp"
 

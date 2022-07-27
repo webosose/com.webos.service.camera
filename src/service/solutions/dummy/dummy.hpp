@@ -14,6 +14,7 @@
  */
 
 #pragma once
+
 #include "camera_solution.h"
 
 class Dummy : public CameraSolution {

@@ -12,6 +12,7 @@
  * Description  Camera Solution FaceDetectionAIF
  *
  */
+
 #include <cstdlib>
 #include <cstdio>
 #include <jpeglib.h>
@@ -20,9 +21,10 @@
 #include "face_detection_aif.hpp"
 #include "camera_solution_event.h"
 #include "camera_types.h"
+#include <rapidjson/document.h>
 
 using namespace cv;
-#include <rapidjson/document.h>
+
 namespace rj = rapidjson;
 
 #define LOG_TAG "FaceDetectionAIF"

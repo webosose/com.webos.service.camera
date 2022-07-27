@@ -14,8 +14,10 @@
  */
 
 #pragma once
+
 #include "camera_solution_async.h"
 #include <aif/facade/EdgeAIVision.h>
+
 using namespace aif;
 
 class FaceDetectionAIF : public CameraSolutionAsync {

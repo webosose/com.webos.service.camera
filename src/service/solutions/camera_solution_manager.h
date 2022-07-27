@@ -12,7 +12,9 @@
  * Description  Camera Solution Manager
  *
  */
+
 #pragma once
+
 #include <list>
 #include <vector>
 #include <string>

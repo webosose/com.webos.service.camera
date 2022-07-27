@@ -15,9 +15,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /*-----------------------------------------------------------------------------
- #include
  (File Inclusions)
- -- ----------------------------------------------------------------------------*/
+ -- -------------------------------------------------------------------------*/
 #include "camera_service.h"
 #include "camera_types.h"
 #include "command_manager.h"
@@ -26,9 +25,7 @@
 #include <pbnjson.hpp>
 #include <sstream>
 #include <string>
-
 #include <signal.h>
-
 
 struct sigaction sigact_service_crash;
 void signal_handler_service_crash(int sig);

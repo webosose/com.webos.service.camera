@@ -12,7 +12,9 @@
  * Description  Camera Solution
  *
  */
+
 #pragma once
+
 #include <thread>
 #include <memory>
 #include <condition_variable>

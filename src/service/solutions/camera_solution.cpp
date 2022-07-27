@@ -16,6 +16,7 @@
 #include "camera_solution.h"
 #include "camera_types.h"
 #include "camera_solution_event.h"
+
 #define LOG_TAG "CameraSolution"
 
 void CameraSolution::initialize(stream_format_t streamFormat)

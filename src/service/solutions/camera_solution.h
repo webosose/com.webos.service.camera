@@ -12,7 +12,9 @@
  * Description  Camera Solution
  *
  */
+
 #pragma once
+
 // System dependencies
 #include <string>
 #include <atomic>

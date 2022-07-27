@@ -15,7 +15,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "v4l2_camera_plugin.h"
-
 #include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>

@@ -12,8 +12,10 @@
  * Description  Camera Solution Dummy
  *
  */
+
 #include "dummy.hpp"
 #include "camera_types.h"
+
 #define LOG_TAG "Dummy"
 
 Dummy::Dummy(void)
