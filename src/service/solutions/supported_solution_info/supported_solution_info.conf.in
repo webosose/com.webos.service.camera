@@ -3,7 +3,8 @@
     {
       "name": "FaceDetection",
       "enable": true,
-      "default": true
+      "default": true,
+      "model": "AIF"
     },
     {
       "name": "Dummy",

@@ -20,9 +20,12 @@
 #include <atomic>
 #include <string>
 
-#define SOLUTION_AUTOCONTRAST "AutoContrast"
-#define SOLUTION_DUMMY "Dummy"
-#define SOLUTION_FACE_DETECTION_AIF "FaceDetectionAIF"
+#define SOLUTION_DUMMY          "Dummy"
+#define SOLUTION_AUTOCONTRAST   "AutoContrast"
+#define SOLUTION_FACEDETECTION  "FaceDetection"
+
+#define FACEDETECTION_MODEL_CNN "CNN"
+#define FACEDETECTION_MODEL_AIF "AIF"
 
 enum Property
 {

@@ -34,6 +34,7 @@ enum LgSolutionErrorValue
 struct SolutionInfo {
     bool enable_;
     bool default_;
+    std::string model_;
 };
 
 class SupportedSolution
@@ -96,7 +97,11 @@ void SupportedSolution::parseSolutionInfo(void)
             {
                 info->default_ = obj_solutionInfo[i]["default"].asBool();
             }
-
+            if (obj_solutionInfo[i].hasKey("model") &&
+                obj_solutionInfo[i]["model"].isString())
+            {
+                info->model_ = obj_solutionInfo[i]["model"].asString();
+            }
             PMLOG_INFO(CONST_MODULE_SM, "supportedSolutionInfo [%s,%d,%d]",
                        name.c_str(), info->enable_, info->default_);
             solutions_.insert(std::make_pair(name, info));
@@ -121,12 +126,12 @@ void CameraSolutionManager::getSupportedSolutionList(std::vector<std::string>& s
         if (info && info->default_)
             enabledList.push_back(SOLUTION_AUTOCONTRAST);
     }
-    if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACE_DETECTION_AIF, info))
+    if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACEDETECTION, info))
     {
         if (info && info->enable_)
-            supportedList.push_back(SOLUTION_FACE_DETECTION_AIF);
+            supportedList.push_back(SOLUTION_FACEDETECTION);
         if (info && info->default_)
-            enabledList.push_back(SOLUTION_FACE_DETECTION_AIF);
+            enabledList.push_back(SOLUTION_FACEDETECTION);
     }
 }
 
@@ -146,10 +151,15 @@ CameraSolutionManager::CameraSolutionManager(void)
           lstSolution_.push_back(std::make_unique<Dummy>());
     }
 
-    if(std::find(list.begin(), list.end(), SOLUTION_FACE_DETECTION_AIF) != list.end())
-    {
-        lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
+    if(std::find(list.begin(), list.end(), SOLUTION_FACEDETECTION) != list.end()) {
+        std::shared_ptr<SolutionInfo> info;
+        bool ret = SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACEDETECTION, info);
+        if (ret && info->model_ == FACEDETECTION_MODEL_AIF)// default model
+        {
+            lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
+        }
     }
+
 }
 
 CameraSolutionManager::~CameraSolutionManager(void) {}
