@@ -19,7 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <jpeglib.h>
-#include <pbnjson.h>
+#include <pbnjson.hpp>
 #include <rapidjson/document.h>
 #include <string>
 
@@ -28,6 +28,8 @@ using namespace cv;
 namespace rj = rapidjson;
 
 #define LOG_TAG "FaceDetectionAIF"
+
+#define AIF_PARAM_FILE "/home/root/aif_param.json"
 
 int getScaleDenomAIF(int height)
 {
@@ -88,6 +90,28 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
                                 } \
                             } \
                         }";
+
+    if (access(AIF_PARAM_FILE, F_OK)==0)
+    {
+        auto obj_aifparam = pbnjson::JDomParser::fromFile(AIF_PARAM_FILE);
+        if (obj_aifparam.isObject())
+        {
+            param = obj_aifparam.stringify();
+
+            if (obj_aifparam.hasKey("inputSize"))
+            {
+                if (obj_aifparam["inputSize"].hasKey("width") &&
+                    obj_aifparam["inputSize"]["width"].isNumber())
+                    dst_width_ = obj_aifparam["inputSize"]["width"].asNumber<int>();
+                if (obj_aifparam["inputSize"].hasKey("height") &&
+                    obj_aifparam["inputSize"]["height"].isNumber())
+                    dst_height_ = obj_aifparam["inputSize"]["height"].asNumber<int>();
+                PMLOG_INFO(LOG_TAG, "inputSize (%d, %d)", dst_width_, dst_height_);
+            }
+        }
+    }
+
+    PMLOG_INFO(LOG_TAG, "aif_param = %s", param.c_str());
     ai.createDetector(type, param);
 
     CameraSolution::initialize(streamFormat);
@@ -226,6 +250,8 @@ bool FaceDetectionAIF::decodeJpeg(void)
 
     cinfo.scale_num       = 1;
     cinfo.scale_denom     = getScaleDenomAIF(oDecodedImage_.srcHeight_);
+    if (dst_height_ > 180)
+        cinfo.scale_denom /= 2;
     cinfo.out_color_space = JCS_EXT_BGR;
 
     jpeg_start_decompress(&cinfo);

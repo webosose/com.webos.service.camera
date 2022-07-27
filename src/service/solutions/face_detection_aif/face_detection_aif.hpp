@@ -72,4 +72,7 @@ private:
     RawImage oDecodedImage_;
     std::string output;
     std::mutex mtxAi_;
+
+    int dst_width_{320};
+    int dst_height_{180};
 };
