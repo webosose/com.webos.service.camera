@@ -37,6 +37,6 @@ private:
     std::string strcamid_;
     bool getJsonString(jvalue_ref &json_outobj, void *p_cur_data, void *p_old_data,
                        EventType etype);
-    int getSubscripeCount(LSHandle *lsHandle, const char *key);
+    int getSubscribeCount(LSHandle *lsHandle, const char *key);
     void subscriptionReply(LSHandle *lsHandle, const char *key, jvalue_ref output_reply);
 };

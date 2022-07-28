@@ -28,16 +28,16 @@ bool EventNotification::addSubscription(LSHandle *lsHandle, const char *key, LSM
 
     if (LSMessageIsSubscription(&message))
     {
-        PMLOG_INFO(CONST_MODULE_EM, "LSMessageIsSubscription success");
+        PMLOG_INFO(CONST_MODULE_EN, "LSMessageIsSubscription success");
         if (!LSSubscriptionAdd(lsHandle, key, &message, &error))
         {
-            PMLOG_INFO(CONST_MODULE_EM, "LSSubscriptionAdd failed");
+            PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionAdd failed");
             LSErrorPrint(&error, stderr);
             LSErrorFree(&error);
             return false;
         }
-        cnt = getSubscripeCount(lsHandle, key);
-        PMLOG_INFO(CONST_MODULE_EM, "cnt %d", cnt);
+        cnt = getSubscribeCount(lsHandle, key);
+        PMLOG_INFO(CONST_MODULE_EN, "cnt %d", cnt);
         LSErrorFree(&error);
         return true;
     }
@@ -53,15 +53,15 @@ void EventNotification::subscriptionReply(LSHandle *lsHandle, const char *key,
     LSErrorInit(&error);
     if (!LSSubscriptionReply(lsHandle, key, jvalue_tostring_simple(output_reply), &error))
     {
-        PMLOG_INFO(CONST_MODULE_EM, "LSSubscriptionReply failed");
+        PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionReply failed");
         LSErrorPrint(&error, stderr);
     }
 
     LSErrorFree(&error);
-    PMLOG_INFO(CONST_MODULE_EM, "end");
+    PMLOG_INFO(CONST_MODULE_EN, "end");
 }
 
-int EventNotification::getSubscripeCount(LSHandle *lsHandle, const char *key)
+int EventNotification::getSubscribeCount(LSHandle *lsHandle, const char *key)
 {
     int ret = -1;
     ret     = LSSubscriptionGetHandleSubscribersCount(lsHandle, key);
@@ -108,7 +108,7 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_EM, "event: %d pdata is null", (int)etype);
+            PMLOG_INFO(CONST_MODULE_EN, "event: %d pdata is null", (int)etype);
             resultVal = false;
         }
         break;
@@ -131,7 +131,7 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_EM, "event: %d pdata is null", (int)etype);
+            PMLOG_INFO(CONST_MODULE_EN, "event: %d pdata is null", (int)etype);
             resultVal = false;
         }
         break;
@@ -152,7 +152,7 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
         if (DEVICE_OK != CommandManager::getInstance().getDeviceList(
                              arr_camdev, arr_micdev, arr_camsupport, arr_micsupport))
         {
-            PMLOG_INFO(CONST_MODULE_EM, "getDeviceList returns not OK \n");
+            PMLOG_INFO(CONST_MODULE_EN, "getDeviceList returns not OK \n");
             resultVal = false;
             break;
         }
@@ -194,7 +194,7 @@ void EventNotification::eventReply(LSHandle *lsHandle, const char *key, void *p_
     jvalue_ref json_outobj = jobject_create();
     std::string strreply;
 
-    PMLOG_INFO(CONST_MODULE_EM, "getSubscripeCount: %d\n", getSubscripeCount(lsHandle, key));
+    PMLOG_INFO(CONST_MODULE_EN, "getSubscribeCount: %d\n", getSubscribeCount(lsHandle, key));
 
     bool rerunVal = getJsonString(json_outobj, p_cur_data, p_old_data, etype);
 
@@ -205,7 +205,7 @@ void EventNotification::eventReply(LSHandle *lsHandle, const char *key, void *p_
     subscriptionReply(lsHandle, key, json_outobj);
 
     strreply = jvalue_stringify(json_outobj);
-    PMLOG_INFO(CONST_MODULE_EM, "strreply %s", strreply.c_str());
+    PMLOG_INFO(CONST_MODULE_EN, "strreply %s", strreply.c_str());
     j_release(&json_outobj);
 }
 
@@ -219,7 +219,7 @@ std::string EventNotification::subscriptionJsonString(bool issubscribed)
                 jboolean_create(issubscribed));
 
     strreply = jvalue_stringify(json_outobj);
-    PMLOG_INFO(CONST_MODULE_EM, "strreply %s", strreply.c_str());
+    PMLOG_INFO(CONST_MODULE_EN, "strreply %s", strreply.c_str());
     j_release(&json_outobj);
 
     return strreply;

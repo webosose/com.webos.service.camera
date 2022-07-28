@@ -29,7 +29,7 @@
 #define CONST_MODULE_CM "CommandHandler"
 #define CONST_MODULE_DC "DeviceController"
 #define CONST_MODULE_DM "DeviceManager"
-#define CONST_MODULE_EM "EventManager"
+#define CONST_MODULE_EN "EventNotification"
 #define CONST_MODULE_LUNA "Service"
 #define CONST_MODULE_NOTIFIER "Notifier"
 #define CONST_MODULE_PC "PDMClient"
