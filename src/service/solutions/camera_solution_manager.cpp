@@ -32,8 +32,8 @@ enum LgSolutionErrorValue
 };
 
 struct SolutionInfo {
-    bool enable_;
-    bool default_;
+    bool support_; // support or not
+    bool enable_;  // default enable or disable
     std::string model_;
 };
 
@@ -87,23 +87,24 @@ void SupportedSolution::parseSolutionInfo(void)
         {
             std::string name = obj_solutionInfo[i]["name"].asString();
             SolutionInfo *info = new SolutionInfo {};
-            if (obj_solutionInfo[i].hasKey("enable") &&
-                obj_solutionInfo[i]["enable"].isBoolean())
+            if (obj_solutionInfo[i].hasKey("params"))
             {
-                info->enable_ = obj_solutionInfo[i]["enable"].asBool();
+                auto obj_params = obj_solutionInfo[i]["params"];
+                if (obj_params.hasKey("support") && obj_params["support"].isBoolean())
+                {
+                    info->support_ = obj_params["support"].asBool();
+                }
+                if (obj_params.hasKey("enable") && obj_params["enable"].isBoolean())
+                {
+                    info->enable_ = obj_params["enable"].asBool();
+                }
+                if (obj_params.hasKey("model") && obj_params["model"].isString())
+                {
+                    info->model_ = obj_params["model"].asString();
+                }
             }
-            if (obj_solutionInfo[i].hasKey("default") &&
-                obj_solutionInfo[i]["default"].isBoolean())
-            {
-                info->default_ = obj_solutionInfo[i]["default"].asBool();
-            }
-            if (obj_solutionInfo[i].hasKey("model") &&
-                obj_solutionInfo[i]["model"].isString())
-            {
-                info->model_ = obj_solutionInfo[i]["model"].asString();
-            }
-            PMLOG_INFO(CONST_MODULE_SM, "supportedSolutionInfo [%s,%d,%d]",
-                       name.c_str(), info->enable_, info->default_);
+            PMLOG_INFO(CONST_MODULE_SM, "supportedSolutionInfo [%s, %d, %d]", name.c_str(),
+                       info->support_, info->enable_);
             solutions_.insert(std::make_pair(name, info));
         }
     }
@@ -114,25 +115,26 @@ void CameraSolutionManager::getSupportedSolutionList(std::vector<std::string>& s
     std::shared_ptr<SolutionInfo> info;
     if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_DUMMY, info))
     {
-        if (info && info->enable_)
+        if (info && info->support_)
             supportedList.push_back(SOLUTION_DUMMY);
-        if (info && info->default_)
+        if (info && info->enable_)
             enabledList.push_back(SOLUTION_DUMMY);
     }
     if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_AUTOCONTRAST, info))
     {
-        if (info && info->enable_)
+        if (info && info->support_)
             supportedList.push_back(SOLUTION_AUTOCONTRAST);
-        if (info && info->default_)
+        if (info && info->enable_)
             enabledList.push_back(SOLUTION_AUTOCONTRAST);
     }
     if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACEDETECTION, info))
     {
-        if (info && info->enable_)
+        if (info && info->support_)
             supportedList.push_back(SOLUTION_FACEDETECTION);
-        if (info && info->default_)
+        if (info && info->enable_)
             enabledList.push_back(SOLUTION_FACEDETECTION);
     }
+
 }
 
 CameraSolutionManager::CameraSolutionManager(void)

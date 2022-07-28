@@ -2,19 +2,23 @@
   "solutionInfo": [
     {
       "name": "FaceDetection",
-      "enable": true,
-      "default": true,
-      "model": "AIF"
+      "params": {
+        "support": true,
+        "enable": false,
+        "model": "AIF"
+      }
     },
     {
       "name": "Dummy",
-      "enable": false,
-      "default": false
+      "params": {
+        "support": false
+      }
     },
     {
       "name": "AutoContrast",
-      "enable": false,
-      "default": false
+      "params": {
+        "support": false
+      }
     }
   ]
 }
