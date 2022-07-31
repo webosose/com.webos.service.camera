@@ -22,20 +22,18 @@
 
 #define SOLUTION_AUTOCONTRAST "AutoContrast"
 #define SOLUTION_DUMMY "Dummy"
-#define SOLUTION_OPENCV_FACEDETECTION "FaceDetectionOpenCV"
-#define SOLUTION_AIF_FACEDETECTION "FaceDetectionAIF"
-#define SOLUTION_FACE_DETECTION_CNN "FaceDetectionCNN"
+#define SOLUTION_FACEDETECTION_OPENCV "FaceDetectionOpenCV"
+#define SOLUTION_FACEDETECTION_AIF "FaceDetectionAIF"
+#define SOLUTION_FACEDETECTION_CNN "FaceDetectionCNN"
 
 enum Property
 {
     LG_SOLUTION_NONE     = 0x0000,
     LG_SOLUTION_PREVIEW  = 0x0001,
-    LG_SOLUTION_VIDEO    = 0x0002,
-    LG_SOLUTION_SNAPSHOT = 0x0004
+    LG_SOLUTION_SNAPSHOT = 0x0002
 };
 
 struct CameraSolutionEvent;
-
 class CameraSolution
 {
 public:

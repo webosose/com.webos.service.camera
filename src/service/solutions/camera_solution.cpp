@@ -9,7 +9,7 @@
  * @Filename    CameraSolution.cpp
  * @contact     Multimedia_TP-Camera@lge.com
  *
- * Description  Camera Solution Manager
+ * Description  Camera Solution
  *
  */
 

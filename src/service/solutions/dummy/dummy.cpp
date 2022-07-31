@@ -21,7 +21,7 @@
 Dummy::Dummy(void)
 {
     PMLOG_INFO(LOG_TAG, "");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_VIDEO | LG_SOLUTION_SNAPSHOT);
+    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 }
 
 Dummy::~Dummy(void)

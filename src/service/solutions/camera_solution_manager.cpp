@@ -21,15 +21,15 @@
 #include <pbnjson.hpp>
 
 #ifdef FEATURE_LG_OPENCV_FACEDETECTION
-#include "facedetection_opencv/facedetection_opencv.hpp"
+#include "face_detection_opencv/face_detection_opencv.hpp"
 #endif
 
 #ifdef FEATURE_LG_AIF_FACEDETECTION
-#include "facedetection_aif/facedetection_aif.hpp"
+#include "face_detection_aif/face_detection_aif.hpp"
 #endif
 
 #ifdef FEATURE_LG_CNN_FACEDETECTION
-#include "facedetection_cnn/facedetection_cnn.hpp"
+#include "face_detection_cnn/face_detection_cnn.hpp"
 #endif
 
 enum LgSolutionErrorValue
@@ -146,7 +146,9 @@ int32_t CameraSolutionManager::getMetaSizeHint(void)
     std::lock_guard<std::mutex> lg(mtxApi_);
     int32_t size{0};
     for (auto &i : lstSolution_)
+    {
         size += i->getMetaSizeHint();
+    }
 
     return size;
 }
@@ -160,12 +162,7 @@ void CameraSolutionManager::initialize(stream_format_t streamFormat)
 void CameraSolutionManager::release(void)
 {
     for (auto &i : lstSolution_)
-    {
-        if (i->isEnabled())
-        {
-            i->release();
-        }
-    }
+        i->release();
 }
 
 void CameraSolutionManager::processCapture(buffer_t frame_buffer)
@@ -208,7 +205,6 @@ void CameraSolutionManager::getEnabledSolutionInfo(SolutionNames &names)
 {
     std::lock_guard<std::mutex> lg(mtxApi_);
     PMLOG_INFO(CONST_MODULE_SM, "");
-
     // check supported solution list
     for (auto &i : lstSolution_)
     {
@@ -223,7 +219,8 @@ void CameraSolutionManager::getEnabledSolutionInfo(SolutionNames &names)
 DEVICE_RETURN_CODE_T
 CameraSolutionManager::enableCameraSolution(const SolutionNames &names)
 {
-    PMLOG_INFO(CONST_MODULE_SM, "E\n");
+    std::lock_guard<std::mutex> lg(mtxApi_);
+    PMLOG_INFO(CONST_MODULE_SM, "");
     uint32_t candidateSolutionCnt = 0;
     for (auto &s : names)
     {
@@ -237,8 +234,8 @@ CameraSolutionManager::enableCameraSolution(const SolutionNames &names)
         }
     }
 
-    // check if the parameters from client are all valid by comparing
-    // candidateSolutionCnt number and parameters number.
+    // check if the parameters from client are all valid by comparing candidateSolutionCnt number
+    // and parameters number.
     if (names.size() == candidateSolutionCnt)
     {
         for (auto &s : names)
@@ -282,8 +279,8 @@ CameraSolutionManager::disableCameraSolution(const SolutionNames &names)
             }
         }
     }
-    // check if the parameters from client are all valid by comparing
-    // candidateSolutionCnt number and parameters number.
+    // check if the parameters from client are all valid by comparing candidateSolutionCnt number
+    // and parameters number.
     if (names.size() == candidateSolutionCnt)
     {
         for (auto &s : names)

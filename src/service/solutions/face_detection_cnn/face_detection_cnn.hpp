@@ -54,6 +54,7 @@ public:
     virtual std::string getSolutionStr(void) override;
     // interface override from CameraSolutionAsync
     virtual void processing(void) override;
+    virtual void postProcessing(void) override;
 
 private:
     bool detectFace(void);
