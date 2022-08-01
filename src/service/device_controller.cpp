@@ -23,10 +23,10 @@
 #include "camera_solution_manager.h"
 #include "command_manager.h"
 #include "device_manager.h"
-#include <pbnjson.h>
 #include <algorithm>
 #include <ctime>
 #include <errno.h>
+#include <pbnjson.h>
 #include <poll.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -371,7 +371,6 @@ void DeviceControl::previewThread()
 
             broadcast_();
             b_issyshmwritedone_ = true;
-
         }
         else if (b_isposixruning)
         {

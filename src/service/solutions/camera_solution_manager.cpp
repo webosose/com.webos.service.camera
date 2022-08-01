@@ -18,19 +18,8 @@
 #include "camera_solution.h"
 #include "camera_types.h"
 #include "dummy/dummy.hpp"
-#include <pbnjson.hpp>
-
-#ifdef FEATURE_LG_OPENCV_FACEDETECTION
-#include "face_detection_opencv/face_detection_opencv.hpp"
-#endif
-
-#ifdef FEATURE_LG_AIF_FACEDETECTION
 #include "face_detection_aif/face_detection_aif.hpp"
-#endif
-
-#ifdef FEATURE_LG_CNN_FACEDETECTION
-#include "face_detection_cnn/face_detection_cnn.hpp"
-#endif
+#include <pbnjson.hpp>
 
 enum LgSolutionErrorValue
 {
@@ -110,26 +99,10 @@ CameraSolutionManager::CameraSolutionManager(void)
         lstSolution_.push_back(std::make_unique<Dummy>());
     }
 
-#ifdef FEATURE_LG_OPENCV_FACEDETECTION
-    if (isSolutionSupported(obj_solutionInfo, SOLUTION_OPENCV_FACEDETECTION))
-    {
-        lstSolution_.push_back(std::make_unique<FaceDetectionOpenCV>());
-    }
-#endif
-
-#ifdef FEATURE_LG_AIF_FACEDETECTION
-    if (isSolutionSupported(obj_solutionInfo, SOLUTION_AIF_FACEDETECTION))
+    if (isSolutionSupported(obj_solutionInfo, SOLUTION_FACEDETECTION_AIF))
     {
         lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
     }
-#endif
-
-#ifdef FEATURE_LG_CNN_FACEDETECTION
-    if (isSolutionSupported(obj_solutionInfo, SOLUTION_FACE_DETECTION_CNN))
-    {
-        lstSolution_.push_back(std::make_unique<FaceDetectionCNN>());
-    }
-#endif
 }
 
 CameraSolutionManager::~CameraSolutionManager(void) {}

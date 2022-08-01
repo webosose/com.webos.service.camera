@@ -75,72 +75,42 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/event_notification.cpp
     )
 
-### SOLUTION feature enable setting Start ###
-set(SOLUTION_AIF_FACEDETECTION FALSE CACHE BOOL "Set to TRUE to enable AIF Face Detection for HAL")
-set(SOLUTION_OPENCV_FACEDETECTION FALSE CACHE BOOL "Set to TRUE to enable OpenCV Face Detection for HAL")
-set(SOLUTION_CNN_FACEDETECTION FALSE CACHE BOOL "Set to TRUE to enable CNN Face Detection for HAL")
-set(SOLUTION_AUTOCONTRAST TRUE CACHE BOOL "Set to TRUE to enable Auto Contrast for HAL")
-set(SOLUTION_DUMMY TRUE CACHE BOOL "Set to TRUE to enable Dummy for HAL")
-### SOLUTION feature enable setting End ###
-
-### SOLUTION_AIF_FACEDETECTION setting Start ###
-if(SOLUTION_AIF_FACEDETECTION)
-
+### SOLUTION MANAGER Add AI Framework Start ###
+# find needed packages
+find_package(PkgConfig)
+pkg_check_modules(TFLITE REQUIRED tensorflowlite)
 pkg_check_modules(OPENCV REQUIRED opencv4)
-include_directories(${OPENCV_INCLUDE_DIRS})
-
 pkg_check_modules(RAPIDJSON REQUIRED RapidJSON)
-include_directories(${RAPIDJSON_INCLUDE_DIRS})
 
-pkg_check_modules(AIFRWK REQUIRED ai-framework)
-include_directories(${AIFRWK_INCLUDE_DIRS})
+# include directories
+include_directories(
+    ${TFLITE_INCLUDE_DIRS}
+    ${OPENCV_INCLUDE_DIRS}
+    ${RAPIDJSON_INCLUDE_DIRS}
+)
+
+# link directories
+link_directories(
+    ${TFLITE_LIBRARY_DIRS}
+    ${OPENCV_LIBRARY_DIRS}
+    ${RAPIDJSON_LIBRARY_DIRS}
+)
+### SOLUTION MANAGER Add AI Framework End ###
+### SOLUTION_AIF_FACEDETECTION setting Start ###
+#if(SOLUTION_AIF_FACEDETECTION)
+
+pkg_check_modules(JPEG REQUIRED libjpeg)
+include_directories(${JPEG_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AIF_FACEDETECTION")
 set (SRC_LIST
     ${SRC_LIST}
     ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
     )
-endif()
 ### SOLUTION_AIF_FACEDETECTION setting End ###
 
-### SOLUTION_OPENCV_FACEDETECTION setting Start ###
-if(SOLUTION_OPENCV_FACEDETECTION)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_OPENCV_FACEDETECTION")
-
-pkg_check_modules(OPENCV REQUIRED opencv4)
-include_directories(${OPENCV_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${OPENCV_CFLAGS})
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_opencv/face_detection_opencv.cpp
-    )
-
-endif()
-### SOLUTION_OPENCV_FACEDETECTION setting End ###
-
-### SOLUTION_CNN_FACEDETECTION setting Start ###
-if(SOLUTION_CNN_FACEDETECTION)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_CNN_FACEDETECTION")
-
-find_library(FACE_DETECTION_LIBS facedetection)
-find_path(FACE_DETECTION_INCLUDE_DIR NAMES facedetectcnn.h PATH_SUFFIXES facedetection)
-include_directories(${FACE_DETECTION_INCLUDE_DIR})
-
-pkg_check_modules(JPEG REQUIRED libjpeg)
-include_directories(${JPEG_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_cnn/face_detection_cnn.cpp
-    )
-
-endif()
-### SOLUTION_CNN_FACEDETECTION setting End ###
-
 ### SOLUTION_AUTOCONTRAST setting Start ###
-if(SOLUTION_AUTOCONTRAST)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AUTOCONTRAST")
 
 set (SRC_LIST
@@ -148,11 +118,9 @@ set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/solutions/auto_contrast/auto_contrast.cpp
     )
 
-endif()
 ### SOLUTION_AUTOCONTRAST setting End ###
 
 ### SOLUTION_DUMMY setting Start ###
-if(SOLUTION_DUMMY)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_DUMMY")
 
 set (SRC_LIST
@@ -160,7 +128,6 @@ set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/solutions/dummy/dummy.cpp
     )
 
-endif()
 ### SOLUTION_DUMMY setting End ###
 
 
@@ -193,7 +160,7 @@ target_link_libraries(${PROJECT_NAME}
                       ${AIFRWK_LDFLAGS}
 		      ${FACE_DETECTION_LIBS}
                       ${JPEG_LDFLAGS}
-
+                      edgeai-vision                      
                       )
 
 
