@@ -219,38 +219,20 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     for (auto str_devPath : str_devPaths)
                     {
                         PMLOG_INFO(CONST_MODULE_PC, "devPath : %s \n", str_devPath.c_str());
-                        strncpy(dev_info_[camcount].strDeviceNode, str_devPath.c_str(),
-                                CONST_MAX_STRING_LENGTH - 1);
 
                         PMLOG_INFO(CONST_MODULE_PC, "received cam device\n");
-                        dev_info_[camcount].nDeviceNum       = 0;     // TBD
-                        dev_info_[camcount].nPortNum         = 0;     // TBD
-                        dev_info_[camcount].isPowerOnConnect = false; // TBD
-
-                        strncpy(dev_info_[camcount].strVendorName, str_vendorname.c_str(),
-                                CONST_MAX_STRING_LENGTH - 1);
-                        dev_info_[camcount].strVendorName[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-                        strncpy(dev_info_[camcount].strProductName, str_productname.c_str(),
-                                CONST_MAX_STRING_LENGTH - 1);
-                        dev_info_[camcount].strProductName[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-                        strncpy(dev_info_[camcount].strVendorID, str_vendorid.c_str(),
-                                CONST_MAX_STRING_LENGTH - 1);
-                        dev_info_[camcount].strVendorID[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-                        strncpy(dev_info_[camcount].strProductID, str_productid.c_str(),
-                                CONST_MAX_STRING_LENGTH - 1);
-                        dev_info_[camcount].strProductID[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-                        strncpy(dev_info_[camcount].strDeviceType, str_devicetype.c_str(),
-                                CONST_MAX_STRING_LENGTH - 1);
-                        dev_info_[camcount].strDeviceType[CONST_MAX_STRING_LENGTH - 1] = '\0';
-
-                        strncpy(dev_info_[camcount].strDeviceSubtype,
-                                str_productname.c_str(), // TBD
-                                CONST_MAX_STRING_LENGTH - 1);
-                        dev_info_[camcount].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] = '\0';
+                        dev_info_[camcount].strDeviceNode              = str_devPath;
+                        dev_info_[camcount].nDeviceNum                 = 0;     // TBD
+                        dev_info_[camcount].nPortNum                   = 0;     // TBD
+                        dev_info_[camcount].isPowerOnConnect           = false; // TBD
+                        dev_info_[camcount].strVendorName              = str_vendorname;
+                        dev_info_[camcount].strProductName             = str_productname;
+                        dev_info_[camcount].strVendorID                = str_vendorid;
+                        dev_info_[camcount].strProductID               = str_productid;
+                        dev_info_[camcount].strDeviceType              = str_devicetype;
+                        dev_info_[camcount].strDeviceSubtype           = str_productname;
+                        //dev_info_[camcount].strHostControllerInterface = str_host_controller_inf;
+                        //dev_info_[camcount].strDeviceKey               = str_devpath_full;
 
                         if (AddOn::hasImplementation())
                         {

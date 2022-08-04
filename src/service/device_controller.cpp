@@ -796,12 +796,12 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceList(DEVICE_LIST_T *plist, int *pca
     *pmicsupport = 0;
     for (int i = 0; i < ncount; i++)
     {
-        if (strncmp(plist[i].strDeviceType, "CAM", 3) == 0)
+        if (plist[i].strDeviceType == "CAM")
         {
             pcamdev[i]     = i + 1;
             pcamsupport[i] = 1;
         }
-        else if (strncmp(plist[i].strDeviceType, "MIC", 3) == 0)
+        else if (plist[i].strDeviceType == "MIC")
         {
             *pmicdev += 1;
             pmicsupport[i] = 1;

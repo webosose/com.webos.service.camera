@@ -4,18 +4,20 @@
 
 #include "camera_constants.h"
 
-typedef struct
+struct DEVICE_LIST_T
 {
     int nDeviceNum;
     int nPortNum;
-    char strVendorName[CONST_MAX_STRING_LENGTH];
-    char strProductName[CONST_MAX_STRING_LENGTH];
-    char strVendorID[CONST_MAX_STRING_LENGTH];
-    char strProductID[CONST_MAX_STRING_LENGTH];
-    char strDeviceType[CONST_MAX_STRING_LENGTH];
-    char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
     int isPowerOnConnect;
-    char strDeviceNode[CONST_MAX_STRING_LENGTH];
-} DEVICE_LIST_T;
+    std::string strVendorName;
+    std::string strProductName;
+    std::string strVendorID;
+    std::string strProductID;
+    std::string strDeviceType;
+    std::string strDeviceSubtype;
+    std::string strDeviceNode;
+    std::string strHostControllerInterface;
+    std::string strDeviceKey;
+};
 
 #endif /* DEVICE_INFO_MANAGED_AS_A_LIST_ITEM_H_ */

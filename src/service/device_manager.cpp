@@ -238,33 +238,32 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
     devStatus.isDeviceOpen = false;
     devStatus.pcamhandle   = nullptr;
     devStatus.nDeviceID    = n_invalid_id;
-    strncpy(devStatus.stList.strVendorName, pList->strVendorName, (CONST_MAX_STRING_LENGTH - 1));
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strVendorName : %s",
-               devStatus.stList.strVendorName);
-    strncpy(devStatus.stList.strProductName, pList->strProductName, (CONST_MAX_STRING_LENGTH - 1));
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strProductName : %s",
-               devStatus.stList.strProductName);
-    strncpy(devStatus.stList.strVendorID, pList->strVendorID, (CONST_MAX_STRING_LENGTH - 1));
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strVendorID : %s", devStatus.stList.strVendorID);
-    strncpy(devStatus.stList.strProductID, pList->strProductID, (CONST_MAX_STRING_LENGTH - 1));
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strProductID : %s",
-               devStatus.stList.strProductID);
-    strncpy(devStatus.stList.strDeviceSubtype, pList->strDeviceSubtype,
-            CONST_MAX_STRING_LENGTH - 1);
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceSubtype : %s",
-               devStatus.stList.strDeviceSubtype);
-    strncpy(devStatus.stList.strDeviceType, pList->strDeviceType, (CONST_MAX_STRING_LENGTH - 1));
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceType : %s",
-               devStatus.stList.strDeviceType);
+
+    devStatus.stList.strVendorName = pList->strVendorName;
+    PMLOG_INFO(CONST_MODULE_DM, "strVendorName : %s", devStatus.stList.strVendorName.c_str());
+    devStatus.stList.strProductName = pList->strProductName;
+    PMLOG_INFO(CONST_MODULE_DM, "strProductName : %s", devStatus.stList.strProductName.c_str());
+    devStatus.stList.strVendorID = pList->strVendorID;
+    PMLOG_INFO(CONST_MODULE_DM, "strVendorID : %s", devStatus.stList.strVendorID.c_str());
+    devStatus.stList.strProductID = pList->strProductID;
+    PMLOG_INFO(CONST_MODULE_DM, "strProductID : %s", devStatus.stList.strProductID.c_str());
+    devStatus.stList.strDeviceSubtype = pList->strDeviceSubtype;
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceSubtype : %s", devStatus.stList.strDeviceSubtype.c_str());
+    devStatus.stList.strDeviceType = pList->strDeviceType;
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceType : %s", devStatus.stList.strDeviceType.c_str());
     devStatus.stList.nDeviceNum = pList->nDeviceNum;
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.nDeviceNum : %d", devStatus.stList.nDeviceNum);
+    PMLOG_INFO(CONST_MODULE_DM, "nDeviceNum : %d", devStatus.stList.nDeviceNum);
     devStatus.stList.nPortNum = pList->nPortNum;
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.nPortNum : %d", devStatus.stList.nPortNum);
+    PMLOG_INFO(CONST_MODULE_DM, "nPortNum : %d", devStatus.stList.nPortNum);
     devStatus.stList.isPowerOnConnect = pList->isPowerOnConnect;
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.isPowerOnConnect : %d",
-               devStatus.stList.isPowerOnConnect);
+    PMLOG_INFO(CONST_MODULE_DM, "isPowerOnConnect : %d", devStatus.stList.isPowerOnConnect);
+    devStatus.stList.strDeviceNode = pList->strDeviceNode;
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceNode : %s", devStatus.stList.strDeviceNode.c_str());
+    devStatus.stList.strDeviceKey = pList->strDeviceKey;
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceKey : %s", devStatus.stList.strDeviceKey.c_str());
+
     devStatus.nDevCount = deviceMap_.size() + 1;
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevCount : %d", devStatus.nDevCount);
+    PMLOG_INFO(CONST_MODULE_DM, "nDevCount : %d", devStatus.nDevCount);
 
     int devidx = 0;
     for (int i = 1; i <= MAX_DEVICE_COUNT; i++)
@@ -291,24 +290,23 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
 
     /* double-check device path */
-    if (strstr(pList->strDeviceNode, "/dev/video") != NULL)
+    if (pList->strDeviceNode.find("/dev/video") != std::string::npos)
     {
-        strncpy(devStatus.stList.strDeviceNode, pList->strDeviceNode, CONST_MAX_STRING_LENGTH - 1);
+        devStatus.stList.strDeviceNode = pList->strDeviceNode;
     }
-    else if (strstr(pList->strDeviceNode, "video") != NULL)
+    else if (pList->strDeviceNode.find("video") != std::string::npos)
     {
-        strncpy(devStatus.stList.strDeviceNode, "/dev/", CONST_MAX_STRING_LENGTH - 1);
-        strncat(devStatus.stList.strDeviceNode, pList->strDeviceNode, CONST_MAX_STRING_LENGTH - 1);
+        devStatus.stList.strDeviceNode = "/dev/" + pList->strDeviceNode;
     }
     else
     {
         PMLOG_INFO(CONST_MODULE_DM, "fail to add device:  %s is not a valid device node!!",
-                   pList->strDeviceNode);
+                   pList->strDeviceNode.c_str());
         return false;
     }
 
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
-               devStatus.stList.strDeviceNode);
+               devStatus.stList.strDeviceNode.c_str());
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
     return true;
@@ -343,7 +341,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
             // find exist device
             for (auto iter : deviceMap_)
             {
-                if (strcmp(iter.second.stList.strDeviceNode, pList[i].strDeviceNode) == 0)
+                if (iter.second.stList.strDeviceNode == pList[i].strDeviceNode)
                 {
                     id = iter.first;
                     break;
@@ -365,7 +363,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
             // Find out which camera is unplugged
             for (int i = 0; i < nDevCount; i++)
             {
-                if (strcmp(iter->second.stList.strDeviceNode, pList[i].strDeviceNode) == 0)
+                if (iter->second.stList.strDeviceNode == pList[i].strDeviceNode)
                 {
                     unplugged = false;
                     break;
@@ -428,13 +426,13 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
         PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
     }
     memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
-    strncpy(p_info->str_devicename, deviceMap_[ncam_id].stList.strProductName,
+    strncpy(p_info->str_devicename, deviceMap_[ncam_id].stList.strProductName.c_str(),
             sizeof(p_info->str_devicename) - 1);
     memset(p_info->str_vendorid, '\0', sizeof(p_info->str_vendorid));
-    strncpy(p_info->str_vendorid, deviceMap_[ncam_id].stList.strVendorID,
+    strncpy(p_info->str_vendorid, deviceMap_[ncam_id].stList.strVendorID.c_str(),
             sizeof(p_info->str_vendorid) - 1);
     memset(p_info->str_productid, '\0', sizeof(p_info->str_productid));
-    strncpy(p_info->str_productid, deviceMap_[ncam_id].stList.strProductID,
+    strncpy(p_info->str_productid, deviceMap_[ncam_id].stList.strProductID.c_str(),
             sizeof(p_info->str_productid) - 1);
 
     return ret;
