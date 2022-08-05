@@ -301,6 +301,8 @@ void DeviceControl::captureThread()
 {
     PMLOG_INFO(CONST_MODULE_DC, "started\n");
 
+    pthread_setname_np(pthread_self(), "capture_thread");
+
     // run capture thread until stopCapture received
     while (b_iscontinuous_capture_)
     {
@@ -322,6 +324,9 @@ void DeviceControl::captureThread()
 void DeviceControl::previewThread()
 {
     PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) start!", cam_handle_);
+
+    pthread_setname_np(pthread_self(), "preview_thread");
+
     // poll for data on buffers and save captured image
     // lock so that if stop preview is called, first this cycle should complete
     std::lock_guard<std::mutex> guard(tMutex);

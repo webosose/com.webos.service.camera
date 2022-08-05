@@ -136,6 +136,9 @@ void CameraSolutionAsync::processForPreview(buffer_t inBuf) { pushJob(inBuf); }
 void CameraSolutionAsync::run(void)
 {
     PerformanceControl oPC;
+
+    pthread_setname_np(pthread_self(), "solution_thread");
+
     while (checkAlive())
     {
         WaitResult resWait = wait();
