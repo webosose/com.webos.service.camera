@@ -31,28 +31,6 @@ namespace rj = rapidjson;
 
 #define AIF_PARAM_FILE "/home/root/aif_param.json"
 
-int getScaleDenomAIF(int height)
-{
-    if (height >= 2160)
-    { // 3840x2160 -> 480x270
-        return 8;
-    }
-    else if (height >= 1080)
-    { // 1920x1080 -> 480x270
-        return 4;
-    }
-    else if (height >= 720)
-    { // 1280x720 -> 320x180
-        return 4;
-    }
-    else if (height >= 480)
-    { // 640x480 -> 320x240
-        return 2;
-    }
-
-    return 1;
-}
-
 FaceDetectionAIF::FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
 
 FaceDetectionAIF::~FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
@@ -91,23 +69,12 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
                             } \
                         }";
 
-    if (access(AIF_PARAM_FILE, F_OK)==0)
+    if (access(AIF_PARAM_FILE, F_OK) == 0)
     {
         auto obj_aifparam = pbnjson::JDomParser::fromFile(AIF_PARAM_FILE);
         if (obj_aifparam.isObject())
         {
             param = obj_aifparam.stringify();
-
-            if (obj_aifparam.hasKey("inputSize"))
-            {
-                if (obj_aifparam["inputSize"].hasKey("width") &&
-                    obj_aifparam["inputSize"]["width"].isNumber())
-                    dst_width_ = obj_aifparam["inputSize"]["width"].asNumber<int>();
-                if (obj_aifparam["inputSize"].hasKey("height") &&
-                    obj_aifparam["inputSize"]["height"].isNumber())
-                    dst_height_ = obj_aifparam["inputSize"]["height"].asNumber<int>();
-                PMLOG_INFO(LOG_TAG, "inputSize (%d, %d)", dst_width_, dst_height_);
-            }
         }
     }
 
@@ -249,9 +216,7 @@ bool FaceDetectionAIF::decodeJpeg(void)
     oDecodedImage_.srcHeight_     = cinfo.image_height;
 
     cinfo.scale_num       = 1;
-    cinfo.scale_denom     = getScaleDenomAIF(oDecodedImage_.srcHeight_);
-    if (dst_height_ > 180)
-        cinfo.scale_denom /= 2;
+    cinfo.scale_denom     = 1;
     cinfo.out_color_space = JCS_EXT_BGR;
 
     jpeg_start_decompress(&cinfo);
