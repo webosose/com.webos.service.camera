@@ -5,5 +5,4 @@
 
 std::string getCommandOutput(std::string cmd);
 
-
 #endif

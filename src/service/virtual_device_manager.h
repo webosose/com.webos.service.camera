@@ -19,7 +19,7 @@
 
 /*-----------------------------------------------------------------------------
  (File Inclusions)
- ------------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 #include "camera_types.h"
 #include "device_controller.h"
 #include <map>
@@ -29,65 +29,65 @@
 class DeviceStateMap
 {
 public:
-  int ndeviceid_;
-  int shmemtype;
-  CameraDeviceState ecamstate_;
-  DeviceStateMap() :
-    ndeviceid_(0),
-    shmemtype(0),
-    ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_UNKNOWN) { };
+    int ndeviceid_;
+    int shmemtype;
+    CameraDeviceState ecamstate_;
+    DeviceStateMap()
+        : ndeviceid_(0), shmemtype(0), ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_UNKNOWN){};
 };
 
 class VirtualDeviceManager
 {
 private:
-  std::map<int, DeviceStateMap> virtualhandle_map_;
-  std::map<int, std::string> handlepriority_map_;
-  int shmempreview_count_[2];
-  bool bcaptureinprogress_;
-  int shmkey_;
-  int poshmkey_;
-  std::vector<int> npreviewhandle_;
-  std::vector<int> ncapturehandle_;
-  CAMERA_FORMAT sformat_;
-  // for multi obj
-  DeviceControl objdevicecontrol_;
+    std::map<int, DeviceStateMap> virtualhandle_map_;
+    std::map<int, std::string> handlepriority_map_;
+    int shmempreview_count_[2];
+    bool bcaptureinprogress_;
+    int shmkey_;
+    int poshmkey_;
+    std::vector<int> npreviewhandle_;
+    std::vector<int> ncapturehandle_;
+    CAMERA_FORMAT sformat_;
+    // for multi obj
+    DeviceControl objdevicecontrol_;
 
-  bool checkDeviceOpen(int);
-  bool checkAppPriorityMap();
-  int getVirtualDeviceHandle(int);
-  void removeVirtualDeviceHandle(int);
-  std::string getAppPriority(int);
-  void removeHandlePriorityObj(int);
-  void updateFormat(CAMERA_FORMAT &,int);
-  DEVICE_RETURN_CODE_T openDevice(int, int *);
+    bool checkDeviceOpen(int);
+    bool checkAppPriorityMap();
+    int getVirtualDeviceHandle(int);
+    void removeVirtualDeviceHandle(int);
+    std::string getAppPriority(int);
+    void removeHandlePriorityObj(int);
+    void updateFormat(CAMERA_FORMAT &, int);
+    DEVICE_RETURN_CODE_T openDevice(int, int *);
 
 public:
-  VirtualDeviceManager();
-  DEVICE_RETURN_CODE_T open(int, int *, std::string);
-  DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle*, const char*);
-  DEVICE_RETURN_CODE_T stopPreview(int);
-  DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&,
-                                    const std::string&);
-  DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string&);
-  DEVICE_RETURN_CODE_T stopCapture(int);
-  DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
-  DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
-  DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
-  DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
-  DEVICE_RETURN_CODE_T getFd(int, int *);
+    VirtualDeviceManager();
+    DEVICE_RETURN_CODE_T open(int, int *, std::string);
+    DEVICE_RETURN_CODE_T close(int);
+    DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle *, const char *);
+    DEVICE_RETURN_CODE_T stopPreview(int);
+    DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string &,
+                                      const std::string &);
+    DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string &);
+    DEVICE_RETURN_CODE_T stopCapture(int);
+    DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
+    DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
+    DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
+    DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
+    DEVICE_RETURN_CODE_T getFd(int, int *);
 
-  bool registerClient(int, int, int, std::string&);
-  bool unregisterClient(int, std::string&);
-  bool isRegisteredClient(int);
+    bool registerClient(int, int, int, std::string &);
+    bool unregisterClient(int, std::string &);
+    bool isRegisteredClient(int);
 
-  void requestPreviewCancel();
+    void requestPreviewCancel();
 
-  DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(int, std::vector<std::string>&);
-  DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string>, std::vector<std::string>&);
-  DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string>, std::vector<std::string>&);
-
+    DEVICE_RETURN_CODE_T
+    getSupportedCameraSolutionInfo(int, std::vector<std::string> &);
+    DEVICE_RETURN_CODE_T
+    getEnabledCameraSolutionInfo(int, std::vector<std::string> &);
+    DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string>);
+    DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string>);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

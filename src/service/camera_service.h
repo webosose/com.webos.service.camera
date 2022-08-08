@@ -19,56 +19,55 @@
 
 /*-----------------------------------------------------------------------------
  (File Inclusions)
- ------------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include "event_notification.h"
 #include "json_parser.h"
 #include "luna-service2/lunaservice.hpp"
-#include "event_notification.h"
 #include <glib.h>
 
 class CameraService : public LS::Handle
 {
 private:
-  using mainloop = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
-  mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
+    using mainloop          = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
+    mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
 
-  EventNotification event_obj;
+    EventNotification event_obj;
 
-  int getId(std::string);
-  void createEventMessage(EventType, void *, int);
+    int getId(std::string);
+    void createEventMessage(EventType, void *, int);
 
-  std::map<int, std::string> cameraHandleMap;
-  std::map<std::string, void*> cameraHandleInfo;
+    std::map<int, std::string> cameraHandleMap;
+    std::map<std::string, void *> cameraHandleInfo;
 
-  void printMap();
-  bool addClientWatcher(LSHandle* handle, LSMessage* message, int ndevice_handle);
-  bool eraseWatcher(LSMessage* message, int ndevhandle);
+    void printMap();
+    bool addClientWatcher(LSHandle *handle, LSMessage *message, int ndevice_handle);
+    bool eraseWatcher(LSMessage *message, int ndevhandle);
 
 public:
-  CameraService();
+    CameraService();
 
-  CameraService(CameraService const &) = delete;
-  CameraService(CameraService &&) = delete;
-  CameraService &operator=(CameraService const &) = delete;
-  CameraService &operator=(CameraService &&) = delete;
+    CameraService(CameraService const &) = delete;
+    CameraService(CameraService &&)      = delete;
+    CameraService &operator=(CameraService const &) = delete;
+    CameraService &operator=(CameraService &&) = delete;
 
-  bool open(LSMessage &);
-  bool close(LSMessage &);
-  bool getInfo(LSMessage &);
-  bool getCameraList(LSMessage &);
-  bool getProperties(LSMessage &);
-  bool setProperties(LSMessage &);
-  bool setFormat(LSMessage &);
-  bool startPreview(LSMessage &);
-  bool stopPreview(LSMessage &);
-  bool startCapture(LSMessage &);
-  bool stopCapture(LSMessage &);
-  bool getEventNotification(LSMessage &);
-  bool getFd(LSMessage &);
+    bool open(LSMessage &);
+    bool close(LSMessage &);
+    bool getInfo(LSMessage &);
+    bool getCameraList(LSMessage &);
+    bool getProperties(LSMessage &);
+    bool setProperties(LSMessage &);
+    bool setFormat(LSMessage &);
+    bool startPreview(LSMessage &);
+    bool stopPreview(LSMessage &);
+    bool startCapture(LSMessage &);
+    bool stopCapture(LSMessage &);
+    bool getEventNotification(LSMessage &);
+    bool getFd(LSMessage &);
 
-  bool getSupportedSolutionInfo(LSMessage &message);
-  bool enableCameraSolution(LSMessage &message);
-  bool disableCameraSolution(LSMessage &message);
+    bool getSolutions(LSMessage &message);
+    bool setSolutions(LSMessage &message);
 };
 
 #endif /*CAMERA_SERVICE_H_*/

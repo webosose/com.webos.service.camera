@@ -312,26 +312,28 @@ const char *getFdSchema = "{ \
   } \
 }";
 
-const char *getSupportedSolutionInfoSchema = "{ \
+const char *getSolutionsSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
-  \"required\": [ \
-    \"handle\" \
-  ], \
   \"properties\": { \
     \"handle\": { \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
+    }, \
+    \"id\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Id Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
     } \
   } \
 }";
 
-const char *solutionSchema = "{ \
+const char *setSolutionsSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
-    \"handle\", \
     \"solutions\" \
   ], \
   \"properties\": { \
@@ -340,17 +342,46 @@ const char *solutionSchema = "{ \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
     }, \
+    \"id\": { \
+      \"type\": \"string\", \
+      \"title\": \"The id Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+    }, \
     \"solutions\": { \
       \"type\": \"array\", \
       \"title\": \"The Solutions Schema\", \
       \"items\": { \
-        \"type\": \"string\", \
-        \"title\": \"The Items Schema\",\
-        \"default\": \"\", \
-        \"pattern\": \"^(.*)$\" \
+        \"type\": \"object\", \
+        \"title\": \"A Schema\", \
+        \"required\": [ \
+          \"name\", \
+          \"params\" \
+        ], \
+        \"properties\": { \
+          \"name\": { \
+            \"type\": \"string\", \
+            \"title\": \"The name Schema\", \
+            \"default\": \"\", \
+            \"pattern\": \"^(.*)$\" \
+          }, \
+          \"params\": { \
+            \"type\": \"object\", \
+            \"title\": \"The params Schema\", \
+            \"required\": [ \
+              \"enable\" \
+            ], \
+            \"properties\": { \
+              \"enable\": { \
+                \"type\": \"boolean\", \
+                \"title\": \"The enable Schema\", \
+                \"default\": false \
+              } \
+            } \
+          } \
+        } \
       }\
-    } \
-  } \
+    }\
+  }\
 }";
-
 #endif /*SRC_SERVICE_JSON_SCHEMA_H_*/

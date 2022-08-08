@@ -18,17 +18,15 @@
 #define NOTIFIER_H_
 
 #include "camera_types.h"
-#include <functional>
-#include <iostream>
-
 #include "device_notifier.h"
 #include "luna-service2/lunaservice.hpp"
 #include "pdm_client.h"
+#include <functional>
+#include <iostream>
 
 class Notifier
 {
 private:
-
     PDMClient pdm_;
     LSHandle *lshandle_;
     DeviceNotifier *p_client_notifier_;
@@ -36,7 +34,7 @@ private:
 public:
     Notifier()
     {
-        lshandle_ = nullptr;
+        lshandle_          = nullptr;
         p_client_notifier_ = nullptr;
     }
     virtual ~Notifier() {}

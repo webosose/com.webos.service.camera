@@ -22,131 +22,131 @@ extern "C"
 {
 #endif
 
-  int open_device(camera_handle_t *h, const char *subsystem)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->openDevice(subsystem);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int open_device(camera_handle_t *h, const char *subsystem)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->openDevice(subsystem);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int close_device(camera_handle_t *h)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->closeDevice();
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int close_device(camera_handle_t *h)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->closeDevice();
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int set_format(camera_handle_t *h, stream_format_t cam_format)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->setFormat(cam_format);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int set_format(camera_handle_t *h, stream_format_t cam_format)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->setFormat(cam_format);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int get_format(camera_handle_t *h, stream_format_t *cam_format)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->getFormat(cam_format);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int get_format(camera_handle_t *h, stream_format_t *cam_format)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->getFormat(cam_format);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int set_buffer(camera_handle_t *h, int num_buffer, int io_mode)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->setBuffer(num_buffer, io_mode);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int set_buffer(camera_handle_t *h, int num_buffer, int io_mode, buffer_t **usrpbufs)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->setBuffer(num_buffer, io_mode, usrpbufs);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int get_buffer(camera_handle_t *h, buffer_t *buf)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->getBuffer(buf);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int get_buffer(camera_handle_t *h, buffer_t *buf)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->getBuffer(buf);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int release_buffer(camera_handle_t *h, buffer_t buf)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->releaseBuffer(buf);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int release_buffer(camera_handle_t *h, buffer_t buf)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->releaseBuffer(buf);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int destroy_buffer(camera_handle_t *h)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->destroyBuffer();
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int destroy_buffer(camera_handle_t *h)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->destroyBuffer();
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int start_capture(camera_handle_t *h)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->startCapture();
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int start_capture(camera_handle_t *h)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->startCapture();
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int stop_capture(camera_handle_t *h)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->stopCapture();
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int stop_capture(camera_handle_t *h)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->stopCapture();
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int set_properties(camera_handle_t *h, const camera_properties_t *cam_params)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->setProperties(cam_params);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int set_properties(camera_handle_t *h, const camera_properties_t *cam_params)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->setProperties(cam_params);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int get_properties(camera_handle_t *h, camera_properties_t *cam_params)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->getProperties(cam_params);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int get_properties(camera_handle_t *h, camera_properties_t *cam_params)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->getProperties(cam_params);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int get_info(camera_handle_t *h, camera_device_info_t *cam_info, const char *devicenode)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->getInfo(cam_info, devicenode);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int get_info(camera_handle_t *h, camera_device_info_t *cam_info, const char *devicenode)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->getInfo(cam_info, devicenode);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
-  int get_buffer_fd(camera_handle_t *h, int *buf_fd, int * count)
-  {
-    CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-    if (NULL != camera_base)
-      return camera_base->getBufferFd(buf_fd, count);
-    else
-      return CAMERA_ERROR_UNKNOWN;
-  }
+    int get_buffer_fd(camera_handle_t *h, int *buf_fd, int *count)
+    {
+        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
+        if (NULL != camera_base)
+            return camera_base->getBufferFd(buf_fd, count);
+        else
+            return CAMERA_ERROR_UNKNOWN;
+    }
 
 #ifdef __cplusplus
 }

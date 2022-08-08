@@ -1,20 +1,21 @@
+#include "ipcshm_func.h"
+#include <errno.h>
+#include <fcntl.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 #include <string.h>
 #include <sys/ipc.h>
-#include <sys/shm.h>
 #include <sys/sem.h>
-#include <sys/types.h>
+#include <sys/shm.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <errno.h>
-#include "ipcshm_func.h"
+#include <sys/types.h>
 
 //#define SHMEM_COMM_DEBUG
 
 #ifdef SHMEM_COMM_DEBUG
-#define DEBUG_PRINT(fmt, args...) printf("\x1b[1;40;32m[SHM_API:%s] " fmt "\x1b[0m\r\n", __FUNCTION__, ##args)
+#define DEBUG_PRINT(fmt, args...)                                                                  \
+    printf("\x1b[1;40;32m[SHM_API:%s] " fmt "\x1b[0m\r\n", __FUNCTION__, ##args)
 #else
 #define DEBUG_PRINT(fmt, args...)
 #endif
@@ -28,18 +29,19 @@
 
 enum
 {
-    MODE_OPEN, MODE_CREATE
+    MODE_OPEN,
+    MODE_CREATE
 };
 
 enum
 {
-    READ_FIRST, READ_LAST
+    READ_FIRST,
+    READ_LAST
 };
 
 // structure define
 
-union semun
-{
+union semun {
     int val;
     struct semid_ds *buf;
     unsigned short *array;
@@ -48,7 +50,9 @@ union semun
 
 typedef enum _SHMEM_MARK_T
 {
-    SHMEM_COMM_MARK_NORMAL = 0x0, SHMEM_COMM_MARK_RESET = 0x1, SHMEM_COMM_MARK_TERMINATE = 0x2
+    SHMEM_COMM_MARK_NORMAL    = 0x0,
+    SHMEM_COMM_MARK_RESET     = 0x1,
+    SHMEM_COMM_MARK_TERMINATE = 0x2
 } SHMEM_MARK_T;
 
 /* shared memory structure
@@ -83,11 +87,11 @@ typedef struct _SHMEM_COMM_T
 } SHMEM_COMM_T;
 
 SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
-        int extraSize, int nOpenMode);
+                          int extraSize, int nOpenMode);
 SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-        unsigned char **ppExtraData, int *pExtraSize, int readMode);
+                          unsigned char **ppExtraData, int *pExtraSize, int readMode);
 SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
-        unsigned char *pExtraData, int extraDataSize);
+                           unsigned char *pExtraData, int extraDataSize);
 
 // Internal Functions
 
@@ -103,7 +107,7 @@ static int lockShmem(SHMEM_COMM_T *shmem_buffer)
     }
 
     sema_buffer.sem_num = 0;
-    sema_buffer.sem_op = -1;
+    sema_buffer.sem_op  = -1;
     sema_buffer.sem_flg = 0;
 
     return semop(shmem_buffer->sema_id, &sema_buffer, 1);
@@ -120,7 +124,7 @@ static int unlockShmem(SHMEM_COMM_T *shmem_buffer)
     }
 
     sema_buffer.sem_num = 0;
-    sema_buffer.sem_op = 1;
+    sema_buffer.sem_op  = 1;
     sema_buffer.sem_flg = 0;
 
     return semop(shmem_buffer->sema_id, &sema_buffer, 1);
@@ -157,7 +161,7 @@ int increseReadIndex(SHMEM_COMM_T *pShmem_buffer, int lread_index)
     if (lread_index == *pShmem_buffer->unit_num)
     {
         *pShmem_buffer->read_index = 0;
-        lread_index = 0;
+        lread_index                = 0;
     }
     else
         *pShmem_buffer->read_index = lread_index;
@@ -173,7 +177,7 @@ SHMEM_STATUS_T CreateShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize
 }
 
 SHMEM_STATUS_T CreateShmemEx(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
-        int extraSize)
+                             int extraSize)
 {
     return _OpenShmem(phShmem, pShmemKey, unitSize, unitNum, extraSize, MODE_CREATE);
 }
@@ -184,7 +188,7 @@ extern SHMEM_STATUS_T OpenShmem(SHMEM_HANDLE *phShmem, key_t shmemKey)
 }
 
 SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
-        int extraSize, int nOpenMode)
+                          int extraSize, int nOpenMode)
 {
     SHMEM_COMM_T *pShmemBuffer;
     unsigned char *pSharedmem;
@@ -193,23 +197,23 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
     int shmemMode = 0666;
     struct shmid_ds shm_stat;
 
-    *phShmem = (SHMEM_HANDLE) calloc(1, sizeof(SHMEM_COMM_T));
-    pShmemBuffer = (SHMEM_COMM_T *) *phShmem;
+    *phShmem     = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
+    pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
 
-    DEBUG_PRINT("hShmem = %p, pKey = %p, nOpenMode=%d, unitSize=%d, unitNum=%d\n",
-            *phShmem, pShmemKey, nOpenMode, unitSize, unitNum);
+    DEBUG_PRINT("hShmem = %p, pKey = %p, nOpenMode=%d, unitSize=%d, unitNum=%d\n", *phShmem,
+                pShmemKey, nOpenMode, unitSize, unitNum);
 
     if (nOpenMode == MODE_CREATE)
     {
         for (shmemKey = CAMSHKEY; shmemKey < 0xFFFF; shmemKey++)
         {
-            pShmemBuffer->shmem_id = shmget((key_t) shmemKey, 0, 0666);
+            pShmemBuffer->shmem_id = shmget((key_t)shmemKey, 0, 0666);
             if (pShmemBuffer->shmem_id == -1 && errno == ENOENT)
                 break;
         }
         *pShmemKey = shmemKey;
-        shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int)
-                + extraSize * unitNum;
+        shmemSize  = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) +
+                    extraSize * unitNum;
         shmemMode |= IPC_CREAT | IPC_EXCL;
     }
     else
@@ -219,7 +223,7 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
 
     DEBUG_PRINT("shmem_key=%d\r\n", shmemKey);
 
-    pShmemBuffer->shmem_id = shmget((key_t) shmemKey, shmemSize, shmemMode);
+    pShmemBuffer->shmem_id = shmget((key_t)shmemKey, shmemSize, shmemMode);
     if (pShmemBuffer->shmem_id == -1)
     {
         DEBUG_PRINT("Can't open shared memory: %s\n", strerror(errno));
@@ -229,48 +233,49 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
 
     DEBUG_PRINT("shared memory created/opened successfully!\n");
 
-    pSharedmem = (unsigned char *) shmat(pShmemBuffer->shmem_id, NULL, 0);
-    pShmemBuffer->write_index = (int *) (pSharedmem);
-    pShmemBuffer->read_index = (int *) (pSharedmem + sizeof(int));
-    pShmemBuffer->unit_size = (int *) (pSharedmem + sizeof(int) * 2);
-    pShmemBuffer->unit_num = (int *) (pSharedmem + sizeof(int) * 3);
-    pShmemBuffer->mark = (SHMEM_MARK_T *) (pSharedmem + sizeof(int) * 4);
-    pShmemBuffer->length_buf = (unsigned int *) (pSharedmem + sizeof(int) * 5);
+    pSharedmem                = (unsigned char *)shmat(pShmemBuffer->shmem_id, NULL, 0);
+    pShmemBuffer->write_index = (int *)(pSharedmem);
+    pShmemBuffer->read_index  = (int *)(pSharedmem + sizeof(int));
+    pShmemBuffer->unit_size   = (int *)(pSharedmem + sizeof(int) * 2);
+    pShmemBuffer->unit_num    = (int *)(pSharedmem + sizeof(int) * 3);
+    pShmemBuffer->mark        = (SHMEM_MARK_T *)(pSharedmem + sizeof(int) * 4);
+    pShmemBuffer->length_buf  = (unsigned int *)(pSharedmem + sizeof(int) * 5);
 
     if (nOpenMode == MODE_CREATE)
     {
         *pShmemBuffer->unit_size = unitSize;
-        *pShmemBuffer->unit_num = unitNum;
+        *pShmemBuffer->unit_num  = unitNum;
     }
 
-    pShmemBuffer->data_buf = pSharedmem + SHMEM_HEADER_SIZE
-            + SHMEM_LENGTH_SIZE * (*pShmemBuffer->unit_num);
+    pShmemBuffer->data_buf =
+        pSharedmem + SHMEM_HEADER_SIZE + SHMEM_LENGTH_SIZE * (*pShmemBuffer->unit_num);
 
     if (shmctl(pShmemBuffer->shmem_id, IPC_STAT, &shm_stat) != -1)
     {
 #ifdef SHMEM_COMM_DEBUG
         DEBUG_PRINT("shm_stat.shm_nattch=%d\n", (int)shm_stat.shm_nattch);
         if (shm_stat.shm_nattch == 1)
-        DEBUG_PRINT("we are the first client\n");
+            DEBUG_PRINT("we are the first client\n");
 
         DEBUG_PRINT("shared memory size = %d\n", shm_stat.shm_segsz);
 #endif
         // shared momory size larger than total, we use extra data
-        if (shm_stat.shm_segsz
-                > SHMEM_HEADER_SIZE
-                        + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE)
-                                * (*pShmemBuffer->unit_num))
+        if (shm_stat.shm_segsz >
+            SHMEM_HEADER_SIZE +
+                (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num))
         {
-            pShmemBuffer->extra_size = (int *) (pSharedmem + SHMEM_HEADER_SIZE
-                    + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num));
-            pShmemBuffer->extra_buf = (pSharedmem + SHMEM_HEADER_SIZE
-                    + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num)
-                    + sizeof(int));
+            pShmemBuffer->extra_size =
+                (int *)(pSharedmem + SHMEM_HEADER_SIZE +
+                        (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num));
+            pShmemBuffer->extra_buf =
+                (pSharedmem + SHMEM_HEADER_SIZE +
+                 (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+                 sizeof(int));
         }
         else
         {
             pShmemBuffer->extra_size = NULL;
-            pShmemBuffer->extra_buf = NULL;
+            pShmemBuffer->extra_buf  = NULL;
         }
     }
 
@@ -280,14 +285,16 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
     }
 
     *pShmemBuffer->mark = SHMEM_COMM_MARK_NORMAL;
-    //Until the writter starts to write both write index and read index are
-    //set to -1 . So the reader can get to know that the writter has not
-    //started to write yet
+    // Until the writter starts to write both write index and read index are
+    // set to -1 . So the reader can get to know that the writter has not
+    // started to write yet
     *pShmemBuffer->write_index = -1;
-    *pShmemBuffer->read_index = -1;
+    *pShmemBuffer->read_index  = -1;
 
-    DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size, SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num); DEBUG_PRINT("shared memory opened successfully! : shmem_id=%d, sema_id=%d\n",
-            pShmemBuffer->shmem_id, pShmemBuffer->sema_id);
+    DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
+                SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
+    DEBUG_PRINT("shared memory opened successfully! : shmem_id=%d, sema_id=%d\n",
+                pShmemBuffer->shmem_id, pShmemBuffer->sema_id);
     return SHMEM_COMM_OK;
 }
 
@@ -302,21 +309,21 @@ SHMEM_STATUS_T ReadLastShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *p
 }
 
 SHMEM_STATUS_T ReadShmemEx(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-        unsigned char **ppExtraData, int *pExtraSize)
+                           unsigned char **ppExtraData, int *pExtraSize)
 {
     return _ReadShmem(hShmem, ppData, pSize, ppExtraData, pExtraSize, READ_FIRST);
 }
 
 SHMEM_STATUS_T ReadLastShmemEx(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-        unsigned char **ppExtraData, int *pExtraSize)
+                               unsigned char **ppExtraData, int *pExtraSize)
 {
     return _ReadShmem(hShmem, ppData, pSize, ppExtraData, pExtraSize, READ_LAST);
 }
 
 SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-        unsigned char **ppExtraData, int *pExtraSize, int readMode)
+                          unsigned char **ppExtraData, int *pExtraSize, int readMode)
 {
-    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *) hShmem;
+    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     int lread_index;
     unsigned char *read_addr;
     int size;
@@ -335,7 +342,7 @@ SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSiz
 #ifdef SHMEM_COMM_DEBUG
         int sem_count;
         sem_count = semctl(shmem_buffer->sema_id, 0, GETVAL, 0);
-        //DEBUG_PRINT("sem_count=%d\n", sem_count);
+// DEBUG_PRINT("sem_count=%d\n", sem_count);
 #endif
         if (-1 != *shmem_buffer->write_index)
         {
@@ -355,7 +362,7 @@ SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSiz
             {
                 lread_index = *shmem_buffer->write_index - 1;
             }
-            size = *(int*) (shmem_buffer->length_buf + lread_index);
+            size = *(int *)(shmem_buffer->length_buf + lread_index);
 
             if ((size == 0) || (size > *shmem_buffer->unit_size))
             {
@@ -364,12 +371,12 @@ SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSiz
             }
 
             read_addr = shmem_buffer->data_buf + (lread_index) * (*shmem_buffer->unit_size);
-            *ppData = read_addr;
-            *pSize = size;
+            *ppData   = read_addr;
+            *pSize    = size;
             if (NULL != ppExtraData && NULL != pExtraSize)
             {
-                *ppExtraData = shmem_buffer->extra_buf
-                        + (lread_index) * (*shmem_buffer->extra_size);
+                *ppExtraData =
+                    shmem_buffer->extra_buf + (lread_index) * (*shmem_buffer->extra_size);
                 *pExtraSize = *shmem_buffer->extra_size;
             }
         }
@@ -381,7 +388,7 @@ SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSiz
 }
 
 SHMEM_STATUS_T WriteShmemEx(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
-        unsigned char *pExtraData, int extraDataSize)
+                            unsigned char *pExtraData, int extraDataSize)
 {
     return _WriteShmem(hShmem, pData, dataSize, pExtraData, extraDataSize);
 }
@@ -392,9 +399,9 @@ SHMEM_STATUS_T WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSiz
 }
 
 SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
-        unsigned char *pExtraData, int extraDataSize)
+                           unsigned char *pExtraData, int extraDataSize)
 {
-    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *) hShmem;
+    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     int lread_index;
     int lwrite_index;
     int mark;
@@ -418,9 +425,9 @@ SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSi
     }
 #endif
 
-    mark = *shmem_buffer->mark;
-    unit_size = *shmem_buffer->unit_size;
-    unit_num = *shmem_buffer->unit_num;
+    mark         = *shmem_buffer->mark;
+    unit_size    = *shmem_buffer->unit_size;
+    unit_num     = *shmem_buffer->unit_num;
     lwrite_index = *shmem_buffer->write_index;
     if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
     {
@@ -439,11 +446,13 @@ SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSi
         return SHMEM_COMM_FAIL;
     }
 
-    //Once the writer writes the last buffer, it is made to point to the first
-    //buffer again
+    // Once the writer writes the last buffer, it is made to point to the first
+    // buffer again
     if (lwrite_index == unit_num)
     {
-        DEBUG_PRINT("Overflow write data(read index = %d, write_index = %d, unit_num = %d)!\n", lread_index, lwrite_index, *shmem_buffer->unit_num);
+        DEBUG_PRINT("Overflow write data(read index = %d, write_index = %d, "
+                    "unit_num = %d)!\n",
+                    lread_index, lwrite_index, *shmem_buffer->unit_num);
         //*shmem_buffer->mark = (*shmem_buffer->mark) | SHMEM_COMM_MARK_RESET;
         *shmem_buffer->write_index = 0;
 
@@ -452,13 +461,13 @@ SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSi
         return SHMEM_COMM_OVERFLOW;
     }
 
-    *(int *) (shmem_buffer->length_buf + lwrite_index) = dataSize;
+    *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
     memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
 
     if (NULL != pExtraData && extraDataSize > 0)
     {
         memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size), pExtraData,
-                extraDataSize);
+               extraDataSize);
     }
 
     *shmem_buffer->write_index += 1;
@@ -468,7 +477,8 @@ SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSi
     unlockShmem(shmem_buffer);
 
 #ifdef SHMEM_COMM_DEBUG
-    //DEBUG_PRINT("Write %u bytes[RI=%d, WI=%d]\n",size, *shmem_buffer->read_index, *shmem_buffer->write_index);
+// DEBUG_PRINT("Write %u bytes[RI=%d, WI=%d]\n",size, *shmem_buffer->read_index,
+// *shmem_buffer->write_index);
 #endif
 
     return SHMEM_COMM_OK;
@@ -481,7 +491,7 @@ SHMEM_STATUS_T CloseShmem(SHMEM_HANDLE *phShmem)
     SHMEM_COMM_T *shmem_buffer;
     DEBUG_PRINT("start");
 
-    shmem_buffer = (SHMEM_COMM_T *) *phShmem;
+    shmem_buffer = (SHMEM_COMM_T *)*phShmem;
 
     if (!shmem_buffer)
     {
