@@ -59,15 +59,19 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
     std::lock_guard<std::mutex> lock(mtxAi_);
     ai.startup();
 
-    std::string param = "{ \
-                            \"model\" : \"face_yunet_cpu\", \
-                            \"param\": { \
-                                \"common\" : { \
-                                    \"useXnnpack\": true, \
-                                    \"numThreads\": 1 \
-                                } \
-                            } \
-                        }";
+    std::string param = R"({
+                                "param": {
+                                    "autoDelegate": {
+                                        "policy": "PYTORCH_MODEL_GPU",
+                                        "cpu_fallback_percentage": 15
+                                    },
+                                    "modelParam": {
+                                    "scoreThreshold": 0.7,
+                                    "nmsThreshold": 0.3,
+                                    "topK": 5000
+                                    }
+                                }
+                            })";
 
     if (access(AIF_PARAM_FILE, F_OK) == 0)
     {
