@@ -51,46 +51,9 @@ int getScaleDenomAIF(int height)
     return 1;
 }
 
-FaceDetectionAIF::FaceDetectionAIF(void)
-{
-    PMLOG_INFO(LOG_TAG, "");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
+FaceDetectionAIF::FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
 
-    ai.startup();
-
-    std::string param = "{ \
-          \"model\" : \"face_full_range_cpu\",    \
-          \"param\": { \
-              \"common\" : { \
-                  \"useXnnpack\": true, \
-                  \"numThreads\": 1 \
-              },\
-              \"modelParam\": { \
-                  \"strides\": [4], \
-                  \"optAspectRatios\": [1.0], \
-                  \"interpolatedScaleAspectRatio\": 0.0, \
-                  \"anchorOffsetX\": 0.5, \
-                  \"anchorOffsetY\": 0.5, \
-                  \"minScale\": 0.1484375, \
-                  \"maxScale\": 0.75, \
-                  \"reduceBoxesInLowestLayer\": false, \
-                  \"scoreThreshold\": 0.5, \
-                  \"iouThreshold\": 0.2, \
-                  \"maxOutputSize\": 100, \
-                  \"updateThreshold\": 0.3 \
-              } \
-           } \
-      }";
-    ai.createDetector(type, param);
-}
-
-FaceDetectionAIF::~FaceDetectionAIF(void)
-{
-    PMLOG_INFO(LOG_TAG, "");
-    ai.deleteDetector(type);
-    ai.shutdown();
-    PMLOG_INFO(LOG_TAG, "");
-}
+FaceDetectionAIF::~FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
 
 int32_t FaceDetectionAIF::getMetaSizeHint(void)
 {
@@ -103,7 +66,41 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
     return 1024;
 }
 
-std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACE_DETECTION_AIF; }
+std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION; }
+
+void FaceDetectionAIF::initialize(stream_format_t streamFormat)
+{
+    PMLOG_INFO(LOG_TAG, "");
+    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
+
+    std::lock_guard<std::mutex> lock(mtxAi_);
+    ai.startup();
+
+    std::string param = "{ \
+                            \"model\" : \"face_yunet_cpu\", \
+                            \"param\": { \
+                                \"common\" : { \
+                                    \"useXnnpack\": true, \
+                                    \"numThreads\": 1 \
+                                } \
+                            } \
+                        }";
+    ai.createDetector(type, param);
+
+    CameraSolution::initialize(streamFormat);
+    PMLOG_INFO(LOG_TAG, "");
+}
+
+void FaceDetectionAIF::release(void)
+{
+    PMLOG_INFO(LOG_TAG, "");
+    mtxAi_.lock();
+    ai.deleteDetector(type);
+    ai.shutdown();
+    mtxAi_.unlock();
+    CameraSolutionAsync::release();
+    PMLOG_INFO(LOG_TAG, "");
+}
 
 void FaceDetectionAIF::processing(void)
 {
@@ -179,8 +176,19 @@ void FaceDetectionAIF::processing(void)
     } while (0);
 }
 
+void FaceDetectionAIF::postProcessing(void)
+{
+    PMLOG_INFO(LOG_TAG, "");
+    jvalue_ref jsonOutObj    = jobject_create();
+    jvalue_ref jsonFaceArray = jarray_create(nullptr);
+    jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
+    if (pEvent_)
+        (pEvent_.load())->onDone(jsonOutObj);
+}
+
 bool FaceDetectionAIF::detectFace(void)
 {
+    std::lock_guard<std::mutex> lock(mtxAi_);
     ai.detect(type,
               Mat(Size(oDecodedImage_.outWidth_, oDecodedImage_.outHeight_), CV_8UC3,
                   oDecodedImage_.pImage_),

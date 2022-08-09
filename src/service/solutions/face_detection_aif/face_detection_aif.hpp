@@ -48,7 +48,7 @@ class FaceDetectionAIF : public CameraSolutionAsync
     };
 
     EdgeAIVision::DetectorType type = EdgeAIVision::DetectorType::FACE;
-    EdgeAIVision ai{EdgeAIVision::getInstance()};
+    EdgeAIVision &ai                = EdgeAIVision::getInstance();
 
 public:
     FaceDetectionAIF(void);
@@ -58,8 +58,11 @@ public:
     // interface override
     virtual int32_t getMetaSizeHint(void) override;
     virtual std::string getSolutionStr(void) override;
+    virtual void initialize(stream_format_t streamFormat) override;
+    virtual void release(void) override;
     // interface override from CameraSolutionAsync
     virtual void processing(void) override;
+    virtual void postProcessing(void) override;
 
 private:
     bool detectFace(void);
@@ -68,4 +71,5 @@ private:
 private:
     RawImage oDecodedImage_;
     std::string output;
+    std::mutex mtxAi_;
 };

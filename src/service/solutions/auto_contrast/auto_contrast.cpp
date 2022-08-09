@@ -30,7 +30,7 @@ int dumpFrame(unsigned char *inputY, unsigned char *inputUV, int width, int heig
 AutoContrast::AutoContrast(void)
 {
     PMLOG_INFO(LOG_TAG, "");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_VIDEO | LG_SOLUTION_SNAPSHOT);
+    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 }
 
 AutoContrast::~AutoContrast(void)
@@ -41,7 +41,11 @@ AutoContrast::~AutoContrast(void)
 
 std::string AutoContrast::getSolutionStr(void) { return SOLUTION_AUTOCONTRAST; }
 
-void AutoContrast::processForSnapshot(buffer_t inBuf) { doAutoContrastProcessing(inBuf); }
+void AutoContrast::processForSnapshot(buffer_t inBuf)
+{
+    PMLOG_INFO(LOG_TAG, "");
+    doAutoContrastProcessing(inBuf);
+}
 
 void AutoContrast::processForPreview(buffer_t inBuf) { doAutoContrastProcessing(inBuf); }
 
@@ -73,7 +77,7 @@ void AutoContrast::doAutoContrastProcessing(buffer_t inBuf)
     }
     else
     {
-        PMLOG_INFO(LOG_TAG, "after AutoContrast works on snapshot");
+        PMLOG_INFO(LOG_TAG, "after AutoContrast works on ");
     }
 
     PMLOG_INFO(LOG_TAG, "<");
@@ -110,8 +114,8 @@ void brightnessEnhancement(unsigned char *inputY, unsigned char *inputUV, int wi
     }
 
     // for(int k = 0 ; k < range/2 ; k++){
-    //    curveLUT[range - k] = curveLUT[k];
-    //}
+    //     curveLUT[range - k] = curveLUT[k];
+    // }
 
     for (int k = 0; k <= range; k++)
     {

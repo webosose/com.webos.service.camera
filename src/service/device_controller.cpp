@@ -23,6 +23,7 @@
 #include "camera_solution_manager.h"
 #include "command_manager.h"
 #include "device_manager.h"
+#include <pbnjson.h>
 #include <algorithm>
 #include <ctime>
 #include <errno.h>
@@ -36,6 +37,38 @@
  */
 #include "camera_base_wrapper.h"
 
+struct MemoryListener : public CameraSolutionEvent
+{
+    MemoryListener(void) { PMLOG_INFO(CONST_MODULE_DC, ""); }
+    virtual ~MemoryListener(void)
+    {
+        if (jsonResult_ != nullptr)
+            j_release(&jsonResult_);
+        jsonResult_ = nullptr;
+        PMLOG_INFO(CONST_MODULE_DC, "");
+    }
+    virtual void onInitialized(void) override { PMLOG_INFO(CONST_MODULE_DC, "It's initialized!!"); }
+    virtual void onDone(jvalue_ref jsonObj) override
+    {
+        std::lock_guard<std::mutex> lg(mtxResult_);
+        // TODO : We need to composite more than one results.
+        //        e.g) {"faces":[{...}, {...}], "poses":[{...}, {...}]}
+        j_release(&jsonResult_);
+        jsonResult_ = jvalue_copy(jsonObj);
+        PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jvalue_stringify(jsonResult_));
+    }
+    std::string getResult(void)
+    {
+        std::lock_guard<std::mutex> lg(mtxResult_);
+        if (jsonResult_ == nullptr)
+            return "";
+        else
+            return jvalue_stringify(jsonResult_);
+    }
+    std::mutex mtxResult_;
+    jvalue_ref jsonResult_{nullptr};
+};
+
 int DeviceControl::n_imagecount_ = 0;
 
 DeviceControl::DeviceControl()
@@ -47,8 +80,9 @@ DeviceControl::DeviceControl()
       str_capturemode_(cstr_oneshot), str_memtype_(""), str_shmemname_(""), cancel_preview_(false),
       buf_size_(0), sh_(nullptr), subskey_(""), camera_id_(-1)
 {
-    //[Camera Solution Manager] make cameraSolutionManager instance
     pCameraSolution = std::make_shared<CameraSolutionManager>();
+    pMemoryListener = std::make_shared<MemoryListener>();
+    pCameraSolution->setEventListener(pMemoryListener.get());
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -304,42 +338,6 @@ void DeviceControl::previewThread()
     int debug_interval = 100; // frames
     auto tic           = std::chrono::steady_clock::now();
 
-    struct MemoryListener : public CameraSolutionEvent
-    {
-        MemoryListener(void) {}
-        virtual ~MemoryListener(void)
-        {
-            if (jsonResult_ != nullptr)
-                j_release(&jsonResult_);
-            jsonResult_ = nullptr;
-        }
-        virtual void onInitialized(void) override
-        {
-            PMLOG_INFO(CONST_MODULE_DC, "It's initialized!!");
-        }
-        virtual void onDone(jvalue_ref jsonObj) override
-        {
-            std::lock_guard<std::mutex> lg(mtxResult_);
-            // TODO : We need to composite more than one results.
-            //        e.g) {"faces":[{...}, {...}], "poses":[{...}, {...}]}
-            j_release(&jsonResult_);
-            jsonResult_ = jvalue_copy(jsonObj);
-            PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jvalue_stringify(jsonResult_));
-        }
-        std::string getResult(void)
-        {
-            std::lock_guard<std::mutex> lg(mtxResult_);
-            if (jsonResult_ == nullptr)
-                return "";
-            else
-                return jvalue_stringify(jsonResult_);
-        }
-        std::mutex mtxResult_;
-        jvalue_ref jsonResult_{nullptr};
-    } memoryListener;
-
-    pCameraSolution->setEventListener(&memoryListener);
-
     while (b_isstreamon_)
     {
         // keep writing data to shared memory
@@ -356,6 +354,12 @@ void DeviceControl::previewThread()
             break;
         }
 
+        //[Camera Solution Manager] process for preview
+        if (pCameraSolution != nullptr)
+        {
+            pCameraSolution->processPreview(frame_buffer);
+        }
+
         if (b_issystemvruning)
         {
             IPCSharedMemory::getInstance().WriteHeader(h_shmsystem_, frame_buffer.index,
@@ -368,11 +372,6 @@ void DeviceControl::previewThread()
             broadcast_();
             b_issyshmwritedone_ = true;
 
-            //[Camera Solution Manager] process for preview
-            if (pCameraSolution != nullptr)
-            {
-                pCameraSolution->processPreview(frame_buffer);
-            }
         }
         else if (b_isposixruning)
         {
@@ -404,8 +403,6 @@ void DeviceControl::previewThread()
             debug_counter = 0;
         }
     }
-
-    pCameraSolution->setEventListener(nullptr);
 
     b_isshmwritedone_   = true;
     b_issyshmwritedone_ = true;
