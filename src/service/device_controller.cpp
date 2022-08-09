@@ -82,7 +82,10 @@ DeviceControl::DeviceControl()
 {
     pCameraSolution = std::make_shared<CameraSolutionManager>();
     pMemoryListener = std::make_shared<MemoryListener>();
-    pCameraSolution->setEventListener(pMemoryListener.get());
+    if (pCameraSolution != nullptr && pMemoryListener != nullptr)
+    {
+        pCameraSolution->setEventListener(pMemoryListener.get());
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
