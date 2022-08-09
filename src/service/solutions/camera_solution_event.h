@@ -6,10 +6,10 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    CameraSolution.h
+ * @Filename    CameraSolutionEvent.h
  * @contact     Multimedia_TP-Camera@lge.com
  *
- * Description  Camera Solution
+ * Description  Camera Solution Event
  *
  */
 

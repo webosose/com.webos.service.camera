@@ -1839,7 +1839,7 @@ void GetSolutionsMethod::getObject(const char *input, const char *schemapath)
         int devicehandle       = n_invalid_id;
         jvalue_ref j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
         jnumber_get_i32(j_param_obj, &devicehandle);
-        if (devicehandle == NULL)
+        if (devicehandle == 0)
         {
             devicehandle = n_invalid_id;
         }
@@ -1867,7 +1867,6 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
                                            std::vector<std::string> enabledSolutionList) const
 {
     jvalue_ref json_outobj                    = jobject_create();
-    jvalue_ref json_solution_obj              = jobject_create();
     jvalue_ref json_supported_solutions_array = jarray_create(0);
 
     std::string str_reply;
@@ -1953,7 +1952,7 @@ void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
         int devicehandle       = n_invalid_id;
         jvalue_ref j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
         jnumber_get_i32(j_param_obj, &devicehandle);
-        if (devicehandle == NULL)
+        if (devicehandle == 0)
         {
             devicehandle = n_invalid_id;
         }
@@ -2009,7 +2008,6 @@ void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
 std::string SetSolutionsMethod::createObjectJsonString() const
 {
     jvalue_ref json_outobj               = jobject_create();
-    jvalue_ref json_enablesolutionsarray = jarray_create(0);
     std::string str_reply;
 
     MethodReply obj_reply = getMethodReply();

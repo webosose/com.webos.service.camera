@@ -6,10 +6,10 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    CameraSolution.cpp
+ * @Filename    CameraSolutionAsync.cpp
  * @contact     Multimedia_TP-Camera@lge.com
  *
- * Description  Camera Solution async
+ * Description  Camera Solution Async
  *
  */
 
@@ -107,7 +107,14 @@ CameraSolutionAsync::Buffer::~Buffer(void)
 
 CameraSolutionAsync::CameraSolutionAsync(void) {}
 
-CameraSolutionAsync::~CameraSolutionAsync(void) {}
+CameraSolutionAsync::~CameraSolutionAsync(void) { PMLOG_INFO(LOG_TAG, ""); }
+
+void CameraSolutionAsync::release()
+{
+    PMLOG_INFO(LOG_TAG, "");
+    setEnableValue(false);
+    PMLOG_INFO(LOG_TAG, "");
+}
 
 void CameraSolutionAsync::setEnableValue(bool enableValue)
 {
@@ -122,23 +129,9 @@ void CameraSolutionAsync::setEnableValue(bool enableValue)
     }
 }
 
-void CameraSolutionAsync::processForSnapshot(buffer_t inBuf)
-{
-    if (!isEnabled())
-        return;
-    if (!(solutionProperty_ & LG_SOLUTION_SNAPSHOT))
-        return;
-}
+void CameraSolutionAsync::processForSnapshot(buffer_t inBuf) { pushJob(inBuf); }
 
-void CameraSolutionAsync::processForPreview(buffer_t inBuf)
-{
-    if (!isEnabled())
-        return;
-    if (!(solutionProperty_ & LG_SOLUTION_PREVIEW))
-        return;
-
-    pushJob(inBuf);
-}
+void CameraSolutionAsync::processForPreview(buffer_t inBuf) { pushJob(inBuf); }
 
 void CameraSolutionAsync::run(void)
 {
@@ -164,6 +157,7 @@ void CameraSolutionAsync::run(void)
             popJob();
         }
     }
+    postProcessing();
 }
 
 void CameraSolutionAsync::startThread(void)

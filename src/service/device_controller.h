@@ -25,7 +25,6 @@
 #include "camera_types.h"
 #include "camshm.h"
 #include "constants.h"
-#include "pbnjson.h"
 #include <condition_variable>
 #include <string>
 #include <thread>
@@ -40,6 +39,7 @@ typedef struct
 } CLIENT_INFO_T;
 
 class CameraSolutionManager;
+struct MemoryListener;
 class DeviceControl
 {
 private:
@@ -92,6 +92,7 @@ private:
     void notifyDeviceFault_();
 
     std::shared_ptr<CameraSolutionManager> pCameraSolution;
+    std::shared_ptr<MemoryListener> pMemoryListener;
 
 public:
     DeviceControl();

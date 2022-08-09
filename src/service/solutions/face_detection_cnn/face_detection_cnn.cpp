@@ -6,7 +6,7 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    FaceDetectionCNN.cpp
+ * @Filename    face_detection_cnn.cpp
  * @contact     Multimedia_TP-Camera@lge.com
  *
  * Description  Camera Solution FaceDetectionCNN
@@ -78,7 +78,7 @@ int32_t FaceDetectionCNN::getMetaSizeHint(void)
     return 1024;
 }
 
-std::string FaceDetectionCNN::getSolutionStr(void) { return SOLUTION_FACE_DETECTION_CNN; }
+std::string FaceDetectionCNN::getSolutionStr(void) { return SOLUTION_FACEDETECTION; }
 
 void FaceDetectionCNN::processing(void)
 {
@@ -119,6 +119,16 @@ void FaceDetectionCNN::processing(void)
 
         j_release(&jsonOutObj);
     } while (0);
+}
+
+void FaceDetectionCNN::postProcessing(void)
+{
+    PMLOG_INFO(LOG_TAG, "");
+    jvalue_ref jsonOutObj    = jobject_create();
+    jvalue_ref jsonFaceArray = jarray_create(nullptr);
+    jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
+    if (pEvent_)
+        (pEvent_.load())->onDone(jsonOutObj);
 }
 
 bool FaceDetectionCNN::detectFace(void)
