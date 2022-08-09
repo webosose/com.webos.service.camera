@@ -23,10 +23,10 @@
 #include "camera_solution_manager.h"
 #include "command_manager.h"
 #include "device_manager.h"
-#include <pbnjson.h>
 #include <algorithm>
 #include <ctime>
 #include <errno.h>
+#include <pbnjson.h>
 #include <poll.h>
 #include <signal.h>
 #include <sys/time.h>
@@ -82,7 +82,10 @@ DeviceControl::DeviceControl()
 {
     pCameraSolution = std::make_shared<CameraSolutionManager>();
     pMemoryListener = std::make_shared<MemoryListener>();
-    pCameraSolution->setEventListener(pMemoryListener.get());
+    if (pCameraSolution != nullptr && pMemoryListener != nullptr)
+    {
+        pCameraSolution->setEventListener(pMemoryListener.get());
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -371,7 +374,6 @@ void DeviceControl::previewThread()
 
             broadcast_();
             b_issyshmwritedone_ = true;
-
         }
         else if (b_isposixruning)
         {

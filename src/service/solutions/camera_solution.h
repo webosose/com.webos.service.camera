@@ -22,9 +22,7 @@
 
 #define SOLUTION_AUTOCONTRAST "AutoContrast"
 #define SOLUTION_DUMMY "Dummy"
-#define SOLUTION_FACEDETECTION_OPENCV "FaceDetectionOpenCV"
 #define SOLUTION_FACEDETECTION_AIF "FaceDetectionAIF"
-#define SOLUTION_FACEDETECTION_CNN "FaceDetectionCNN"
 
 enum Property
 {

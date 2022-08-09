@@ -66,7 +66,7 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
     return 1024;
 }
 
-std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION; }
+std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION_AIF; }
 
 void FaceDetectionAIF::initialize(stream_format_t streamFormat)
 {

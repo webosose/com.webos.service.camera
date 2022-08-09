@@ -27,7 +27,7 @@ class CameraSolution;
 class CameraSolutionEvent;
 class CameraSolutionManager
 {
-    CameraSolutionManager(const CameraSolutionManager &)            = delete;
+    CameraSolutionManager(const CameraSolutionManager &) = delete;
     CameraSolutionManager &operator=(const CameraSolutionManager &) = delete;
 
 public:

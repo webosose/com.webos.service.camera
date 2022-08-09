@@ -2007,7 +2007,7 @@ void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
 
 std::string SetSolutionsMethod::createObjectJsonString() const
 {
-    jvalue_ref json_outobj               = jobject_create();
+    jvalue_ref json_outobj = jobject_create();
     std::string str_reply;
 
     MethodReply obj_reply = getMethodReply();
