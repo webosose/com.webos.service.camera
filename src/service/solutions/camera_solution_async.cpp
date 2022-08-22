@@ -59,7 +59,9 @@ struct PerformanceControl
         if (timeMultiple_ > 0)
             g_usleep(timeScale_ * timeMultiple_);
 
-        if (frameCount_ < 30)
+        uint32_t adj = abs(avrFPS_ - 0.0) < 1e-9 ? 0 : avrFPS_ > 1 ? 27 / (int)avrFPS_ : 27;
+
+        if (frameCount_ < (30 - adj))
             return;
 
         uint64_t totalDur = std::accumulate(lstDur_.begin(), lstDur_.end(), 0);
@@ -68,8 +70,8 @@ struct PerformanceControl
 
         if (avrFPS_ > targetFPS_)
         {
-            if ((avrFPS_ - targetFPS_) > 1)
-                timeMultiple_ += 5;
+            if ((avrFPS_ - targetFPS_) > 0.5)
+                timeMultiple_ += 10;
             else
                 timeMultiple_ += 1;
         }
@@ -136,6 +138,7 @@ void CameraSolutionAsync::processForPreview(buffer_t inBuf) { pushJob(inBuf); }
 void CameraSolutionAsync::run(void)
 {
     PerformanceControl oPC;
+    oPC.targetFPS(1.0f);
 
     pthread_setname_np(pthread_self(), "solution_thread");
 
