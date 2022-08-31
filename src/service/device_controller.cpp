@@ -624,7 +624,17 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
 
     if (tidPreview.joinable())
     {
-        tidPreview.join();
+        PMLOG_INFO(CONST_MODULE_DC, "Thread Closing");
+        try
+        {
+            tidPreview.join();
+        }
+        catch (const std::system_error &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "Caught a system_error with code %d meaning %s",
+                        e.code().value(), e.what());
+        }
+        PMLOG_INFO(CONST_MODULE_DC, "Thread Closed");
     }
 
     if (cancel_preview_ == true)
