@@ -20,7 +20,6 @@
 #define CONST_MAX_INDEX 300
 #define CONST_MAX_FORMAT 5
 #define CONST_MAX_STRING_LENGTH 256
-#define CONST_MAX_STRING_RESOLUTION_LENGTH 20
 #define CONST_MAX_BUFFER_NUM 6
 #define CONST_MAX_PROPERTY_NUM 20
 
@@ -153,45 +152,10 @@ typedef enum
     QUERY_END
 } query_ctrl_t;
 
-typedef struct
-{
-    int n_width[CONST_MAX_FORMAT][CONST_MAX_INDEX];
-    int n_height[CONST_MAX_FORMAT][CONST_MAX_INDEX];
-    char c_res[CONST_MAX_FORMAT][CONST_MAX_INDEX][CONST_MAX_STRING_RESOLUTION_LENGTH];
-    camera_format_t e_format[CONST_MAX_FORMAT];
-    int n_frameindex[CONST_MAX_FORMAT];
-    int n_framecount[CONST_MAX_FORMAT];
-    int n_formatindex;
-} camera_resolution_t;
-
-typedef struct
+struct camera_queryctrl_t
 {
     int data[PROPERTY_END][QUERY_END];
-} camera_queryctrl_t;
-
-typedef struct
-{
-    int nBrightness;
-    int nContrast;
-    int nSaturation;
-    int nHue;
-    int nAutoWhiteBalance;
-    int nGamma;
-    int nGain;
-    int nFrequency;
-    int nWhiteBalanceTemperature;
-    int nSharpness;
-    int nBacklightCompensation;
-    int nAutoExposure;
-    int nExposure;
-    int nPan;
-    int nTilt;
-    int nFocusAbsolute;
-    int nAutoFocus;
-    int nZoomAbsolute;
-    camera_queryctrl_t stGetData;
-    camera_resolution_t stResolution;
-} camera_properties_t;
+};
 
 typedef struct
 {

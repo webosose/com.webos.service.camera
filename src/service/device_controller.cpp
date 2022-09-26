@@ -902,24 +902,12 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
     }
 
     // update resolution structure
-    oparams->stResolution.n_formatindex = out_params.stResolution.n_formatindex;
-    memset(oparams->stResolution.c_res, '\0', sizeof(oparams->stResolution.c_res));
-
-    for (int n = 0; n < out_params.stResolution.n_formatindex; n++)
+    for (auto const &v : out_params.stResolution)
     {
-        oparams->stResolution.e_format[n]       = out_params.stResolution.e_format[n];
-        oparams->stResolution.n_frameindex[n]   = out_params.stResolution.n_frameindex[n];
-        out_params.stResolution.n_framecount[n] = out_params.stResolution.n_frameindex[n] + 1;
-        oparams->stResolution.n_framecount[n]   = out_params.stResolution.n_framecount[n];
-        for (int count = 0; count < out_params.stResolution.n_framecount[n]; count++)
-        {
-            oparams->stResolution.n_height[n][count] = out_params.stResolution.n_height[n][count];
-            oparams->stResolution.n_width[n][count]  = out_params.stResolution.n_width[n][count];
-            PMLOG_DEBUG("out_params.stResolution.c_res %s\n",
-                        out_params.stResolution.c_res[n][count]);
-            strncpy(oparams->stResolution.c_res[n][count], out_params.stResolution.c_res[n][count],
-                    sizeof(oparams->stResolution.c_res[n][count]) - 1);
-        }
+        std::vector<std::string> c_res;
+        c_res.clear();
+        c_res.assign(v.c_res.begin(), v.c_res.end());
+        oparams->stResolution.emplace_back(c_res, v.e_format);
     }
 
     return DEVICE_OK;

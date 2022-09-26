@@ -15,6 +15,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "camera_hal_if.h"
+#include "camera_hal_if_cpp_types.h"
 #include "camera_hal_types.h"
 #include <poll.h>
 #include <pthread.h>

@@ -35,8 +35,8 @@ extern "C"
     int destroy_buffer(camera_handle_t *);
     int start_capture(camera_handle_t *);
     int stop_capture(camera_handle_t *);
-    int set_properties(camera_handle_t *, const camera_properties_t *);
-    int get_properties(camera_handle_t *, camera_properties_t *);
+    int set_properties(camera_handle_t *, const void *);
+    int get_properties(camera_handle_t *, void *);
     int get_info(camera_handle_t *, camera_device_info_t *, const char *);
     int get_buffer_fd(camera_handle_t *, int *, int *);
 

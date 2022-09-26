@@ -112,20 +112,20 @@ extern "C"
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int set_properties(camera_handle_t *h, const camera_properties_t *cam_params)
+    int set_properties(camera_handle_t *h, const void *cam_params)
     {
         CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
         if (NULL != camera_base)
-            return camera_base->setProperties(cam_params);
+            return camera_base->setProperties(static_cast<const camera_properties_t *>(cam_params));
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int get_properties(camera_handle_t *h, camera_properties_t *cam_params)
+    int get_properties(camera_handle_t *h, void *cam_params)
     {
         CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
         if (NULL != camera_base)
-            return camera_base->getProperties(cam_params);
+            return camera_base->getProperties(static_cast<camera_properties_t *>(cam_params));
         else
             return CAMERA_ERROR_UNKNOWN;
     }

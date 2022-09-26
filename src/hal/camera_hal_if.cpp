@@ -426,7 +426,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_set_properties(void *h, const camera_properties_t *cam_in_params)
+    int camera_hal_if_set_properties(void *h, const void *cam_in_params)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -456,7 +456,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_get_properties(void *h, camera_properties_t *cam_out_params)
+    int camera_hal_if_get_properties(void *h, void *cam_out_params)
     {
         int retVal = CAMERA_ERROR_NONE;
 

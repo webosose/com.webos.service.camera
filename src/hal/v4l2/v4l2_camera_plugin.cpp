@@ -814,23 +814,22 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *valu
     return CAMERA_ERROR_NONE;
 }
 
-void V4l2CameraPlugin::getCameraFormatProperty(struct v4l2_fmtdesc format,
-                                               camera_properties_t *cam_out_params)
+camera_format_t V4l2CameraPlugin::getCameraFormatProperty(struct v4l2_fmtdesc format)
 {
+    camera_format_t format_ = CAMERA_FORMAT_UNDEFINED;
     switch (format.pixelformat)
     {
     case V4L2_PIX_FMT_YUYV:
-        cam_out_params->stResolution.e_format[format.index] = CAMERA_FORMAT_YUV;
+        format_ = CAMERA_FORMAT_YUV;
         break;
     case V4L2_PIX_FMT_MJPEG:
-        cam_out_params->stResolution.e_format[format.index] = CAMERA_FORMAT_JPEG;
+        format_ = CAMERA_FORMAT_JPEG;
         break;
     case V4L2_PIX_FMT_H264:
-        cam_out_params->stResolution.e_format[format.index] = CAMERA_FORMAT_H264ES;
+        format_ = CAMERA_FORMAT_H264ES;
         break;
-    default:
-        HAL_LOG_INFO(CONST_MODULE_HAL, "format.pixelformat:%d", format.pixelformat);
     }
+    return format_;
 }
 
 void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params)
@@ -843,9 +842,10 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
     struct v4l2_frmsizeenum frmsize;
     CLEAR(frmsize);
     int ncount = 0;
+
+    cam_out_params->stResolution.clear();
     while ((-1 != xioctl(fd_, VIDIOC_ENUM_FMT, &format)))
     {
-        getCameraFormatProperty(format, cam_out_params);
         format.index++;
         frmsize.pixel_format = format.pixelformat;
         frmsize.index        = 0;
@@ -853,28 +853,25 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
         CLEAR(fival);
         int res_index = 0;
 
+        std::vector<std::string> v_res;
         while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMESIZES, &frmsize)))
         {
             if (V4L2_FRMSIZE_TYPE_DISCRETE == frmsize.type)
             {
-                cam_out_params->stResolution.n_height[ncount][res_index] =
-                    frmsize.discrete.height;
-                cam_out_params->stResolution.n_width[ncount][res_index] =
-                    frmsize.discrete.width;
                 fival.index        = 0;
                 fival.pixel_format = frmsize.pixel_format;
                 fival.width        = frmsize.discrete.width;
                 fival.height       = frmsize.discrete.height;
                 while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMEINTERVALS, &fival)))
                 {
-                    snprintf(cam_out_params->stResolution.c_res[ncount][res_index], 20,
-                             "%d,%d,%d", frmsize.discrete.width, frmsize.discrete.height,
-                             fival.discrete.denominator / fival.discrete.numerator);
-                    HAL_LOG_INFO(CONST_MODULE_HAL, "c_res %s ",
-                                 cam_out_params->stResolution.c_res[ncount][res_index]);
-                    cam_out_params->stResolution.n_frameindex[ncount] = res_index;
+                    std::string res =
+                        std::to_string(frmsize.discrete.width) + "," +
+                        std::to_string(frmsize.discrete.height) + "," +
+                        std::to_string(fival.discrete.denominator / fival.discrete.numerator);
+                    HAL_LOG_INFO(CONST_MODULE_HAL, "c_res %s ", res.c_str());
                     fival.index++;
                     res_index++;
+                    v_res.emplace_back(res);
                     if (res_index >= CONST_MAX_INDEX)
                     {
                         HAL_LOG_INFO(CONST_MODULE_HAL, "WARN : Exceeded resolution table size!");
@@ -884,10 +881,10 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
             }
             else if (V4L2_FRMSIZE_TYPE_STEPWISE == frmsize.type)
             {
-                snprintf(cam_out_params->stResolution.c_res[ncount][res_index], 10, "%d,%d",
-                         frmsize.stepwise.max_width, frmsize.stepwise.max_height);
-                cam_out_params->stResolution.n_frameindex[ncount] = res_index;
+                std::string res = std::to_string(frmsize.discrete.width) + "," +
+                                  std::to_string(frmsize.discrete.height);
                 res_index++;
+                v_res.emplace_back(res);
                 HAL_LOG_INFO(CONST_MODULE_HAL, "framesize type : V4L2_FRMSIZE_TYPE_STEPWISE");
             }
             else if (V4L2_FRMSIZE_TYPE_CONTINUOUS == frmsize.type)
@@ -899,8 +896,7 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
                 break;
             frmsize.index++;
         }
-        ncount++;
-        cam_out_params->stResolution.n_formatindex = format.index;
+        cam_out_params->stResolution.emplace_back(v_res, getCameraFormatProperty(format));
     }
 }
 

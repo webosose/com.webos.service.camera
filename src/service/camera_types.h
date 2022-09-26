@@ -21,6 +21,7 @@
 #include "camera_constants.h"
 #include "camera_device_list_type.h"
 #include "camera_device_event_type.h"
+#include "camera_hal_if_cpp_types.h"
 #include "camera_hal_if_types.h"
 #include "camera_log.h"
 #include "luna-service2/lunaservice.h"
@@ -178,7 +179,7 @@ struct CAMERA_PROPERTIES_T
     int nZoomAbsolute;
 
     camera_queryctrl_t stGetData;
-    camera_resolution_t stResolution;
+    std::vector<camera_resolution_t> stResolution;
 
     bool operator!=(const CAMERA_PROPERTIES_T &);
 
