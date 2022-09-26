@@ -38,6 +38,7 @@ extern "C"
         HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle : %p", camera_handle);
 
         camera_handle->h_plugin = dlopen(subsystem, RTLD_LAZY);
+        HAL_LOG_INFO(CONST_MODULE_HAL, "dlopen plugin(%p)", camera_handle->h_plugin);
         if (!camera_handle->h_plugin)
         {
             HAL_LOG_INFO(CONST_MODULE_HAL, "dlopen failed for : %s", subsystem);
@@ -88,6 +89,10 @@ extern "C"
         camera_handle->current_state = CAMERA_HAL_STATE_UNKNOWN;
 
         pf_destroy_handle(camera_handle->handle);
+
+        int ret = dlclose(camera_handle->h_plugin);
+        HAL_LOG_INFO(CONST_MODULE_HAL, "dlclose plugin(%p) ret(%d)", camera_handle->h_plugin, ret);
+
         delete camera_handle;
 
         return CAMERA_ERROR_NONE;
