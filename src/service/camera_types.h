@@ -18,14 +18,19 @@
 #define CAMERA_TYPES_H_
 
 #include "PmLogLib.h"
-#include "camera_hal_types.h"
 #include "camera_hal_if_types.h"
 #include "constants.h"
 #include "luna-service2/lunaservice.h"
 
 #define PMLOG_ERROR(module, args...) PmLogMsg(getCameraLunaPmLogContext(), Error, module, 0, ##args)
-#define PMLOG_INFO(module, args...) PmLogMsg(getCameraLunaPmLogContext(), Info, module, 0, ##args)
-#define PMLOG_DEBUG(args...) PmLogMsg(getCameraLunaPmLogContext(), Debug, NULL, 0, ##args)
+#define PMLOG_INFO(module, FORMAT__, ...) \
+  PmLogInfo(getCameraLunaPmLogContext(), \
+  module, 0, "%s():%d " FORMAT__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+#define PMLOG_DEBUG(FORMAT__, ...) \
+  PmLogDebug(getCameraLunaPmLogContext(), \
+  "[%s:%d]" FORMAT__, __PRETTY_FUNCTION__, __LINE__, ##__VA_ARGS__)
+
+
 
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
@@ -63,8 +68,6 @@ typedef enum
   DEVICE_ERROR_DEVICE_IS_NOT_STARTED,
   DEVICE_ERROR_NODEVICE,
   DEVICE_ERROR_MAX_LIMIT_REACHED,
-  DEVICE_ERROR_PREVIEW_NOT_STARTED,
-  DEVICE_ERROR_NOT_POSIXSHM,
   // session
   DEVICE_ERROR_SESSION_ERROR,
   DEVICE_ERROR_SESSION_NOT_OWNER,
@@ -102,7 +105,11 @@ typedef enum
   DEVICE_ERROR_ALREADY_OEPENED_PRIMARY_DEVICE,
   DEVICE_ERROR_CANNOT_WRITE,
   DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE,
-  DEVICE_ERROR_HANDLE_NOT_EXIST
+  DEVICE_ERROR_HANDLE_NOT_EXIST,
+  DEVICE_ERROR_PREVIEW_NOT_STARTED,
+  DEVICE_ERROR_NOT_POSIXSHM,
+  DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL,
+  DEVICE_ERROR_CLIENT_PID_IS_MISSING
 } DEVICE_RETURN_CODE_T;
 
 typedef enum
@@ -147,7 +154,8 @@ enum class EventType
   EVENT_TYPE_FORMAT = 0,
   EVENT_TYPE_PROPERTIES,
   EVENT_TYPE_CONNECT,
-  EVENT_TYPE_DISCONNECT
+  EVENT_TYPE_DISCONNECT,
+  EVENT_TYPE_DEVICE_FAULT,
 };
 
 enum class CameraDeviceState
@@ -160,8 +168,8 @@ enum class CameraDeviceState
 /*Structures*/
 struct CAMERA_FORMAT
 {
-  int nWidth;
-  int nHeight;
+  unsigned int nWidth;
+  unsigned int nHeight;
   int nFps;
   camera_format_t eFormat;
   bool operator != (const CAMERA_FORMAT &);
@@ -187,6 +195,8 @@ struct CAMERA_PROPERTIES_T
   int nFocusAbsolute;
   int nAutoFocus;
   int nZoomAbsolute;
+
+  camera_queryctrl_t stGetData;
   camera_resolution_t stResolution;
 
   bool operator != (const CAMERA_PROPERTIES_T &);
@@ -201,7 +211,7 @@ struct CAMERA_PROPERTIES_T
         nExposure(CONST_PARAM_DEFAULT_VALUE), nPan(CONST_PARAM_DEFAULT_VALUE),
         nTilt(CONST_PARAM_DEFAULT_VALUE), nFocusAbsolute(CONST_PARAM_DEFAULT_VALUE),
         nAutoFocus(CONST_PARAM_DEFAULT_VALUE), nZoomAbsolute(CONST_PARAM_DEFAULT_VALUE),
-        stResolution() { }
+        stGetData(), stResolution() { }
 };
 
 typedef struct
@@ -210,6 +220,8 @@ typedef struct
   int nPortNum;
   char strVendorName[CONST_MAX_STRING_LENGTH];
   char strProductName[CONST_MAX_STRING_LENGTH];
+  char strVendorID[CONST_MAX_STRING_LENGTH];
+  char strProductID[CONST_MAX_STRING_LENGTH];
   char strDeviceType[CONST_MAX_STRING_LENGTH];
   char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
   int isPowerOnConnect;
@@ -222,13 +234,18 @@ typedef struct
   std::string str_memorysource;
 } camera_memory_source_t;
 
-typedef struct
-{
-  EventType event;
-  void *pdata;
-} event_notification_t;
 
-PmLogContext getCameraLunaPmLogContext();
+
+static inline PmLogContext getCameraLunaPmLogContext()
+{
+  static PmLogContext usLogContext = 0;
+  if (0 == usLogContext)
+  {
+    PmLogGetContext("camera", &usLogContext);
+  }
+  return usLogContext;
+}
+
 void getFormatString(int, char *);
 char *getTypeString(device_t);
 int getRandomNumber();

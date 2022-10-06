@@ -66,7 +66,7 @@ public:
   VirtualDeviceManager();
   DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&,
                                     const std::string&);
@@ -77,6 +77,12 @@ public:
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
   DEVICE_RETURN_CODE_T getFd(int, int *);
+
+  bool registerClient(int, int, int, std::string&);
+  bool unregisterClient(int, std::string&);
+  bool isRegisteredClient(int);
+
+  void requestPreviewCancel();
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

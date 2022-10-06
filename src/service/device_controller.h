@@ -22,13 +22,23 @@
 ------------------------------------------------------------------------------*/
 #include "camera_hal_types.h"
 #include "camera_types.h"
-#include "camshm.h"
 #include "cam_posixshm.h"
 #include "constants.h"
 #include <unistd.h>
 #include <thread>
 #include <string>
 #include <condition_variable>
+#include <vector>
+#include <pthread.h>
+
+
+typedef struct
+{
+    pid_t pid;
+    int sig;
+    int handle;
+} CLIENT_INFO_T;
+
 
 class DeviceControl
 {
@@ -57,7 +67,6 @@ private:
   std::mutex tMutex;
   std::condition_variable tCondVar;
   std::string strdevicenode_;
-  SHMEM_HANDLE h_shmsystem_;
   SHMEM_HANDLE h_shmposix_;
   std::string str_imagepath_;
   std::string str_capturemode_;
@@ -66,11 +75,23 @@ private:
 
   static int n_imagecount_;
 
+  std::vector<CLIENT_INFO_T> client_pool_;
+  std::mutex client_pool_mutex_;
+  void broadcast_();
+
+  bool cancel_preview_;
+  int buf_size_;
+
+  LSHandle *sh_;
+  std::string subskey_;
+  int camera_id_;
+  void notifyDeviceFault_();
+
 public:
   DeviceControl();
-  DEVICE_RETURN_CODE_T open(void *, std::string);
+  DEVICE_RETURN_CODE_T open(void *, std::string, int);
   DEVICE_RETURN_CODE_T close(void *);
-  DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *);
+  DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(void *, int);
   DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(void *);
@@ -84,6 +105,12 @@ public:
   DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
+
+  bool registerClient(pid_t, int, int, std::string& outmsg);
+  bool unregisterClient(pid_t, std::string& outmsg);
+  bool isRegisteredClient(int devhandle);
+
+  void requestPreviewCancel();
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

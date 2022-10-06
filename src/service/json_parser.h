@@ -83,7 +83,11 @@ private:
 class OpenMethod
 {
 public:
-  OpenMethod() { n_devicehandle_ = -1; }
+  OpenMethod() {
+    n_devicehandle_ = -1;
+    n_client_pid_ = -1;
+    n_client_sig_ = -1;
+  }
   ~OpenMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
@@ -94,6 +98,12 @@ public:
 
   void setAppPriority(const std::string& priority) { str_priority_ = priority; }
   std::string getAppPriority() const { return str_priority_; }
+
+  void setClientProcessId(int pid) { n_client_pid_ = pid; }
+  int getClientProcessId() const { return n_client_pid_; }
+
+  void setClientSignal(int sig) { n_client_sig_ = sig; }
+  int getClientSignal() const { return n_client_sig_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
@@ -110,6 +120,8 @@ private:
   int n_devicehandle_;
   std::string str_devid_;
   std::string str_priority_;
+  int n_client_pid_;
+  int n_client_sig_;
   MethodReply objreply_;
 };
 
@@ -202,11 +214,18 @@ private:
 class StopPreviewCaptureCloseMethod
 {
 public:
-  StopPreviewCaptureCloseMethod() { n_devicehandle_ = -1; }
+  StopPreviewCaptureCloseMethod()
+  {
+    n_devicehandle_ = -1;
+    n_client_pid_ = -1;
+  }
   ~StopPreviewCaptureCloseMethod() {}
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
+
+  void setClientProcessId(int pid) { n_client_pid_ = pid; }
+  int getClientProcessId() const { return n_client_pid_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
   {
@@ -221,6 +240,7 @@ public:
 
 private:
   int n_devicehandle_;
+  int n_client_pid_;
   MethodReply objreply_;
 };
 
@@ -235,7 +255,9 @@ public:
 
   void setCameraInfo(const camera_device_info_t& r_ininfo)
   {
-    strncpy(ro_info_.str_devicename, r_ininfo.str_devicename, 32);
+    strncpy(ro_info_.str_devicename, r_ininfo.str_devicename, (CONST_MAX_STRING_LENGTH - 1));
+    strncpy(ro_info_.str_vendorid, r_ininfo.str_vendorid, (CONST_MAX_STRING_LENGTH - 1));
+    strncpy(ro_info_.str_productid, r_ininfo.str_productid, (CONST_MAX_STRING_LENGTH - 1));
     ro_info_.b_builtin = r_ininfo.b_builtin;
     ro_info_.n_codec = r_ininfo.n_codec;
     ro_info_.n_format = r_ininfo.n_format;
@@ -244,6 +266,7 @@ public:
     ro_info_.n_maxpicturewidth = r_ininfo.n_maxpicturewidth;
     ro_info_.n_maxvideoheight = r_ininfo.n_maxvideoheight;
     ro_info_.n_maxvideowidth = r_ininfo.n_maxvideowidth;
+    ro_info_.n_cur_fps = r_ininfo.n_cur_fps;
     ro_info_.n_samplingrate = r_ininfo.n_samplingrate;
   }
 
@@ -295,22 +318,34 @@ public:
     ro_camproperties_.nFocusAbsolute = rin_info.nFocusAbsolute;
     ro_camproperties_.nAutoFocus = rin_info.nAutoFocus;
     ro_camproperties_.nZoomAbsolute = rin_info.nZoomAbsolute;
+
+    //update query data
+
+   for (int i = 0; i < PROPERTY_END; i++)
+   {
+     for (int j = 0; j < QUERY_END; j++)
+     {
+       ro_camproperties_.stGetData.data[i][j] = rin_info.stGetData.data[i][j];
+     }
+   }
+
    // update resolution structure
     ro_camproperties_.stResolution.n_formatindex = rin_info.stResolution.n_formatindex;
     for (int n = 0; n < rin_info.stResolution.n_formatindex; n++)
     {
       ro_camproperties_.stResolution.e_format[n] = rin_info.stResolution.e_format[n];
       ro_camproperties_.stResolution.n_frameindex[n] = rin_info.stResolution.n_frameindex[n];
-      for (int count = 0; count < rin_info.stResolution.n_frameindex[n]; count++)
+      ro_camproperties_.stResolution.n_framecount[n] = rin_info.stResolution.n_framecount[n];
+      for (int count = 0; count < rin_info.stResolution.n_framecount[n]; count++)
       {
         ro_camproperties_.stResolution.n_height[n][count] =
             rin_info.stResolution.n_height[n][count];
         ro_camproperties_.stResolution.n_width[n][count] =
             rin_info.stResolution.n_width[n][count];
-        memset(ro_camproperties_.stResolution.c_res[count], 0,
-               sizeof(ro_camproperties_.stResolution.c_res[count]));
-        strncpy(ro_camproperties_.stResolution.c_res[count], rin_info.stResolution.c_res[count],
-                sizeof(ro_camproperties_.stResolution.c_res[count])-1);
+        memset(ro_camproperties_.stResolution.c_res[n][count], '\0',
+               sizeof(ro_camproperties_.stResolution.c_res[n][count]));
+        strncpy(ro_camproperties_.stResolution.c_res[n][count], rin_info.stResolution.c_res[n][count],
+                sizeof(ro_camproperties_.stResolution.c_res[n][count])-1);
       }
     }
   }
@@ -328,6 +363,7 @@ public:
   MethodReply getMethodReply() const { return objreply_; }
 
   void getPropertiesObject(const char *, const char *);
+  bool isParamsEmpty(const char *, const char *);
   void getSetPropertiesObject(const char *, const char *);
   std::string createGetPropertiesObjectJsonString() const;
   std::string createSetPropertiesObjectJsonString() const;
@@ -399,39 +435,12 @@ private:
   MethodReply objreply_;
 };
 
-class EventNotification
-{
-public:
-  EventNotification()
-  {
-    etype_ = EventType::EVENT_TYPE_NONE;
-    pdata_ = nullptr;
-    b_issubscribed_ = false;
-  }
-  ~EventNotification() {}
-
-  void getEventObject(const char *, const char *);
-  std::string createEventObjectJsonString(void *) const;
-  std::string createEventObjectSubscriptionJsonString(CAMERA_FORMAT *, CAMERA_PROPERTIES_T *) const;
-  void setEventType(EventType etype) { etype_ = etype; }
-  void setEventData(void *data) { pdata_ = data; }
-  void setCameraId(const std::string& camid) { strcamid_ = camid; }
-  std::string getCameraId() { return strcamid_; }
-
-private:
-  EventType etype_;
-  void *pdata_;
-  bool b_issubscribed_;
-  std::string strcamid_;
-  void outputObjectFormat(CAMERA_FORMAT *, jvalue_ref &)const;
-  void outputObjectProperties(CAMERA_PROPERTIES_T *, jvalue_ref &)const;
-};
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
-void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, void *, jvalue_ref &);
+void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, CAMERA_PROPERTIES_T *, jvalue_ref &);
 void mappingPropertieswithConstValues(std::map<std::string,int> &, CAMERA_PROPERTIES_T *);
 void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
                                               jvalue_ref &);
-void createGetPropertiesOutputJsonString(const std::string, int, jvalue_ref &);
+void createGetPropertiesOutputJsonString(const std::string, CAMERA_PROPERTIES_T *, jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/

@@ -74,29 +74,22 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE, "Unsupported Memory Type"},
     {DEVICE_ERROR_HANDLE_NOT_EXIST, "Wrong handle"},
     {DEVICE_ERROR_PREVIEW_NOT_STARTED, "Preview not started"},
-    {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"}};
+    {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"},
+    {DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL, "Failed to register pid with specified signal"},
+    {DEVICE_ERROR_CLIENT_PID_IS_MISSING, "Must specify client pid"}};
 
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},
     {EventType::EVENT_TYPE_PROPERTIES, cstr_properties},
-    {EventType::EVENT_TYPE_CONNECT, "DEVICE_CONNECT_EVENT"},
-    {EventType::EVENT_TYPE_DISCONNECT, "DEVICE_DISCONNECT_EVENT"}};
+    {EventType::EVENT_TYPE_CONNECT, cstr_connect},
+    {EventType::EVENT_TYPE_DISCONNECT, cstr_disconnect},
+    {EventType::EVENT_TYPE_DEVICE_FAULT, cstr_devicefault}};
 
 std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
                                                           {CAMERA_FORMAT_YUV, "YUV"},
                                                           {CAMERA_FORMAT_H264ES, "H264ES"},
-                                                          {CAMERA_FORMAT_JPEG, "JPEG"}};
-
-extern PmLogContext getCameraLunaPmLogContext()
-{
-  static PmLogContext usLogContext = 0;
-  if (0 == usLogContext)
-  {
-    PmLogGetContext("camera", &usLogContext);
-  }
-  return usLogContext;
-}
-
+                                                          {CAMERA_FORMAT_JPEG, "JPEG"},
+                                                          {CAMERA_FORMAT_NV12, "NV12"},};
 
 int getRandomNumber()
 {
@@ -136,6 +129,9 @@ void getFormatString(int nFormat, char *pFormats)
       break;
     case CAMERA_FORMAT_JPEG:
       strncat(pFormats, "JPEG|", 5);
+      break;
+    case CAMERA_FORMAT_NV12:
+      strncat(pFormats, "NV12|", 5);
       break;
     default:
       break;
@@ -192,6 +188,8 @@ void convertFormatToCode(std::string format, camera_format_t *pformatcode)
     *pformatcode = CAMERA_FORMAT_H264ES;
   else if (format == cstr_jpegformat)
     *pformatcode = CAMERA_FORMAT_JPEG;
+  else if (format == cstr_nv12format)
+    *pformatcode = CAMERA_FORMAT_NV12;
   else
     *pformatcode = CAMERA_FORMAT_UNDEFINED;
 }
@@ -237,6 +235,9 @@ std::string getResolutionString(camera_format_t eformat)
     break;
   case CAMERA_FORMAT_H264ES:
     str_resolution = cstr_h264esformat;
+    break;
+  case CAMERA_FORMAT_NV12:
+    str_resolution = cstr_nv12format;
     break;
   default:
     break;
