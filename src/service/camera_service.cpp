@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -339,7 +339,7 @@ bool CameraService::startPreview(LSMessage &message)
     int key = 0;
 
     memType = obj_startpreview.rGetParams();
-    if (memType.str_memorytype == kMemtypeShmem)
+    if ((memType.str_memorytype == kMemtypeShmem) || (memType.str_memorytype == kMemtypePosixshm))
     {
         err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key,
                                                             this->get(), CONST_EVENT_NOTIFICATION);
