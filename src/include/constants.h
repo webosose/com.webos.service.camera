@@ -33,6 +33,7 @@
 #define CONST_MODULE_NOTIFIER "Notifier"
 #define CONST_MODULE_PDMCLIENT "PDMClient"
 #define CONST_MODULE_SHM "SHM_API"
+#define CONST_MODULE_SM "SolutionManager"
 
 #define CONST_DEVICE_NAME_CAMERA "camera"
 #define CONST_DEVICE_HANDLE "handle"
@@ -123,6 +124,8 @@
 #define CONST_PARAM_NAME_DEFAULT_VALUE "default"
 #define CONST_PARAM_NAME_VALUE "value"
 #define CONST_PARAM_NAME_NOTSUPPORT "not support"
+#define CONST_PARAM_NAME_SUPPORTED "supported"
+#define CONST_PARAM_NAME_SOLUTION "solutions"
 
 const int n_invalid_id = -1;
 const int frame_count = 8;

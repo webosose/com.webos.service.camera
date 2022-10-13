@@ -78,6 +78,11 @@ public:
   DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
   DEVICE_RETURN_CODE_T getFd(int, int *);
 
+  DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(int, std::vector<std::string> &);
+  DEVICE_RETURN_CODE_T getEnabledCameraSolutionInfo(int, std::vector<std::string> &);
+  DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string>);
+  DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string>);
+
   bool registerClient(int, int, int, std::string&);
   bool unregisterClient(int, std::string&);
   bool isRegisteredClient(int);

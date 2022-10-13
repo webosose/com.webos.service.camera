@@ -1379,3 +1379,202 @@ std::string GetFdMethod::createObjectJsonString() const
 
   return str_reply;
 }
+
+void GetSolutionsMethod::getObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    int devicehandle       = n_invalid_id;
+    jvalue_ref j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
+    jnumber_get_i32(j_param_obj, &devicehandle);
+    if (devicehandle == 0)
+    {
+      devicehandle = n_invalid_id;
+    }
+    setDeviceHandle(devicehandle);
+    j_param_obj       = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+    raw_buffer str_id = jstring_get_fast(j_param_obj);
+    if (strstr(str_id.m_str, "camera") == NULL)
+    {
+      setCameraId(cstr_invaliddeviceid);
+    }
+    else
+    {
+      setCameraId(str_id.m_str);
+    }
+  }
+  else
+  {
+    setDeviceHandle(n_invalid_id);
+  }
+  j_release(&j_obj);
+}
+
+std::string
+GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSolutionList,
+                                           std::vector<std::string> enabledSolutionList) const
+{
+  jvalue_ref json_outobj                    = jobject_create();
+  jvalue_ref json_supported_solutions_array = jarray_create(0);
+
+  std::string str_reply;
+
+  MethodReply obj_reply = getMethodReply();
+
+  if (obj_reply.bGetReturnValue())
+  {
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                jboolean_create(obj_reply.bGetReturnValue()));
+
+    if (supportedSolutionList.size() > 0)
+    {
+      for (auto supportedSolution : supportedSolutionList)
+      {
+        bool isEnabled               = false;
+        jvalue_ref json_solution_obj = jobject_create();
+
+        jobject_put(json_solution_obj, J_CSTR_TO_JVAL("name"),
+                    jstring_create(supportedSolution.c_str()));
+
+        for (auto enabledSolution : enabledSolutionList)
+        {
+          if (enabledSolution == supportedSolution)
+          {
+            isEnabled = true;
+            break;
+          }
+        }
+
+        jvalue_ref json_paramsobj = jobject_create();
+        jobject_put(json_paramsobj, J_CSTR_TO_JVAL("enable"), jboolean_create(isEnabled));
+        /* To do: TBD */
+        /*
+        jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_1"),
+        jstring_create(string_value));
+        jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_2"),
+        jnumber_create_i32(num_value));
+        */
+        jobject_put(json_solution_obj, J_CSTR_TO_JVAL("params"), json_paramsobj);
+
+        jarray_append(json_supported_solutions_array, json_solution_obj);
+      }
+
+      jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTION),
+                  json_supported_solutions_array);
+    }
+  }
+  else
+  {
+    createJsonStringFailure(obj_reply, json_outobj);
+  }
+
+  str_reply = jvalue_stringify(json_outobj);
+  j_release(&json_outobj);
+
+  return str_reply;
+}
+
+SetSolutionsMethod::SetSolutionsMethod()
+    : n_devicehandle_(n_invalid_id), str_enable_solutions_(), str_disable_solutions_()
+{
+}
+
+bool SetSolutionsMethod::isEmpty()
+{
+  bool isEmpty = false;
+  if (0 == str_enable_solutions_.size() && 0 == str_disable_solutions_.size())
+  {
+    isEmpty = true;
+  }
+  return isEmpty;
+}
+
+void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  jvalue_ref j_solutions_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    int devicehandle       = n_invalid_id;
+    jvalue_ref j_param_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
+    jnumber_get_i32(j_param_obj, &devicehandle);
+    if (devicehandle == 0)
+    {
+      devicehandle = n_invalid_id;
+    }
+    setDeviceHandle(devicehandle);
+
+    j_param_obj       = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+    raw_buffer str_id = jstring_get_fast(j_param_obj);
+    if (strstr(str_id.m_str, "camera") == NULL)
+    {
+      setCameraId(cstr_invaliddeviceid);
+    }
+    else
+    {
+      setCameraId(str_id.m_str);
+    }
+
+    j_solutions_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOLUTION));
+
+    for (ssize_t i = 0; i != jarray_size(j_solutions_obj); i++)
+    {
+      raw_buffer strid = jstring_get_fast(
+          jobject_get(jarray_get(j_solutions_obj, i), J_CSTR_TO_BUF("name")));
+
+      bool enable = false;
+      jvalue_ref j_param_obj =
+          jobject_get(jarray_get(j_solutions_obj, i), J_CSTR_TO_BUF("params"));
+      jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("enable")), &enable);
+      /* To do: TBD */
+      /*
+      jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key1")),
+      &enable);
+      jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key2")),
+      &enable);
+      */
+
+      if (true == enable)
+      {
+        setEnableSolutionList(strid.m_str);
+      }
+      else
+      {
+        setDisbleSolutionList(strid.m_str);
+      }
+    }
+  }
+  else
+  {
+    setDeviceHandle(n_invalid_id);
+  }
+  j_release(&j_obj);
+}
+
+std::string SetSolutionsMethod::createObjectJsonString() const
+{
+  jvalue_ref json_outobj = jobject_create();
+  std::string str_reply;
+
+  MethodReply obj_reply = getMethodReply();
+
+  if (obj_reply.bGetReturnValue())
+  {
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                jboolean_create(obj_reply.bGetReturnValue()));
+  }
+  else
+  {
+    createJsonStringFailure(obj_reply, json_outobj);
+  }
+
+  str_reply = jvalue_stringify(json_outobj);
+  j_release(&json_outobj);
+
+  return str_reply;
+}

@@ -30,11 +30,47 @@
 #include <errno.h>
 #include <algorithm>
 
+#include "camera_solution_event.h"
+#include "camera_solution_manager.h"
+#include "device_manager.h"
+#include <pbnjson.h>
+
 /**
  * need to call directly camera base methods in order to cancel preview when the camera is disconnected.
  */
 #include "camera_base_wrapper.h"
 
+struct MemoryListener : public CameraSolutionEvent
+{
+  MemoryListener(void) { PMLOG_INFO(CONST_MODULE_DC, ""); }
+  virtual ~MemoryListener(void)
+  {
+    if (jsonResult_ != nullptr)
+      j_release(&jsonResult_);
+    jsonResult_ = nullptr;
+    PMLOG_INFO(CONST_MODULE_DC, "");
+  }
+  virtual void onInitialized(void) override { PMLOG_INFO(CONST_MODULE_DC, "It's initialized!!"); }
+  virtual void onDone(jvalue_ref jsonObj) override
+  {
+    std::lock_guard<std::mutex> lg(mtxResult_);
+    // TODO : We need to composite more than one results.
+    //        e.g) {"faces":[{...}, {...}], "poses":[{...}, {...}]}
+    j_release(&jsonResult_);
+    jsonResult_ = jvalue_copy(jsonObj);
+    PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jvalue_stringify(jsonResult_));
+  }
+  std::string getResult(void)
+  {
+    std::lock_guard<std::mutex> lg(mtxResult_);
+    if (jsonResult_ == nullptr)
+      return "";
+    else
+      return jvalue_stringify(jsonResult_);
+  }
+  std::mutex mtxResult_;
+  jvalue_ref jsonResult_{nullptr};
+};
 
 int DeviceControl::n_imagecount_ = 0;
 
@@ -47,6 +83,12 @@ DeviceControl::DeviceControl()
       str_shmemname_(""), cancel_preview_(false), buf_size_(0),
       sh_(nullptr), subskey_(""), camera_id_(-1)
 {
+  pCameraSolution = std::make_shared<CameraSolutionManager>();
+  pMemoryListener = std::make_shared<MemoryListener>();
+  if (pCameraSolution != nullptr && pMemoryListener != nullptr)
+  {
+    pCameraSolution->setEventListener(pMemoryListener.get());
+  }
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -218,6 +260,12 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
       PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n",
                  frame_buffer.length);
 
+      //[Camera Solution Manager] processing for capture
+      if (pCameraSolution != nullptr)
+      {
+        pCameraSolution->processCapture(frame_buffer);
+      }
+
       // write captured image to /tmp only if startCapture request is made
       if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
         return DEVICE_ERROR_CANNOT_WRITE;
@@ -330,6 +378,12 @@ void DeviceControl::previewThread()
        broadcast_();
        b_issyshmwritedone_ = true;
 
+       //[Camera Solution Manager] process for preview
+       if (pCameraSolution != nullptr)
+       {
+         pCameraSolution->processPreview(frame_buffer);
+       }
+
        retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
        if (retval != CAMERA_ERROR_NONE)
        {
@@ -356,6 +410,12 @@ void DeviceControl::previewThread()
        auto retshmem = IPCPosixSharedMemory::getInstance().WritePosixShmemory(h_shmposix_,
                     (unsigned char *)frame_buffer.start, frame_buffer.length,
                     (unsigned char *)&timestamp, sizeof(timestamp));
+       //[Camera Solution Manager] process for preview
+       if (pCameraSolution != nullptr)
+       {
+         pCameraSolution->processPreview(frame_buffer);
+       }
+
        if (retshmem != POSHMEM_COMM_OK)
        {
          PMLOG_ERROR(CONST_MODULE_DC, "Write Posix Shared memory error %d \n", retshmem);
@@ -447,6 +507,14 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
              streamformat.stream_height);
 
   buf_size_ = streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+
+  //[Camera Solution Manager] initialization
+  int32_t meta_size = 0;
+  if (pCameraSolution != nullptr)
+  {
+    pCameraSolution->initialize(streamformat);
+    meta_size = pCameraSolution->getMetaSizeHint();
+  }
 
   // now that system V shmem is placed in HAL Plugin layer for zero-copy and hidden, only posix shmem left alone.
   if (memtype == kMemtypePosixshm)
@@ -580,6 +648,12 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
     {
         // camera_hal_if_destroy_buffer() frees system V shared memory!
         b_issystemvruning = false;
+    }
+
+    //[]Camera Solution Manager] release
+    if (pCameraSolution != nullptr)
+    {
+      pCameraSolution->release();
     }
 
     return DEVICE_OK;
@@ -1033,3 +1107,47 @@ void DeviceControl::notifyDeviceFault_()
     }
     LSErrorFree(&lserror);
 }
+
+//[Camera Solution Manager] interfaces start
+DEVICE_RETURN_CODE_T
+DeviceControl::getSupportedCameraSolutionInfo(std::vector<std::string> &solutionsInfo)
+{
+  if (pCameraSolution != nullptr)
+  {
+    pCameraSolution->getSupportedSolutionInfo(solutionsInfo);
+  }
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T
+DeviceControl::getEnabledCameraSolutionInfo(std::vector<std::string> &solutionsInfo)
+{
+  if (pCameraSolution != nullptr)
+  {
+    pCameraSolution->getEnabledSolutionInfo(solutionsInfo);
+  }
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::enableCameraSolution(const std::vector<std::string> solutions)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "");
+
+  if (pCameraSolution != nullptr)
+  {
+    return pCameraSolution->enableCameraSolution(solutions);
+  }
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::disableCameraSolution(const std::vector<std::string> solutions)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "");
+
+  if (pCameraSolution != nullptr)
+  {
+    return pCameraSolution->disableCameraSolution(solutions);
+  }
+  return DEVICE_OK;
+}
+//[Camera Solution Manager] interfaces end

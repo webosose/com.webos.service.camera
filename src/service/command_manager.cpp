@@ -353,13 +353,13 @@ DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, int *shmfd)
 bool CommandManager::registerClientPid(int devhandle, int n_client_pid, int n_client_sig, std::string & outmsg)
 {
   PMLOG_INFO(CONST_MODULE_CM, "n_client_pid : %d\n", n_client_pid);
-  
+
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
   {
     return ptr->registerClient(n_client_pid, n_client_sig, devhandle, outmsg);
   }
-  outmsg = "No virtual device manager available for registering the client of pid " 
+  outmsg = "No virtual device manager available for registering the client of pid "
          + std::to_string(n_client_pid);
   return false;
 }
@@ -373,7 +373,7 @@ bool CommandManager::unregisterClientPid(int devhandle, int n_client_pid, std::s
   {
     return ptr->unregisterClient(n_client_pid, outmsg);
   }
-  outmsg = "No virtual device manager available for unregistering the client of pid " 
+  outmsg = "No virtual device manager available for unregistering the client of pid "
          + std::to_string(n_client_pid);
   return false;
 }
@@ -391,7 +391,7 @@ bool CommandManager::isRegisteredClientPid(int devhandle)
 void CommandManager::handleCrash()
 {
     PMLOG_INFO(CONST_MODULE_CM, "start freeing resources for abnormal service termination \n");
-   
+
     std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
     while (it != virtualdevmgrobj_map_.end())
     {
@@ -427,4 +427,69 @@ void CommandManager::requestPreviewCancel(int dev_idx)
             obj.ptr->requestPreviewCancel();
         }
     }
+}
+
+DEVICE_RETURN_CODE_T
+CommandManager::getSupportedCameraSolutionInfo(int devhandle,
+                                               std::vector<std::string> &solutionsInfo)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "getSupportedCameraSolutionInfo : devhandle : %d\n", devhandle);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->getSupportedCameraSolutionInfo(devhandle, solutionsInfo);
+  }
+  else
+  {
+    return DEVICE_ERROR_UNKNOWN;
+  }
+}
+
+DEVICE_RETURN_CODE_T
+CommandManager::getEnabledCameraSolutionInfo(int devhandle, std::vector<std::string> &solutionsInfo)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "getSupportedCameraSolutionInfo : devhandle : %d\n", devhandle);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->getEnabledCameraSolutionInfo(devhandle, solutionsInfo);
+  }
+  else
+  {
+    return DEVICE_ERROR_UNKNOWN;
+  }
+}
+
+DEVICE_RETURN_CODE_T
+CommandManager::enableCameraSolution(int devhandle, const std::vector<std::string> solutions)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "enableCameraSolutionInfo : devhandle : %d\n", devhandle);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->enableCameraSolution(devhandle, solutions);
+  }
+  else
+  {
+    return DEVICE_ERROR_UNKNOWN;
+  }
+}
+
+DEVICE_RETURN_CODE_T
+CommandManager::disableCameraSolution(int devhandle, const std::vector<std::string> solutions)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "enableCameraSolutionInfo : devhandle : %d\n", devhandle);
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->disableCameraSolution(devhandle, solutions);
+  }
+  else
+  {
+    return DEVICE_ERROR_UNKNOWN;
+  }
 }
