@@ -18,17 +18,14 @@
 #define CAMERA_TYPES_H_
 
 #include "PmLogLib.h"
+#include "camera_constants.h"
+#include "camera_device_list_type.h"
+#include "camera_device_event_type.h"
 #include "camera_hal_if_types.h"
-#include "constants.h"
+#include "camera_log.h"
 #include "luna-service2/lunaservice.h"
 
-#define PMLOG_ERROR(module, args...) PmLogMsg(getCameraLunaPmLogContext(), Error, module, 0, ##args)
-#define PMLOG_INFO(module, FORMAT__, ...)                                                          \
-    PmLogInfo(getCameraLunaPmLogContext(), module, 0, "%s():%d " FORMAT__, __FUNCTION__, __LINE__, \
-              ##__VA_ARGS__)
-#define PMLOG_DEBUG(FORMAT__, ...)                                                                 \
-    PmLogDebug(getCameraLunaPmLogContext(), "[%s:%d]" FORMAT__, __PRETTY_FUNCTION__, __LINE__,     \
-               ##__VA_ARGS__)
+
 
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
@@ -106,25 +103,10 @@ typedef enum
     DEVICE_ERROR_HANDLE_NOT_EXIST,
     DEVICE_ERROR_PREVIEW_NOT_STARTED,
     DEVICE_ERROR_NOT_POSIXSHM,
+	DEVICE_ERROR_APP_PERMISSION,
     DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL,
     DEVICE_ERROR_CLIENT_PID_IS_MISSING
 } DEVICE_RETURN_CODE_T;
-
-typedef enum
-{
-    DEVICE_EVENT_NONE,
-    DEVICE_EVENT_STATE_PLUGGED = 1,
-    DEVICE_EVENT_STATE_UNPLUGGED,
-    DEVICE_EVENT_STATE_UNSUPPORTED_PLUGGED,
-    DEVICE_EVENT_STATE_UNSUPPORTED_UNPLUGGED,
-    DEVICE_EVENT_STATE_DUPLICATED_PLUGGED,
-    DEVICE_EVENT_STATE_DUPLICATED_UNPLUGGED,
-    DEVICE_EVENT_STATE_BUILT_IN_UP,
-    DEVICE_EVENT_STATE_BUILT_IN_DOWN,
-    DEVICE_EVENT_STATE_UPDATING,
-    DEVICE_EVENT_STATE_UPDATE_FINISHED,
-    DEVICE_EVENT_STATE_UPDATE_FAIL
-} DEVICE_EVENT_STATE_T;
 
 typedef enum
 {
@@ -214,19 +196,6 @@ struct CAMERA_PROPERTIES_T
     }
 };
 
-typedef struct
-{
-    int nDeviceNum;
-    int nPortNum;
-    char strVendorName[CONST_MAX_STRING_LENGTH];
-    char strProductName[CONST_MAX_STRING_LENGTH];
-    char strVendorID[CONST_MAX_STRING_LENGTH];
-    char strProductID[CONST_MAX_STRING_LENGTH];
-    char strDeviceType[CONST_MAX_STRING_LENGTH];
-    char strDeviceSubtype[CONST_MAX_STRING_LENGTH];
-    int isPowerOnConnect;
-    char strDeviceNode[CONST_MAX_STRING_LENGTH];
-} DEVICE_LIST_T;
 
 typedef struct
 {
@@ -234,15 +203,6 @@ typedef struct
     std::string str_memorysource;
 } camera_memory_source_t;
 
-static inline PmLogContext getCameraLunaPmLogContext()
-{
-    static PmLogContext usLogContext = 0;
-    if (0 == usLogContext)
-    {
-        PmLogGetContext("camera", &usLogContext);
-    }
-    return usLogContext;
-}
 
 void getFormatString(int, char *);
 char *getTypeString(device_t);

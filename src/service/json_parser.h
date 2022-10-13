@@ -17,8 +17,8 @@
 #ifndef JSON_PARSER_H_
 #define JSON_PARSER_H_
 
+#include "camera_constants.h"
 #include "camera_types.h"
-#include "constants.h"
 #include "json_utils.h"
 #include <iostream>
 #include <map>
@@ -106,6 +106,9 @@ public:
     void setClientSignal(int sig) { n_client_sig_ = sig; }
     int getClientSignal() const { return n_client_sig_; }
 
+    void setAppId(const std::string& appid) { str_appid_ = appid; }
+    std::string getAppId() const { return str_appid_; }
+
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
         objreply_.setReturnValue(returnvalue);
@@ -123,6 +126,7 @@ private:
     std::string str_priority_;
     int n_client_pid_;
     int n_client_sig_;
+    std::string str_appid_;
     MethodReply objreply_;
 };
 

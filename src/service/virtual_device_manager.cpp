@@ -18,7 +18,8 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "virtual_device_manager.h"
-#include "constants.h"
+#include "addon.h"
+#include "camera_constants.h"
 #include "device_manager.h"
 #include <algorithm>
 #include <fstream>
@@ -129,7 +130,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     return ret;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string apppriority)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string apppriority, std::string appId)
 {
     PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", devid);
 
@@ -184,6 +185,13 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
         {
             // add handle with priority to map
             handlepriority_map_.insert(std::make_pair(*devhandle, apppriority));
+            if (AddOn::hasImplementation())
+            {
+                if (apppriority == cstr_primary)
+                {
+                    AddOn::logExtraMessage(appId);
+                }
+            }
         }
         return ret;
     }

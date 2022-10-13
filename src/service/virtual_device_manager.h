@@ -62,7 +62,7 @@ private:
 
 public:
     VirtualDeviceManager();
-    DEVICE_RETURN_CODE_T open(int, int *, std::string);
+    DEVICE_RETURN_CODE_T open(int, int *, std::string, std::string);
     DEVICE_RETURN_CODE_T close(int);
     DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle *, const char *);
     DEVICE_RETURN_CODE_T stopPreview(int);

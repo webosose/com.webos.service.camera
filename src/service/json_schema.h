@@ -96,6 +96,11 @@ const char *openSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Signal Number\", \
       \"default\": 10 \
+    }, \
+    \"appId\": { \
+      \"type\": \"string\", \
+      \"title\": \"Application Id of The Client Application\", \
+      \"default\": \"\" \
     } \
   } \
 }";

@@ -24,7 +24,7 @@
 #include "camera_hal_types.h"
 #include "camera_types.h"
 #include "camshm.h"
-#include "constants.h"
+#include "camera_constants.h"
 #include <condition_variable>
 #include <string>
 #include <thread>
