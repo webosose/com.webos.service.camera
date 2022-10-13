@@ -15,7 +15,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "json_parser.h"
-#include "constants.h"
+#include "addon.h"
+#include "camera_constants.h"
 #include "whitelist_checker.h"
 #include <iostream>
 #include <signal.h>
@@ -400,8 +401,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
     if (objreply.bGetReturnValue())
     {
         char strformat[CONST_MAX_STRING_LENGTH];
-        bool supported = WhitelistChecker::isSupportedCamera(rGetCameraInfo().str_vendorid,
-                                                             rGetCameraInfo().str_productid);
+        bool supported = AddOn::isSupportedCamera(rGetCameraInfo().str_productid,
+                                                             rGetCameraInfo().str_vendorid);
 
         getFormatString(rGetCameraInfo().n_format, strformat);
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),

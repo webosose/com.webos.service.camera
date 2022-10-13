@@ -53,6 +53,18 @@ include_directories(${CMAKE_SOURCE_DIR}/files/systemd/)
 
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
+#addon interface
+include_directories(${CMAKE_SOURCE_DIR}/src/addon/include)
+
+#publish headers for addon interface implementation
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_constants.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_list_type.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_event_type.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_log.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_interface.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_singleton.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+
+
 #service
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/)
@@ -73,6 +85,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
     ${CMAKE_SOURCE_DIR}/src/service/whitelist_checker.cpp
     ${CMAKE_SOURCE_DIR}/src/service/event_notification.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/addon.cpp
     )
 
 ### SOLUTION MANAGER Add AI Framework Start ###

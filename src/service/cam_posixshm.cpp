@@ -17,7 +17,7 @@
 #include "cam_posixshm.h"
 #include "PmLogLib.h"
 #include "camera_types.h"
-#include "constants.h"
+#include "camera_constants.h"
 #include "luna-service2/lunaservice.h"
 #include <errno.h>
 #include <fcntl.h>

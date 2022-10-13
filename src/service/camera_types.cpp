@@ -75,6 +75,7 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_HANDLE_NOT_EXIST, "Wrong handle"},
     {DEVICE_ERROR_PREVIEW_NOT_STARTED, "Preview not started"},
     {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"},
+    {DEVICE_ERROR_APP_PERMISSION, "app permission fail"},
     {DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL, "Failed to register pid with specified signal"},
     {DEVICE_ERROR_CLIENT_PID_IS_MISSING, "Must specify client pid"}};
 

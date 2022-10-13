@@ -65,6 +65,7 @@
 #define CONST_PARAM_NAME_MODE "mode"
 #define CONST_PARAM_NAME_EXPOSURE "exposure"
 #define CONST_PARAM_NAME_ID "id"
+#define CONST_PARAM_NAME_APPID "appId"
 #define CONST_PARAM_NAME_HEIGHT "height"
 #define CONST_PARAM_NAME_FRAMERATE "frameRate"
 #define CONST_PARAM_NAME_INFO "info"

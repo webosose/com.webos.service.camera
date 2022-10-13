@@ -18,6 +18,7 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "camera_service.h"
+#include "addon.h"
 #include "camera_types.h"
 #include "command_manager.h"
 #include "json_schema.h"
@@ -58,6 +59,12 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     // attach to mainloop and run it
     attachToLoop(main_loop_ptr_.get());
 
+    // load/initialize addon before subscription to pdm client
+    AddOn::open();
+    if (AddOn::hasImplementation())
+    {
+        AddOn::initialize(this->get());
+    }
     // subscribe to pdm client
     Notifier notifier;
     notifier.setLSHandle(this->get());
@@ -157,11 +164,19 @@ bool CameraService::open(LSMessage &message)
 
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
-    // camera id validation check
-    if (cstr_invaliddeviceid == open.getCameraId())
+    std::string app_id = open.getAppId();
+
+    // camera id & appId validation check
+    if (cstr_invaliddeviceid == open.getCameraId() || (AddOn::hasImplementation() && app_id.empty()))
     {
         PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
+        open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+    }
+	else if (!AddOn::isAppPermission(app_id))
+    {
+        PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::App Permission Fail\n");
+        err_id = DEVICE_ERROR_APP_PERMISSION;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
     else
@@ -170,10 +185,14 @@ bool CameraService::open(LSMessage &message)
         PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
         std::string app_priority = open.getAppPriority();
         PMLOG_INFO(CONST_MODULE_LUNA, "priority : %s \n", app_priority.c_str());
+        if (AddOn::hasImplementation())
+        {
+            PMLOG_INFO(CONST_MODULE_LUNA, "appId : %s", app_id.c_str());
+        }
         int ndevice_handle = n_invalid_id;
 
         // open camera device and save fd
-        err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_priority);
+        err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_priority, app_id);
         if (DEVICE_OK != err_id)
         {
             PMLOG_DEBUG("err_id != DEVICE_OK\n");
@@ -662,6 +681,7 @@ bool CameraService::getCameraList(LSMessage &message)
                 obj_getcameralist.setCameraList(arrlist[i], i);
             }
         }
+        AddOn::setSubscriptionForCameraList(message);
     }
 
     // create json string now for reply

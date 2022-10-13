@@ -18,7 +18,7 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "command_manager.h"
-#include "constants.h"
+#include "camera_constants.h"
 #include "device_controller.h"
 #include "device_manager.h"
 
@@ -53,7 +53,7 @@ void CommandManager::removeVirtualDevMgrObj(int devhandle)
     }
 }
 
-DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::string apppriority)
+DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::string apppriority, std::string appId)
 {
     PMLOG_INFO(CONST_MODULE_CM, "deviceid : %d \n", deviceid);
 
@@ -78,7 +78,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     if (nullptr != obj.ptr)
     {
         // open device and return devicehandle
-        DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, apppriority);
+        DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, apppriority, appId);
         if (DEVICE_OK == ret)
         {
             PMLOG_INFO(CONST_MODULE_CM, "devicehandle : %d \n", *devicehandle);
