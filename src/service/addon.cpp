@@ -130,7 +130,7 @@ bool AddOn::isSupportedCamera(std::string str_productId, std::string str_vendorI
 {
     if (!plugin_)
     {
-        return WhitelistChecker::isSupportedCamera(str_vendorId, str_productId);
+        return WhitelistChecker::isSupportedCamera(str_productId, str_vendorId);
     }
     return plugin_->isSupportedCamera(str_productId, str_vendorId);
 }
