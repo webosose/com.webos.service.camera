@@ -15,7 +15,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "pdm_client.h"
-#include "constants.h"
+#include "addon.h"
+#include "camera_constants.h"
 #include "device_manager.h"
 #include "event_notification.h"
 #include "whitelist_checker.h"
@@ -204,6 +205,14 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     }
                     PMLOG_INFO(CONST_MODULE_PC, "str_productid : %s \n", str_productid.c_str());
 
+                    int32_t port_num = 0;
+
+                    if (AddOn::hasImplementation())
+                    {
+                        port_num = AddOn::getDevicePort(jin_array_obj);
+                        AddOn::getDeviceExtraData(jin_array_obj);
+                    }
+
                     // devPath
                     std::vector<std::string> str_devPaths;
                     getDevPaths(jin_array_obj, str_devPaths);
@@ -243,6 +252,11 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                                 CONST_MAX_STRING_LENGTH - 1);
                         dev_info_[camcount].strDeviceSubtype[CONST_MAX_STRING_LENGTH - 1] = '\0';
 
+                        if (AddOn::hasImplementation())
+                        {
+                            AddOn::setDeviceExtraData(camcount, AddOn::currentExtraData());
+                        }
+
                         camcount++;
                     }
                 }
@@ -253,6 +267,11 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
             PMLOG_INFO(CONST_MODULE_PC, "camcount : %d \n", camcount);
 
             DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
+
+            if (AddOn::hasImplementation())
+            {
+                AddOn::setDeviceEvent(dev_info_, camcount);
+            }
 
             if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
             {
