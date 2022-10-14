@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,6 +32,9 @@ int DeviceManager::findDevNum(int ndevicehandle)
   int nDeviceID = n_invalid_id;
   PMLOG_DEBUG("ndevicehandle : %d", ndevicehandle);
   PMLOG_DEBUG("deviceMap_.count : %d", deviceMap_.size());
+
+  if (ndevicehandle == n_invalid_id)
+    return nDeviceID;
 
   for (auto iter : deviceMap_)
   {
