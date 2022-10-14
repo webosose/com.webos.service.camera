@@ -31,6 +31,8 @@
 #include <vector>
 #include <pthread.h>
 
+class CameraSolutionManager;
+struct MemoryListener;
 
 typedef struct
 {
@@ -87,6 +89,9 @@ private:
   int camera_id_;
   void notifyDeviceFault_();
 
+  std::shared_ptr<CameraSolutionManager> pCameraSolution;
+  std::shared_ptr<MemoryListener> pMemoryListener;
+
 public:
   DeviceControl();
   DEVICE_RETURN_CODE_T open(void *, std::string, int);
@@ -105,6 +110,13 @@ public:
   DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
   DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
+
+  //[Camera Solution Manager] integration start
+  DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(std::vector<std::string> &);
+  DEVICE_RETURN_CODE_T getEnabledCameraSolutionInfo(std::vector<std::string> &);
+  DEVICE_RETURN_CODE_T enableCameraSolution(const std::vector<std::string>);
+  DEVICE_RETURN_CODE_T disableCameraSolution(const std::vector<std::string>);
+  //[Camera Solution Manager] integration end
 
   bool registerClient(pid_t, int, int, std::string& outmsg);
   bool unregisterClient(pid_t, std::string& outmsg);

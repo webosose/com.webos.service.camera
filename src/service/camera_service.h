@@ -65,6 +65,9 @@ public:
   bool stopCapture(LSMessage &);
   bool getEventNotification(LSMessage &);
   bool getFd(LSMessage &);
+
+  bool getSolutions(LSMessage &message);
+  bool setSolutions(LSMessage &message);
 };
 
 #endif /*CAMERA_SERVICE_H_*/

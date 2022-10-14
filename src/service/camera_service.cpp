@@ -54,6 +54,9 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   LS_CATEGORY_METHOD(stopPreview)
   LS_CATEGORY_METHOD(getEventNotification)
   LS_CATEGORY_METHOD(getFd)
+  LS_CATEGORY_METHOD(setSolutions)
+  LS_CATEGORY_METHOD(getSolutions)
+
   LS_CATEGORY_END;
 
   // attach to mainloop and run it
@@ -990,6 +993,233 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
 
   return true;
 }
+
+//[Camera Solution Manager] NEW APIs for Solution Manager - start
+bool CameraService::getSolutions(LSMessage &message)
+{
+  PMLOG_INFO(CONST_MODULE_LUNA, " E \n");
+  auto *payload               = LSMessageGetPayload(&message);
+  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+
+  GetSolutionsMethod obj_getsolutions;
+  obj_getsolutions.getObject(payload, getSolutionsSchema);
+  int ndevhandle = obj_getsolutions.getDeviceHandle();
+  int ncamId     = getId(obj_getsolutions.getCameraId());
+
+  PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle (%d) \n", ndevhandle);
+  PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
+  // check if device handle value and camera id are set property.
+  //      device handle         cameraId        result
+  // 1.        set                 set           error
+  // 2.        set               not set         OK
+  // 3.      not set               set           OK
+  // 4.      not set             not set         error
+
+  if (n_invalid_id != ndevhandle && n_invalid_id != ncamId)
+  {
+    err_id = DEVICE_ERROR_WRONG_PARAM;
+  }
+  else if (n_invalid_id == ndevhandle && n_invalid_id == ncamId)
+  {
+    err_id = DEVICE_ERROR_PARAM_IS_MISSING;
+  }
+
+  if (err_id != DEVICE_OK)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
+    obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                    getErrorString(err_id));
+  }
+  else
+  {
+    if (n_invalid_id == ndevhandle)
+    {
+      ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
+      PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
+    }
+    PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
+    obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
+                                    getErrorString(err_id));
+  }
+
+  std::vector<std::string> supportedSolutionList;
+  std::vector<std::string> enabledSolutionList;
+
+  err_id = CommandManager::getInstance().getSupportedCameraSolutionInfo(ndevhandle,
+                                                                        supportedSolutionList);
+  if (DEVICE_OK != err_id)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA,
+               "error happens on getting supported solution list by err_id(%d)\n", err_id);
+    obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                    getErrorString(err_id));
+  }
+
+  err_id =
+      CommandManager::getInstance().getEnabledCameraSolutionInfo(ndevhandle, enabledSolutionList);
+  if (DEVICE_OK != err_id)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA,
+               "error happens on getting enabled solution list by err_id(%d)\n", err_id);
+    obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                    getErrorString(err_id));
+  }
+
+  std::string output_reply =
+      obj_getsolutions.createObjectJsonString(supportedSolutionList, enabledSolutionList);
+
+  LS::Message request(&message);
+  request.respond(output_reply.c_str());
+  PMLOG_INFO(CONST_MODULE_LUNA, " output_reply(%s) \n", output_reply.c_str());
+
+  PMLOG_INFO(CONST_MODULE_LUNA, " X \n");
+  return true;
+}
+
+bool CameraService::setSolutions(LSMessage &message)
+{
+  auto *payload = LSMessageGetPayload(&message);
+
+  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+
+  SetSolutionsMethod obj_setSolutions;
+  obj_setSolutions.getObject(payload, setSolutionsSchema);
+  int ndevhandle = obj_setSolutions.getDeviceHandle();
+  int ncamId     = getId(obj_setSolutions.getCameraId());
+  PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle (%d) \n", ndevhandle);
+  PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
+
+  // check if device handle value and camera id are set property.
+  //      device handle         cameraId        result
+  // 1.        set                 set           error
+  // 2.        set               not set         OK
+  // 3.      not set               set           OK
+  // 4.      not set             not set         error
+
+  if (n_invalid_id != ndevhandle && n_invalid_id != ncamId)
+  {
+    err_id = DEVICE_ERROR_WRONG_PARAM;
+  }
+  else if (n_invalid_id == ndevhandle && n_invalid_id == ncamId)
+  {
+    err_id = DEVICE_ERROR_PARAM_IS_MISSING;
+  }
+
+  if (err_id != DEVICE_OK)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
+
+    obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                    getErrorString(err_id));
+  }
+  else
+  {
+    // check solutions is empty or not
+    if (obj_setSolutions.isEmpty())
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA, "solutions is empty\n");
+      err_id = DEVICE_ERROR_WRONG_PARAM;
+      obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                      getErrorString(err_id));
+    }
+    else
+    {
+      if (n_invalid_id == ndevhandle)
+      {
+        ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
+        PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId,
+                   ndevhandle);
+      }
+
+      // check if the requested solution parameter is valid or not. If not valid at least one
+      // of them, this method didn't do anything
+      std::vector<std::string> supportedSolutionList;
+      unsigned int candidateSolutionCnt = 0;
+      err_id = CommandManager::getInstance().getSupportedCameraSolutionInfo(
+          ndevhandle, supportedSolutionList);
+
+      std::vector<std::string> str_solutions = obj_setSolutions.getEnableSolutionList();
+
+      for (auto &s : str_solutions)
+      {
+        for (auto &i : supportedSolutionList)
+        {
+          if (s == i)
+          {
+            candidateSolutionCnt++;
+            PMLOG_INFO(CONST_MODULE_SM, "candidate enabled solutionName %s", s.c_str());
+          }
+        }
+      }
+
+      // check if the parameters from client are all valid by comparing candidateSolutionCnt
+      // number and parameters number.
+      if (str_solutions.size() != candidateSolutionCnt)
+      {
+        PMLOG_ERROR(CONST_MODULE_LUNA, "%d invalid parameter existed\n",
+                    str_solutions.size() - candidateSolutionCnt);
+        err_id = DEVICE_ERROR_WRONG_PARAM;
+        obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                        getErrorString(err_id));
+      }
+
+      str_solutions        = obj_setSolutions.getDisableSolutionList();
+      candidateSolutionCnt = 0;
+      for (auto &s : str_solutions)
+      {
+        for (auto &i : supportedSolutionList)
+        {
+          if (s == i)
+          {
+            candidateSolutionCnt++;
+            PMLOG_INFO(CONST_MODULE_SM, "candidate enabled solutionName %s", s.c_str());
+          }
+        }
+      }
+
+      // check if the parameters from client are all valid by comparing candidateSolutionCnt
+      // number and parameters number.
+      if (str_solutions.size() != candidateSolutionCnt)
+      {
+        PMLOG_ERROR(CONST_MODULE_LUNA, "%d invalid parameter existed\n",
+                    str_solutions.size() - candidateSolutionCnt);
+        err_id = DEVICE_ERROR_WRONG_PARAM;
+        obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                        getErrorString(err_id));
+      }
+
+      if (DEVICE_OK == err_id)
+      {
+        err_id = CommandManager::getInstance().enableCameraSolution(
+            ndevhandle, obj_setSolutions.getEnableSolutionList());
+        err_id = CommandManager::getInstance().disableCameraSolution(
+            ndevhandle, obj_setSolutions.getDisableSolutionList());
+      }
+
+      if (DEVICE_OK != err_id)
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOT_OK err_id(%d)\n", err_id);
+        obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                        getErrorString(err_id));
+      }
+      else
+      {
+        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
+        obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
+                                        getErrorString(err_id));
+      }
+    }
+  }
+
+  std::string output_reply = obj_setSolutions.createObjectJsonString();
+  LS::Message request(&message);
+  request.respond(output_reply.c_str());
+
+  return true;
+}
+
+//[Camera Solution Manager] NEW APIs for Solution Manager - end
+
 int main(int argc, char *argv[])
 {
   install_handler_service_crash();

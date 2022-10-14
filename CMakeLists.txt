@@ -57,6 +57,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/include)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/)
+include_directories(${CMAKE_SOURCE_DIR}/src/service/solutions/)
 
 set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/camera_service.cpp
@@ -73,6 +74,37 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/event_notification.cpp
     )
 
+### SOLUTION_AUTOCONTRAST setting Start ###
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AUTOCONTRAST")
+
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/auto_contrast/auto_contrast.cpp
+    )
+
+### SOLUTION_AUTOCONTRAST setting End ###
+
+### SOLUTION_DUMMY setting Start ###
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_DUMMY")
+
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/dummy/dummy.cpp
+    )
+
+### SOLUTION_DUMMY setting End ###
+### SOLUTION MANAGER Main setting Start ###
+
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
+    )
+message(STATUS "Using json to define supported solutions for variable platform")
+webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+
+### SOLUTION MANAGER Main setting End ###
 add_executable(${PROJECT_NAME}
                ${SRC_LIST})
 
