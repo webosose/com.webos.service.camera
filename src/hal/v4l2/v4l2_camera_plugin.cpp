@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -197,7 +197,7 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
 
   fds.fd = fd_;
   fds.events = POLLIN;
-  retVal = poll(&fds, 1, 2000);
+  retVal = poll(&fds, 1, 10000);
   if (0 == retVal)
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "POLL timeout!");
@@ -226,8 +226,8 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
       HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_DQBUF failed %d, %s", errno,
                    strerror(errno));
     }
-    memcpy(outbuf->start, buffers_[buf.index].start, buf.bytesused);
-    outbuf->length = buf.bytesused;
+    memcpy(outbuf->start, buffers_[buf.index].start, buf.length);
+    outbuf->length = buf.length;
     outbuf->index = buf.index;
     break;
   }
