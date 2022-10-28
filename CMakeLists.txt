@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2021 LG Electronics, Inc.
+# Copyright (c) 2019-2022 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -144,6 +144,7 @@ set (SRC_V4L2
     ${CMAKE_SOURCE_DIR}/src/hal/v4l2/camshm_0-cpy.cpp)
 add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
 set_target_properties (v4l2-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
+target_link_libraries (v4l2-camera-plugin ${PMLOGLIB_LDFLAGS})
 
 #link libraries camera_hal and v4l2-camera-plugin
 target_link_libraries(camera_hal
