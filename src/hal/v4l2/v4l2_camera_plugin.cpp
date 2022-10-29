@@ -1111,42 +1111,6 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
     return CAMERA_ERROR_UNKNOWN;
   }
 
-  //Create buffer now
-  struct v4l2_create_buffers bcreate = {0};
-  struct v4l2_format fmt = {0};
-
-  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  fmt.fmt.pix.width = stream_format_.stream_width;
-  fmt.fmt.pix.height = stream_format_.stream_height;
-  fmt.fmt.pix.pixelformat = getFourCCPixelFormat(stream_format_.pixel_format);
-  fmt.fmt.pix.field = V4L2_FIELD_INTERLACED;
-  fmt.fmt.pix.sizeimage = stream_format_.buffer_size;
-
-  bcreate.memory = V4L2_MEMORY_MMAP;
-  bcreate.format = fmt;
-  bcreate.count = req.count;
-
-  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_CREATE_BUFS, &bcreate))
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_CREATE_BUFS failed %d, %s", errno,
-                 strerror(errno));
-    return CAMERA_ERROR_UNKNOWN;
-  }
-  for(unsigned int i = 0; i < req.count; i++)
-  {
-    struct v4l2_buffer qrybuf = {0};
-
-    qrybuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    qrybuf.memory = V4L2_MEMORY_DMABUF;
-    qrybuf.index = i;
-
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYBUF, &qrybuf))
-    {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_QUERYBUF failed %d, %s", errno,
-                   strerror(errno));
-      return CAMERA_ERROR_UNKNOWN;
-    }
-  }
   return CAMERA_ERROR_NONE;
 }
 
