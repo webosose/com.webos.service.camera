@@ -537,6 +537,30 @@ extern "C"
     return retVal;
   }
 
+
+  int camera_hal_if_destroy_dmafd(void *h)
+  {
+    int retVal = -1;
+    camera_handle_t *camera_handle = (camera_handle_t *)h;
+    if (camera_handle)
+    {
+      const std::lock_guard<std::mutex> lock(camera_handle->lock);
+
+      retVal = destroy_dma_fd(camera_handle);
+      if (retVal == CAMERA_ERROR_UNKNOWN)
+      {
+        retVal = CAMERA_ERROR_GET_BUFFER_FD;
+        HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_dmafd failed \n");
+      }
+    }
+    else
+    {
+      retVal = CAMERA_ERROR_GET_BUFFER_FD;
+      HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_dmafd : camera handle NULL  \n");
+    }
+    return retVal;
+  }
+
 #ifdef __cplusplus
 }
 #endif
