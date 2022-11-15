@@ -1072,6 +1072,8 @@ bool CameraService::getSolutions(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_LUNA, " E \n");
     auto *payload               = LSMessageGetPayload(&message);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    std::vector<std::string> supportedSolutionList;
+    std::vector<std::string> enabledSolutionList;
 
     GetSolutionsMethod obj_getsolutions;
     obj_getsolutions.getObject(payload, getSolutionsSchema);
@@ -1112,29 +1114,26 @@ bool CameraService::getSolutions(LSMessage &message)
         PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
         obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                         getErrorString(err_id));
-    }
 
-    std::vector<std::string> supportedSolutionList;
-    std::vector<std::string> enabledSolutionList;
+        err_id = CommandManager::getInstance().getSupportedCameraSolutionInfo(
+            ndevhandle, supportedSolutionList);
+        if (DEVICE_OK != err_id)
+        {
+            PMLOG_INFO(CONST_MODULE_LUNA,
+                       "error happens on getting supported solution list by err_id(%d)\n", err_id);
+            obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                            getErrorString(err_id));
+        }
 
-    err_id = CommandManager::getInstance().getSupportedCameraSolutionInfo(ndevhandle,
-                                                                          supportedSolutionList);
-    if (DEVICE_OK != err_id)
-    {
-        PMLOG_INFO(CONST_MODULE_LUNA,
-                   "error happens on getting supported solution list by err_id(%d)\n", err_id);
-        obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                        getErrorString(err_id));
-    }
-
-    err_id =
-        CommandManager::getInstance().getEnabledCameraSolutionInfo(ndevhandle, enabledSolutionList);
-    if (DEVICE_OK != err_id)
-    {
-        PMLOG_INFO(CONST_MODULE_LUNA,
-                   "error happens on getting enabled solution list by err_id(%d)\n", err_id);
-        obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                        getErrorString(err_id));
+        err_id = CommandManager::getInstance().getEnabledCameraSolutionInfo(ndevhandle,
+                                                                            enabledSolutionList);
+        if (DEVICE_OK != err_id)
+        {
+            PMLOG_INFO(CONST_MODULE_LUNA,
+                       "error happens on getting enabled solution list by err_id(%d)\n", err_id);
+            obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                            getErrorString(err_id));
+        }
     }
 
     std::string output_reply =
