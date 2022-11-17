@@ -1019,7 +1019,7 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
             // DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
             PMLOG_INFO(CONST_MODULE_LUNA, "disconnect:%s\n", service_name);
 
-            for (auto it = self->cameraHandleMap.begin(); it != self->cameraHandleMap.end(); ++it)
+            for (auto it = self->cameraHandleMap.begin(); it != self->cameraHandleMap.end();)
             {
                 if (name.compare(it->second) == 0)
                 {
@@ -1035,7 +1035,11 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
                     {
                         PMLOG_INFO(CONST_MODULE_LUNA, "close err_id != DEVICE_OK\n");
                     }
-                    self->cameraHandleMap.erase(it->first);
+                    it = self->cameraHandleMap.erase(it); // or "self->cameraHandleMap.erase(it++);"
+                }
+                else
+                {
+                    ++it;
                 }
             }
 
