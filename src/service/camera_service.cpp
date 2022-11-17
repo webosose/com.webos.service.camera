@@ -958,22 +958,28 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
       //DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
       PMLOG_INFO(CONST_MODULE_LUNA, "disconnect:%s\n", service_name);
 
-      for(auto it = self->cameraHandleMap.begin(); it != self->cameraHandleMap.end(); ++it)
+      for (auto it = self->cameraHandleMap.begin(); it != self->cameraHandleMap.end();)
       {
-        if(name.compare(it->second) == 0)
-        {
-          PMLOG_INFO(CONST_MODULE_LUNA, "disconnect erase HandleMap service_name: %s, ndevice_handle %d\n", name.c_str(), it->first);
-          if(CommandManager::getInstance().stopPreview(it->first) != DEVICE_OK)
+          if (name.compare(it->second) == 0)
           {
-            PMLOG_INFO(CONST_MODULE_LUNA, "stoppreview err_id != DEVICE_OK\n");
-          }
+              PMLOG_INFO(CONST_MODULE_LUNA,
+                         "disconnect erase HandleMap service_name: %s, ndevice_handle %d\n",
+                         name.c_str(), it->first);
 
-          if (CommandManager::getInstance().close(it->first) != DEVICE_OK )
-          {
-            PMLOG_INFO(CONST_MODULE_LUNA, "close err_id != DEVICE_OK\n");
+              if (CommandManager::getInstance().stopPreview(it->first) != DEVICE_OK)
+              {
+                  PMLOG_INFO(CONST_MODULE_LUNA, "stoppreview err_id != DEVICE_OK\n");
+              }
+              if (CommandManager::getInstance().close(it->first) != DEVICE_OK)
+              {
+                  PMLOG_INFO(CONST_MODULE_LUNA, "close err_id != DEVICE_OK\n");
+              }
+              it = self->cameraHandleMap.erase(it); // or "self->cameraHandleMap.erase(it++);"
           }
-          self->cameraHandleMap.erase(it->first);
-        }
+          else
+          {
+              ++it;
+          }
       }
 
       LSCancelServerStatus(input_handle, info->second, nullptr);
