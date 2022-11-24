@@ -31,6 +31,9 @@ int DeviceManager::findDevNum(int ndevicehandle)
     PMLOG_DEBUG("ndevicehandle : %d", ndevicehandle);
     PMLOG_DEBUG("deviceMap_.count : %d", deviceMap_.size());
 
+    if (ndevicehandle == n_invalid_id)
+        return nDeviceID;
+
     for (auto iter : deviceMap_)
     {
         PMLOG_DEBUG("iter.second.nDevIndex : %d", iter.second.nDevIndex);
