@@ -128,6 +128,11 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
         setCameraId(cstr_invaliddeviceid);
         setClientProcessId(n_invalid_pid);
     }
+
+    raw_buffer str_appid = jstring_get_fast(jobject_get(j_obj,
+                                                        J_CSTR_TO_BUF(CONST_PARAM_NAME_APPID)));
+    setAppId(str_appid.m_str);
+
     j_release(&j_obj);
 }
 
