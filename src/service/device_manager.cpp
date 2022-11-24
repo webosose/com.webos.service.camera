@@ -54,16 +54,8 @@ bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool statu
 
     if (n_invalid_id == dev_num)
         return CONST_PARAM_VALUE_FALSE;
-    if (status)
-    {
-        deviceMap_[dev_num].devType      = devType;
-        deviceMap_[dev_num].isDeviceOpen = true;
-    }
-    else
-    {
-        deviceMap_[dev_num].devType      = DEVICE_DEVICE_UNDEFINED;
-        deviceMap_[dev_num].isDeviceOpen = false;
-    }
+
+    deviceMap_[dev_num].isDeviceOpen = status;
 
     return CONST_PARAM_VALUE_TRUE;
 }
