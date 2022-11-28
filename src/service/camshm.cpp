@@ -216,8 +216,8 @@ SHMEM_STATUS_T IPCSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem, int n
     {
         for (int i = 0; i < *shmem_buffer->unit_num; i++)
         {
-            pBufsExt->start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
-            pBufsExt->length = *shmem_buffer->extra_size;
+            pBufsExt[i].start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
+            pBufsExt[i].length = *shmem_buffer->extra_size;
         }
     }
     return SHMEM_IS_OK;
