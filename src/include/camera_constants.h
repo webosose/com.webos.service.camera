@@ -119,8 +119,6 @@
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
 #define CONST_PARAM_NAME_CAPABILITIES "capabilities"
-#define CONST_PARAM_NAME_SUBSYSTEM "SUBSYSTEM"
-#define CONST_PARAM_NAME_KERNEL "KERNEL"
 #define CONST_CLIENT_PROCESS_ID "pid"
 #define CONST_CLIENT_SIGNAL_NUM "sig"
 #define CONST_PARAM_NAME_MAX "max"
@@ -138,13 +136,13 @@ const int buffer_count  = 2; // YUY2 buffer count as maximum
 const int n_invalid_pid = -1;
 const int n_invalid_sig = -1;
 
-const std::string cstr_empty       = "";
-const std::string cstr_pdmclient   = "com.webos.service.pdmclient";
-const std::string cstr_uri         = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
-const std::string cstr_payload     = "{\"subscribe\":true,\"category\":\"Video\"}";
-const std::string cstr_powerstatus = "powerStatus";
-const std::string cstr_cam         = "CAM";
-const std::string cstr_capture     = ":capture:";
+const std::string cstr_empty     = "";
+const std::string cstr_pdmclient = "com.webos.service.pdmclient";
+const std::string cstr_uri       = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
+const std::string cstr_payload   = "{\"subscribe\":true,\"category\":\"Video\",\"groupSubDevices\":true}";
+const std::string cstr_powerstatus     = "powerStatus";
+const std::string cstr_cam             = "CAM";
+const std::string cstr_capture         = ":capture:";
 const std::string cstr_invaliddeviceid = "-1";
 const std::string cstr_yuvformat       = "YUV";
 const std::string cstr_h264esformat    = "H264ES";

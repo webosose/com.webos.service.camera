@@ -25,60 +25,6 @@
 
 DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
 
-void getDevPaths(jvalue_ref &array_obj, std::vector<std::string> &devPaths)
-{
-    // subDeviceList
-    jvalue_ref jin_subdevice_list_obj;
-    jvalue_ref jin_obj_devPath;
-    raw_buffer devPath;
-    if (jobject_get_exists(array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SUB_DEVICE_LIST),
-                           &jin_subdevice_list_obj))
-    {
-        int subdevice_count = 0;
-        subdevice_count     = jarray_size(jin_subdevice_list_obj);
-        for (int i = 0; i < subdevice_count; i++)
-        {
-            jvalue_ref jin_subdevice_obj = jarray_get(jin_subdevice_list_obj, i);
-
-            jvalue_ref jin_obj_capabilities;
-            bool is_capabilities =
-                jobject_get_exists(jin_subdevice_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_CAPABILITIES),
-                                   &jin_obj_capabilities);
-            PMLOG_INFO(CONST_MODULE_PC, "Check for is_capabilities in the received JSON - %d",
-                       is_capabilities);
-            if (!is_capabilities)
-            {
-                continue;
-            }
-            raw_buffer capabilities      = jstring_get_fast(jin_obj_capabilities);
-            std::string str_capabilities = capabilities.m_str;
-            PMLOG_INFO(CONST_MODULE_PC, "capabilities : %s \n", str_capabilities.c_str());
-            if (str_capabilities != cstr_capture)
-            {
-                continue;
-            }
-            bool is_devPath = jobject_get_exists(
-                jin_subdevice_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_PATH), &jin_obj_devPath);
-            PMLOG_INFO(CONST_MODULE_PC, "Check for devPath in the received JSON - %d", is_devPath);
-            if (!is_devPath)
-            {
-                continue;
-            }
-            devPath = jstring_get_fast(jin_obj_devPath);
-            devPaths.push_back(devPath.m_str);
-        }
-    }
-    else
-    {
-        jvalue_ref jin_obj_kernel;
-        if (jobject_get_exists(array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_KERNEL), &jin_obj_kernel))
-        {
-            devPath = jstring_get_fast(jin_obj_kernel);
-            devPaths.push_back(devPath.m_str);
-        }
-    }
-}
-
 static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
     jerror *error       = NULL;
@@ -132,28 +78,12 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
                     // deviceType
                     jvalue_ref jin_obj_devicetype;
-                    std::string str_devicetype;
-                    if (jobject_get_exists(jin_array_obj,
-                                           J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE),
-                                           &jin_obj_devicetype))
-                    {
-                        raw_buffer device_type = jstring_get_fast(jin_obj_devicetype);
-                        str_devicetype         = device_type.m_str;
-                    }
-                    else
-                    {
-                        jvalue_ref jin_obj_subsystem;
-                        if (jobject_get_exists(jin_array_obj,
-                                               J_CSTR_TO_BUF(CONST_PARAM_NAME_SUBSYSTEM),
-                                               &jin_obj_subsystem))
-                        {
-                            raw_buffer subsystem = jstring_get_fast(jin_obj_subsystem);
-                            if (strcmp(subsystem.m_str, "video4linux") == 0)
-                            {
-                                str_devicetype = cstr_cam;
-                            }
-                        }
-                    }
+                    if (!jobject_get_exists(jin_array_obj,
+                                            J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE),
+                                            &jin_obj_devicetype))
+                        continue;
+                    raw_buffer device_type     = jstring_get_fast(jin_obj_devicetype);
+                    std::string str_devicetype = device_type.m_str;
                     PMLOG_INFO(CONST_MODULE_PC, "str_devicetype : %s \n", str_devicetype.c_str());
                     if (str_devicetype != cstr_cam)
                     {
@@ -213,11 +143,47 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                         AddOn::getDeviceExtraData(jin_array_obj);
                     }
 
-                    // devPath
-                    std::vector<std::string> str_devPaths;
-                    getDevPaths(jin_array_obj, str_devPaths);
-                    for (auto str_devPath : str_devPaths)
+                    // subDeviceList
+                    jvalue_ref jin_subdevice_list_obj;
+                    int subdevice_count = 0;
+                    if (!jobject_get_exists(jin_array_obj,
+                                            J_CSTR_TO_BUF(CONST_PARAM_NAME_SUB_DEVICE_LIST),
+                                            &jin_subdevice_list_obj))
+                        continue;
+
+                    subdevice_count = jarray_size(jin_subdevice_list_obj);
+                    for (int j = 0; j < subdevice_count; j++)
                     {
+                        jvalue_ref jin_subdevice_obj = jarray_get(jin_subdevice_list_obj, j);
+
+                        jvalue_ref jin_obj_capabilities;
+                        bool is_capabilities = jobject_get_exists(
+                            jin_subdevice_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_CAPABILITIES),
+                            &jin_obj_capabilities);
+                        PMLOG_INFO(CONST_MODULE_PC,
+                                   "Check for is_capabilities in the received JSON - %d",
+                                   is_capabilities);
+                        if (!is_capabilities)
+                            continue;
+
+                        raw_buffer capabilities      = jstring_get_fast(jin_obj_capabilities);
+                        std::string str_capabilities = capabilities.m_str;
+                        PMLOG_INFO(CONST_MODULE_PC, "capabilities : %s \n",
+                                   str_capabilities.c_str());
+                        if (str_capabilities != cstr_capture)
+                            continue;
+
+                        jvalue_ref jin_obj_devPath;
+                        bool is_devPath = jobject_get_exists(
+                            jin_subdevice_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_PATH),
+                            &jin_obj_devPath);
+                        PMLOG_INFO(CONST_MODULE_PC, "Check for devPath in the received JSON - %d",
+                                   is_devPath);
+                        if (!is_devPath)
+                            continue;
+
+                        raw_buffer devPath      = jstring_get_fast(jin_obj_devPath);
+                        std::string str_devPath = devPath.m_str;
                         PMLOG_INFO(CONST_MODULE_PC, "devPath : %s \n", str_devPath.c_str());
 
                         PMLOG_INFO(CONST_MODULE_PC, "received cam device\n");
