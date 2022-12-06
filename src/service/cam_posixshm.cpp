@@ -239,8 +239,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
     {
         for (int i = 0; i < *shmem_buffer->unit_num; i++)
         {
-            pBufsExt->start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
-            pBufsExt->length = *shmem_buffer->extra_size;
+            pBufsExt[i].start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
+            pBufsExt[i].length = *shmem_buffer->extra_size;
         }
     }
 
