@@ -31,6 +31,7 @@
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
 
+const std::string kMemtypeShmemMmap = "sharedmemory_mmap";
 const std::string kMemtypeShmem    = "sharedmemory";
 const std::string kMemtypePosixshm = "posixshm";
 

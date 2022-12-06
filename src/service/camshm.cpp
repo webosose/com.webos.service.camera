@@ -188,6 +188,67 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     return SHMEM_IS_OK;
 }
 
+SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
+                                              unsigned char *pExtraData, int extraDataSize)
+{
+    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return SHMEM_FAILED;
+    }
+
+    if (*shmem_buffer->write_index == -1)
+    {
+        *shmem_buffer->write_index = 0;
+    }
+
+    int mark = *shmem_buffer->mark;
+    int unit_size = *shmem_buffer->unit_size;
+    int unit_num = *shmem_buffer->unit_num;
+    int lwrite_index = *shmem_buffer->write_index;
+    if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
+    {
+        DEBUG_PRINT("extraDataSize should be same with extrasize used when open\n");
+        return SHMEM_FAILED;
+    }
+
+    if (mark == SHMEM_COMM_MARK_RESET)
+    {
+        DEBUG_PRINT("warning - read process isn't reset yet!\n");
+    }
+
+    if ((dataSize == 0) || (dataSize > unit_size))
+    {
+        DEBUG_PRINT("size error(%d > %d)!\n", dataSize, unit_size);
+        return SHMEM_FAILED;
+    }
+
+    // Once the writer writes the last buffer, it is made to point to the first
+    // buffer again
+    if (lwrite_index == unit_num)
+    {
+        DEBUG_PRINT("Overflow write data(write_index = %d, unit_num = %d)!\n", lwrite_index,
+                    *shmem_buffer->unit_num);
+        *shmem_buffer->write_index = 0;
+        return SHMEM_ERROR_RANGE_OUT; //ERROR_OVERFLOW
+    }
+
+    *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
+    memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
+
+    if (pExtraData && extraDataSize > 0)
+    {
+        memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size), pExtraData,
+               extraDataSize);
+    }
+
+    *shmem_buffer->write_index += 1;
+    if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
+        *shmem_buffer->write_index = 0;
+    return SHMEM_IS_OK;
+}
+
 SHMEM_STATUS_T IPCSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem, int numBuffers,
                                                       buffer_t pBufs[], buffer_t pBufsExt[])
 {

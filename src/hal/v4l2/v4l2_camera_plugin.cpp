@@ -218,7 +218,8 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
         {
             HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_DQBUF failed %d, %s", errno, strerror(errno));
         }
-        memcpy(outbuf->start, buffers_[buf.index].start, buf.bytesused);
+
+        outbuf->start  = buffers_[buf.index].start;
         outbuf->length = buf.bytesused;
         outbuf->index  = buf.index;
         break;
@@ -306,10 +307,6 @@ int V4l2CameraPlugin::releaseBuffer(buffer_t inbuf)
             return CAMERA_ERROR_UNKNOWN;
         }
 
-        if (IOMODE_DMABUF != io_mode_)
-        {
-            munmap(inbuf.start, inbuf.length);
-        }
         break;
     }
     default:

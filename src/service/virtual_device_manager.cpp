@@ -303,7 +303,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             return DEVICE_ERROR_CAN_NOT_START;
         }
 
-        if ((memtype == kMemtypeShmem && shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
+        if (((memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap )&& shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
             (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0))
         {
             void *handle;
@@ -314,7 +314,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             if (DEVICE_OK == ret)
             {
                 // Increament preview count by 1
-                if (memtype == kMemtypeShmem)
+                if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
                 {
                     obj_devstate.shmemtype = SHMEM_SYSTEMV;
                     shmempreview_count_[SHMEM_SYSTEMV]++;
@@ -337,7 +337,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
         else
         {
             PMLOG_INFO(CONST_MODULE_VDM, "preview already started by other app \n");
-            if (memtype == kMemtypeShmem)
+            if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
                 *pkey = shmkey_;
             else
                 *pkey = poshmkey_;
@@ -346,7 +346,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             // update state of device to preview
             obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
             // Increament preview count by 1
-            if (memtype == kMemtypeShmem)
+            if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
             {
                 obj_devstate.shmemtype = SHMEM_SYSTEMV;
                 shmempreview_count_[SHMEM_SYSTEMV]++;

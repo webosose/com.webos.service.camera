@@ -55,9 +55,7 @@ private:
     bool b_isstreamon_;
     bool b_isposixruning;
     bool b_issystemvruning;
-    bool b_isshmwritedone_;
-    bool b_issyshmwritedone_;
-    bool b_isposhmwritedone_;
+    bool b_issystemvruning_mmap;
 
     void *cam_handle_;
     int shmemfd_;
