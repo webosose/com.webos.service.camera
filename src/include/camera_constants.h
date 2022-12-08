@@ -106,6 +106,8 @@
 #define CONST_PARAM_NAME_PRODUCT_NAME "productName"
 #define CONST_PARAM_NAME_VENDOR_ID "vendorID"
 #define CONST_PARAM_NAME_PRODUCT_ID "productID"
+#define CONST_PARAM_NAME_HOST_CONTROLLER_INTERFACE "hostControllerInterface"
+#define CONST_PARAM_NAME_IS_POWERON_CONNECT "isPowerOnConnect"
 #define CONST_PARAM_NAME_SERIAL_NUMBER "serialNumber"
 #define CONST_PARAM_NAME_SUB_DEVICE_LIST "subDeviceList"
 #define CONST_PARAM_NAME_DEVICE_TYPE "deviceType"
