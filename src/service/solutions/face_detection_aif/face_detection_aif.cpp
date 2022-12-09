@@ -43,7 +43,8 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
     // n <-- 100
     // size = 10 + 56*100 + 2 = 572
     // size + padding -> 1024
-    return 1024;
+    //return 1024;
+    return 0;
 }
 
 std::string FaceDetectionAIF::getSolutionStr(void)
@@ -167,7 +168,7 @@ void FaceDetectionAIF::processing(void)
 
         jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
 
-        if (pEvent_)
+        if (pEvent_ && getMetaSizeHint() > 0)
             (pEvent_.load())->onDone(jsonOutObj);
 
         j_release(&jsonOutObj);
@@ -180,7 +181,7 @@ void FaceDetectionAIF::postProcessing(void)
     jvalue_ref jsonOutObj    = jobject_create();
     jvalue_ref jsonFaceArray = jarray_create(nullptr);
     jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
-    if (pEvent_)
+    if (pEvent_ && getMetaSizeHint() > 0)
         (pEvent_.load())->onDone(jsonOutObj);
 }
 

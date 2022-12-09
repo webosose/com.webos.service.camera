@@ -37,7 +37,7 @@
 // constants
 
 #define CAMSHKEY 7010
-#define SHMEM_HEADER_SIZE (5 * sizeof(int))
+#define SHMEM_HEADER_SIZE (6 * sizeof(int))
 #define SHMEM_LENGTH_SIZE sizeof(int)
 
 typedef enum
@@ -51,10 +51,13 @@ typedef enum
  4 bytes          : write_index
  4 bytes          : read_index
  4 bytes          : unit_size
+ 4 bytes          : meta_size
  4 bytes          : unit_num
  4 bytes          : mark
  4 bytes  *unit_num : length data
  unit_size*unit_num : data
+ 4 bytes  *unit_num : length meta
+ meta_size*unit_num : meta
  4 bytes         : extra_size
  extra_size*unit_num : extra data
  */
@@ -68,24 +71,81 @@ typedef struct
     int *write_index;
     int *read_index;
     int *unit_size;
+    int *meta_size;
     int *unit_num;
     SHMEM_MARK_T *mark;
 
     unsigned int *length_buf;
     unsigned char *data_buf;
 
+    unsigned int *length_meta;
+    unsigned char *data_meta;
+
     int *extra_size;
     unsigned char *extra_buf;
 } SHMEM_COMM_T;
 
+//  << Shmem shape : frame_count : 8, extra_size : sizeof(int)) >>
+//      +---------+---------+----------------
+//      |         | 4 bytes | write_index
+//      |         +---------+----------------
+//      |         | 4 bytes | read_index
+//      |HEADER   +---------+----------------
+//      |24 bytes | 4 bytes | unit_size
+//      |         +---------+----------------
+//      |         | 4 bytes | meta_size
+//      |         +---------+----------------
+//      |         | 4 bytes | unit_num
+//      |         +---------+----------------
+//      |         | 4 bytes | mark
+//      +---------+---------+---------------- (length_buf)
+//      |         | 4 bytes | frame_size[0]
+//      |         +---------+----------------
+//      |LENGTH   | 4 bytes | ...
+//      |32 bytes +---------+----------------
+//      |         | 4 bytes | frame_size[7]
+//      +---------+---------+---------------- (data_buf)
+//      |         | x bytes | frame_buf[0]
+//      |         +---------+----------------
+//      |DATA     | x bytes | ...
+//      |x*8 bytes+---------+----------------
+//      |         | x bytes | frame_buf[7]
+//      +---------+---------+---------------- (length_meta)
+//      |         | 4 bytes | meta_size[0]
+//      |         +---------+----------------
+//      |LENGTH   | 4 bytes | ...
+//      |32 bytes +---------+----------------
+//      |         | 4 bytes | meta_size[7]
+//      +---------+---------+---------------- (data_meta)
+//      |         | y bytes | meta_buf[0]
+//      |         +---------+----------------
+//      |META     | y bytes | ...
+//      |y*8 bytes+---------+----------------
+//      |         | y bytes | meta_buf[7]
+//      +---------+---------+----------------
+//      |EXTRA SZ | 4 bytes | extra_size
+//      +---------+---------+---------------- (extra_buf)
+//      |         | 4 bytes | extra_buf[0]
+//      |         +---------+----------------
+//      |EXTRA BUF| 4 bytes | ...
+//      |4*8 bytes+---------+----------------
+//      |         | 4 bytes | extra_buf[7]
+//      +---------+---------+----------------
+//
+// TOTAL = HEADER(24) +
+//         LENGTH(sizeof(int) * unit_num) + DATA(unit_size * unit_num) +
+//         LENGTH(sizeof(int) * unit_num) + DATA(meta_size * unit_num) +
+//         EXTRA_SZ(sizeof(int)) + EXTRA_BUF(extra_size * unit_num))
+
 SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pShmemKey,
-                                               int unitSize, int unitNum, int extraSize)
+                                               int unitSize, int metaSize, int unitNum,
+                                               int extraSize)
 {
     *phShmem                   = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
     SHMEM_COMM_T *pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
 
-    DEBUG_PRINT("hShmem = %p, pKey = %p, unitSize=%d, unitNum=%d\n", *phShmem, pShmemKey, unitSize,
-                unitNum);
+    DEBUG_PRINT("hShmem = %p, pKey = %p, unitSize=%d, metaSize=%d, unitNum=%d\n", *phShmem,
+                pShmemKey, unitSize, metaSize, unitNum);
 
     key_t shmemKey;
     int shmemMode = 0666;
@@ -96,8 +156,8 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
             break;
     }
     *pShmemKey    = shmemKey;
-    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) +
-                    extraSize * unitNum;
+    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + (extraSize)*unitNum;
     shmemMode |= IPC_CREAT | IPC_EXCL;
 
     DEBUG_PRINT("shmem_key=%d\n", shmemKey);
@@ -114,12 +174,12 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     DEBUG_PRINT("shared memory created/opened successfully!\n");
 
     unsigned char *pSharedmem = (unsigned char *)shmat(pShmemBuffer->shmem_id, NULL, 0);
-    pShmemBuffer->write_index = (int *)(pSharedmem);
-    pShmemBuffer->read_index  = (int *)(pSharedmem + sizeof(int));
+    pShmemBuffer->write_index = (int *)(pSharedmem + sizeof(int) * 0);
+    pShmemBuffer->read_index  = (int *)(pSharedmem + sizeof(int) * 1);
     pShmemBuffer->unit_size   = (int *)(pSharedmem + sizeof(int) * 2);
-    pShmemBuffer->unit_num    = (int *)(pSharedmem + sizeof(int) * 3);
-    pShmemBuffer->mark        = (SHMEM_MARK_T *)(pSharedmem + sizeof(int) * 4);
-    pShmemBuffer->length_buf  = (unsigned int *)(pSharedmem + sizeof(int) * 5);
+    pShmemBuffer->meta_size   = (int *)(pSharedmem + sizeof(int) * 3);
+    pShmemBuffer->unit_num    = (int *)(pSharedmem + sizeof(int) * 4);
+    pShmemBuffer->mark        = (SHMEM_MARK_T *)(pSharedmem + sizeof(int) * 5);
 
     if ((pShmemBuffer->sema_id = semget(shmemKey, 1, shmemMode)) == -1)
     {
@@ -136,10 +196,43 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     }
 
     *pShmemBuffer->unit_size = unitSize;
+    *pShmemBuffer->meta_size = metaSize;
     *pShmemBuffer->unit_num  = unitNum;
 
-    pShmemBuffer->data_buf =
-        pSharedmem + SHMEM_HEADER_SIZE + SHMEM_LENGTH_SIZE * (*pShmemBuffer->unit_num);
+    size_t length_buf_offset = sizeof(int) * 6;
+
+    size_t data_buf_offset = SHMEM_HEADER_SIZE + (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t length_meta_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t data_meta_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+        (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t extra_size_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+        ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t extra_buf_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+        ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) + sizeof(int);
+
+    pShmemBuffer->length_buf = (unsigned int *)(pSharedmem + length_buf_offset);
+
+    pShmemBuffer->data_buf = pSharedmem + data_buf_offset;
+
+    pShmemBuffer->length_meta = (unsigned int *)(pSharedmem + length_meta_offset);
+
+    pShmemBuffer->data_meta = pSharedmem + data_meta_offset;
+
+    pShmemBuffer->extra_size = nullptr;
+
+    pShmemBuffer->extra_buf = nullptr;
 
     struct shmid_ds shm_stat;
     if (-1 != shmctl(pShmemBuffer->shmem_id, IPC_STAT, &shm_stat))
@@ -152,17 +245,10 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
         DEBUG_PRINT("shared memory size = %d\n", shm_stat.shm_segsz);
 #endif
         // shared momory size larger than total, we use extra data
-        if (shm_stat.shm_segsz >
-            (SHMEM_HEADER_SIZE +
-             (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num)))
+        if (shm_stat.shm_segsz > extra_size_offset)
         {
-            pShmemBuffer->extra_size =
-                (int *)(pSharedmem + SHMEM_HEADER_SIZE +
-                        (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num));
-            pShmemBuffer->extra_buf =
-                (pSharedmem + SHMEM_HEADER_SIZE +
-                 (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
-                 sizeof(int));
+            pShmemBuffer->extra_size = (int *)(pSharedmem + extra_size_offset);
+            pShmemBuffer->extra_buf  = pSharedmem + extra_buf_offset;
         }
         else
         {
@@ -188,7 +274,8 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     return SHMEM_IS_OK;
 }
 
-SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSize,
+SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char *pData,
+                                              int dataSize, unsigned char *pMeta, int metaSize,
                                               unsigned char *pExtraData, int extraDataSize)
 {
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
@@ -203,9 +290,10 @@ SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char
         *shmem_buffer->write_index = 0;
     }
 
-    int mark = *shmem_buffer->mark;
-    int unit_size = *shmem_buffer->unit_size;
-    int unit_num = *shmem_buffer->unit_num;
+    int mark         = *shmem_buffer->mark;
+    int unit_size    = *shmem_buffer->unit_size;
+    int meta_size    = *shmem_buffer->meta_size;
+    int unit_num     = *shmem_buffer->unit_num;
     int lwrite_index = *shmem_buffer->write_index;
     if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
     {
@@ -236,6 +324,13 @@ SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char
 
     *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
     memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
+
+    if (metaSize < meta_size)
+    {
+        *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
+        memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
+               metaSize);
+    }
 
     if (pExtraData && extraDataSize > 0)
     {
@@ -301,6 +396,28 @@ SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size
     *shmem_buffer->write_index                 = index;
     *(int *)(shmem_buffer->length_buf + index) = bytesWritten;
 
+    return SHMEM_IS_OK;
+}
+
+SHMEM_STATUS_T IPCSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pMeta,
+                                           size_t metaSize)
+{
+    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return SHMEM_IS_NULL;
+    }
+
+    int meta_size = *shmem_buffer->meta_size;
+    int lwrite_index = *shmem_buffer->write_index;
+
+    if (metaSize < meta_size)
+    {
+        *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
+        memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
+               metaSize);
+    }
     return SHMEM_IS_OK;
 }
 

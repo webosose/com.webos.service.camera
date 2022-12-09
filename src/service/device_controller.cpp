@@ -369,10 +369,13 @@ void DeviceControl::previewThread()
             pCameraSolution->processPreview(frame_buffer);
         }
 
+        auto meta = pMemoryListener->getResult();
         if (b_issystemvruning)
         {
             IPCSharedMemory::getInstance().WriteHeader(h_shmsystem_, frame_buffer.index,
                                                        frame_buffer.length);
+
+            IPCSharedMemory::getInstance().WriteMeta(h_shmsystem_, (unsigned char *)meta.c_str(), meta.size() + 1);
 
             // Time stamp is currently not used actually.
             IPCSharedMemory::getInstance().WriteExtra(h_shmsystem_, (unsigned char *)&timestamp,
@@ -384,15 +387,14 @@ void DeviceControl::previewThread()
         {
             auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(h_shmsystem_,
                           (unsigned char *)frame_buffer.start, frame_buffer.length,
-                          (unsigned char *)&timestamp, sizeof(timestamp));
+                          (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
+                          sizeof(timestamp));
 
             if (retshmem != SHMEM_IS_OK)
             {
               PMLOG_ERROR(CONST_MODULE_DC, "Write Shared memory error %d \n", retshmem);
             }
             broadcast_();
-
-
         }
         else if (b_isposixruning)
         {
@@ -510,7 +512,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     {
         // frame_count = 8 (see "constants.h")
         auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
-            &h_shmsystem_, pkey, buf_size_, frame_count, sizeof(unsigned int));
+            &h_shmsystem_, pkey, buf_size_, meta_size, frame_count, sizeof(unsigned int));
         if (retshmem != SHMEM_IS_OK)
         {
             PMLOG_ERROR(CONST_MODULE_DC, "CreateShmemory error %d \n", retshmem);
