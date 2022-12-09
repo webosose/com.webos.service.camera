@@ -48,7 +48,6 @@ class FaceDetectionAIF : public CameraSolutionAsync
     };
 
     EdgeAIVision::DetectorType type = EdgeAIVision::DetectorType::FACE;
-    EdgeAIVision &ai                = EdgeAIVision::getInstance();
 
 public:
     FaceDetectionAIF(void);

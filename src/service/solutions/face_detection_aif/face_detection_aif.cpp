@@ -57,7 +57,7 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 
     std::lock_guard<std::mutex> lock(mtxAi_);
-    ai.startup();
+    EdgeAIVision::getInstance().startup();
 
     std::string param = R"({
                                 "param": {
@@ -83,7 +83,7 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
     }
 
     PMLOG_INFO(LOG_TAG, "aif_param = %s", param.c_str());
-    ai.createDetector(type, param);
+    EdgeAIVision::getInstance().createDetector(type, param);
 
     CameraSolution::initialize(streamFormat);
     PMLOG_INFO(LOG_TAG, "");
@@ -93,8 +93,8 @@ void FaceDetectionAIF::release(void)
 {
     PMLOG_INFO(LOG_TAG, "");
     mtxAi_.lock();
-    ai.deleteDetector(type);
-    ai.shutdown();
+    EdgeAIVision::getInstance().deleteDetector(type);
+    EdgeAIVision::getInstance().shutdown();
     mtxAi_.unlock();
     CameraSolutionAsync::release();
     PMLOG_INFO(LOG_TAG, "");
@@ -187,10 +187,11 @@ void FaceDetectionAIF::postProcessing(void)
 bool FaceDetectionAIF::detectFace(void)
 {
     std::lock_guard<std::mutex> lock(mtxAi_);
-    ai.detect(type,
-              Mat(Size(oDecodedImage_.outWidth_, oDecodedImage_.outHeight_), CV_8UC3,
-                  oDecodedImage_.pImage_),
-              output);
+    EdgeAIVision::getInstance().detect(
+        type,
+        Mat(Size(oDecodedImage_.outWidth_, oDecodedImage_.outHeight_), CV_8UC3,
+            oDecodedImage_.pImage_),
+        output);
     return true;
     // TODO : Do we need to decide success or failure from here?
     //        Just now, I think it's a role of applicaiton.
