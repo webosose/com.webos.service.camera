@@ -26,6 +26,11 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
 
     jerror *error       = NULL;
     const char *payload = LSMessageGetPayload(message);
+    if(!payload)
+    {
+        PMLOG_ERROR(CONST_MODULE_AC, "payload is null\n");
+        return false;
+    }
 
     jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
     if (jis_valid(jin_obj))
@@ -44,7 +49,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                 if (jobject_get_exists(jin_obj, J_CSTR_TO_BUF("clientKey"), &jin_obj_clientKey))
                 {
                     raw_buffer clientKey          = jstring_get_fast(jin_obj_clientKey);
-                    client->mDeviceInfo.clientKey = clientKey.m_str;
+                    client->mDeviceInfo.clientKey = clientKey.m_str ? clientKey.m_str : "";
                     PMLOG_INFO(CONST_MODULE_AC, "clientKey : %s \n",
                                client->mDeviceInfo.clientKey.c_str());
                 }
@@ -61,14 +66,14 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                                            &jin_sub_obj))
                     {
                         raw_buffer name      = jstring_get_fast(jin_sub_obj);
-                        std::string str_name = name.m_str;
+                        std::string str_name = name.m_str ? name.m_str : "";
                         PMLOG_INFO(CONST_MODULE_AC, "version: %s \n", str_name.c_str());
                     }
                     // type
                     if (jobject_get_exists(jin_obj_deviceInfo, J_CSTR_TO_BUF("type"), &jin_sub_obj))
                     {
                         raw_buffer name      = jstring_get_fast(jin_sub_obj);
-                        std::string str_name = name.m_str;
+                        std::string str_name = name.m_str ? name.m_str : "";
                         PMLOG_INFO(CONST_MODULE_AC, "type: %s \n", str_name.c_str());
                     }
                     // platform
@@ -76,7 +81,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                                            &jin_sub_obj))
                     {
                         raw_buffer name      = jstring_get_fast(jin_sub_obj);
-                        std::string str_name = name.m_str;
+                        std::string str_name = name.m_str ? name.m_str : "";
                         PMLOG_INFO(CONST_MODULE_AC, "platform: %s \n", str_name.c_str());
                     }
                     // manufacturer
@@ -84,7 +89,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                                            &jin_sub_obj))
                     {
                         raw_buffer name                  = jstring_get_fast(jin_sub_obj);
-                        client->mDeviceInfo.manufacturer = name.m_str;
+                        client->mDeviceInfo.manufacturer = name.m_str ? name.m_str : "";
                         PMLOG_INFO(CONST_MODULE_AC, "manufacturer: %s \n",
                                    client->mDeviceInfo.manufacturer.c_str());
                     }
@@ -93,7 +98,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                                            &jin_sub_obj))
                     {
                         raw_buffer name               = jstring_get_fast(jin_sub_obj);
-                        client->mDeviceInfo.modelName = name.m_str;
+                        client->mDeviceInfo.modelName = name.m_str ? name.m_str : "";
                         PMLOG_INFO(CONST_MODULE_AC, "modelName: %s \n",
                                    client->mDeviceInfo.modelName.c_str());
                     }
@@ -102,7 +107,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                                            &jin_sub_obj))
                     {
                         raw_buffer name                = jstring_get_fast(jin_sub_obj);
-                        client->mDeviceInfo.deviceName = name.m_str;
+                        client->mDeviceInfo.deviceName = name.m_str ? name.m_str : "";
                         PMLOG_INFO(CONST_MODULE_AC, "deviceName: %s \n",
                                    client->mDeviceInfo.deviceName.c_str());
                     }
@@ -237,7 +242,7 @@ bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceN
 void AppCastClient::setState(APP_CAST_STATE new_state)
 {
     mState = new_state;
-    PMLOG_INFO(CONST_MODULE_AC, "setState : mState = %s (%d)", str_state[mState].c_str(), mState);
+    PMLOG_INFO(CONST_MODULE_AC, "setState : mState = %s (%d)", str_state[static_cast<unsigned int>(mState)].c_str(), mState);
 }
 
 static bool sendConnectSoundInputCallback(LSHandle *sh, LSMessage *msg, void *ctx)

@@ -91,6 +91,10 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 {
     *phShmem                     = (SHMEM_HANDLE)calloc(1, sizeof(POSHMEM_COMM_T));
     POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
+    if (pShmemBuffer == nullptr) {
+        DEBUG_PRINT("failed to create memory for shm handle");
+        return PSHMEM_IS_NULL;
+    }
 
     DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%d\n", *phShmem, unitSize, unitNum);
 
@@ -140,7 +144,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 
     unsigned char *pSharedmem =
         (unsigned char *)mmap(NULL, shmemSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (pSharedmem == MAP_FAILED)
+    if (pSharedmem == MAP_FAILED || pSharedmem == NULL)
     {
         DEBUG_PRINT("mmap failed \n");
         shm_unlink(poshm_name);

@@ -36,7 +36,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
     if (jis_valid(jin_obj))
     {
         bool retvalue;
-        int camcount = 0;
+        unsigned int camcount = 0;
         jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
         PMLOG_INFO(CONST_MODULE_PC, "retvalue : %d \n", retvalue);
 
@@ -118,7 +118,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                                            &jin_obj_vendorid))
                     {
                         raw_buffer vendor_id = jstring_get_fast(jin_obj_vendorid);
-                        str_vendorid         = vendor_id.m_str;
+                        str_vendorid         = vendor_id.m_str ? vendor_id.m_str : "";
                     }
                     PMLOG_INFO(CONST_MODULE_PC, "str_vendorid : %s \n", str_vendorid.c_str());
 
@@ -130,7 +130,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                                            &jin_obj_productid))
                     {
                         raw_buffer product_id = jstring_get_fast(jin_obj_productid);
-                        str_productid         = product_id.m_str;
+                        str_productid         = product_id.m_str ? product_id.m_str : "";
                     }
                     PMLOG_INFO(CONST_MODULE_PC, "str_productid : %s \n", str_productid.c_str());
 
@@ -155,7 +155,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     {
                         raw_buffer host_controller_inf =
                             jstring_get_fast(jin_obj_host_controller_inf);
-                        str_host_controller_inf = host_controller_inf.m_str;
+                        str_host_controller_inf = host_controller_inf.m_str ? host_controller_inf.m_str : "";
                         PMLOG_INFO(CONST_MODULE_PC, "str_host_controller_inf : %s \n",
                                    str_host_controller_inf.c_str());
                     }
@@ -179,7 +179,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                                            &jin_obj_devPathfull))
                     {
                         raw_buffer dev_pathfull = jstring_get_fast(jin_obj_devPathfull);
-                        str_devpath_full        = dev_pathfull.m_str;
+                        str_devpath_full        = dev_pathfull.m_str ? dev_pathfull.m_str : "";
                         PMLOG_INFO(CONST_MODULE_PC, "str_devpath_full : %s \n",
                                    str_devpath_full.c_str());
                     }
@@ -275,7 +275,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 
             if (false == AddOn::hasImplementation())
             {
-                if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
+                if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED && camcount)
                 {
                     WhitelistChecker::check(dev_info_[camcount - 1].strProductName,
                                             dev_info_[camcount - 1].strVendorName);

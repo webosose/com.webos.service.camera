@@ -60,10 +60,11 @@ struct MemoryListener : public CameraSolutionEvent
     std::string getResult(void)
     {
         std::lock_guard<std::mutex> lg(mtxResult_);
-        if (jsonResult_ == nullptr)
-            return "";
-        else
-            return jvalue_stringify(jsonResult_);
+        if (jsonResult_ != nullptr) {
+            const char* jvalue = jvalue_stringify(jsonResult_);
+            if (jvalue) return jvalue;
+        }
+        return "";
     }
     std::mutex mtxResult_;
     jvalue_ref jsonResult_{nullptr};
@@ -118,6 +119,10 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
 
         time_t t    = time(NULL);
         tm *timePtr = localtime(&t);
+        if (timePtr == nullptr) {
+            PMLOG_ERROR(CONST_MODULE_DC, "localtime() given null ptr");
+            return DEVICE_ERROR_UNKNOWN;
+        }
         struct timeval tmnow;
         gettimeofday(&tmnow, NULL);
 
@@ -252,6 +257,11 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
             PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
             PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n", frame_buffer.length);
 
+            if (frame_buffer.start == nullptr) {
+                PMLOG_ERROR(CONST_MODULE_DC, "no valid memory on frame buffer ptr");
+                return DEVICE_ERROR_OUT_OF_MEMORY;
+            }
+
             //[Camera Solution Manager] processing for capture
             if (pCameraSolution != nullptr)
             {
@@ -359,6 +369,12 @@ void DeviceControl::previewThread()
         {
             PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
 
+            notifyDeviceFault_();
+            break;
+        }
+
+        if (frame_buffer.start == nullptr) {
+            PMLOG_ERROR(CONST_MODULE_DC, "no valid frame buffer obtained");
             notifyDeviceFault_();
             break;
         }
@@ -488,7 +504,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     cam_handle_  = handle;
     str_memtype_ = memtype;
     sh_          = sh;
-    subskey_     = subskey;
+    subskey_     = subskey ? subskey : "";
 
     // get current saved format for device
     stream_format_t streamformat;

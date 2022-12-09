@@ -686,7 +686,7 @@ bool CameraService::getCameraList(LSMessage &message)
             }
 
             obj_getcameralist.setCameraCount(n_camcount);
-            for (int i = 0; i < n_camcount; i++)
+            for (unsigned int i = 0; i < n_camcount; i++)
             {
                 obj_getcameralist.setCameraList(arrlist[i], i);
             }

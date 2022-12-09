@@ -204,7 +204,8 @@ void EventNotification::eventReply(LSHandle *lsHandle, const char *key, void *p_
 
     subscriptionReply(lsHandle, key, json_outobj);
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* jvalue = jvalue_stringify(json_outobj);
+    if (jvalue) strreply = jvalue;
     PMLOG_INFO(CONST_MODULE_EN, "strreply %s", strreply.c_str());
     j_release(&json_outobj);
 }
@@ -218,7 +219,8 @@ std::string EventNotification::subscriptionJsonString(bool issubscribed)
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(issubscribed));
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* jvalue = jvalue_stringify(json_outobj);
+    if (jvalue) strreply = jvalue;
     PMLOG_INFO(CONST_MODULE_EN, "strreply %s", strreply.c_str());
     j_release(&json_outobj);
 

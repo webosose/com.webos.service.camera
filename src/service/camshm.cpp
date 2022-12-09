@@ -143,6 +143,11 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
 {
     *phShmem                   = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
     SHMEM_COMM_T *pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
+    if (!pShmemBuffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return SHMEM_FAILED;
+    }
 
     DEBUG_PRINT("hShmem = %p, pKey = %p, unitSize=%d, metaSize=%d, unitNum=%d\n", *phShmem,
                 pShmemKey, unitSize, metaSize, unitNum);

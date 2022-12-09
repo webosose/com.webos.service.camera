@@ -67,7 +67,8 @@ std::string GetCameraListMethod::createCameraListObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -165,7 +166,8 @@ std::string OpenMethod::createOpenObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -190,8 +192,8 @@ void StartPreviewMethod::getStartPreviewObject(const char *input, const char *sc
             jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
 
         camera_memory_source_t r_cams_source;
-        r_cams_source.str_memorysource = source.m_str;
-        r_cams_source.str_memorytype   = type.m_str;
+        if (source.m_str) r_cams_source.str_memorysource = source.m_str;
+        if (type.m_str)   r_cams_source.str_memorytype   = type.m_str;
         setParams(r_cams_source);
     }
     else
@@ -220,7 +222,8 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -273,7 +276,8 @@ std::string StopPreviewCaptureCloseMethod::createObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -319,7 +323,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
 
         raw_buffer str_mode =
             jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MODE)));
-        str_mode_ = str_mode.m_str;
+        str_mode_ = str_mode.m_str == nullptr ? "" : str_mode.m_str;
 
         if (0 == strcmp(str_mode_.c_str(), "MODE_BURST"))
         {
@@ -337,7 +341,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
         // get path for images to be saved
         raw_buffer strpath =
             jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_IMAGE_PATH)));
-        str_path_ = strpath.m_str;
+        str_path_ = strpath.m_str ? strpath.m_str : "";
     }
     else
     {
@@ -363,7 +367,8 @@ std::string StartCaptureMethod::createStartCaptureObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -445,7 +450,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) strreply = str;
     j_release(&json_outobj);
 
     return strreply;
@@ -552,7 +558,8 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) strreply = str;
     j_release(&json_outobj);
 
     return strreply;
@@ -644,7 +651,8 @@ std::string GetSetPropertiesMethod::createSetPropertiesObjectJsonString() const
         createJsonStringFailure(objreply, json_outbj);
     }
 
-    strreply = jvalue_stringify(json_outbj);
+    const char* str = jvalue_stringify(json_outbj);
+    if (str) strreply = str;
     j_release(&json_outbj);
 
     return strreply;
@@ -709,7 +717,8 @@ std::string SetFormatMethod::createSetFormatObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) strreply = str;
     j_release(&json_outobj);
 
     return strreply;
@@ -1823,7 +1832,8 @@ std::string GetFdMethod::createObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -1918,7 +1928,8 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -2018,7 +2029,8 @@ std::string SetSolutionsMethod::createObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
