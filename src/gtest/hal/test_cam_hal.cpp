@@ -1241,6 +1241,7 @@ TEST(CameraHAL, ReleaseBuffer_Invalidstate)
 TEST(CameraHAL, GetInfo_Validparameters)
 {
     camera_device_info_t caminfo;
+    caminfo.subsystem = "libv4l2-camera-plugin.so";
     int retval = camera_hal_if_get_info(devname, &caminfo);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
 }
@@ -1248,6 +1249,7 @@ TEST(CameraHAL, GetInfo_Validparameters)
 TEST(CameraHAL, GetInfo_Invaliddevicenode)
 {
     camera_device_info_t caminfo;
+    caminfo.subsystem = "libv4l2-camera-plugin.so";
     int retval = camera_hal_if_get_info(devname_1, &caminfo);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
 }

@@ -500,10 +500,7 @@ extern "C"
         void *handle;
         int retVal;
 
-        if (strstr(devicenode, "udpsrc"))
-            retVal = camera_hal_if_init(&handle, "libremote-camera-plugin.so");
-        else
-            retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so");
+        retVal = camera_hal_if_init(&handle, caminfo->subsystem);
 
         if (CAMERA_ERROR_NONE != retVal)
         {

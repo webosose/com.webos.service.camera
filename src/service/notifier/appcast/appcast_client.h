@@ -33,14 +33,6 @@ enum APP_CAST_STATE
     STATE_END // must be last - used to validate app cast state
 };
 
-typedef struct
-{
-    std::string manufacturer;
-    std::string modelName;
-    std::string deviceName;
-    std::string clientKey;
-} deviceInfo_t;
-
 class AppCastClient : public DeviceNotifier
 {
 private:

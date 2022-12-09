@@ -22,7 +22,7 @@
 const char *rc_library = "libremote-camera.so";
 
 /* function pointer loaded from libRemoteCamera.so */
-void *create_remote_camera_handle(bool useDummy)
+void *create_remote_camera_handle()
 {
     void *plugin = dlopen(rc_library, RTLD_LAZY);
 
@@ -35,10 +35,7 @@ void *create_remote_camera_handle(bool useDummy)
     typedef void *(*pfn_create_handle)();
 
     pfn_create_handle pf_create_handle;
-    if (useDummy)
-        pf_create_handle = (pfn_create_handle)dlsym(plugin, "create_handle_dummy");
-    else
-        pf_create_handle = (pfn_create_handle)dlsym(plugin, "create_handle");
+    pf_create_handle = (pfn_create_handle)dlsym(plugin, "create_handle");
     dlclose(plugin);
 
     if (!pf_create_handle)
@@ -53,9 +50,9 @@ void *create_remote_camera_handle(bool useDummy)
     return handle;
 }
 
-void *create_handle(void) { return create_remote_camera_handle(false); }
+void *create_handle(void) { return create_remote_camera_handle(); }
 
-void destroy_remote_camera_handle(void *handle, bool useDummy)
+void destroy_remote_camera_handle(void *handle)
 {
     void *plugin = dlopen(rc_library, RTLD_LAZY);
 
@@ -67,10 +64,7 @@ void destroy_remote_camera_handle(void *handle, bool useDummy)
 
     typedef void (*pfn_destroy_handle)(void *);
     pfn_destroy_handle pf_destroy_handle;
-    if (useDummy)
-        pf_destroy_handle = (pfn_destroy_handle)dlsym(plugin, "destroy_handle_dummy");
-    else
-        pf_destroy_handle = (pfn_destroy_handle)dlsym(plugin, "destroy_handle");
+    pf_destroy_handle = (pfn_destroy_handle)dlsym(plugin, "destroy_handle");
     dlclose(plugin);
 
     if (!pf_destroy_handle)
@@ -82,8 +76,5 @@ void destroy_remote_camera_handle(void *handle, bool useDummy)
     pf_destroy_handle(handle);
 }
 
-void destroy_handle(void *handle) { destroy_remote_camera_handle(handle, false); }
+void destroy_handle(void *handle) { destroy_remote_camera_handle(handle); }
 
-void *create_handle_dummy(void) { return create_remote_camera_handle(true); }
-
-void destroy_handle_dummy(void *handle) { destroy_remote_camera_handle(handle, true); }

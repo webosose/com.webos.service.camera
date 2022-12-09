@@ -1,10 +1,10 @@
 #ifndef CAMERA_SERVICE_ADDON_INTERFACE_H_
 #define CAMERA_SERVICE_ADDON_INTERFACE_H_
 
+#include "camera_device_types.h"
 #include <luna-service2/lunaservice.h>
 #include <pbnjson.h>
 #include <string>
-#include "camera_device_list_type.h"
 
 
 typedef int (*DEVICE_LIST_CALLBACK)(int*, int*, int*, int*);

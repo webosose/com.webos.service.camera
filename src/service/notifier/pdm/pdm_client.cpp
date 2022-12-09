@@ -241,6 +241,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                         dev_info_[camcount].strDeviceSubtype           = str_productname;
                         dev_info_[camcount].strHostControllerInterface = str_host_controller_inf;
                         dev_info_[camcount].strDeviceKey               = str_devpath_full;
+                        dev_info_[camcount].strDeviceLabel             = "v4l2";
 
                         camcount++;
                     }
@@ -273,10 +274,13 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                                EventType::EVENT_TYPE_DISCONNECT);
             }
 
-            if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
+            if (false == AddOn::hasImplementation())
             {
-                WhitelistChecker::check(dev_info_[camcount - 1].strProductName,
-                                        dev_info_[camcount - 1].strVendorName);
+                if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
+                {
+                    WhitelistChecker::check(dev_info_[camcount - 1].strProductName,
+                                            dev_info_[camcount - 1].strVendorName);
+                }
             }
         }
         j_release(&jin_obj);

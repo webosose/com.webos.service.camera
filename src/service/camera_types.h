@@ -19,8 +19,8 @@
 
 #include "PmLogLib.h"
 #include "camera_constants.h"
-#include "camera_device_list_type.h"
-#include "camera_device_event_type.h"
+#include "camera_device_types.h"
+#include "camera_event_types.h"
 #include "camera_hal_if_cpp_types.h"
 #include "camera_hal_if_types.h"
 #include "camera_log.h"
@@ -38,14 +38,6 @@ const std::string kMemtypePosixshm = "posixshm";
 /*-----------------------------------------------------------------------------
  (Type Definitions)
  ----------------------------------------------------------------------------*/
-typedef enum
-{
-    DEVICE_DEVICE_UNDEFINED = -1,
-    DEVICE_CAMERA           = 1,
-    DEVICE_MICROPHONE,
-    DEVICE_OTHER
-} DEVICE_TYPE_T;
-
 typedef enum
 {
     DEVICE_RETURN_UNDEFINED = -1,

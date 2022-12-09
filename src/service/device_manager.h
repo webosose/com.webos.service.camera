@@ -43,8 +43,6 @@ class DeviceManager
 private:
     std::map<int, DEVICE_STATUS> deviceMap_;
     int findDevNum(int);
-    int remoteCamIdx_{0};
-    int fakeCamIdx_{0};
     AppCastClient *appCastClient_{nullptr};
 
 public:
@@ -60,6 +58,8 @@ public:
     void getDeviceNode(int *, std::string &);
     void getDeviceHandle(int *, void **);
     int getDeviceId(int *);
+    DEVICE_TYPE_T getDeviceType(int *);
+    int getDeviceCounts(DEVICE_TYPE_T);
     bool addVirtualHandle(int devid, int virtualHandle);
     bool eraseVirtualHandle(int deviceId, int virtualHandle);
     int addDevice(DEVICE_LIST_T *pList);
@@ -71,14 +71,12 @@ public:
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
     DEVICE_RETURN_CODE_T updateHandle(int, void *);
 
-    int addRemoteCamera(deviceInfo_t *deviceInfo, bool fakeCamera = false);
-    int removeRemoteCamera();
+    int addRemoteCamera(deviceInfo_t *deviceInfo);
+    int removeRemoteCamera(int);
     int set_appcastclient(AppCastClient *);
     AppCastClient *get_appcastclient();
     bool isRemoteCamera(DEVICE_LIST_T &);
     bool isRemoteCamera(void *);
-    bool isRemoteCamera(int);
-    bool isFakeCamera(int);
     void printCameraStatus();
 };
 

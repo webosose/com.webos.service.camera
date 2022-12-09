@@ -101,11 +101,25 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     // create v4l2 handle
     void *p_cam_handle;
 
-    DEVICE_RETURN_CODE_T ret;
-    if (DeviceManager::getInstance().isRemoteCamera(devid))
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libremote-camera-plugin.so");
-    else
+    DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
+    DEVICE_TYPE_T type = DeviceManager::getInstance().getDeviceType(&devid);
+    switch (type)
+    {
+    case DEVICE_V4L2_CAMERA:
         ret = objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin.so");
+        break;
+    case DEVICE_REMOTE_CAMERA:
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libremote-camera-plugin.so");
+        break;
+    case DEVICE_REMOTE_CAMERA_FAKE:
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libfake-camera-plugin.so");
+        break;
+    case DEVICE_V4L2_CAMERA_DUMMY:
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin-dummy.so");
+        break;
+    default:
+        break;
+    }
 
     if (DEVICE_OK != ret)
     {
@@ -127,7 +141,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     if (DEVICE_OK != ret)
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
     else
-        DeviceManager::getInstance().deviceStatus(devid, DEVICE_CAMERA, TRUE);
+        DeviceManager::getInstance().deviceStatus(devid, type, TRUE);
 
     // get virtual device handle for device opened
     *devhandle = getVirtualDeviceHandle(devid);
@@ -163,7 +177,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
     }
 
     // check if camera device requested to open is valid and not already opened
-    if (DeviceManager::getInstance().isDeviceValid(DEVICE_CAMERA, &devid))
+    DEVICE_TYPE_T type = DeviceManager::getInstance().getDeviceType(&devid);
+    if (DeviceManager::getInstance().isDeviceValid(type, &devid))
     {
         // check if deviceid requested is there in connected device list
         if (n_invalid_id == devid)
@@ -248,7 +263,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
                 ret = objdevicecontrol_.close(handle);
                 if (DEVICE_OK == ret)
                 {
-                    DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
+                    DEVICE_TYPE_T type = DeviceManager::getInstance().getDeviceType(&deviceid);
+                    DeviceManager::getInstance().deviceStatus(deviceid, type, FALSE);
                     ret = objdevicecontrol_.destroyHandle(handle);
                     DeviceManager::getInstance().updateHandle(deviceid, nullptr);
                     // remove the virtual device

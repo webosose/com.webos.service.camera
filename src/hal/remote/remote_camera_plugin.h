@@ -23,8 +23,6 @@ extern "C"
 #endif
     void *create_handle(void);
     void destroy_handle(void *);
-    void *create_handle_dummy(void);
-    void destroy_handle_dummy(void *);
 #ifdef __cplusplus
 }
 #endif

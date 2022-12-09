@@ -152,6 +152,30 @@ int DeviceManager::getDeviceId(int *device_id)
     return deviceMap_[dev_num].nDeviceID;
 }
 
+DEVICE_TYPE_T DeviceManager::getDeviceType(int *device_id)
+{
+    int dev_num = findDevNum(*device_id);
+    if (n_invalid_id == dev_num)
+    {
+        *device_id = dev_num;
+        return DEVICE_DEVICE_UNDEFINED;
+    }
+
+    return deviceMap_[dev_num].devType;
+}
+
+int DeviceManager::getDeviceCounts(DEVICE_TYPE_T type)
+{
+    int count = 0;
+    for (auto iter : deviceMap_)
+    {
+        if (iter.second.devType == type)
+            ++count;
+    }
+
+    return count;
+}
+
 bool DeviceManager::addVirtualHandle(int devid, int virtualHandle)
 {
     PMLOG_INFO(CONST_MODULE_DM, "devid: %d, virualHandle: %d", devid, virtualHandle);
@@ -235,7 +259,6 @@ DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCa
 int DeviceManager::addDevice(DEVICE_LIST_T *pList)
 {
     DEVICE_STATUS devStatus;
-    devStatus.devType      = DEVICE_CAMERA;
     devStatus.isDeviceOpen = false;
     devStatus.pcamhandle   = nullptr;
     devStatus.nDeviceID    = n_invalid_id;
@@ -263,8 +286,18 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     devStatus.stList.strDeviceKey = pList->strDeviceKey;
     PMLOG_INFO(CONST_MODULE_DM, "strDeviceKey : %s", devStatus.stList.strDeviceKey.c_str());
 
+    devStatus.stList.strDeviceLabel = pList->strDeviceLabel;
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceLabel : %s", devStatus.stList.strDeviceLabel.c_str());
+
     devStatus.nDevCount = deviceMap_.size() + 1;
     PMLOG_INFO(CONST_MODULE_DM, "nDevCount : %d", devStatus.nDevCount);
+    devStatus.devType = DEVICE_V4L2_CAMERA;
+    if (devStatus.stList.strDeviceLabel == "remote")
+        devStatus.devType = DEVICE_REMOTE_CAMERA;
+    else if (devStatus.stList.strDeviceLabel == "dummy")
+        devStatus.devType = DEVICE_V4L2_CAMERA_DUMMY;
+    else if (devStatus.stList.strDeviceLabel == "fake")
+        devStatus.devType = DEVICE_REMOTE_CAMERA_FAKE;
 
     int devidx = 0;
     for (int i = 1; i <= MAX_DEVICE_COUNT; i++)
@@ -290,25 +323,26 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     devStatus.nDevIndex = devidx;
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
 
-    /* double-check device path */
-    if (pList->strDeviceNode.find("/dev/video") != std::string::npos)
+    if (devStatus.devType == DEVICE_V4L2_CAMERA || devStatus.devType == DEVICE_V4L2_CAMERA_DUMMY)
     {
-        devStatus.stList.strDeviceNode = pList->strDeviceNode;
-    }
-    else if (pList->strDeviceNode.find("video") != std::string::npos)
-    {
-        devStatus.stList.strDeviceNode = "/dev/" + pList->strDeviceNode;
-    }
-    else
-    {
-        PMLOG_INFO(CONST_MODULE_DM, "fail to add device:  %s is not a valid device node!!",
+        /* double-check device path */
+        if (pList->strDeviceNode.find("/dev/video") != std::string::npos)
+        {
+            devStatus.stList.strDeviceNode = pList->strDeviceNode;
+        }
+        else if (pList->strDeviceNode.find("video") != std::string::npos)
+        {
+            devStatus.stList.strDeviceNode = "/dev/" + pList->strDeviceNode;
+        }
+        else
+        {
+            PMLOG_INFO(CONST_MODULE_DM, "fail to add device:  %s is not a valid device node!!",
+                       pList->strDeviceNode.c_str());
+            return 0;
+        }
+        PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
                    pList->strDeviceNode.c_str());
-        return 0;
     }
-
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
-               devStatus.stList.strDeviceNode.c_str());
-
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
     return devidx;
@@ -334,10 +368,8 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
 {
     PMLOG_INFO(CONST_MODULE_DM, "started! nDevCount : %d \n", nDevCount);
 
-    // Find the number of V4L2 cameras
-    int numV4L2Cameras = deviceMap_.size();
-    for (auto iter : deviceMap_)
-      if ( isRemoteCamera(iter.second.stList) ) numV4L2Cameras --;
+    // Find the number of real V4L2 cameras
+    int numV4L2Cameras = getDeviceCounts(DEVICE_V4L2_CAMERA);
 
     if (numV4L2Cameras < nDevCount) // Plugged
     {
@@ -348,7 +380,8 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
             // find exist device
             for (auto iter : deviceMap_)
             {
-                if (iter.second.stList.strDeviceNode == pList[i].strDeviceNode)
+                if (iter.second.stList.strDeviceNode == pList[i].strDeviceNode &&
+                    iter.second.stList.strDeviceLabel == pList[i].strDeviceLabel)
                 {
                     id = iter.first;
                     break;
@@ -368,14 +401,17 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
         {
             bool unplugged = true;
 
-            // Skip remote camera
-            if ( isRemoteCamera(iter->second.stList) )
-              unplugged = false;
+            // Skip cameras except real V4L2 cameras
+            if (iter->second.devType != DEVICE_V4L2_CAMERA)
+            {
+                unplugged = false;
+            }
 
             // Find out which camera is unplugged
             for (int i = 0; i < nDevCount; i++)
             {
-                if (iter->second.stList.strDeviceNode == pList[i].strDeviceNode)
+                if (iter->second.stList.strDeviceNode == pList[i].strDeviceNode &&
+                    iter->second.stList.strDeviceLabel == pList[i].strDeviceLabel)
                 {
                     unplugged = false;
                     break;
@@ -432,7 +468,37 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
         return DEVICE_ERROR_NODEVICE;
     }
 
-    DEVICE_RETURN_CODE_T ret = DeviceControl::getDeviceInfo(strdevicenode, p_info);
+    DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
+    DEVICE_TYPE_T type = getDeviceType(&ndev_id);
+    // debug
+    PMLOG_INFO(CONST_MODULE_DM, "type : %d", (int)type);
+
+    p_info->subsystem = nullptr;
+    switch (type)
+    {
+    case DEVICE_V4L2_CAMERA:
+        p_info->subsystem = "libv4l2-camera-plugin.so";
+        break;
+    case DEVICE_REMOTE_CAMERA:
+        p_info->subsystem = "libremote-camera-plugin.so";
+        break;
+    case DEVICE_REMOTE_CAMERA_FAKE:
+        p_info->subsystem = "libfake-camera-plugin.so";
+        break;
+    case DEVICE_V4L2_CAMERA_DUMMY:
+        p_info->subsystem = "libv4l2-camera-plugin-dummy.so";
+        break;
+    default:
+        break;
+    }
+
+    if (p_info->subsystem == nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "Invalid subsystem");
+        return DEVICE_RETURN_UNDEFINED;
+    }
+
+    ret = DeviceControl::getDeviceInfo(strdevicenode, p_info);
     if (DEVICE_OK != ret)
     {
         PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
@@ -465,7 +531,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
     return DEVICE_OK;
 }
 
-int DeviceManager::addRemoteCamera(deviceInfo_t *deviceInfo, bool fakeCamera)
+int DeviceManager::addRemoteCamera(deviceInfo_t *deviceInfo)
 {
     DEVICE_LIST_T devInfo;
 
@@ -485,29 +551,38 @@ int DeviceManager::addRemoteCamera(deviceInfo_t *deviceInfo, bool fakeCamera)
     devInfo.strDeviceType        = "CAM";
     devInfo.strDeviceSubtype     = "IP-CAM JPEG";
     std::string remoteDeviceNode = "udpsrc=" + deviceInfo->clientKey;
-    if (fakeCamera)
-        remoteDeviceNode = "udpsrc_fake=" + deviceInfo->clientKey;
     devInfo.strDeviceNode = remoteDeviceNode;
     devInfo.strDeviceKey  = deviceInfo->clientKey;
+    devInfo.strDeviceLabel = deviceInfo->deviceLabel;
 
-    remoteCamIdx_ = addDevice(&devInfo);
-
-    if (fakeCamera)
-        fakeCamIdx_ = remoteCamIdx_;
+    int dev_idx = addDevice(&devInfo);
 
     printCameraStatus();
-    return 1;
+    return dev_idx;
 }
 
-int DeviceManager::removeRemoteCamera()
+int DeviceManager::removeRemoteCamera(int dev_idx)
 {
     PMLOG_INFO(CONST_MODULE_DM, "start");
 
-    DEVICE_STATUS *pStatus = &deviceMap_[remoteCamIdx_];
+    if (dev_idx == 0)
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "dev_idx : %d, No such device", dev_idx);
+        return 0;
+    }
+
+    DEVICE_STATUS *pStatus = &deviceMap_[dev_idx];
+    
+    if (pStatus->devType != DEVICE_REMOTE_CAMERA && pStatus->devType != DEVICE_REMOTE_CAMERA_FAKE)
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "dev_idx : %d, is not remote camera", dev_idx);
+        return 0;
+    }
+
     if (pStatus->isDeviceOpen && pStatus->handleList.size() > 0)
     {
         PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
-        CommandManager::getInstance().requestPreviewCancel(remoteCamIdx_);
+        CommandManager::getInstance().requestPreviewCancel(dev_idx);
         for (int i = pStatus->handleList.size() - 1; i >= 0; i--)
         {
             CommandManager::getInstance().stopPreview(pStatus->handleList[i]);
@@ -515,11 +590,7 @@ int DeviceManager::removeRemoteCamera()
         }
         PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");
     }
-    removeDevice(remoteCamIdx_);
-
-    if (fakeCamIdx_ == remoteCamIdx_)
-        fakeCamIdx_ = 0;
-    remoteCamIdx_ = 0;
+    removeDevice(dev_idx);
 
     printCameraStatus();
     return 1;
@@ -550,10 +621,6 @@ bool DeviceManager::isRemoteCamera(void *camhandle)
 
     return false;
 }
-
-bool DeviceManager::isRemoteCamera(int devid) { return (devid == remoteCamIdx_); }
-
-bool DeviceManager::isFakeCamera(int devid) { return (devid == fakeCamIdx_); }
 
 void DeviceManager::printCameraStatus()
 {
