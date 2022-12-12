@@ -62,7 +62,6 @@ install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_types.h DESTINATION 
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_log.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_interface.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_singleton.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 
 
 #service

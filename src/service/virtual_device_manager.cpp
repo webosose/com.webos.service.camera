@@ -209,7 +209,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
             {
                 if (apppriority == cstr_primary)
                 {
-                    AddOn::logExtraMessage(appId);
+                    AddOn::logMessagePrivate(appId);
                 }
             }
         }

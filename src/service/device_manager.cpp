@@ -633,3 +633,23 @@ void DeviceManager::printCameraStatus()
                numV4L2Cameras, deviceMap_.size() - numV4L2Cameras);
 }
 
+bool DeviceManager::getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
+                                         std::string &productName)
+{
+    for (auto &it : deviceMap_)
+    {
+        if (std::string("CAM") != it.second.stList.strDeviceType)
+            continue;
+        if (it.second.isDeviceOpen)
+        {
+            productId   = it.second.stList.strProductID;
+            vendorId    = it.second.stList.strVendorID;
+            productName = it.second.stList.strProductName;
+
+            PMLOG_INFO(CONST_MODULE_DM, "strProductID = %s, strVendorID = %s \n", productId.c_str(),
+                       vendorId.c_str());
+            return true;
+        }
+    }
+    return false;
+}

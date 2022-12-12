@@ -1,16 +1,15 @@
 #include "addon.h"
 #include "camera_types.h"
+#include "command_manager.h"
+#include "device_manager.h"
 #include "whitelist_checker.h"
 #include <dlfcn.h>
-#include "command_manager.h"
 
 
 #define CONST_MODULE_ADDON "ADDON"
 
 void *AddOn::handle_ = nullptr;
 ICameraServiceAddon *AddOn::plugin_ = nullptr;
-EXTRA_DATA_T AddOn::extra_data_ = nullptr;
-
 
 typedef void *(*pfn_create_plugin_instance)();
 typedef void *(*pfn_destroy_plugin_instance)(void*);
@@ -22,12 +21,37 @@ pfn_destroy_plugin_instance destroy_plugin_instance;
 int AddOn::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
 {
     return (int)(CommandManager::getDeviceList(
-			    pcamdev, pmicdev, pcamsupport, pmicsupport));
+                 pcamdev, pmicdev, pcamsupport, pmicsupport));
 }
 
-EXTRA_DATA_T AddOn::currentExtraData()
+int AddOn::getDeviceCounts(DEVICE_TYPE_T type)
 {
-    return AddOn::extra_data_;
+    return DeviceManager::getInstance().getDeviceCounts(type);
+}
+
+int AddOn::addDevice(DEVICE_LIST_T *devList)
+{
+    return DeviceManager::getInstance().addDevice(devList);
+}
+
+bool AddOn::removeDevice(int dev_idx)
+{
+    return DeviceManager::getInstance().removeDevice(dev_idx);
+}
+
+int AddOn::addRemoteCamera(deviceInfo_t *devInfo)
+{
+    return DeviceManager::getInstance().addRemoteCamera(devInfo);
+}
+
+int AddOn::removeRemoteCamera(int dev_idx)
+{
+    return DeviceManager::getInstance().removeRemoteCamera(dev_idx);
+}
+
+bool AddOn::getCurrentDeviceInfo(std::string &productId, std::string &venderId, std::string &productName)
+{
+    return DeviceManager::getInstance().getCurrentDeviceInfo(productId, venderId, productName);
 }
 
 void AddOn::open()
@@ -109,11 +133,11 @@ void AddOn::setSubscriptionForCameraList(LSMessage &message)
     }
 }
 
-void AddOn::setDeviceEvent(DEVICE_LIST_T *device_list, int count)
+void AddOn::setDeviceEvent(DEVICE_LIST_T *device_list, int count, bool resumed, bool remote)
 {
     if (plugin_)
     {
-        plugin_->setDeviceEvent(device_list, count, AddOn::getDeviceList);
+        plugin_->setDeviceEvent(device_list, count, resumed, remote, AddOn::getDeviceList);
     }
 }
 
@@ -121,7 +145,7 @@ bool AddOn::setPermission(LSMessage &message)
 {
     if (!plugin_)
     {
-	    return true;
+        return true;
     }
     return plugin_->setPermission(message);
 }
@@ -150,38 +174,38 @@ bool AddOn::test(LSMessage &message)
     {
         return true;
     }
-    return plugin_->test(message, AddOn::getDeviceList);
+    return plugin_->test(message,
+                         AddOn::getDeviceCounts,
+                         AddOn::addDevice,
+                         AddOn::removeDevice,
+                         AddOn::addRemoteCamera,
+                         AddOn::removeRemoteCamera,
+                         AddOn::getDeviceList);
 }
 
-void AddOn::getDeviceExtraData(jvalue_ref &jin_array_obj)
-{
-    if (plugin_)
-    {
-	    AddOn::extra_data_ = plugin_->getDeviceExtraData(jin_array_obj);
-    }
-}
-
-void AddOn::setDeviceExtraData(int index, EXTRA_DATA_T extra)
-{
-    if (plugin_)
-    {
-        plugin_->setDeviceExtraData(index, extra);
-    }
-}
-
-void AddOn::logExtraMessage(std::string str_extra_logmsg)
-{
-    if (plugin_)
-    {
-        plugin_->logExtraMessage(str_extra_logmsg);
-    }
-}
-
-int AddOn::getDevicePort(jvalue_ref &jin_array_obj)
+bool AddOn::isResumeDone()
 {
     if (!plugin_)
     {
-        return 0;
+        return false;
     }
-    return plugin_->getDevicePort(jin_array_obj);
+    return plugin_->isResumeDone();
+}
+
+bool AddOn::toastCameraUsingPopup()
+{
+    if (!plugin_)
+    {
+        return false;
+    }
+    return plugin_->toastCameraUsingPopup(AddOn::getCurrentDeviceInfo);
+}
+
+void AddOn::logMessagePrivate(std::string msg)
+{
+    if (!plugin_)
+    {
+        return;
+    }
+    plugin_->logMessagePrivate(msg);
 }

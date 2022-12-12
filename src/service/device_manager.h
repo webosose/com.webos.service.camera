@@ -65,6 +65,9 @@ public:
     int addDevice(DEVICE_LIST_T *pList);
     bool removeDevice(int devid);
 
+    bool getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
+                              std::string &productName);
+
     DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *) const;
     DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
                                     DEVICE_EVENT_STATE_T *);

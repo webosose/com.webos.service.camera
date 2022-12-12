@@ -15,9 +15,9 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "appcast_client.h"
+#include "addon.h"
 #include "camera_constants.h"
 #include "device_manager.h"
-//#include "tv_interface.h"
 #include <pbnjson.hpp>
 
 static int remoteCamIdx_{0};
@@ -129,15 +129,21 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                         client->sendSetSoundInput(true);
                         client->setState(READY);
 
-                        /*
-                        DEVICE_LIST_T devList      = {};
-                        std::string strProductName = "ThinQ WebCam";
-                        if (client->mDeviceInfo.modelName.empty() == false)
-                            strProductName = client->mDeviceInfo.modelName;
+                        if (AddOn::hasImplementation())
+                        {
+                            DEVICE_LIST_T devList      = {};
+                            std::string strProductName = "ThinQ WebCam";
+                            if (client->mDeviceInfo.modelName.empty() == false)
+                                strProductName = client->mDeviceInfo.modelName;
 
-                        devList.strProductName = strProductName;
-                        TVInterface::setDeviceEvent(&devList, 1, true, true);
-                        */
+                            devList.strProductName = strProductName;
+                            devList.strDeviceLabel = "remote";
+                        
+                            if (AddOn::hasImplementation())
+                            {
+                                AddOn::setDeviceEvent(&devList, 1, true, true);
+                            }
+                        }
 
                         // Save connect payload of AppCastClient
                         client->connect_payload = payload;
@@ -150,7 +156,11 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                 DeviceManager::getInstance().removeRemoteCamera(remoteCamIdx_);
                 client->sendConnectSoundInput(false);
                 client->setState(INIT);
-                //TVInterface::setDeviceEvent(nullptr, 0, true, true);
+
+                if (AddOn::hasImplementation())
+                {
+                    AddOn::setDeviceEvent(nullptr, 0, true, true);
+                }
             }
         }
         j_release(&jin_obj);

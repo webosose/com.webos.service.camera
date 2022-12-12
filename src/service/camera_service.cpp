@@ -176,7 +176,7 @@ bool CameraService::open(LSMessage &message)
         err_id = DEVICE_ERROR_JSON_PARSING;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
-	else if (!AddOn::isAppPermission(app_id))
+    else if (!AddOn::isAppPermission(app_id))
     {
         PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::App Permission Fail\n");
         err_id = DEVICE_ERROR_APP_PERMISSION;
@@ -206,6 +206,15 @@ bool CameraService::open(LSMessage &message)
             PMLOG_DEBUG("err_id == DEVICE_OK\n");
             open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
             open.setDeviceHandle(ndevice_handle);
+
+            if (AddOn::hasImplementation())
+            {
+                if (app_priority == cstr_primary)
+                {
+                    bool res = AddOn::toastCameraUsingPopup();
+                    PMLOG_INFO(CONST_MODULE_LUNA, "toastCameraUsingPopup = %d ", res);
+                }
+            }
 
             addClientWatcher(this->get(), &message, ndevice_handle);
 
