@@ -18,7 +18,7 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "virtual_device_manager.h"
-#include "addon.h"
+#include "addon.h" // platform-specific functionality extension support
 #include "camera_constants.h"
 #include "device_manager.h"
 #include <algorithm>
@@ -347,6 +347,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 // update state of device to preview
                 obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
                 virtualhandle_map_[devhandle] = obj_devstate;
+
+                // Apply platform-specific policy to solutions if exists.
+                if (AddOn::hasImplementation())
+                {
+                    ret = objdevicecontrol_.enableCameraSolution(AddOn::getDevicePrivateData(deviceid));
+                    if (DEVICE_OK != ret)
+                        PMLOG_INFO(CONST_MODULE_VDM, "Failed to enable camera solution\n");
+                }
             }
             return ret;
         }
@@ -884,8 +892,15 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
 
     if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
     {
-
+        // get enabled solutions of device opened
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions);
+
+        if (ret == DEVICE_OK)
+        {
+            // Attach platform-specific private component to device in order to enforce platform-specific policy
+            AddOn::attachPrivateComponentToDevice(deviceid, solutions);
+        }
+
         return ret;
     }
     else
@@ -909,6 +924,13 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
     {
         // get disabled solutions of device opened
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.disableCameraSolution(solutions);
+
+        if (ret == DEVICE_OK)
+        {
+            // Detach platform-specific private component from device used for platform-specific policy application
+            AddOn::detachPrivateComponentFromDevice(deviceid, solutions);
+        }
+
         return ret;
     }
     else

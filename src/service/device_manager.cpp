@@ -18,6 +18,7 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "device_manager.h"
+#include "addon.h" /* calls platform specific functionality if addon interface has been implemented */
 #include "command_manager.h"
 #include "device_controller.h"
 
@@ -323,6 +324,9 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     devStatus.nDevIndex = devidx;
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
 
+    // Push platform-specific device private data associated with this device */
+    AddOn::pushDevicePrivateData(devStatus.nDeviceID, devStatus.nDevIndex, devStatus.devType, pList);
+
     if (devStatus.devType == DEVICE_V4L2_CAMERA || devStatus.devType == DEVICE_V4L2_CAMERA_DUMMY)
     {
         /* double-check device path */
@@ -354,6 +358,9 @@ bool DeviceManager::removeDevice(int devid)
     auto dev = deviceMap_.find(devid);
     if (dev != deviceMap_.end())
     {
+        // Pop platform-specific private data associated with this device.
+        AddOn::popDevicePrivateData(devid);
+
         deviceMap_.erase(dev);
         PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %d", deviceMap_.size());
         return true;
@@ -528,6 +535,9 @@ DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
         deviceMap_[dev_num].nDeviceID = devicehandle;
     deviceMap_[dev_num].pcamhandle = handle;
 
+    // Pass updated handle value to platform-specific device private handler
+    AddOn::updateDevicePrivateHandle(deviceid, devicehandle);
+
     return DEVICE_OK;
 }
 
@@ -572,7 +582,7 @@ int DeviceManager::removeRemoteCamera(int dev_idx)
     }
 
     DEVICE_STATUS *pStatus = &deviceMap_[dev_idx];
-    
+
     if (pStatus->devType != DEVICE_REMOTE_CAMERA && pStatus->devType != DEVICE_REMOTE_CAMERA_FAKE)
     {
         PMLOG_INFO(CONST_MODULE_DM, "dev_idx : %d, is not remote camera", dev_idx);

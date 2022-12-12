@@ -1,5 +1,6 @@
 #include "addon.h"
 #include "camera_types.h"
+#include "camera_solution_manager.h"
 #include "command_manager.h"
 #include "device_manager.h"
 #include "whitelist_checker.h"
@@ -208,4 +209,61 @@ void AddOn::logMessagePrivate(std::string msg)
         return;
     }
     plugin_->logMessagePrivate(msg);
+}
+
+void AddOn::attachPrivateComponentToDevice(int deviceid, const std::vector<std::string> &privateStrVecData)
+{
+    if (!plugin_)
+    {
+        return;
+    }
+    plugin_->attachPrivateComponentToDevice(deviceid, privateStrVecData);
+}
+
+void AddOn::detachPrivateComponentFromDevice(int deviceid, const std::vector<std::string> &privateStrVecData)
+{
+    if (!plugin_)
+    {
+        return;
+    }
+    plugin_->detachPrivateComponentFromDevice(deviceid, privateStrVecData);
+}
+
+void AddOn::pushDevicePrivateData(int device_id, int dev_idx, DEVICE_TYPE_T type, DEVICE_LIST_T *pstList) 
+{
+    if (!plugin_)
+    {
+        return;
+    }
+
+    plugin_->pushDevicePrivateData(device_id, dev_idx, type, pstList, 
+                                   CameraSolutionManager::getSupportedSolutionList);
+}
+
+void AddOn::popDevicePrivateData(int dev_idx)
+{
+    if (!plugin_)
+    {
+        return;
+    }
+    plugin_->popDevicePrivateData(dev_idx);
+}
+
+std::vector<std::string> AddOn::getDevicePrivateData(int deviceid)
+{
+    if (!plugin_)
+    {
+        std::vector<std::string> empty{};
+        return empty;
+    }
+    return plugin_->getDevicePrivateData(deviceid);
+}
+
+void AddOn::updateDevicePrivateHandle(int deviceid, int devicehandle)
+{
+    if (!plugin_)
+    {
+        return;
+    }
+    plugin_->updateDevicePrivateHandle(deviceid, devicehandle);
 }
