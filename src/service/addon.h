@@ -17,9 +17,21 @@ private:
     static int addRemoteCamera(deviceInfo_t*);
     static int removeRemoteCamera(int);
     static bool getCurrentDeviceInfo(std::string&, std::string&, std::string&);
-private:
-    static DeviceEventCallback *cb_;
 
+private:
+    struct Callback : public DeviceEventCallback
+    {
+        int getDeviceList(int*,int*,int*,int*) override;
+        int getDeviceCounts(DEVICE_TYPE_T) override;
+        int addDevice(DEVICE_LIST_T*) override;
+        bool removeDevice(int) override;
+        int addRemoteCamera(deviceInfo_t*) override;
+        int removeRemoteCamera(int) override;
+        bool getCurrentDeviceInfo(std::string&, std::string&, std::string&) override;
+        void getSupportedSolutionList(std::vector<std::string>&, std::vector<std::string>&) override;
+    };
+
+    static Callback *cb_;
 
 public:
     static void open();

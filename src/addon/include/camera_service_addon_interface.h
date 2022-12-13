@@ -8,26 +8,46 @@
 #include <vector>
 
 
-typedef int (*DEVICE_LIST_CALLBACK)(int*, int*, int*, int*);
-typedef int (*DEVICE_COUNT_CALLBACK)(DEVICE_TYPE_T);
-typedef int (*DEVICE_ADD_CALLBACK)(DEVICE_LIST_T*);
-typedef bool (*DEVICE_REMOVE_CALLBACK)(int);
-typedef int (*DEVICE_REMOTE_ADD_CALLBACK)(deviceInfo_t*);
-typedef int (*DEVICE_REMOTE_REMOVE_CALLBACK)(int);
-typedef bool (*DEVICE_CURRENT_INFO_CALLBACK)(std::string&, std::string&, std::string&);
-typedef void (*DEVICE_PRIVATE_CALLBACK)(std::vector<std::string>&, std::vector<std::string>&);
-
 struct DeviceEventCallback
 {
-    DEVICE_LIST_CALLBACK            getDeviceList;
-    DEVICE_COUNT_CALLBACK           getDeviceCounts;
-    DEVICE_ADD_CALLBACK             addDevice;
-    DEVICE_REMOVE_CALLBACK          removeDevice;
-    DEVICE_REMOTE_ADD_CALLBACK      addRemoteCamera;
-    DEVICE_REMOTE_REMOVE_CALLBACK   removeRemoteCamera;
-    DEVICE_CURRENT_INFO_CALLBACK    getCurrentDeviceInfo;
-    DEVICE_PRIVATE_CALLBACK         getSupportedSolutionList;
-};
+    virtual ~DeviceEventCallback()
+    {
+    }
+    virtual int getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
+    {
+        return -1;
+    }
+    virtual int getDeviceCounts(DEVICE_TYPE_T type)
+    { 
+        return 0; 
+    }
+    virtual int addDevice(DEVICE_LIST_T *devList)
+    {
+        return 0;
+    }
+    virtual bool removeDevice(int dev_idx)
+    {
+        return false;
+    }
+    virtual int addRemoteCamera(deviceInfo_t *devInfo)
+    {
+        return 0;
+    }
+    virtual int removeRemoteCamera(int dev_idx)
+    {
+        return 0;
+    }
+    virtual bool getCurrentDeviceInfo(std::string &productId, 
+                                      std::string &vendorId, 
+                                      std::string &productName)
+    {
+        return false;
+    }
+    virtual void getSupportedSolutionList(std::vector<std::string> &supportedList, 
+                                          std::vector<std::string> &enabledList)
+    {
+    }
+}; 
 
 
 class ICameraServiceAddon
@@ -39,25 +59,25 @@ public:
 
     virtual bool hasImplementation() = 0;
 
-    virtual void initialize(LSHandle*) = 0;
-    virtual void setSubscriptionForCameraList(LSMessage &) = 0;
-    virtual void setDeviceEvent(DEVICE_LIST_T*, int, bool, bool, DeviceEventCallback*) = 0;
-    virtual bool setPermission(LSMessage &) = 0;
-    virtual bool isSupportedCamera(std::string, std::string) = 0;
-    virtual bool isAppPermission(std::string) = 0;
-    virtual bool test(LSMessage &, DeviceEventCallback*) = 0;
+    virtual void initialize(LSHandle *lshandle) = 0;
+    virtual void setSubscriptionForCameraList(LSMessage &message) = 0;
+    virtual void setDeviceEvent(DEVICE_LIST_T *devList, int count, bool resumed, bool remote, DeviceEventCallback *cb) = 0;
+    virtual bool setPermission(LSMessage &message) = 0;
+    virtual bool isSupportedCamera(std::string productId, std::string vendorId) = 0;
+    virtual bool isAppPermission(std::string appId) = 0;
+    virtual bool test(LSMessage &message, DeviceEventCallback *cb) = 0;
     virtual bool isResumeDone() = 0;
 
-    virtual bool toastCameraUsingPopup(DeviceEventCallback*) = 0;
+    virtual bool toastCameraUsingPopup(DeviceEventCallback *cb) = 0;
 
-    virtual void logMessagePrivate(std::string) = 0;
+    virtual void logMessagePrivate(std::string privateMessage) = 0;
 
-    virtual void attachPrivateComponentToDevice(int, const std::vector<std::string>&) = 0;
-    virtual void detachPrivateComponentFromDevice(int, const std::vector<std::string>&) = 0;
-    virtual void pushDevicePrivateData(int, int, DEVICE_TYPE_T, DEVICE_LIST_T*, DeviceEventCallback*) = 0;
-    virtual void popDevicePrivateData(int) = 0;
-    virtual std::vector<std::string> getDevicePrivateData(int) = 0;
-    virtual void updateDevicePrivateHandle(int, int) = 0;
+    virtual void attachPrivateComponentToDevice(int deviceid, const std::vector<std::string> &solutions) = 0;
+    virtual void detachPrivateComponentFromDevice(int deviceid, const std::vector<std::string> &solutions) = 0;
+    virtual void pushDevicePrivateData(int device_id, int dev_idx, DEVICE_TYPE_T type, DEVICE_LIST_T *pstList, DeviceEventCallback *cb) = 0;
+    virtual void popDevicePrivateData(int dev_idx) = 0;
+    virtual std::vector<std::string> getDevicePrivateData(int deviceid) = 0;
+    virtual void updateDevicePrivateHandle(int deviceid, int devicehandle) = 0;
 };
 
 #endif /* CAMERA_SERVICE_ADDON_INTERFACE_H_ */

@@ -11,7 +11,7 @@
 
 void *AddOn::handle_ = nullptr;
 ICameraServiceAddon *AddOn::plugin_ = nullptr;
-DeviceEventCallback *AddOn::cb_ = nullptr;
+AddOn::Callback *AddOn::cb_ = nullptr;
 
 typedef void *(*pfn_create_plugin_instance)();
 typedef void *(*pfn_destroy_plugin_instance)(void*);
@@ -84,21 +84,13 @@ void AddOn::open()
     plugin_ = (ICameraServiceAddon*)create_plugin_instance();
     if (plugin_)
     {
-        AddOn::cb_ = (DeviceEventCallback*)calloc(1, sizeof(DeviceEventCallback));
+        AddOn::cb_ = new Callback();
         if (nullptr == AddOn::cb_)
         {
             PMLOG_INFO(CONST_MODULE_ADDON, "DeviceEventCallback object malloc failed.");
             close();
             PMLOG_INFO(CONST_MODULE_ADDON, "module instance closed.\n");
         }
-        AddOn::cb_->getDeviceList = AddOn::getDeviceList;
-        AddOn::cb_->getDeviceCounts = AddOn::getDeviceCounts;
-        AddOn::cb_->addDevice = AddOn::addDevice;
-        AddOn::cb_->removeDevice = AddOn::removeDevice;
-        AddOn::cb_->addRemoteCamera = AddOn::addRemoteCamera;
-        AddOn::cb_->removeRemoteCamera = AddOn::removeRemoteCamera;
-        AddOn::cb_->getCurrentDeviceInfo = AddOn::getCurrentDeviceInfo;
-        AddOn::cb_->getSupportedSolutionList = CameraSolutionManager::getSupportedSolutionList;
         PMLOG_INFO(CONST_MODULE_ADDON, "module instance created and ready : OK!");
     }
     else
@@ -121,7 +113,7 @@ void AddOn::close()
     }
     if (AddOn::cb_)
     {
-        free(AddOn::cb_);
+        delete AddOn::cb_;
         AddOn::cb_ = nullptr;
     }
 }
@@ -281,3 +273,46 @@ void AddOn::updateDevicePrivateHandle(int deviceid, int devicehandle)
     }
     plugin_->updateDevicePrivateHandle(deviceid, devicehandle);
 }
+
+
+int AddOn::Callback::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
+{
+    return AddOn::getDeviceList(pcamdev, pmicdev, pcamsupport, pmicsupport);
+}
+
+int AddOn::Callback::getDeviceCounts(DEVICE_TYPE_T type)
+{
+    return AddOn::getDeviceCounts(type);
+}
+
+int AddOn::Callback::addDevice(DEVICE_LIST_T *devList)
+{
+    return AddOn::addDevice(devList);
+}
+
+bool AddOn::Callback::removeDevice(int dev_idx)
+{
+    return AddOn::removeDevice(dev_idx);
+}
+
+int AddOn::Callback::addRemoteCamera(deviceInfo_t *devInfo)
+{
+    return AddOn::addRemoteCamera(devInfo);
+}
+
+int AddOn::Callback::removeRemoteCamera(int dev_idx)
+{
+    return AddOn::removeRemoteCamera(dev_idx);
+}
+
+bool AddOn::Callback::getCurrentDeviceInfo(std::string &productId, std::string &vendorId, std::string &productName)
+{
+    return AddOn::getCurrentDeviceInfo(productId, vendorId, productName);
+}
+
+void AddOn::Callback::getSupportedSolutionList(std::vector<std::string> &supportedList,
+                                              std::vector<std::string> &enabledList)
+{
+    CameraSolutionManager::getSupportedSolutionList(supportedList, enabledList);
+}
+
