@@ -17,6 +17,9 @@ private:
     static int addRemoteCamera(deviceInfo_t*);
     static int removeRemoteCamera(int);
     static bool getCurrentDeviceInfo(std::string&, std::string&, std::string&);
+private:
+    static DeviceEventCallback *cb_;
+
 
 public:
     static void open();

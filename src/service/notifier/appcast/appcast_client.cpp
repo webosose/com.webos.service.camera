@@ -138,11 +138,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
 
                             devList.strProductName = strProductName;
                             devList.strDeviceLabel = "remote";
-                        
-                            if (AddOn::hasImplementation())
-                            {
-                                AddOn::setDeviceEvent(&devList, 1, true, true);
-                            }
+                            AddOn::setDeviceEvent(&devList, 1, true, true);
                         }
 
                         // Save connect payload of AppCastClient

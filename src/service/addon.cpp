@@ -11,6 +11,7 @@
 
 void *AddOn::handle_ = nullptr;
 ICameraServiceAddon *AddOn::plugin_ = nullptr;
+DeviceEventCallback *AddOn::cb_ = nullptr;
 
 typedef void *(*pfn_create_plugin_instance)();
 typedef void *(*pfn_destroy_plugin_instance)(void*);
@@ -83,6 +84,21 @@ void AddOn::open()
     plugin_ = (ICameraServiceAddon*)create_plugin_instance();
     if (plugin_)
     {
+        AddOn::cb_ = (DeviceEventCallback*)calloc(1, sizeof(DeviceEventCallback));
+        if (nullptr == AddOn::cb_)
+        {
+            PMLOG_INFO(CONST_MODULE_ADDON, "DeviceEventCallback object malloc failed.");
+            close();
+            PMLOG_INFO(CONST_MODULE_ADDON, "module instance closed.\n");
+        }
+        AddOn::cb_->getDeviceList = AddOn::getDeviceList;
+        AddOn::cb_->getDeviceCounts = AddOn::getDeviceCounts;
+        AddOn::cb_->addDevice = AddOn::addDevice;
+        AddOn::cb_->removeDevice = AddOn::removeDevice;
+        AddOn::cb_->addRemoteCamera = AddOn::addRemoteCamera;
+        AddOn::cb_->removeRemoteCamera = AddOn::removeRemoteCamera;
+        AddOn::cb_->getCurrentDeviceInfo = AddOn::getCurrentDeviceInfo;
+        AddOn::cb_->getSupportedSolutionList = CameraSolutionManager::getSupportedSolutionList;
         PMLOG_INFO(CONST_MODULE_ADDON, "module instance created and ready : OK!");
     }
     else
@@ -102,6 +118,11 @@ void AddOn::close()
     {
         dlclose(handle_);
         handle_ = nullptr;
+    }
+    if (AddOn::cb_)
+    {
+        free(AddOn::cb_);
+        AddOn::cb_ = nullptr;
     }
 }
 
@@ -138,7 +159,7 @@ void AddOn::setDeviceEvent(DEVICE_LIST_T *device_list, int count, bool resumed, 
 {
     if (plugin_)
     {
-        plugin_->setDeviceEvent(device_list, count, resumed, remote, AddOn::getDeviceList);
+        plugin_->setDeviceEvent(device_list, count, resumed, remote, cb_);
     }
 }
 
@@ -175,13 +196,7 @@ bool AddOn::test(LSMessage &message)
     {
         return true;
     }
-    return plugin_->test(message,
-                         AddOn::getDeviceCounts,
-                         AddOn::addDevice,
-                         AddOn::removeDevice,
-                         AddOn::addRemoteCamera,
-                         AddOn::removeRemoteCamera,
-                         AddOn::getDeviceList);
+    return plugin_->test(message, cb_);
 }
 
 bool AddOn::isResumeDone()
@@ -199,7 +214,7 @@ bool AddOn::toastCameraUsingPopup()
     {
         return false;
     }
-    return plugin_->toastCameraUsingPopup(AddOn::getCurrentDeviceInfo);
+    return plugin_->toastCameraUsingPopup(cb_);
 }
 
 void AddOn::logMessagePrivate(std::string msg)
@@ -236,8 +251,7 @@ void AddOn::pushDevicePrivateData(int device_id, int dev_idx, DEVICE_TYPE_T type
         return;
     }
 
-    plugin_->pushDevicePrivateData(device_id, dev_idx, type, pstList, 
-                                   CameraSolutionManager::getSupportedSolutionList);
+    plugin_->pushDevicePrivateData(device_id, dev_idx, type, pstList, cb_); 
 }
 
 void AddOn::popDevicePrivateData(int dev_idx)
