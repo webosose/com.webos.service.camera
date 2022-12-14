@@ -58,11 +58,13 @@ include_directories(${CMAKE_SOURCE_DIR}/src/addon/include)
 
 #publish headers for addon interface implementation
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_constants.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_base.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if_cpp_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_event_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_log.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_interface.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
-
 
 #service
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
