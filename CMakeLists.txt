@@ -248,3 +248,8 @@ if (SHMEM_TEST)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_smsync)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_sync_read)
 endif()
+
+#TODO : Remove this if getAttachedNonStorageDeviceList parameters are the same
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
+    add_definitions(-DUSE_GROUP_SUB_DEVICES)
+endif()

@@ -314,12 +314,18 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
     LSError lserror;
     LSErrorInit(&lserror);
 
+    std::string payload = "{\"subscribe\":true,\"category\":\"Video\"";
+#ifdef USE_GROUP_SUB_DEVICES
+    payload += ",\"groupSubDevices\":true";
+#endif
+    payload += "}";
+
     PMLOG_INFO(CONST_MODULE_PC, "connected status:%d \n", connected);
     if (connected)
     {
         // get camera service handle and register cb function with pdm
         retval =
-            LSCall(sh, cstr_uri.c_str(), cstr_payload.c_str(), deviceStateCb, NULL, NULL, &lserror);
+            LSCall(sh, cstr_uri.c_str(), payload.c_str(), deviceStateCb, NULL, NULL, &lserror);
         if (!retval)
         {
             PMLOG_INFO(CONST_MODULE_PC, "PDM client Unable to unregister service\n");

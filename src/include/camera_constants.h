@@ -141,7 +141,6 @@ const int n_invalid_sig = -1;
 const std::string cstr_empty     = "";
 const std::string cstr_pdmclient = "com.webos.service.pdmclient";
 const std::string cstr_uri       = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
-const std::string cstr_payload   = "{\"subscribe\":true,\"category\":\"Video\",\"groupSubDevices\":true}";
 const std::string cstr_powerstatus     = "powerStatus";
 const std::string cstr_cam             = "CAM";
 const std::string cstr_capture         = ":capture:";
