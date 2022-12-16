@@ -54,6 +54,7 @@ public:
 
     deviceInfo_t mDeviceInfo;
     std::string connect_payload;
+    int remoteCamIdx_{0};
 };
 
 #endif
