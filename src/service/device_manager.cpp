@@ -461,16 +461,16 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
     switch (type)
     {
     case DEVICE_V4L2_CAMERA:
-        p_info->subsystem = "libv4l2-camera-plugin.so";
+        p_info->subsystem = cstr_libv4l2.c_str();
         break;
     case DEVICE_REMOTE_CAMERA:
-        p_info->subsystem = "libremote-camera-plugin.so";
+        p_info->subsystem = cstr_libremote.c_str();
         break;
     case DEVICE_REMOTE_CAMERA_FAKE:
-        p_info->subsystem = "libfake-camera-plugin.so";
+        p_info->subsystem = cstr_libfake.c_str();
         break;
     case DEVICE_V4L2_CAMERA_DUMMY:
-        p_info->subsystem = "libv4l2-camera-plugin-dummy.so";
+        p_info->subsystem = cstr_libdummy.c_str();
         break;
     default:
         break;

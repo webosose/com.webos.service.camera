@@ -103,16 +103,16 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     switch (type)
     {
     case DEVICE_V4L2_CAMERA:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin.so");
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libv4l2);
         break;
     case DEVICE_REMOTE_CAMERA:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libremote-camera-plugin.so");
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libremote);
         break;
     case DEVICE_REMOTE_CAMERA_FAKE:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libfake-camera-plugin.so");
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libfake);
         break;
     case DEVICE_V4L2_CAMERA_DUMMY:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin-dummy.so");
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libdummy);
         break;
     default:
         break;
