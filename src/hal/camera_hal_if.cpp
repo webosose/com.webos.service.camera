@@ -46,6 +46,7 @@ extern "C"
         }
 
         typedef void *(*pfn_create_handle)();
+
         pfn_create_handle pf_create_handle =
             (pfn_create_handle)dlsym(camera_handle->h_plugin, "create_handle");
 

@@ -891,7 +891,6 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
     {
         // get enabled solutions of device opened
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions);
-
         if (ret == DEVICE_OK)
         {
             // Attach platform-specific private component to device in order to enforce platform-specific policy

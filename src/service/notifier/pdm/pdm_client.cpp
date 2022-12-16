@@ -65,10 +65,9 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                                                 J_CSTR_TO_BUF(CONST_PARAM_NAME_VIDEO_DEVICE_LIST));
                 }
                 else
-                {
                     jin_obj_child =
                         jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VIDEO_DEVICE_LIST));
-                }
+
                 int listcount = jarray_size(jin_obj_child);
                 PMLOG_INFO(CONST_MODULE_PC, "listcount : %d \n", listcount);
 
@@ -86,18 +85,14 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     std::string str_devicetype = device_type.m_str;
                     PMLOG_INFO(CONST_MODULE_PC, "str_devicetype : %s \n", str_devicetype.c_str());
                     if (str_devicetype != cstr_cam)
-                    {
                         continue;
-                    }
+
                     // vendorName
                     jvalue_ref jin_obj_vendorname;
                     if (!jobject_get_exists(jin_array_obj,
                                             J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_NAME),
                                             &jin_obj_vendorname))
-                    {
                         continue;
-                    }
-
                     raw_buffer vendor_name     = jstring_get_fast(jin_obj_vendorname);
                     std::string str_vendorname = vendor_name.m_str;
                     PMLOG_INFO(CONST_MODULE_PC, "str_vendorname : %s \n", str_vendorname.c_str());

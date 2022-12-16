@@ -27,7 +27,7 @@ class CameraSolution;
 class CameraSolutionEvent;
 class CameraSolutionManager
 {
-    CameraSolutionManager(const CameraSolutionManager &) = delete;
+    CameraSolutionManager(const CameraSolutionManager &)            = delete;
     CameraSolutionManager &operator=(const CameraSolutionManager &) = delete;
 
 public:
@@ -55,7 +55,8 @@ public:
     DEVICE_RETURN_CODE_T disableCameraSolution(const SolutionNames &names);
 
 public:
-    static void getSupportedSolutionList(std::vector<std::string>& supportedList, std::vector<std::string>& enabledList);
+    static void getSupportedSolutionList(std::vector<std::string> &supportedList,
+                                         std::vector<std::string> &enabledList);
 
 private:
     SolutionList lstSolution_;

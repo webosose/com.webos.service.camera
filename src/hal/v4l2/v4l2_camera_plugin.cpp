@@ -107,10 +107,9 @@ int V4l2CameraPlugin::setFormat(stream_format_t stream_format)
     parm.type                                  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     parm.parm.capture.timeperframe.numerator   = 1;
     parm.parm.capture.timeperframe.denominator = stream_format.stream_fps;
-
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_PARM, &parm))
     {
-        HAL_LOG_INFO(CONST_MODULE_HAL, "setFormat : VIDIOC_S_PARM failed\n");
+        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_S_PARM failed\n");
         return CAMERA_ERROR_UNKNOWN;
     }
 
@@ -218,7 +217,6 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
         {
             HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_DQBUF failed %d, %s", errno, strerror(errno));
         }
-
         outbuf->start  = buffers_[buf.index].start;
         outbuf->length = buf.bytesused;
         outbuf->index  = buf.index;
@@ -236,11 +234,9 @@ int V4l2CameraPlugin::getBuffer(buffer_t *outbuf)
         {
             HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_DQBUF failed %d, %s", errno, strerror(errno));
         }
-
         outbuf->start  = buffers_[buf.index].start;
         outbuf->length = buf.bytesused;
         outbuf->index  = buf.index;
-
         break;
     }
     case IOMODE_DMABUF:

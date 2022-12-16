@@ -53,7 +53,6 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     LS_CATEGORY_METHOD(getFd)
     LS_CATEGORY_METHOD(setSolutions)
     LS_CATEGORY_METHOD(getSolutions)
-
     LS_CATEGORY_END;
 
     // attach to mainloop and run it
@@ -159,8 +158,8 @@ void CameraService::createEventMessage(EventType etype, void *p_old_data, int de
 bool CameraService::open(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
 
+    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
     // create Open class object and read data from json object after schema validation
     OpenMethod open;
     open.getOpenObject(payload, openSchema);
@@ -168,7 +167,6 @@ bool CameraService::open(LSMessage &message)
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     std::string app_id = open.getAppId();
-
     // camera id & appId validation check
     if (cstr_invaliddeviceid == open.getCameraId() || (AddOn::hasImplementation() && app_id.empty()))
     {
@@ -385,7 +383,6 @@ bool CameraService::startPreview(LSMessage &message)
         int key = 0;
 
         memType = obj_startpreview.rGetParams();
-
         if (memType.str_memorytype == kMemtypeShmem || memType.str_memorytype == kMemtypeShmemMmap || memType.str_memorytype == kMemtypePosixshm)
         {
             err_id = CommandManager::getInstance().startPreview(
@@ -694,6 +691,7 @@ bool CameraService::getCameraList(LSMessage &message)
                 obj_getcameralist.setCameraList(arrlist[i], i);
             }
         }
+
         AddOn::setSubscriptionForCameraList(message);
     }
 
@@ -878,7 +876,8 @@ bool CameraService::setFormat(LSMessage &message)
 
 bool CameraService::getEventNotification(LSMessage &message)
 {
-    auto *payload  = LSMessageGetPayload(&message);
+    auto *payload = LSMessageGetPayload(&message);
+    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
     bool returnVal = event_obj.addSubscription(this->get(), CONST_EVENT_NOTIFICATION, message);
 
     std::string output_reply = event_obj.subscriptionJsonString(returnVal);
@@ -1092,11 +1091,11 @@ bool CameraService::getSolutions(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle (%d) \n", ndevhandle);
     PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
     // check if device handle value and camera id are set property.
-    //      device handle         cameraId        result
-    // 1.        set                 set           error
-    // 2.        set               not set         OK
-    // 3.      not set               set           OK
-    // 4.      not set             not set         error
+    //       device handle         cameraId        result
+    //  1.        set                 set           error
+    //  2.        set               not set         OK
+    //  3.      not set               set           OK
+    //  4.      not set             not set         error
 
     if (n_invalid_id != ndevhandle && n_invalid_id != ncamId)
     {
@@ -1170,11 +1169,11 @@ bool CameraService::setSolutions(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
 
     // check if device handle value and camera id are set property.
-    //      device handle         cameraId        result
-    // 1.        set                 set           error
-    // 2.        set               not set         OK
-    // 3.      not set               set           OK
-    // 4.      not set             not set         error
+    //       device handle         cameraId        result
+    //  1.        set                 set           error
+    //  2.        set               not set         OK
+    //  3.      not set               set           OK
+    //  4.      not set             not set         error
 
     if (n_invalid_id != ndevhandle && n_invalid_id != ncamId)
     {

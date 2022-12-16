@@ -1901,10 +1901,8 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
                 jobject_put(json_paramsobj, J_CSTR_TO_JVAL("enable"), jboolean_create(isEnabled));
                 /* To do: TBD */
                 /*
-                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_1"),
-                jstring_create(string_value));
-                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_2"),
-                jnumber_create_i32(num_value));
+                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_1"), jstring_create(string_value));
+                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_2"), jnumber_create_i32(num_value));
                 */
                 jobject_put(json_solution_obj, J_CSTR_TO_JVAL("params"), json_paramsobj);
 
@@ -1982,10 +1980,8 @@ void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
             jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("enable")), &enable);
             /* To do: TBD */
             /*
-            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key1")),
-            &enable);
-            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key2")),
-            &enable);
+            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key1")), &enable);
+            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key2")), &enable);
             */
 
             if (true == enable)

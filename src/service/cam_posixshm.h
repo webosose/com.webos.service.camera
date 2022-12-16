@@ -50,7 +50,7 @@ public:
     PSHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *, int, int, int, std::string, int);
 
     IPCPosixSharedMemory(IPCPosixSharedMemory const &) = delete;
-    void operator=(IPCPosixSharedMemory const &) = delete;
+    void operator=(IPCPosixSharedMemory const &)       = delete;
 
 private:
     IPCPosixSharedMemory() {}

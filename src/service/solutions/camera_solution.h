@@ -20,9 +20,9 @@
 #include <atomic>
 #include <string>
 
-#define SOLUTION_DUMMY          "Dummy"
-#define SOLUTION_AUTOCONTRAST   "AutoContrast"
-#define SOLUTION_FACEDETECTION  "FaceDetection"
+#define SOLUTION_DUMMY "Dummy"
+#define SOLUTION_AUTOCONTRAST "AutoContrast"
+#define SOLUTION_FACEDETECTION "FaceDetection"
 
 #define FACEDETECTION_MODEL_CNN "CNN"
 #define FACEDETECTION_MODEL_AIF "AIF"
