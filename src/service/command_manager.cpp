@@ -53,7 +53,8 @@ void CommandManager::removeVirtualDevMgrObj(int devhandle)
     }
 }
 
-DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::string apppriority, std::string appId)
+DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::string appId,
+                                          std::string apppriority)
 {
     PMLOG_INFO(CONST_MODULE_CM, "deviceid : %d \n", deviceid);
 
@@ -78,7 +79,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     if (nullptr != obj.ptr)
     {
         // open device and return devicehandle
-        DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, apppriority, appId);
+        DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, appId, apppriority);
         if (DEVICE_OK == ret)
         {
             PMLOG_INFO(CONST_MODULE_CM, "devicehandle : %d \n", *devicehandle);

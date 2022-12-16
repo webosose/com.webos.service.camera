@@ -149,7 +149,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     return ret;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string apppriority, std::string appId)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string appId,
+                                                std::string apppriority)
 {
     PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", devid);
 

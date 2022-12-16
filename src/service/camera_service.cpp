@@ -195,7 +195,7 @@ bool CameraService::open(LSMessage &message)
         int ndevice_handle = n_invalid_id;
 
         // open camera device and save fd
-        err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_priority, app_id);
+        err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_id, app_priority);
         if (DEVICE_OK != err_id)
         {
             PMLOG_DEBUG("err_id != DEVICE_OK\n");

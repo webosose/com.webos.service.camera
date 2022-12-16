@@ -81,13 +81,15 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
 
     if (0 == retVal)
     {
+        raw_buffer str_appid =
+            jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_APPID)));
+        setAppId(str_appid.m_str);
         raw_buffer str_id =
             jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID)));
         setCameraId(str_id.m_str);
         str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_APP_PRIORITY)));
         std::string priority = str_id.m_str;
-        // parsing of argumnets to open call. Only empty or primary or secondary
-        // are valid
+        // parsing of argumnets to open call. Only empty or primary or secondary are valid
         if ((0 == priority.length()) || (cstr_primary == priority) || (cstr_secondary == priority))
         {
             setAppPriority(str_id.m_str);
@@ -128,11 +130,6 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
         setCameraId(cstr_invaliddeviceid);
         setClientProcessId(n_invalid_pid);
     }
-
-    raw_buffer str_appid = jstring_get_fast(jobject_get(j_obj,
-                                                        J_CSTR_TO_BUF(CONST_PARAM_NAME_APPID)));
-    setAppId(str_appid.m_str);
-
     j_release(&j_obj);
 }
 
