@@ -41,6 +41,10 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
+pkg_check_modules(JPEG REQUIRED libjpeg)
+include_directories(${JPEG_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
+
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
@@ -91,6 +95,29 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/addon.cpp
     )
 
+### SOLUTION MANAGER Main setting Start ###
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
+    )
+### SOLUTION MANAGER Main setting End ###
+
+### SOLUTION MANAGER Solution implementations Start ###
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/dummy/dummy.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/auto_contrast/auto_contrast.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
+    )
+### SOLUTION MANAGER Solution implementations End ###
+
+### SOLUTION MANAGER Solution configuration file Start ###
+message(STATUS "Using json to define supported solutions for variable platform")
+webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+### SOLUTION MANAGER Solution configuration file End ###
+
 ### SOLUTION MANAGER Add AI Framework Start ###
 # find needed packages
 find_package(PkgConfig)
@@ -112,57 +139,9 @@ link_directories(
     ${RAPIDJSON_LIBRARY_DIRS}
 )
 ### SOLUTION MANAGER Add AI Framework End ###
-### SOLUTION_AIF_FACEDETECTION setting Start ###
-#if(SOLUTION_AIF_FACEDETECTION)
-
-pkg_check_modules(JPEG REQUIRED libjpeg)
-include_directories(${JPEG_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AIF_FACEDETECTION")
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
-    )
-### SOLUTION_AIF_FACEDETECTION setting End ###
-
-### SOLUTION_AUTOCONTRAST setting Start ###
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AUTOCONTRAST")
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/auto_contrast/auto_contrast.cpp
-    )
-
-### SOLUTION_AUTOCONTRAST setting End ###
-
-### SOLUTION_DUMMY setting Start ###
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_DUMMY")
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/dummy/dummy.cpp
-    )
-
-### SOLUTION_DUMMY setting End ###
-
-
-### SOLUTION MANAGER Main setting Start ###
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
-    )
-message(STATUS "Using json to define supported solutions for variable platform")
-webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
-
-### SOLUTION MANAGER Main setting End ###
 
 add_executable(${PROJECT_NAME}
                ${SRC_LIST})
-
 
 target_link_libraries(${PROJECT_NAME}
                       ${GLIB2_LDFLAGS}
@@ -171,12 +150,11 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       pthread
                       camera_hal
-                      ${OPENCV_LDFLAGS}
-                      ${RAPIDJSON_LDFLAGS}
-                      ${AIFRWK_LDFLAGS}
-		      ${FACE_DETECTION_LIBS}
                       ${JPEG_LDFLAGS}
-                      edgeai-vision                      
+                      ${TFLITE_LIBRARIES}
+                      ${OPENCV_LIBRARIES}
+                      ${RAPIDJSON_LIBRARIES}
+                      edgeai-vision
                       )
 
 
