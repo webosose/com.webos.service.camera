@@ -51,7 +51,7 @@ int DeviceManager::findDevNum(int ndevicehandle)
     return nDeviceID;
 }
 
-bool DeviceManager::deviceStatus(int deviceID, DEVICE_TYPE_T devType, bool status)
+bool DeviceManager::setOpenStatus(int deviceID, bool status)
 {
     PMLOG_INFO(CONST_MODULE_DM, "deviceID %d status : %d \n!!", deviceID, status);
     int dev_num = findDevNum(deviceID);

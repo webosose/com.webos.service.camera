@@ -52,7 +52,7 @@ public:
         static DeviceManager obj;
         return obj;
     }
-    bool deviceStatus(int, DEVICE_TYPE_T, bool);
+    bool setOpenStatus(int, bool);
     bool isDeviceOpen(int *);
     bool isDeviceValid(DEVICE_TYPE_T, int *);
     void getDeviceNode(int *, std::string &);

@@ -141,7 +141,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     if (DEVICE_OK != ret)
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
     else
-        DeviceManager::getInstance().deviceStatus(devid, type, TRUE);
+        DeviceManager::getInstance().setOpenStatus(devid, TRUE);
 
     // get virtual device handle for device opened
     *devhandle = getVirtualDeviceHandle(devid);
@@ -263,8 +263,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
                 ret = objdevicecontrol_.close(handle);
                 if (DEVICE_OK == ret)
                 {
-                    DEVICE_TYPE_T type = DeviceManager::getInstance().getDeviceType(&deviceid);
-                    DeviceManager::getInstance().deviceStatus(deviceid, type, FALSE);
+                    DeviceManager::getInstance().setOpenStatus(deviceid, FALSE);
                     ret = objdevicecontrol_.destroyHandle(handle);
                     DeviceManager::getInstance().updateHandle(deviceid, nullptr);
                     // remove the virtual device
