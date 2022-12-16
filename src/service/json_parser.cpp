@@ -17,7 +17,6 @@
 #include "json_parser.h"
 #include "addon.h"
 #include "camera_constants.h"
-#include "whitelist_checker.h"
 #include <iostream>
 #include <signal.h>
 

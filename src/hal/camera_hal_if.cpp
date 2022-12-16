@@ -20,7 +20,6 @@
 #include <dlfcn.h>
 #include <new>
 #include <unistd.h>
-#include <cstring>
 
 #ifdef __cplusplus
 extern "C"

@@ -22,9 +22,6 @@
 #include "command_manager.h"
 #include "device_controller.h"
 
-#include <fstream>
-#include <string.h>
-
 DeviceManager::DeviceManager() {}
 
 int DeviceManager::findDevNum(int ndevicehandle)

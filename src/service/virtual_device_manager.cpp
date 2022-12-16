@@ -21,9 +21,6 @@
 #include "addon.h" // platform-specific functionality extension support
 #include "camera_constants.h"
 #include "device_manager.h"
-#include <algorithm>
-#include <fstream>
-#include <unistd.h>
 
 VirtualDeviceManager::VirtualDeviceManager()
     : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_{},
