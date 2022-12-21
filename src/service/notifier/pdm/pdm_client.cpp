@@ -23,6 +23,7 @@
 #include <glib.h>
 #include <pbnjson.hpp>
 
+//TODO : Add to PDMClient member as std::vector<DEVICE_LIST_T>
 DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
 
 static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
@@ -38,6 +39,9 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
         int camcount = 0;
         jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
         PMLOG_INFO(CONST_MODULE_PC, "retvalue : %d \n", retvalue);
+
+        PDMClient *client = (PDMClient *)user_data;
+
         if (retvalue)
         {
             jvalue_ref jin_obj_devlistinfo;
@@ -279,19 +283,23 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
             }
         }
         j_release(&jin_obj);
+
+        if (NULL != client->subscribeToDeviceInfoCb_)
+            client->subscribeToDeviceInfoCb_(dev_info_);
     }
 
     return true;
 }
 
-void PDMClient::subscribeToClient(GMainLoop *loop)
+void PDMClient::subscribeToClient(handlercb cb, GMainLoop *loop)
 {
     LSError lsregistererror;
     LSErrorInit(&lsregistererror);
 
     // register to PDM luna service with cb to be called
-    bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
-                                           subscribeToPdmService, loop, NULL, &lsregistererror);
+    subscribeToDeviceInfoCb_ = cb;
+    bool result              = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
+                                                        subscribeToPdmService, this, NULL, &lsregistererror);
     if (!result)
     {
         PMLOG_INFO(CONST_MODULE_PC, "LSRegister Server Status failed");
@@ -303,40 +311,40 @@ void PDMClient::setLSHandle(LSHandle *handle) { lshandle_ = handle; }
 bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
                                       void *ctx)
 {
-    int retval = 0;
     int ret    = 0;
-
-    LSError lserror;
-    LSErrorInit(&lserror);
-
-    std::string payload = "{\"subscribe\":true,\"category\":\"Video\"";
-#ifdef USE_GROUP_SUB_DEVICES
-    payload += ",\"groupSubDevices\":true";
-#endif
-    payload += "}";
 
     PMLOG_INFO(CONST_MODULE_PC, "connected status:%d \n", connected);
     if (connected)
     {
+        LSError lserror;
+        LSErrorInit(&lserror);
+
+        std::string payload = "{\"subscribe\":true,\"category\":\"Video\"";
+#ifdef USE_GROUP_SUB_DEVICES
+        payload += ",\"groupSubDevices\":true";
+#endif
+        payload += "}";
+
         // get camera service handle and register cb function with pdm
-        retval =
-            LSCall(sh, cstr_uri.c_str(), payload.c_str(), deviceStateCb, NULL, NULL, &lserror);
+        int retval =
+            LSCall(sh, cstr_uri.c_str(), payload.c_str(), deviceStateCb, ctx, NULL, &lserror);
+
         if (!retval)
         {
             PMLOG_INFO(CONST_MODULE_PC, "PDM client Unable to unregister service\n");
             ret = -1;
         }
+
+        if (LSErrorIsSet(&lserror))
+        {
+            LSErrorPrint(&lserror, stderr);
+        }
+        LSErrorFree(&lserror);
     }
     else
     {
         PMLOG_INFO(CONST_MODULE_PC, "connected value is false");
     }
-
-    if (LSErrorIsSet(&lserror))
-    {
-        LSErrorPrint(&lserror, stderr);
-    }
-    LSErrorFree(&lserror);
 
     return ret;
 }

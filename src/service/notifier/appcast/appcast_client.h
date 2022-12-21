@@ -22,8 +22,6 @@
 #include <functional>
 #include <luna-service2/lunaservice.hpp>
 
-using appcasthandlercb = std::function<void(DEVICE_LIST_T *)>;
-
 enum APP_CAST_STATE
 {
     INIT  = 0,
@@ -43,7 +41,7 @@ private:
 public:
     AppCastClient();
     virtual ~AppCastClient() {}
-    virtual void subscribeToClient(GMainLoop *loop) override;
+    virtual void subscribeToClient(handlercb, GMainLoop *loop) override;
     virtual void setLSHandle(LSHandle *);
     void setState(APP_CAST_STATE);
     bool sendConnectSoundInput(bool);

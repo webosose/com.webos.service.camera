@@ -175,7 +175,7 @@ AppCastClient::AppCastClient()
     DeviceManager::getInstance().set_appcastclient(this);
 }
 
-void AppCastClient::subscribeToClient(GMainLoop *loop)
+void AppCastClient::subscribeToClient(handlercb cb, GMainLoop *loop)
 {
     LSError lsregistererror;
     LSErrorInit(&lsregistererror);

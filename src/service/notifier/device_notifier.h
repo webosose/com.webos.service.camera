@@ -22,10 +22,13 @@
 
 class DeviceNotifier
 {
-private:
 public:
-    virtual void subscribeToClient(GMainLoop *loop) = 0;
-    virtual void setLSHandle(LSHandle *)            = 0;
+    using handlercb = std::function<void(void *)>;
+
+//TODO : Remove hadldercb. It is not used
+//TODO : Remove loop. It is not used
+    virtual void subscribeToClient(handlercb, GMainLoop *loop) = 0;
+    virtual void setLSHandle(LSHandle *)                       = 0;
 };
 
 #endif /* DEVICE_NOTIFIER_H_ */

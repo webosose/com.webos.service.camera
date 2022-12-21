@@ -42,7 +42,7 @@ public:
     virtual ~Notifier() {}
 
     void addNotifier(NotifierClient, GMainLoop *loop);
-    void registerCallback(GMainLoop *loop);
+    void registerCallback(DeviceNotifier::handlercb, GMainLoop *loop);
     void setLSHandle(LSHandle *);
 };
 

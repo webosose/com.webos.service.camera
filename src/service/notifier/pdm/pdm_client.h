@@ -32,8 +32,10 @@ private:
 public:
     PDMClient() { lshandle_ = nullptr; }
     virtual ~PDMClient() {}
-    virtual void subscribeToClient(GMainLoop *loop) override;
+    virtual void subscribeToClient(handlercb, GMainLoop *loop) override;
     void setLSHandle(LSHandle *);
+
+    DeviceNotifier::handlercb subscribeToDeviceInfoCb_;
 };
 
 #endif
