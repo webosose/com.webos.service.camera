@@ -397,6 +397,8 @@ void DeviceControl::previewThread()
             IPCSharedMemory::getInstance().WriteExtra(h_shmsystem_, (unsigned char *)&timestamp,
                                                       sizeof(timestamp));
 
+            IPCSharedMemory::getInstance().IncrementWriteIndex(h_shmsystem_);
+
             broadcast_();
         }
         else if (b_issystemvruning_mmap)
@@ -420,6 +422,8 @@ void DeviceControl::previewThread()
             // Time stamp is currently not used actually.
             IPCPosixSharedMemory::getInstance().WriteExtra(h_shmposix_, (unsigned char *)&timestamp,
                                                            sizeof(timestamp));
+
+            IPCPosixSharedMemory::getInstance().IncrementWriteIndex(h_shmposix_);
         }
 
         retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
