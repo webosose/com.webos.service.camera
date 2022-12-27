@@ -19,7 +19,7 @@ private:
     static bool getCurrentDeviceInfo(std::string&, std::string&, std::string&);
 
 private:
-    struct Callback : public DeviceEventCallback
+    struct Service : public ICameraService
     {
         int getDeviceList(int*,int*,int*,int*) override;
         int getDeviceCounts(DEVICE_TYPE_T) override;
@@ -31,7 +31,7 @@ private:
         void getSupportedSolutionList(std::vector<std::string>&, std::vector<std::string>&) override;
     };
 
-    static Callback *cb_;
+    static Service *service_;
 
 public:
     static void open();

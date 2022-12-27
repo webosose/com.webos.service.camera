@@ -11,7 +11,7 @@
 
 void *AddOn::handle_ = nullptr;
 ICameraServiceAddon *AddOn::plugin_ = nullptr;
-AddOn::Callback *AddOn::cb_ = nullptr;
+AddOn::Service *AddOn::service_ = nullptr;
 
 typedef void *(*pfn_create_plugin_instance)();
 typedef void *(*pfn_destroy_plugin_instance)(void*);
@@ -84,8 +84,8 @@ void AddOn::open()
     plugin_ = (ICameraServiceAddon*)create_plugin_instance();
     if (plugin_)
     {
-        AddOn::cb_ = new Callback();
-        if (nullptr == AddOn::cb_)
+        AddOn::service_ = new Service();
+        if (nullptr == AddOn::service_)
         {
             PMLOG_INFO(CONST_MODULE_ADDON, "DeviceEventCallback object malloc failed.");
             close();
@@ -111,10 +111,10 @@ void AddOn::close()
         dlclose(handle_);
         handle_ = nullptr;
     }
-    if (AddOn::cb_)
+    if (AddOn::service_)
     {
-        delete AddOn::cb_;
-        AddOn::cb_ = nullptr;
+        delete AddOn::service_;
+        AddOn::service_ = nullptr;
     }
 }
 
@@ -135,6 +135,7 @@ void AddOn::initialize(LSHandle *ls_handle)
 {
     if (plugin_)
     {
+        plugin_->setCameraService(AddOn::service_);
         plugin_->initialize(ls_handle);
     }
 }
@@ -151,7 +152,7 @@ void AddOn::setDeviceEvent(DEVICE_LIST_T *device_list, int count, bool resumed, 
 {
     if (plugin_)
     {
-        plugin_->setDeviceEvent(device_list, count, resumed, remote, cb_);
+        plugin_->setDeviceEvent(device_list, count, resumed, remote);
     }
 }
 
@@ -188,7 +189,7 @@ bool AddOn::test(LSMessage &message)
     {
         return true;
     }
-    return plugin_->test(message, cb_);
+    return plugin_->test(message);
 }
 
 bool AddOn::isResumeDone()
@@ -206,7 +207,7 @@ bool AddOn::toastCameraUsingPopup()
     {
         return false;
     }
-    return plugin_->toastCameraUsingPopup(cb_);
+    return plugin_->toastCameraUsingPopup();
 }
 
 void AddOn::logMessagePrivate(std::string msg)
@@ -236,14 +237,14 @@ void AddOn::detachPrivateComponentFromDevice(int deviceid, const std::vector<std
     plugin_->detachPrivateComponentFromDevice(deviceid, privateStrVecData);
 }
 
-void AddOn::pushDevicePrivateData(int device_id, int dev_idx, DEVICE_TYPE_T type, DEVICE_LIST_T *pstList) 
+void AddOn::pushDevicePrivateData(int device_id, int dev_idx, DEVICE_TYPE_T type, DEVICE_LIST_T *pstList)
 {
     if (!plugin_)
     {
         return;
     }
 
-    plugin_->pushDevicePrivateData(device_id, dev_idx, type, pstList, cb_); 
+    plugin_->pushDevicePrivateData(device_id, dev_idx, type, pstList);
 }
 
 void AddOn::popDevicePrivateData(int dev_idx)
@@ -275,42 +276,42 @@ void AddOn::updateDevicePrivateHandle(int deviceid, int devicehandle)
 }
 
 
-int AddOn::Callback::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
+int AddOn::Service::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
 {
     return AddOn::getDeviceList(pcamdev, pmicdev, pcamsupport, pmicsupport);
 }
 
-int AddOn::Callback::getDeviceCounts(DEVICE_TYPE_T type)
+int AddOn::Service::getDeviceCounts(DEVICE_TYPE_T type)
 {
     return AddOn::getDeviceCounts(type);
 }
 
-int AddOn::Callback::addDevice(DEVICE_LIST_T *devList)
+int AddOn::Service::addDevice(DEVICE_LIST_T *devList)
 {
     return AddOn::addDevice(devList);
 }
 
-bool AddOn::Callback::removeDevice(int dev_idx)
+bool AddOn::Service::removeDevice(int dev_idx)
 {
     return AddOn::removeDevice(dev_idx);
 }
 
-int AddOn::Callback::addRemoteCamera(deviceInfo_t *devInfo)
+int AddOn::Service::addRemoteCamera(deviceInfo_t *devInfo)
 {
     return AddOn::addRemoteCamera(devInfo);
 }
 
-int AddOn::Callback::removeRemoteCamera(int dev_idx)
+int AddOn::Service::removeRemoteCamera(int dev_idx)
 {
     return AddOn::removeRemoteCamera(dev_idx);
 }
 
-bool AddOn::Callback::getCurrentDeviceInfo(std::string &productId, std::string &vendorId, std::string &productName)
+bool AddOn::Service::getCurrentDeviceInfo(std::string &productId, std::string &vendorId, std::string &productName)
 {
     return AddOn::getCurrentDeviceInfo(productId, vendorId, productName);
 }
 
-void AddOn::Callback::getSupportedSolutionList(std::vector<std::string> &supportedList,
+void AddOn::Service::getSupportedSolutionList(std::vector<std::string> &supportedList,
                                               std::vector<std::string> &enabledList)
 {
     CameraSolutionManager::getSupportedSolutionList(supportedList, enabledList);
