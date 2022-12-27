@@ -327,26 +327,6 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     // Push platform-specific device private data associated with this device */
     AddOn::pushDevicePrivateData(devStatus.nDeviceID, devStatus.nDevIndex, devStatus.devType, pList);
 
-    if (devStatus.devType == DEVICE_V4L2_CAMERA || devStatus.devType == DEVICE_V4L2_CAMERA_DUMMY)
-    {
-        /* double-check device path */
-        if (pList->strDeviceNode.find("/dev/video") != std::string::npos)
-        {
-            devStatus.stList.strDeviceNode = pList->strDeviceNode;
-        }
-        else if (pList->strDeviceNode.find("video") != std::string::npos)
-        {
-            devStatus.stList.strDeviceNode = "/dev/" + pList->strDeviceNode;
-        }
-        else
-        {
-            PMLOG_INFO(CONST_MODULE_DM, "fail to add device:  %s is not a valid device node!!",
-                       pList->strDeviceNode.c_str());
-            return 0;
-        }
-        PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
-                   pList->strDeviceNode.c_str());
-    }
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
     return devidx;
