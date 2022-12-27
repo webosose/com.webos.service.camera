@@ -20,8 +20,6 @@
 #include "device_manager.h"
 #include <pbnjson.hpp>
 
-static int remoteCamIdx_{0};
-
 static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
     PMLOG_INFO(CONST_MODULE_AC, "callback received\n");
@@ -124,7 +122,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                         PMLOG_INFO(CONST_MODULE_AC, "add camera\n");
 
                         client->mDeviceInfo.deviceLabel = "remote";
-                        remoteCamIdx_ = DeviceManager::getInstance().addRemoteCamera(&client->mDeviceInfo);
+                        client->remoteCamIdx_ = DeviceManager::getInstance().addRemoteCamera(&client->mDeviceInfo);
                         client->sendConnectSoundInput(true);
                         client->sendSetSoundInput(true);
                         client->setState(READY);
@@ -149,7 +147,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
             else
             {
                 PMLOG_INFO(CONST_MODULE_AC, "remove camera\n");
-                DeviceManager::getInstance().removeRemoteCamera(remoteCamIdx_);
+                DeviceManager::getInstance().removeRemoteCamera(client->remoteCamIdx_);
                 client->sendConnectSoundInput(false);
                 client->setState(INIT);
 
