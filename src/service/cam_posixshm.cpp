@@ -290,6 +290,24 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned c
     unsigned char *addr =
         shmem_buffer->extra_buf + (*shmem_buffer->write_index) * (*shmem_buffer->extra_size);
     memcpy(addr, extraData, extraBytes);
+
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+
+    //Increase the write index to match the read index of ReadShmem
+    *shmem_buffer->write_index += 1;
+    if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
+        *shmem_buffer->write_index = 0;
+
     return PSHMEM_IS_OK;
 }
 

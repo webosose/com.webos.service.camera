@@ -47,6 +47,7 @@ public:
     PSHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, buffer_t[], buffer_t[]);
     PSHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
     PSHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char *, size_t);
+    PSHMEM_STATUS_T IncrementWriteIndex(SHMEM_HANDLE);
     PSHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *, int, int, int, std::string, int);
 
     IPCPosixSharedMemory(IPCPosixSharedMemory const &) = delete;

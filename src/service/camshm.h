@@ -47,6 +47,7 @@ public:
     SHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
     SHMEM_STATUS_T WriteMeta(SHMEM_HANDLE, unsigned char *, size_t);
     SHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char *, size_t);
+    SHMEM_STATUS_T IncrementWriteIndex(SHMEM_HANDLE);
     SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);
 
     IPCSharedMemory(IPCSharedMemory const &) = delete;

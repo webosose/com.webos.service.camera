@@ -443,6 +443,24 @@ SHMEM_STATUS_T IPCSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned char *e
     unsigned char *addr =
         shmem_buffer->extra_buf + (*shmem_buffer->write_index) * (*shmem_buffer->extra_size);
     memcpy(addr, extraData, extraBytes);
+
+    return SHMEM_IS_OK;
+}
+
+SHMEM_STATUS_T IPCSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
+{
+    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return SHMEM_IS_NULL;
+    }
+
+    //Increase the write index to match the read index of ReadShmem
+    *shmem_buffer->write_index += 1;
+    if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
+        *shmem_buffer->write_index = 0;
+
     return SHMEM_IS_OK;
 }
 
