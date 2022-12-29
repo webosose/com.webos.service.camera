@@ -1,4 +1,4 @@
-# Copyright (c) 2019 LG Electronics, Inc.
+# Copyright (c) 2019-2021 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-set(UNIT_TEST_SOURCES
-    hal/test_cam_hal.cpp )
+if(WEBOS_USES_GOOGLE_TEST)
+    add_subdirectory(plugins/hal)
+endif()
 
-add_executable (test_cam_hal ${UNIT_TEST_SOURCES})
-target_link_libraries (test_cam_hal ${WEBOS_GTEST_LIBRARIES} camera_hal)
-install(TARGETS test_cam_hal DESTINATION ${WEBOS_INSTALL_SBINDIR})
+add_subdirectory(test-app)

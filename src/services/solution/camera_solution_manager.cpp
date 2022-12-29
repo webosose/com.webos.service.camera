@@ -14,11 +14,11 @@
  */
 
 #include "camera_solution_manager.h"
-#include "auto_contrast/auto_contrast.hpp"
+#include "auto_contrast.hpp"
 #include "camera_solution.h"
 #include "camera_types.h"
-#include "dummy/dummy.hpp"
-#include "face_detection_aif/face_detection_aif.hpp"
+#include "dummy.hpp"
+#include "face_detection_aif.hpp"
 #include <pbnjson.hpp>
 
 enum LgSolutionErrorValue

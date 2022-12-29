@@ -16,7 +16,7 @@
 #pragma once
 
 // System dependencies
-#include "camera_hal_if.h"
+#include "camera_hal_if_types.h"
 #include <atomic>
 #include <string>
 

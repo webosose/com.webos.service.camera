@@ -47,5 +47,4 @@ target_link_libraries (${BIN_NAME}
     ${PBNJSON_CPP_LDFLAGS}
 )
 
-
 install(TARGETS ${BIN_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
