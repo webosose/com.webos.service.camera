@@ -47,10 +47,10 @@ private:
 public:
     CameraService();
 
-    CameraService(CameraService const &) = delete;
-    CameraService(CameraService &&)      = delete;
+    CameraService(CameraService const &)            = delete;
+    CameraService(CameraService &&)                 = delete;
     CameraService &operator=(CameraService const &) = delete;
-    CameraService &operator=(CameraService &&) = delete;
+    CameraService &operator=(CameraService &&)      = delete;
 
     bool open(LSMessage &);
     bool close(LSMessage &);
@@ -65,7 +65,6 @@ public:
     bool stopCapture(LSMessage &);
     bool getEventNotification(LSMessage &);
     bool getFd(LSMessage &);
-
     bool getSolutions(LSMessage &message);
     bool setSolutions(LSMessage &message);
 };

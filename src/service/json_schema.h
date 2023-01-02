@@ -385,8 +385,8 @@ const char *setSolutionsSchema = "{ \
             } \
           } \
         } \
-      }\
-    }\
-  }\
+      } \
+    } \
+  } \
 }";
 #endif /*SRC_SERVICE_JSON_SCHEMA_H_*/

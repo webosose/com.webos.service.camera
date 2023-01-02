@@ -41,6 +41,10 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
+pkg_check_modules(JPEG REQUIRED libjpeg)
+include_directories(${JPEG_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
+
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
@@ -58,17 +62,19 @@ include_directories(${CMAKE_SOURCE_DIR}/src/addon/include)
 
 #publish headers for addon interface implementation
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_constants.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_list_type.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_event_type.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_base.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_hal_if_cpp_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_device_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
+install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_event_types.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/include/camera_log.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
 install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_interface.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
-install(FILES ${CMAKE_SOURCE_DIR}/src/addon/include/camera_service_addon_singleton.h DESTINATION ${WEBOS_INSTALL_INCLUDEDIR})
-
 
 #service
 include_directories(${CMAKE_SOURCE_DIR}/src/service/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/)
+include_directories(${CMAKE_SOURCE_DIR}/src/service/notifier/appcast/)
 include_directories(${CMAKE_SOURCE_DIR}/src/service/solutions/)
 
 set(SRC_LIST
@@ -80,6 +86,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/json_parser.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/pdm_client.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/notifier/appcast/appcast_client.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/cam_posixshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
@@ -87,6 +94,29 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/event_notification.cpp
     ${CMAKE_SOURCE_DIR}/src/service/addon.cpp
     )
+
+### SOLUTION MANAGER Main setting Start ###
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
+    )
+### SOLUTION MANAGER Main setting End ###
+
+### SOLUTION MANAGER Solution implementations Start ###
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/dummy/dummy.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/auto_contrast/auto_contrast.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
+    )
+### SOLUTION MANAGER Solution implementations End ###
+
+### SOLUTION MANAGER Solution configuration file Start ###
+message(STATUS "Using json to define supported solutions for variable platform")
+webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+### SOLUTION MANAGER Solution configuration file End ###
 
 ### SOLUTION MANAGER Add AI Framework Start ###
 # find needed packages
@@ -109,57 +139,9 @@ link_directories(
     ${RAPIDJSON_LIBRARY_DIRS}
 )
 ### SOLUTION MANAGER Add AI Framework End ###
-### SOLUTION_AIF_FACEDETECTION setting Start ###
-#if(SOLUTION_AIF_FACEDETECTION)
-
-pkg_check_modules(JPEG REQUIRED libjpeg)
-include_directories(${JPEG_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AIF_FACEDETECTION")
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
-    )
-### SOLUTION_AIF_FACEDETECTION setting End ###
-
-### SOLUTION_AUTOCONTRAST setting Start ###
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AUTOCONTRAST")
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/auto_contrast/auto_contrast.cpp
-    )
-
-### SOLUTION_AUTOCONTRAST setting End ###
-
-### SOLUTION_DUMMY setting Start ###
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_DUMMY")
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/dummy/dummy.cpp
-    )
-
-### SOLUTION_DUMMY setting End ###
-
-
-### SOLUTION MANAGER Main setting Start ###
-
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution.cpp
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
-    )
-message(STATUS "Using json to define supported solutions for variable platform")
-webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
-
-### SOLUTION MANAGER Main setting End ###
 
 add_executable(${PROJECT_NAME}
                ${SRC_LIST})
-
 
 target_link_libraries(${PROJECT_NAME}
                       ${GLIB2_LDFLAGS}
@@ -168,12 +150,11 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       pthread
                       camera_hal
-                      ${OPENCV_LDFLAGS}
-                      ${RAPIDJSON_LDFLAGS}
-                      ${AIFRWK_LDFLAGS}
-		      ${FACE_DETECTION_LIBS}
                       ${JPEG_LDFLAGS}
-                      edgeai-vision                      
+                      ${TFLITE_LIBRARIES}
+                      ${OPENCV_LIBRARIES}
+                      ${RAPIDJSON_LIBRARIES}
+                      edgeai-vision
                       )
 
 
@@ -205,13 +186,21 @@ set (SRC_V4L2
 add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
 set_target_properties (v4l2-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
 
+#remote-camera-plugin library
+set (SRC_REMOTE
+     ${CMAKE_SOURCE_DIR}/src/hal/remote/remote_camera_plugin.cpp)
+add_library(remote-camera-plugin SHARED ${SRC_REMOTE})
+set_target_properties (remote-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
+
 #link libraries camera_hal and v4l2-camera-plugin
 target_link_libraries(camera_hal
                       v4l2-camera-plugin
+                      remote-camera-plugin
                       ${CMAKE_DL_LIBS}
                       ${PMLOGLIB_LDFLAGS}
                       pthread)
 install(TARGETS v4l2-camera-plugin DESTINATION ${WEBOS_INSTALL_LIBDIR})
+install(TARGETS remote-camera-plugin DESTINATION ${WEBOS_INSTALL_LIBDIR})
 install(TARGETS camera_hal DESTINATION ${WEBOS_INSTALL_LIBDIR})
 
 #haltestapp project exe
@@ -236,4 +225,9 @@ set(SHMEM_TEST TRUE CACHE BOOL "Set to TRUE to enable shared memory synchronizat
 if (SHMEM_TEST)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_smsync)
     add_subdirectory(${CMAKE_SOURCE_DIR}/src/test/test_sync_read)
+endif()
+
+#TODO : Remove this if getAttachedNonStorageDeviceList parameters are the same
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
+    add_definitions(-DUSE_GROUP_SUB_DEVICES)
 endif()

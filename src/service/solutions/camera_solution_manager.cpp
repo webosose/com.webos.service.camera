@@ -31,77 +31,133 @@ enum LgSolutionErrorValue
     SOLUTION_MANAGER_MAX_ERROR_INDEX,
 };
 
-// To load configuration
-LgSolutionErrorValue loadSolutionList(pbnjson::JValue &json)
+struct SolutionInfo
 {
-    std::string jsonPath_      = "/etc/com.webos.service.camera/supported_solution_info.conf";
-    auto obj_supportedSolution = pbnjson::JDomParser::fromFile(jsonPath_.c_str());
-    if (!obj_supportedSolution.isObject())
+    bool support_; // support or not
+    bool enable_;  // default enable or disable
+    std::string model_;
+};
+
+class SupportedSolution
+{
+private:
+    SupportedSolution() { parseSolutionInfo(); };
+    SupportedSolution(const SupportedSolution &){};
+    ~SupportedSolution(){};
+    void parseSolutionInfo(void);
+    std::map<std::string, std::shared_ptr<SolutionInfo>> solutions_;
+
+public:
+    static SupportedSolution &getInstance()
+    {
+        static SupportedSolution instance;
+        return instance;
+    };
+    bool getSolutionInfo(std::string name, std::shared_ptr<SolutionInfo> &info)
+    {
+        if (!solutions_.count(name))
+            return false;
+        info = solutions_[name];
+        return true;
+    };
+};
+
+void SupportedSolution::parseSolutionInfo(void)
+{
+    std::string jsonPath_ = "/etc/com.webos.service.camera/supported_solution_info.conf";
+    auto obj_conf         = pbnjson::JDomParser::fromFile(jsonPath_.c_str());
+    if (!obj_conf.isObject())
     {
         PMLOG_ERROR(CONST_MODULE_SM, "configuration file parsing error! need to check %s",
                     jsonPath_.c_str());
-        return SOLUTION_MANAGER_PARSING_ERROR;
+        return;
     }
 
     // check solution_info field
-    if (!obj_supportedSolution.hasKey("solutionInfo"))
+    if (!obj_conf.hasKey("solutionInfo"))
     {
         PMLOG_ERROR(CONST_MODULE_SM, "Can't find solutionInfo field. need to check it!");
-        return SOLUTION_MANAGER_PARAMETER_ERROR;
+        return;
     }
 
-    json = obj_supportedSolution["solutionInfo"];
-
-    return SOLUTION_MANAGER_NO_ERROR;
-}
-
-bool isSolutionSupported(const pbnjson::JValue &json, const std::string &key)
-{
-    bool value = false;
-
-    auto solutionList = json[0]; // we already know array number of solutionInfo
-                                 // is 1 and never get increased, so we put 0 on
-                                 // it.
-
-    if (solutionList.hasKey(key) && solutionList[key].isBoolean() &&
-        solutionList[key].asBool(value) == CONV_OK)
+    auto obj_solutionInfo = obj_conf["solutionInfo"];
+    size_t count          = obj_solutionInfo.arraySize();
+    for (size_t i = 0; i < count; i++)
     {
-        if (value == true)
+        if (obj_solutionInfo[i].hasKey("name"))
         {
-            PMLOG_ERROR(CONST_MODULE_SM, "%s is enabled", key.c_str());
+            std::string name   = obj_solutionInfo[i]["name"].asString();
+            SolutionInfo *info = new SolutionInfo{};
+            if (obj_solutionInfo[i].hasKey("params"))
+            {
+                auto obj_params = obj_solutionInfo[i]["params"];
+                if (obj_params.hasKey("support") && obj_params["support"].isBoolean())
+                {
+                    info->support_ = obj_params["support"].asBool();
+                }
+                if (obj_params.hasKey("enable") && obj_params["enable"].isBoolean())
+                {
+                    info->enable_ = obj_params["enable"].asBool();
+                }
+                if (obj_params.hasKey("model") && obj_params["model"].isString())
+                {
+                    info->model_ = obj_params["model"].asString();
+                }
+            }
+            PMLOG_INFO(CONST_MODULE_SM, "supportedSolutionInfo [%s, %d, %d]", name.c_str(),
+                       info->support_, info->enable_);
+            solutions_.insert(std::make_pair(name, info));
         }
     }
+}
 
-    return value;
+void CameraSolutionManager::getSupportedSolutionList(std::vector<std::string> &supportedList,
+                                                     std::vector<std::string> &enabledList)
+{
+    std::shared_ptr<SolutionInfo> info;
+    if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_DUMMY, info))
+    {
+        if (info && info->support_)
+            supportedList.push_back(SOLUTION_DUMMY);
+        if (info && info->enable_)
+            enabledList.push_back(SOLUTION_DUMMY);
+    }
+    if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_AUTOCONTRAST, info))
+    {
+        if (info && info->support_)
+            supportedList.push_back(SOLUTION_AUTOCONTRAST);
+        if (info && info->enable_)
+            enabledList.push_back(SOLUTION_AUTOCONTRAST);
+    }
+    if (SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACEDETECTION, info))
+    {
+        if (info && info->support_)
+            supportedList.push_back(SOLUTION_FACEDETECTION);
+        if (info && info->enable_)
+            enabledList.push_back(SOLUTION_FACEDETECTION);
+    }
 }
 
 CameraSolutionManager::CameraSolutionManager(void)
 {
-    pbnjson::JValue obj_solutionInfo = nullptr;
+    std::vector<std::string> list, enabledList;
+    getSupportedSolutionList(list, enabledList);
+    PMLOG_INFO(CONST_MODULE_SM, "solution list count %d", list.size());
 
-    bool retValue = loadSolutionList(obj_solutionInfo);
-    if (retValue != SOLUTION_MANAGER_NO_ERROR)
-    {
-        PMLOG_ERROR(CONST_MODULE_SM,
-                    "failed to get solution list info so "
-                    "can't enable solutions. (error:%d)",
-                    retValue);
-        return;
-    }
-
-    if (isSolutionSupported(obj_solutionInfo, SOLUTION_AUTOCONTRAST))
-    {
+    if (std::find(list.begin(), list.end(), SOLUTION_AUTOCONTRAST) != list.end())
         lstSolution_.push_back(std::make_unique<AutoContrast>());
-    }
 
-    if (isSolutionSupported(obj_solutionInfo, SOLUTION_DUMMY))
-    {
+    if (std::find(list.begin(), list.end(), SOLUTION_DUMMY) != list.end())
         lstSolution_.push_back(std::make_unique<Dummy>());
-    }
 
-    if (isSolutionSupported(obj_solutionInfo, SOLUTION_FACEDETECTION_AIF))
+    if (std::find(list.begin(), list.end(), SOLUTION_FACEDETECTION) != list.end())
     {
-        lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
+        std::shared_ptr<SolutionInfo> info;
+        bool ret = SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACEDETECTION, info);
+        if (ret && info->model_ == FACEDETECTION_MODEL_AIF)// default model
+        {
+            lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
+        }
     }
 }
 
@@ -189,8 +245,7 @@ void CameraSolutionManager::getEnabledSolutionInfo(SolutionNames &names)
     }
 }
 
-DEVICE_RETURN_CODE_T
-CameraSolutionManager::enableCameraSolution(const SolutionNames &names)
+DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const SolutionNames &names)
 {
     std::lock_guard<std::mutex> lg(mtxApi_);
     PMLOG_INFO(CONST_MODULE_SM, "");
@@ -234,8 +289,7 @@ CameraSolutionManager::enableCameraSolution(const SolutionNames &names)
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T
-CameraSolutionManager::disableCameraSolution(const SolutionNames &names)
+DEVICE_RETURN_CODE_T CameraSolutionManager::disableCameraSolution(const SolutionNames &names)
 {
     std::lock_guard<std::mutex> lg(mtxApi_);
     PMLOG_INFO(CONST_MODULE_SM, "");

@@ -19,8 +19,9 @@
 
 #include "PmLogLib.h"
 #include "camera_constants.h"
-#include "camera_device_list_type.h"
-#include "camera_device_event_type.h"
+#include "camera_device_types.h"
+#include "camera_event_types.h"
+#include "camera_hal_if_cpp_types.h"
 #include "camera_hal_if_types.h"
 #include "camera_log.h"
 #include "luna-service2/lunaservice.h"
@@ -30,20 +31,13 @@
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
 
+const std::string kMemtypeShmemMmap = "sharedmemory_mmap";
 const std::string kMemtypeShmem    = "sharedmemory";
 const std::string kMemtypePosixshm = "posixshm";
 
 /*-----------------------------------------------------------------------------
  (Type Definitions)
  ----------------------------------------------------------------------------*/
-typedef enum
-{
-    DEVICE_DEVICE_UNDEFINED = -1,
-    DEVICE_CAMERA           = 1,
-    DEVICE_MICROPHONE,
-    DEVICE_OTHER
-} DEVICE_TYPE_T;
-
 typedef enum
 {
     DEVICE_RETURN_UNDEFINED = -1,
@@ -125,7 +119,8 @@ typedef enum
 enum class NotifierClient
 {
     NOTIFIER_CLIENT_PDM = 0,
-    NOTIFIER_CLIENT_UDEV
+    NOTIFIER_CLIENT_UDEV,
+    NOTIFIER_CLIENT_APPCAST,
 };
 
 enum class EventType
@@ -177,7 +172,7 @@ struct CAMERA_PROPERTIES_T
     int nZoomAbsolute;
 
     camera_queryctrl_t stGetData;
-    camera_resolution_t stResolution;
+    std::vector<camera_resolution_t> stResolution;
 
     bool operator!=(const CAMERA_PROPERTIES_T &);
 

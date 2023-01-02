@@ -37,6 +37,7 @@ extern "C"
         HAL_LOG_INFO(CONST_MODULE_HAL, "camera_handle : %p", camera_handle);
 
         camera_handle->h_plugin = dlopen(subsystem, RTLD_LAZY);
+        HAL_LOG_INFO(CONST_MODULE_HAL, "dlopen plugin(%p)", camera_handle->h_plugin);
         if (!camera_handle->h_plugin)
         {
             HAL_LOG_INFO(CONST_MODULE_HAL, "dlopen failed for : %s", subsystem);
@@ -45,6 +46,7 @@ extern "C"
         }
 
         typedef void *(*pfn_create_handle)();
+
         pfn_create_handle pf_create_handle =
             (pfn_create_handle)dlsym(camera_handle->h_plugin, "create_handle");
 
@@ -87,6 +89,10 @@ extern "C"
         camera_handle->current_state = CAMERA_HAL_STATE_UNKNOWN;
 
         pf_destroy_handle(camera_handle->handle);
+
+        int ret = dlclose(camera_handle->h_plugin);
+        HAL_LOG_INFO(CONST_MODULE_HAL, "dlclose plugin(%p) ret(%d)", camera_handle->h_plugin, ret);
+
         delete camera_handle;
 
         return CAMERA_ERROR_NONE;
@@ -420,7 +426,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_set_properties(void *h, const camera_properties_t *cam_in_params)
+    int camera_hal_if_set_properties(void *h, const void *cam_in_params)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -450,7 +456,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_get_properties(void *h, camera_properties_t *cam_out_params)
+    int camera_hal_if_get_properties(void *h, void *cam_out_params)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -492,7 +498,10 @@ extern "C"
     int camera_hal_if_get_info(const char *devicenode, camera_device_info_t *caminfo)
     {
         void *handle;
-        int retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so");
+        int retVal;
+
+        retVal = camera_hal_if_init(&handle, caminfo->subsystem);
+
         if (CAMERA_ERROR_NONE != retVal)
         {
             retVal = CAMERA_ERROR_GET_INFO;

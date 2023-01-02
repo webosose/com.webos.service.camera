@@ -26,17 +26,24 @@ void Notifier::addNotifier(NotifierClient client, GMainLoop *loop)
         if (nullptr != p_client_notifier_)
         {
             p_client_notifier_->setLSHandle(lshandle_);
-            registerCallback(loop);
+            registerCallback(NULL, loop);
+        }
+    }
+    else if (client == NotifierClient::NOTIFIER_CLIENT_APPCAST)
+    {
+        p_client_notifier_ = &appcast_; // points to appcast object
+        if (nullptr != p_client_notifier_)
+        {
+            p_client_notifier_->setLSHandle(lshandle_);
+            registerCallback(NULL, loop);
         }
     }
 }
 
-void Notifier::registerCallback(GMainLoop *loop)
+void Notifier::registerCallback(DeviceNotifier::handlercb deviceinfo, GMainLoop *loop)
 {
     if (nullptr != p_client_notifier_)
-    {
-        p_client_notifier_->subscribeToClient(loop);
-    }
+        p_client_notifier_->subscribeToClient(deviceinfo, loop);
 }
 
 void Notifier::setLSHandle(LSHandle *handle) { lshandle_ = handle; }

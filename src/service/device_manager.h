@@ -20,6 +20,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#include "appcast_client.h"
 #include "camera_types.h"
 #include <map>
 #include <vector>
@@ -42,6 +43,7 @@ class DeviceManager
 private:
     std::map<int, DEVICE_STATUS> deviceMap_;
     int findDevNum(int);
+    AppCastClient *appCastClient_{nullptr};
 
 public:
     DeviceManager();
@@ -50,22 +52,34 @@ public:
         static DeviceManager obj;
         return obj;
     }
-    bool deviceStatus(int, DEVICE_TYPE_T, bool);
+    bool setOpenStatus(int, bool);
     bool isDeviceOpen(int *);
     bool isDeviceValid(DEVICE_TYPE_T, int *);
     void getDeviceNode(int *, std::string &);
     void getDeviceHandle(int *, void **);
     int getDeviceId(int *);
+    DEVICE_TYPE_T getDeviceType(int *);
+    int getDeviceCounts(DEVICE_TYPE_T);
     bool addVirtualHandle(int devid, int virtualHandle);
     bool eraseVirtualHandle(int deviceId, int virtualHandle);
-    bool addDevice(DEVICE_LIST_T *pList);
+    int addDevice(DEVICE_LIST_T *pList);
     bool removeDevice(int devid);
 
+    bool getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
+                              std::string &productName);
     DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *) const;
     DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
                                     DEVICE_EVENT_STATE_T *);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
     DEVICE_RETURN_CODE_T updateHandle(int, void *);
+
+    int addRemoteCamera(deviceInfo_t *deviceInfo);
+    int removeRemoteCamera(int);
+    int set_appcastclient(AppCastClient *);
+    AppCastClient *get_appcastclient();
+    bool isRemoteCamera(DEVICE_LIST_T &);
+    bool isRemoteCamera(void *);
+    void printCameraStatus();
 };
 
 #endif /*SERVICE_DEVICE_MANAGER_H_*/

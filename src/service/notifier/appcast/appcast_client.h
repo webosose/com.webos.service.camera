@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,28 +14,45 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef PDM_CLIENT
-#define PDM_CLIENT
+#ifndef APPCAST_CLIENT
+#define APPCAST_CLIENT
 
 #include "camera_types.h"
 #include "device_notifier.h"
 #include <functional>
 #include <luna-service2/lunaservice.hpp>
 
-class PDMClient : public DeviceNotifier
+enum APP_CAST_STATE
+{
+    INIT  = 0,
+    READY = 1,
+    PLAY  = 2,
+
+    STATE_END // must be last - used to validate app cast state
+};
+
+class AppCastClient : public DeviceNotifier
 {
 private:
-    static bool subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
-                                      void *ctx);
+    static bool subscribeToAppcastService(LSHandle *sh, const char *serviceName, bool connected,
+                                          void *ctx);
     LSHandle *lshandle_;
 
 public:
-    PDMClient() { lshandle_ = nullptr; }
-    virtual ~PDMClient() {}
+    AppCastClient();
+    virtual ~AppCastClient() {}
     virtual void subscribeToClient(handlercb, GMainLoop *loop) override;
-    void setLSHandle(LSHandle *);
+    virtual void setLSHandle(LSHandle *);
+    void setState(APP_CAST_STATE);
+    bool sendConnectSoundInput(bool);
+    bool sendSetSoundInput(bool);
 
-    DeviceNotifier::handlercb subscribeToDeviceInfoCb_;
+    APP_CAST_STATE mState;
+    std::string str_state[STATE_END];
+
+    deviceInfo_t mDeviceInfo;
+    std::string connect_payload;
+    int remoteCamIdx_{0};
 };
 
 #endif

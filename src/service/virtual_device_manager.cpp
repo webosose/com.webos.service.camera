@@ -18,15 +18,12 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "virtual_device_manager.h"
-#include "addon.h"
+#include "addon.h" // platform-specific functionality extension support
 #include "camera_constants.h"
 #include "device_manager.h"
-#include <algorithm>
-#include <fstream>
-#include <unistd.h>
 
 VirtualDeviceManager::VirtualDeviceManager()
-    : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_(),
+    : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_{},
       bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), sformat_()
 {
 }
@@ -100,8 +97,27 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
     // create v4l2 handle
     void *p_cam_handle;
-    DEVICE_RETURN_CODE_T ret =
-        objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin.so");
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
+    DEVICE_TYPE_T type = DeviceManager::getInstance().getDeviceType(&devid);
+    switch (type)
+    {
+    case DEVICE_V4L2_CAMERA:
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libv4l2);
+        break;
+    case DEVICE_REMOTE_CAMERA:
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libremote);
+        break;
+    case DEVICE_REMOTE_CAMERA_FAKE:
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libfake);
+        break;
+    case DEVICE_V4L2_CAMERA_DUMMY:
+        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libdummy);
+        break;
+    default:
+        break;
+    }
+
     if (DEVICE_OK != ret)
     {
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to create handle\n");
@@ -122,7 +138,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     if (DEVICE_OK != ret)
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
     else
-        DeviceManager::getInstance().deviceStatus(devid, DEVICE_CAMERA, TRUE);
+        DeviceManager::getInstance().setOpenStatus(devid, TRUE);
 
     // get virtual device handle for device opened
     *devhandle = getVirtualDeviceHandle(devid);
@@ -130,7 +146,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     return ret;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string apppriority, std::string appId)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::string appId,
+                                                std::string apppriority)
 {
     PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", devid);
 
@@ -158,7 +175,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
     }
 
     // check if camera device requested to open is valid and not already opened
-    if (DeviceManager::getInstance().isDeviceValid(DEVICE_CAMERA, &devid))
+    DEVICE_TYPE_T type = DeviceManager::getInstance().getDeviceType(&devid);
+    if (DeviceManager::getInstance().isDeviceValid(type, &devid))
     {
         // check if deviceid requested is there in connected device list
         if (n_invalid_id == devid)
@@ -189,7 +207,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::open(int devid, int *devhandle, std::
             {
                 if (apppriority == cstr_primary)
                 {
-                    AddOn::logExtraMessage(appId);
+                    AddOn::logMessagePrivate(appId);
                 }
             }
         }
@@ -243,8 +261,9 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
                 ret = objdevicecontrol_.close(handle);
                 if (DEVICE_OK == ret)
                 {
-                    DeviceManager::getInstance().deviceStatus(deviceid, DEVICE_CAMERA, FALSE);
+                    DeviceManager::getInstance().setOpenStatus(deviceid, FALSE);
                     ret = objdevicecontrol_.destroyHandle(handle);
+                    DeviceManager::getInstance().updateHandle(deviceid, nullptr);
                     // remove the virtual device
                     removeVirtualDeviceHandle(devhandle);
                     // since the device is closed, remove the element from map
@@ -297,7 +316,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             return DEVICE_ERROR_CAN_NOT_START;
         }
 
-        if ((memtype == kMemtypeShmem && shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
+        if (((memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap )&& shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
             (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0))
         {
             void *handle;
@@ -308,7 +327,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             if (DEVICE_OK == ret)
             {
                 // Increament preview count by 1
-                if (memtype == kMemtypeShmem)
+                if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
                 {
                     obj_devstate.shmemtype = SHMEM_SYSTEMV;
                     shmempreview_count_[SHMEM_SYSTEMV]++;
@@ -320,18 +339,26 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                     shmempreview_count_[SHMEM_POSIX]++;
                     poshmkey_ = *pkey;
                 }
+                // add to vector the app calling startPreview
+                npreviewhandle_.push_back(devhandle);
+                // update state of device to preview
+                obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
+                virtualhandle_map_[devhandle] = obj_devstate;
+
+                // Apply platform-specific policy to solutions if exists.
+                if (AddOn::hasImplementation())
+                {
+                    ret = objdevicecontrol_.enableCameraSolution(AddOn::getDevicePrivateData(deviceid));
+                    if (DEVICE_OK != ret)
+                        PMLOG_INFO(CONST_MODULE_VDM, "Failed to enable camera solution\n");
+                }
             }
-            // add to vector the app calling startPreview
-            npreviewhandle_.push_back(devhandle);
-            // update state of device to preview
-            obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
-            virtualhandle_map_[devhandle] = obj_devstate;
             return ret;
         }
         else
         {
             PMLOG_INFO(CONST_MODULE_VDM, "preview already started by other app \n");
-            if (memtype == kMemtypeShmem)
+            if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
                 *pkey = shmkey_;
             else
                 *pkey = poshmkey_;
@@ -340,7 +367,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             // update state of device to preview
             obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
             // Increament preview count by 1
-            if (memtype == kMemtypeShmem)
+            if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
             {
                 obj_devstate.shmemtype = SHMEM_SYSTEMV;
                 shmempreview_count_[SHMEM_SYSTEMV]++;
@@ -862,8 +889,14 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
 
     if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
     {
-
+        // get enabled solutions of device opened
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions);
+        if (ret == DEVICE_OK)
+        {
+            // Attach platform-specific private component to device in order to enforce platform-specific policy
+            AddOn::attachPrivateComponentToDevice(deviceid, solutions);
+        }
+
         return ret;
     }
     else
@@ -887,6 +920,13 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
     {
         // get disabled solutions of device opened
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.disableCameraSolution(solutions);
+
+        if (ret == DEVICE_OK)
+        {
+            // Detach platform-specific private component from device used for platform-specific policy application
+            AddOn::detachPrivateComponentFromDevice(deviceid, solutions);
+        }
+
         return ret;
     }
     else

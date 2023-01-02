@@ -8,13 +8,30 @@ class AddOn
 private:
     static void * handle_;
     static ICameraServiceAddon *plugin_;
-    static int getDeviceList(int*,int*,int*,int*);
 
 private:
-    static EXTRA_DATA_T extra_data_;
+    static int getDeviceCounts(DEVICE_TYPE_T);
+    static int getDeviceList(int*, int*, int*, int*);
+    static int addDevice(DEVICE_LIST_T*);
+    static bool removeDevice(int);
+    static int addRemoteCamera(deviceInfo_t*);
+    static int removeRemoteCamera(int);
+    static bool getCurrentDeviceInfo(std::string&, std::string&, std::string&);
 
-public:
-    static EXTRA_DATA_T currentExtraData();
+private:
+    struct Service : public ICameraService
+    {
+        int getDeviceList(int*,int*,int*,int*) override;
+        int getDeviceCounts(DEVICE_TYPE_T) override;
+        int addDevice(DEVICE_LIST_T*) override;
+        bool removeDevice(int) override;
+        int addRemoteCamera(deviceInfo_t*) override;
+        int removeRemoteCamera(int) override;
+        bool getCurrentDeviceInfo(std::string&, std::string&, std::string&) override;
+        void getSupportedSolutionList(std::vector<std::string>&, std::vector<std::string>&) override;
+    };
+
+    static Service *service_;
 
 public:
     static void open();
@@ -24,15 +41,22 @@ public:
 
     static void initialize(LSHandle*);
     static void setSubscriptionForCameraList(LSMessage &);
-    static void setDeviceEvent(DEVICE_LIST_T*, int);
+    static void setDeviceEvent(DEVICE_LIST_T*, int, bool, bool remote = false);
     static bool setPermission(LSMessage &);
     static bool isSupportedCamera(std::string, std::string);
     static bool isAppPermission(std::string);
     static bool test(LSMessage &);
-    static void getDeviceExtraData(jvalue_ref &);
-    static void setDeviceExtraData(int, EXTRA_DATA_T);
-    static void logExtraMessage(std::string);
-    static int getDevicePort(jvalue_ref &);
+    static bool isResumeDone();
+
+    static bool toastCameraUsingPopup();
+    static void logMessagePrivate(std::string);
+
+    static void attachPrivateComponentToDevice(int, const std::vector<std::string>&);
+    static void detachPrivateComponentFromDevice(int, const std::vector<std::string>&);
+    static void pushDevicePrivateData(int, int, DEVICE_TYPE_T, DEVICE_LIST_T*);
+    static void popDevicePrivateData(int);
+    static std::vector<std::string> getDevicePrivateData(int);
+    static void updateDevicePrivateHandle(int, int);
 };
 
 #endif /* ADDON_H_ */

@@ -19,7 +19,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <jpeglib.h>
-#include <pbnjson.h>
+#include <pbnjson.hpp>
 #include <rapidjson/document.h>
 #include <string>
 
@@ -29,27 +29,7 @@ namespace rj = rapidjson;
 
 #define LOG_TAG "FaceDetectionAIF"
 
-int getScaleDenomAIF(int height)
-{
-    if (height >= 2160)
-    { // 3840x2160 -> 480x270
-        return 8;
-    }
-    else if (height >= 1080)
-    { // 1920x1080 -> 480x270
-        return 4;
-    }
-    else if (height >= 720)
-    { // 1280x720 -> 320x180
-        return 4;
-    }
-    else if (height >= 480)
-    { // 640x480 -> 320x240
-        return 2;
-    }
-
-    return 1;
-}
+#define AIF_PARAM_FILE "/home/root/aif_param.json"
 
 FaceDetectionAIF::FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
 
@@ -63,10 +43,11 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
     // n <-- 100
     // size = 10 + 56*100 + 2 = 572
     // size + padding -> 1024
-    return 1024;
+    //return 1024;
+    return 0;
 }
 
-std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION_AIF; }
+std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION; }
 
 void FaceDetectionAIF::initialize(stream_format_t streamFormat)
 {
@@ -74,18 +55,33 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 
     std::lock_guard<std::mutex> lock(mtxAi_);
-    ai.startup();
+    EdgeAIVision::getInstance().startup();
 
-    std::string param = "{ \
-                            \"model\" : \"face_yunet_cpu\", \
-                            \"param\": { \
-                                \"common\" : { \
-                                    \"useXnnpack\": true, \
-                                    \"numThreads\": 1 \
-                                } \
-                            } \
-                        }";
-    ai.createDetector(type, param);
+    std::string param = R"({
+                                "param": {
+                                    "autoDelegate": {
+                                        "policy": "PYTORCH_MODEL_GPU",
+                                        "cpu_fallback_percentage": 15
+                                    },
+                                    "modelParam": {
+                                    "scoreThreshold": 0.7,
+                                    "nmsThreshold": 0.3,
+                                    "topK": 5000
+                                    }
+                                }
+                            })";
+
+    if (access(AIF_PARAM_FILE, F_OK) == 0)
+    {
+        auto obj_aifparam = pbnjson::JDomParser::fromFile(AIF_PARAM_FILE);
+        if (obj_aifparam.isObject())
+        {
+            param = obj_aifparam.stringify();
+        }
+    }
+
+    PMLOG_INFO(LOG_TAG, "aif_param = %s", param.c_str());
+    EdgeAIVision::getInstance().createDetector(type, param);
 
     CameraSolution::initialize(streamFormat);
     PMLOG_INFO(LOG_TAG, "");
@@ -95,8 +91,8 @@ void FaceDetectionAIF::release(void)
 {
     PMLOG_INFO(LOG_TAG, "");
     mtxAi_.lock();
-    ai.deleteDetector(type);
-    ai.shutdown();
+    EdgeAIVision::getInstance().deleteDetector(type);
+    EdgeAIVision::getInstance().shutdown();
     mtxAi_.unlock();
     CameraSolutionAsync::release();
     PMLOG_INFO(LOG_TAG, "");
@@ -169,7 +165,7 @@ void FaceDetectionAIF::processing(void)
 
         jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
 
-        if (pEvent_)
+        if (pEvent_ && getMetaSizeHint() > 0)
             (pEvent_.load())->onDone(jsonOutObj);
 
         j_release(&jsonOutObj);
@@ -182,17 +178,18 @@ void FaceDetectionAIF::postProcessing(void)
     jvalue_ref jsonOutObj    = jobject_create();
     jvalue_ref jsonFaceArray = jarray_create(nullptr);
     jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
-    if (pEvent_)
+    if (pEvent_ && getMetaSizeHint() > 0)
         (pEvent_.load())->onDone(jsonOutObj);
 }
 
 bool FaceDetectionAIF::detectFace(void)
 {
     std::lock_guard<std::mutex> lock(mtxAi_);
-    ai.detect(type,
-              Mat(Size(oDecodedImage_.outWidth_, oDecodedImage_.outHeight_), CV_8UC3,
-                  oDecodedImage_.pImage_),
-              output);
+    EdgeAIVision::getInstance().detect(
+        type,
+        Mat(Size(oDecodedImage_.outWidth_, oDecodedImage_.outHeight_), CV_8UC3,
+            oDecodedImage_.pImage_),
+        output);
     return true;
     // TODO : Do we need to decide success or failure from here?
     //        Just now, I think it's a role of applicaiton.
@@ -222,7 +219,7 @@ bool FaceDetectionAIF::decodeJpeg(void)
     oDecodedImage_.srcHeight_     = cinfo.image_height;
 
     cinfo.scale_num       = 1;
-    cinfo.scale_denom     = getScaleDenomAIF(oDecodedImage_.srcHeight_);
+    cinfo.scale_denom     = 1;
     cinfo.out_color_space = JCS_EXT_BGR;
 
     jpeg_start_decompress(&cinfo);

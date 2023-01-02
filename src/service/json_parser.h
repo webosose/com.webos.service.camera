@@ -17,8 +17,8 @@
 #ifndef JSON_PARSER_H_
 #define JSON_PARSER_H_
 
-#include "camera_constants.h"
 #include "camera_types.h"
+#include "camera_constants.h"
 #include "json_utils.h"
 #include <iostream>
 #include <map>
@@ -57,7 +57,7 @@ public:
     GetCameraListMethod() { n_camcount_ = 0; }
     ~GetCameraListMethod() {}
 
-    void setCameraList(const std::string &str_id, int count) { str_list_[count] = str_id; }
+    void setCameraList(const std::string &str_id, unsigned int count) { str_list_[count] = str_id; }
     std::string strGetCameraList(int count) const { return str_list_[count]; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
@@ -97,6 +97,9 @@ public:
     void setCameraId(const std::string &devid) { str_devid_ = devid; }
     std::string getCameraId() const { return str_devid_; }
 
+    void setAppId(const std::string &appid) { str_appid_ = appid; }
+    std::string getAppId() const { return str_appid_; }
+
     void setAppPriority(const std::string &priority) { str_priority_ = priority; }
     std::string getAppPriority() const { return str_priority_; }
 
@@ -105,9 +108,6 @@ public:
 
     void setClientSignal(int sig) { n_client_sig_ = sig; }
     int getClientSignal() const { return n_client_sig_; }
-
-    void setAppId(const std::string& appid) { str_appid_ = appid; }
-    std::string getAppId() const { return str_appid_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -123,10 +123,10 @@ public:
 private:
     int n_devicehandle_;
     std::string str_devid_;
+    std::string str_appid_;
     std::string str_priority_;
     int n_client_pid_;
     int n_client_sig_;
-    std::string str_appid_;
     MethodReply objreply_;
 };
 
@@ -335,24 +335,12 @@ public:
         }
 
         // update resolution structure
-        ro_camproperties_.stResolution.n_formatindex = rin_info.stResolution.n_formatindex;
-        memset(ro_camproperties_.stResolution.c_res, '\0',
-               sizeof(ro_camproperties_.stResolution.c_res));
-        for (int n = 0; n < rin_info.stResolution.n_formatindex; n++)
+        for (auto const &v : rin_info.stResolution)
         {
-            ro_camproperties_.stResolution.e_format[n]     = rin_info.stResolution.e_format[n];
-            ro_camproperties_.stResolution.n_frameindex[n] = rin_info.stResolution.n_frameindex[n];
-            ro_camproperties_.stResolution.n_framecount[n] = rin_info.stResolution.n_framecount[n];
-            for (int count = 0; count < rin_info.stResolution.n_framecount[n]; count++)
-            {
-                ro_camproperties_.stResolution.n_height[n][count] =
-                    rin_info.stResolution.n_height[n][count];
-                ro_camproperties_.stResolution.n_width[n][count] =
-                    rin_info.stResolution.n_width[n][count];
-                strncpy(ro_camproperties_.stResolution.c_res[n][count],
-                        rin_info.stResolution.c_res[n][count],
-                        sizeof(ro_camproperties_.stResolution.c_res[n][count]) - 1);
-            }
+            std::vector<std::string> c_res;
+            c_res.clear();
+            c_res.assign(v.c_res.begin(), v.c_res.end());
+            ro_camproperties_.stResolution.emplace_back(c_res, v.e_format);
         }
     }
     CAMERA_PROPERTIES_T rGetCameraProperties() const { return ro_camproperties_; }

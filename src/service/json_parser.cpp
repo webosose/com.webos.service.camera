@@ -17,7 +17,6 @@
 #include "json_parser.h"
 #include "addon.h"
 #include "camera_constants.h"
-#include "whitelist_checker.h"
 #include <iostream>
 #include <signal.h>
 
@@ -68,7 +67,8 @@ std::string GetCameraListMethod::createCameraListObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -81,13 +81,15 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
 
     if (0 == retVal)
     {
+        raw_buffer str_appid =
+            jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_APPID)));
+        setAppId(str_appid.m_str);
         raw_buffer str_id =
             jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID)));
         setCameraId(str_id.m_str);
         str_id = jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_APP_PRIORITY)));
         std::string priority = str_id.m_str;
-        // parsing of argumnets to open call. Only empty or primary or secondary
-        // are valid
+        // parsing of argumnets to open call. Only empty or primary or secondary are valid
         if ((0 == priority.length()) || (cstr_primary == priority) || (cstr_secondary == priority))
         {
             setAppPriority(str_id.m_str);
@@ -164,7 +166,8 @@ std::string OpenMethod::createOpenObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -189,8 +192,8 @@ void StartPreviewMethod::getStartPreviewObject(const char *input, const char *sc
             jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
 
         camera_memory_source_t r_cams_source;
-        r_cams_source.str_memorysource = source.m_str;
-        r_cams_source.str_memorytype   = type.m_str;
+        if (source.m_str) r_cams_source.str_memorysource = source.m_str;
+        if (type.m_str)   r_cams_source.str_memorytype   = type.m_str;
         setParams(r_cams_source);
     }
     else
@@ -219,7 +222,8 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -272,7 +276,8 @@ std::string StopPreviewCaptureCloseMethod::createObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -318,7 +323,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
 
         raw_buffer str_mode =
             jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_MODE)));
-        str_mode_ = str_mode.m_str;
+        str_mode_ = str_mode.m_str == nullptr ? "" : str_mode.m_str;
 
         if (0 == strcmp(str_mode_.c_str(), "MODE_BURST"))
         {
@@ -336,7 +341,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
         // get path for images to be saved
         raw_buffer strpath =
             jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_IMAGE_PATH)));
-        str_path_ = strpath.m_str;
+        str_path_ = strpath.m_str ? strpath.m_str : "";
     }
     else
     {
@@ -362,7 +367,8 @@ std::string StartCaptureMethod::createStartCaptureObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -444,7 +450,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) strreply = str;
     j_release(&json_outobj);
 
     return strreply;
@@ -521,23 +528,16 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
 
             // add resolution structure
             jvalue_ref json_resolutionobj = jobject_create();
-            for (int nformat = 0; nformat < rGetCameraProperties().stResolution.n_formatindex;
-                 nformat++)
+            for (auto const &v : rGetCameraProperties().stResolution)
             {
                 jvalue_ref json_resolutionarray = jarray_create(0);
-                for (int count = 0;
-                     count < rGetCameraProperties().stResolution.n_framecount[nformat]; count++)
+                for (auto const &res : v.c_res)
                 {
-                    jarray_append(
-                        json_resolutionarray,
-                        jstring_create(rGetCameraProperties().stResolution.c_res[nformat][count]));
+                    jarray_append(json_resolutionarray, jstring_create(res.c_str()));
                 }
-                jobject_put(
-                    json_resolutionobj,
-                    jstring_create(
-                        getResolutionString(rGetCameraProperties().stResolution.e_format[nformat])
-                            .c_str()),
-                    json_resolutionarray);
+                jobject_put(json_resolutionobj,
+                            jstring_create(getResolutionString(v.e_format).c_str()),
+                            json_resolutionarray);
             }
             jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
                         json_resolutionobj);
@@ -558,7 +558,8 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) strreply = str;
     j_release(&json_outobj);
 
     return strreply;
@@ -605,7 +606,16 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOEXPOSURE));
         jnumber_get_i32(jparams, &r_camproperties.nAutoExposure);
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOWHITEBALANCE));
-        jnumber_get_i32(jparams, &r_camproperties.nAutoWhiteBalance);
+        if (jis_boolean(jparams))
+        {
+            bool awb = false;
+            jboolean_get(jparams, &awb);
+            r_camproperties.nAutoWhiteBalance = awb ? 1 : 0;
+        }
+        else
+        {
+            jnumber_get_i32(jparams, &r_camproperties.nAutoWhiteBalance);
+        }
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION));
         jnumber_get_i32(jparams, &r_camproperties.nBacklightCompensation);
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_ZOOM_ABSOLUTE));
@@ -614,7 +624,7 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
         jnumber_get_i32(jparams, &r_camproperties.nAutoFocus);
         jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FOCUS_ABSOLUTE));
         jnumber_get_i32(jparams, &r_camproperties.nFocusAbsolute);
-        r_camproperties.stResolution.n_formatindex = 0;
+        r_camproperties.stResolution.clear();
         setCameraProperties(r_camproperties);
     }
     else
@@ -641,7 +651,8 @@ std::string GetSetPropertiesMethod::createSetPropertiesObjectJsonString() const
         createJsonStringFailure(objreply, json_outbj);
     }
 
-    strreply = jvalue_stringify(json_outbj);
+    const char* str = jvalue_stringify(json_outbj);
+    if (str) strreply = str;
     j_release(&json_outbj);
 
     return strreply;
@@ -706,7 +717,8 @@ std::string SetFormatMethod::createSetFormatObjectJsonString() const
         createJsonStringFailure(objreply, json_outobj);
     }
 
-    strreply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) strreply = str;
     j_release(&json_outobj);
 
     return strreply;
@@ -1764,19 +1776,15 @@ void createGetPropertiesOutputParamJsonString(const std::string strparam,
     else if (CONST_PARAM_NAME_RESOLUTION == strparam)
     {
         jvalue_ref json_resolutionobj = jobject_create();
-        for (int nformat = 0; nformat < properties->stResolution.n_formatindex; nformat++)
+        for (auto const &v : properties->stResolution)
         {
             jvalue_ref json_resolutionarray = jarray_create(0);
-            for (int count = 0; count < properties->stResolution.n_framecount[nformat]; count++)
+            for (auto const &res : v.c_res)
             {
-                jarray_append(json_resolutionarray,
-                              jstring_create(properties->stResolution.c_res[nformat][count]));
+                jarray_append(json_resolutionarray, jstring_create(res.c_str()));
             }
-            jobject_put(
-                json_resolutionobj,
-                jstring_create(
-                    getResolutionString(properties->stResolution.e_format[nformat]).c_str()),
-                json_resolutionarray);
+            jobject_put(json_resolutionobj, jstring_create(getResolutionString(v.e_format).c_str()),
+                        json_resolutionarray);
         }
         jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
                     json_resolutionobj);
@@ -1824,7 +1832,8 @@ std::string GetFdMethod::createObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -1902,10 +1911,8 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
                 jobject_put(json_paramsobj, J_CSTR_TO_JVAL("enable"), jboolean_create(isEnabled));
                 /* To do: TBD */
                 /*
-                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_1"),
-                jstring_create(string_value));
-                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_2"),
-                jnumber_create_i32(num_value));
+                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_1"), jstring_create(string_value));
+                jobject_put(json_paramsobj, J_CSTR_TO_JVAL("Key_2"), jnumber_create_i32(num_value));
                 */
                 jobject_put(json_solution_obj, J_CSTR_TO_JVAL("params"), json_paramsobj);
 
@@ -1921,7 +1928,8 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;
@@ -1983,10 +1991,8 @@ void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
             jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("enable")), &enable);
             /* To do: TBD */
             /*
-            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key1")),
-            &enable);
-            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key2")),
-            &enable);
+            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key1")), &enable);
+            jboolean_get(jobject_get(j_param_obj, J_CSTR_TO_BUF("Key2")), &enable);
             */
 
             if (true == enable)
@@ -2023,7 +2029,8 @@ std::string SetSolutionsMethod::createObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    str_reply = jvalue_stringify(json_outobj);
+    const char* str = jvalue_stringify(json_outobj);
+    if (str) str_reply = str;
     j_release(&json_outobj);
 
     return str_reply;

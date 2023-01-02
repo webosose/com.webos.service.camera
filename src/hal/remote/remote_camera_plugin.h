@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2022 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,21 +14,17 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef DEVICE_NOTIFIER_H_
-#define DEVICE_NOTIFIER_H_
+#ifndef REMOTE_CAMERA_PLUGIN
+#define REMOTE_CAMERA_PLUGIN
 
-#include "camera_types.h"
-#include "luna-service2/lunaservice.hpp"
-
-class DeviceNotifier
+#ifdef __cplusplus
+extern "C"
 {
-public:
-    using handlercb = std::function<void(void *)>;
+#endif
+    void *create_handle(void);
+    void destroy_handle(void *);
+#ifdef __cplusplus
+}
+#endif
 
-//TODO : Remove hadldercb. It is not used
-//TODO : Remove loop. It is not used
-    virtual void subscribeToClient(handlercb, GMainLoop *loop) = 0;
-    virtual void setLSHandle(LSHandle *)                       = 0;
-};
-
-#endif /* DEVICE_NOTIFIER_H_ */
+#endif

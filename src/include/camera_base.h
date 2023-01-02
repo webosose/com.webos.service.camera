@@ -17,6 +17,7 @@
 #ifndef CAMERA_BASE
 #define CAMERA_BASE
 
+#include "camera_hal_if_cpp_types.h"
 #include "camera_hal_if_types.h"
 #include "camera_hal_types.h"
 #include <iostream>

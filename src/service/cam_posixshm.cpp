@@ -91,6 +91,10 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 {
     *phShmem                     = (SHMEM_HANDLE)calloc(1, sizeof(POSHMEM_COMM_T));
     POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
+    if (pShmemBuffer == nullptr) {
+        DEBUG_PRINT("failed to create memory for shm handle");
+        return PSHMEM_IS_NULL;
+    }
 
     DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%d\n", *phShmem, unitSize, unitNum);
 
@@ -140,7 +144,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 
     unsigned char *pSharedmem =
         (unsigned char *)mmap(NULL, shmemSize, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
-    if (pSharedmem == MAP_FAILED)
+    if (pSharedmem == MAP_FAILED || pSharedmem == NULL)
     {
         DEBUG_PRINT("mmap failed \n");
         shm_unlink(poshm_name);
@@ -178,8 +182,9 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
         return PSHMEM_FAILED;
     }
     // shared momory size larger than total, we use extra data
-    if (sb.st_size > (long int)(SHMEM_HEADER_SIZE + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) *
-                                                        (*pShmemBuffer->unit_num)))
+    if ((long unsigned int)sb.st_size >
+        (SHMEM_HEADER_SIZE +
+         (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num)))
     {
         pShmemBuffer->extra_size =
             (int *)(pSharedmem + SHMEM_HEADER_SIZE +
@@ -239,8 +244,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
     {
         for (int i = 0; i < *shmem_buffer->unit_num; i++)
         {
-            pBufsExt->start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
-            pBufsExt->length = *shmem_buffer->extra_size;
+            pBufsExt[i].start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
+            pBufsExt[i].length = *shmem_buffer->extra_size;
         }
     }
 
@@ -285,6 +290,24 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned c
     unsigned char *addr =
         shmem_buffer->extra_buf + (*shmem_buffer->write_index) * (*shmem_buffer->extra_size);
     memcpy(addr, extraData, extraBytes);
+
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+
+    //Increase the write index to match the read index of ReadShmem
+    *shmem_buffer->write_index += 1;
+    if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
+        *shmem_buffer->write_index = 0;
+
     return PSHMEM_IS_OK;
 }
 

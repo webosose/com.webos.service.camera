@@ -106,6 +106,8 @@
 #define CONST_PARAM_NAME_PRODUCT_NAME "productName"
 #define CONST_PARAM_NAME_VENDOR_ID "vendorID"
 #define CONST_PARAM_NAME_PRODUCT_ID "productID"
+#define CONST_PARAM_NAME_HOST_CONTROLLER_INTERFACE "hostControllerInterface"
+#define CONST_PARAM_NAME_IS_POWERON_CONNECT "isPowerOnConnect"
 #define CONST_PARAM_NAME_SERIAL_NUMBER "serialNumber"
 #define CONST_PARAM_NAME_SUB_DEVICE_LIST "subDeviceList"
 #define CONST_PARAM_NAME_DEVICE_TYPE "deviceType"
@@ -119,8 +121,6 @@
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
 #define CONST_PARAM_NAME_CAPABILITIES "capabilities"
-#define CONST_PARAM_NAME_SUBSYSTEM "SUBSYSTEM"
-#define CONST_PARAM_NAME_KERNEL "KERNEL"
 #define CONST_CLIENT_PROCESS_ID "pid"
 #define CONST_CLIENT_SIGNAL_NUM "sig"
 #define CONST_PARAM_NAME_MAX "max"
@@ -138,13 +138,12 @@ const int buffer_count  = 2; // YUY2 buffer count as maximum
 const int n_invalid_pid = -1;
 const int n_invalid_sig = -1;
 
-const std::string cstr_empty       = "";
-const std::string cstr_pdmclient   = "com.webos.service.pdmclient";
-const std::string cstr_uri         = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
-const std::string cstr_payload     = "{\"subscribe\":true,\"category\":\"Video\"}";
-const std::string cstr_powerstatus = "powerStatus";
-const std::string cstr_cam         = "CAM";
-const std::string cstr_capture     = ":capture:";
+const std::string cstr_empty     = "";
+const std::string cstr_pdmclient = "com.webos.service.pdmclient";
+const std::string cstr_uri       = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
+const std::string cstr_powerstatus     = "powerStatus";
+const std::string cstr_cam             = "CAM";
+const std::string cstr_capture         = ":capture:";
 const std::string cstr_invaliddeviceid = "-1";
 const std::string cstr_yuvformat       = "YUV";
 const std::string cstr_h264esformat    = "H264ES";
@@ -159,5 +158,9 @@ const std::string cstr_continuous      = "MODE_CONTINUOUS";
 const std::string cstr_connect         = "device_connect";
 const std::string cstr_disconnect      = "device_disconnect";
 const std::string cstr_devicefault     = "device_fault";
+const std::string cstr_libv4l2         = "libv4l2-camera-plugin.so";
+const std::string cstr_libremote       = "libremote-camera-plugin.so";
+const std::string cstr_libfake         = "libfake-camera-plugin.so";
+const std::string cstr_libdummy        = "libv4l2-camera-plugin-dummy.so";
 
 #endif /*CAMERA_CONST_H_*/
