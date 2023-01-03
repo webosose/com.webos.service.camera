@@ -99,7 +99,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     void *p_cam_handle;
 
     DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
-    DEVICE_TYPE_T type = DeviceManager::getInstance().getDeviceType(&devid);
+    DEVICE_TYPE_T type       = DeviceManager::getInstance().getDeviceType(&devid);
     switch (type)
     {
     case DEVICE_V4L2_CAMERA:
@@ -316,7 +316,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             return DEVICE_ERROR_CAN_NOT_START;
         }
 
-        if (((memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap )&& shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
+        if (((memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap) &&
+             shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
             (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0))
         {
             void *handle;
@@ -348,7 +349,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 // Apply platform-specific policy to solutions if exists.
                 if (AddOn::hasImplementation())
                 {
-                    ret = objdevicecontrol_.enableCameraSolution(AddOn::getDevicePrivateData(deviceid));
+                    ret = objdevicecontrol_.enableCameraSolution(
+                        AddOn::getDevicePrivateData(deviceid));
                     if (DEVICE_OK != ret)
                         PMLOG_INFO(CONST_MODULE_VDM, "Failed to enable camera solution\n");
                 }
@@ -893,7 +895,8 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
         DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions);
         if (ret == DEVICE_OK)
         {
-            // Attach platform-specific private component to device in order to enforce platform-specific policy
+            // Attach platform-specific private component to device in order to enforce
+            // platform-specific policy
             AddOn::attachPrivateComponentToDevice(deviceid, solutions);
         }
 
@@ -923,7 +926,8 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
 
         if (ret == DEVICE_OK)
         {
-            // Detach platform-specific private component from device used for platform-specific policy application
+            // Detach platform-specific private component from device used for platform-specific
+            // policy application
             AddOn::detachPrivateComponentFromDevice(deviceid, solutions);
         }
 

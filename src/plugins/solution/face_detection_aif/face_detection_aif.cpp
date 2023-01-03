@@ -43,7 +43,7 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
     // n <-- 100
     // size = 10 + 56*100 + 2 = 572
     // size + padding -> 1024
-    //return 1024;
+    // return 1024;
     return 0;
 }
 

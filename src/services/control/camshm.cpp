@@ -324,7 +324,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char
         DEBUG_PRINT("Overflow write data(write_index = %d, unit_num = %d)!\n", lwrite_index,
                     *shmem_buffer->unit_num);
         *shmem_buffer->write_index = 0;
-        return SHMEM_ERROR_RANGE_OUT; //ERROR_OVERFLOW
+        return SHMEM_ERROR_RANGE_OUT; // ERROR_OVERFLOW
     }
 
     *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
@@ -405,7 +405,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size
 }
 
 SHMEM_STATUS_T IPCSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pMeta,
-                                           size_t metaSize)
+                                          size_t metaSize)
 {
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
@@ -414,7 +414,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pM
         return SHMEM_IS_NULL;
     }
 
-    int meta_size = *shmem_buffer->meta_size;
+    int meta_size    = *shmem_buffer->meta_size;
     int lwrite_index = *shmem_buffer->write_index;
 
     if (metaSize < meta_size)
@@ -456,7 +456,7 @@ SHMEM_STATUS_T IPCSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
         return SHMEM_IS_NULL;
     }
 
-    //Increase the write index to match the read index of ReadShmem
+    // Increase the write index to match the read index of ReadShmem
     *shmem_buffer->write_index += 1;
     if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
         *shmem_buffer->write_index = 0;

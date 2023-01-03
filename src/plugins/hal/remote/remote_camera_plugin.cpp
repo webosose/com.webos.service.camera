@@ -77,4 +77,3 @@ void destroy_remote_camera_handle(void *handle)
 }
 
 void destroy_handle(void *handle) { destroy_remote_camera_handle(handle); }
-

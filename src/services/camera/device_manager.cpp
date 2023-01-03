@@ -322,7 +322,8 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
 
     // Push platform-specific device private data associated with this device */
-    AddOn::pushDevicePrivateData(devStatus.nDeviceID, devStatus.nDevIndex, devStatus.devType, pList);
+    AddOn::pushDevicePrivateData(devStatus.nDeviceID, devStatus.nDevIndex, devStatus.devType,
+                                 pList);
 
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
@@ -453,7 +454,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
     }
 
     DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
-    DEVICE_TYPE_T type = getDeviceType(&ndev_id);
+    DEVICE_TYPE_T type       = getDeviceType(&ndev_id);
     // debug
     PMLOG_INFO(CONST_MODULE_DM, "type : %d", (int)type);
 
@@ -538,9 +539,9 @@ int DeviceManager::addRemoteCamera(deviceInfo_t *deviceInfo)
     devInfo.strDeviceType        = "CAM";
     devInfo.strDeviceSubtype     = "IP-CAM JPEG";
     std::string remoteDeviceNode = "udpsrc=" + deviceInfo->clientKey;
-    devInfo.strDeviceNode = remoteDeviceNode;
-    devInfo.strDeviceKey  = deviceInfo->clientKey;
-    devInfo.strDeviceLabel = deviceInfo->deviceLabel;
+    devInfo.strDeviceNode        = remoteDeviceNode;
+    devInfo.strDeviceKey         = deviceInfo->clientKey;
+    devInfo.strDeviceLabel       = deviceInfo->deviceLabel;
 
     int dev_idx = addDevice(&devInfo);
 

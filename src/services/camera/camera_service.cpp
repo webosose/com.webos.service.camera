@@ -168,7 +168,8 @@ bool CameraService::open(LSMessage &message)
 
     std::string app_id = open.getAppId();
     // camera id & appId validation check
-    if (cstr_invaliddeviceid == open.getCameraId() || (AddOn::hasImplementation() && app_id.empty()))
+    if (cstr_invaliddeviceid == open.getCameraId() ||
+        (AddOn::hasImplementation() && app_id.empty()))
     {
         PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
@@ -383,7 +384,9 @@ bool CameraService::startPreview(LSMessage &message)
         int key = 0;
 
         memType = obj_startpreview.rGetParams();
-        if (memType.str_memorytype == kMemtypeShmem || memType.str_memorytype == kMemtypeShmemMmap || memType.str_memorytype == kMemtypePosixshm)
+        if (memType.str_memorytype == kMemtypeShmem ||
+            memType.str_memorytype == kMemtypeShmemMmap ||
+            memType.str_memorytype == kMemtypePosixshm)
         {
             err_id = CommandManager::getInstance().startPreview(
                 ndevhandle, memType.str_memorytype, &key, this->get(), CONST_EVENT_NOTIFICATION);
@@ -1015,7 +1018,8 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
     printMap();
 
     auto func = [](LSHandle *input_handle, const char *service_name, bool connected,
-                   void *ctx) -> bool {
+                   void *ctx) -> bool
+    {
         CameraService *self = static_cast<CameraService *>(ctx);
         auto info           = self->cameraHandleInfo.find(service_name);
 

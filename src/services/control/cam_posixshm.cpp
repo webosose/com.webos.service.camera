@@ -16,8 +16,8 @@
 
 #include "cam_posixshm.h"
 #include "PmLogLib.h"
-#include "camera_types.h"
 #include "camera_constants.h"
+#include "camera_types.h"
 #include "luna-service2/lunaservice.h"
 #include <errno.h>
 #include <fcntl.h>
@@ -91,7 +91,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 {
     *phShmem                     = (SHMEM_HANDLE)calloc(1, sizeof(POSHMEM_COMM_T));
     POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
-    if (pShmemBuffer == nullptr) {
+    if (pShmemBuffer == nullptr)
+    {
         DEBUG_PRINT("failed to create memory for shm handle");
         return PSHMEM_IS_NULL;
     }
@@ -303,7 +304,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
         return PSHMEM_IS_NULL;
     }
 
-    //Increase the write index to match the read index of ReadShmem
+    // Increase the write index to match the read index of ReadShmem
     *shmem_buffer->write_index += 1;
     if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
         *shmem_buffer->write_index = 0;

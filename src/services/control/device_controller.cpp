@@ -60,9 +60,11 @@ struct MemoryListener : public CameraSolutionEvent
     std::string getResult(void)
     {
         std::lock_guard<std::mutex> lg(mtxResult_);
-        if (jsonResult_ != nullptr) {
-            const char* jvalue = jvalue_stringify(jsonResult_);
-            if (jvalue) return jvalue;
+        if (jsonResult_ != nullptr)
+        {
+            const char *jvalue = jvalue_stringify(jsonResult_);
+            if (jvalue)
+                return jvalue;
         }
         return "";
     }
@@ -74,10 +76,9 @@ int DeviceControl::n_imagecount_ = 0;
 
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
-      b_issystemvruning_mmap(false), b_issystemvruning(false),
-      cam_handle_(nullptr), shmemfd_(-1), usrpbufs_(nullptr),
-      informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG), tMutex(), tCondVar(),
-      h_shmsystem_(nullptr), h_shmposix_(nullptr), str_imagepath_(cstr_empty),
+      b_issystemvruning_mmap(false), b_issystemvruning(false), cam_handle_(nullptr), shmemfd_(-1),
+      usrpbufs_(nullptr), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG), tMutex(),
+      tCondVar(), h_shmsystem_(nullptr), h_shmposix_(nullptr), str_imagepath_(cstr_empty),
       str_capturemode_(cstr_oneshot), str_memtype_(""), str_shmemname_(""), cancel_preview_(false),
       buf_size_(0), sh_(nullptr), subskey_(""), camera_id_(-1)
 {
@@ -119,7 +120,8 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
 
         time_t t    = time(NULL);
         tm *timePtr = localtime(&t);
-        if (timePtr == nullptr) {
+        if (timePtr == nullptr)
+        {
             PMLOG_ERROR(CONST_MODULE_DC, "localtime() given null ptr");
             return DEVICE_ERROR_UNKNOWN;
         }
@@ -229,7 +231,8 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
     int fd      = -1;
     auto retval = camera_hal_if_get_fd(handle, &fd);
     PMLOG_INFO(CONST_MODULE_DC, "camera_hal_if_get_fd fd : %d \n", fd);
-    struct pollfd poll_set[]{
+    struct pollfd poll_set[]
+    {
         {.fd = fd, .events = POLLIN},
     };
 
@@ -257,7 +260,8 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
             PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
             PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n", frame_buffer.length);
 
-            if (frame_buffer.start == nullptr) {
+            if (frame_buffer.start == nullptr)
+            {
                 PMLOG_ERROR(CONST_MODULE_DC, "no valid memory on frame buffer ptr");
                 return DEVICE_ERROR_OUT_OF_MEMORY;
             }
@@ -351,7 +355,6 @@ void DeviceControl::previewThread()
     // int framesize =
     //        streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
-
     int debug_counter  = 0;
     int debug_interval = 100; // frames
     auto tic           = std::chrono::steady_clock::now();
@@ -363,7 +366,6 @@ void DeviceControl::previewThread()
 
         buffer_t frame_buffer = {0};
 
-
         auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
         if (retval != CAMERA_ERROR_NONE)
         {
@@ -373,7 +375,8 @@ void DeviceControl::previewThread()
             break;
         }
 
-        if (frame_buffer.start == nullptr) {
+        if (frame_buffer.start == nullptr)
+        {
             PMLOG_ERROR(CONST_MODULE_DC, "no valid frame buffer obtained");
             notifyDeviceFault_();
             break;
@@ -391,7 +394,8 @@ void DeviceControl::previewThread()
             IPCSharedMemory::getInstance().WriteHeader(h_shmsystem_, frame_buffer.index,
                                                        frame_buffer.length);
 
-            IPCSharedMemory::getInstance().WriteMeta(h_shmsystem_, (unsigned char *)meta.c_str(), meta.size() + 1);
+            IPCSharedMemory::getInstance().WriteMeta(h_shmsystem_, (unsigned char *)meta.c_str(),
+                                                     meta.size() + 1);
 
             // Time stamp is currently not used actually.
             IPCSharedMemory::getInstance().WriteExtra(h_shmsystem_, (unsigned char *)&timestamp,
@@ -403,14 +407,14 @@ void DeviceControl::previewThread()
         }
         else if (b_issystemvruning_mmap)
         {
-            auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(h_shmsystem_,
-                          (unsigned char *)frame_buffer.start, frame_buffer.length,
-                          (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
-                          sizeof(timestamp));
+            auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(
+                h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
+                (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
+                sizeof(timestamp));
 
             if (retshmem != SHMEM_IS_OK)
             {
-              PMLOG_ERROR(CONST_MODULE_DC, "Write Shared memory error %d \n", retshmem);
+                PMLOG_ERROR(CONST_MODULE_DC, "Write Shared memory error %d \n", retshmem);
             }
             broadcast_();
         }
@@ -595,24 +599,24 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
             b_isstreamon_     = true;
             b_issystemvruning = true;
         }
-        else if(memtype == kMemtypeShmemMmap)
+        else if (memtype == kMemtypeShmemMmap)
         {
-             auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP, nullptr);
-             if (retval != CAMERA_ERROR_NONE)
-             {
+            auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP, nullptr);
+            if (retval != CAMERA_ERROR_NONE)
+            {
                 PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed \n");
                 return DEVICE_ERROR_UNKNOWN;
-             }
+            }
 
-             retval = camera_hal_if_start_capture(handle);
-             if (retval != CAMERA_ERROR_NONE)
-             {
+            retval = camera_hal_if_start_capture(handle);
+            if (retval != CAMERA_ERROR_NONE)
+            {
                 PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed \n");
                 return DEVICE_ERROR_UNKNOWN;
-             }
+            }
 
-             b_isstreamon_ = true;
-             b_issystemvruning_mmap = true;
+            b_isstreamon_          = true;
+            b_issystemvruning_mmap = true;
         }
         else // memtype == kMemtypePosixshm
         {
@@ -709,7 +713,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
 
     if (memtype == SHMEM_SYSTEMV)
     {
-        b_issystemvruning = false;
+        b_issystemvruning      = false;
         b_issystemvruning_mmap = false;
         if (h_shmsystem_ != nullptr)
         {

@@ -17,8 +17,8 @@
 #ifndef JSON_PARSER_H_
 #define JSON_PARSER_H_
 
-#include "camera_types.h"
 #include "camera_constants.h"
+#include "camera_types.h"
 #include "json_utils.h"
 #include <iostream>
 #include <map>

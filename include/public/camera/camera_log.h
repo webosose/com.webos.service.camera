@@ -11,7 +11,6 @@
     PmLogDebug(getCameraLunaPmLogContext(), "[%s:%d]" FORMAT__, __PRETTY_FUNCTION__, __LINE__,     \
                ##__VA_ARGS__)
 
-
 static inline PmLogContext getCameraLunaPmLogContext()
 {
     static PmLogContext usLogContext = 0;

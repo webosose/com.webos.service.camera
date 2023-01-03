@@ -23,7 +23,7 @@
 #include <glib.h>
 #include <pbnjson.hpp>
 
-//TODO : Add to PDMClient member as std::vector<DEVICE_LIST_T>
+// TODO : Add to PDMClient member as std::vector<DEVICE_LIST_T>
 DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
 
 static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
@@ -155,7 +155,8 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     {
                         raw_buffer host_controller_inf =
                             jstring_get_fast(jin_obj_host_controller_inf);
-                        str_host_controller_inf = host_controller_inf.m_str ? host_controller_inf.m_str : "";
+                        str_host_controller_inf =
+                            host_controller_inf.m_str ? host_controller_inf.m_str : "";
                         PMLOG_INFO(CONST_MODULE_PC, "str_host_controller_inf : %s \n",
                                    str_host_controller_inf.c_str());
                     }
@@ -311,7 +312,7 @@ void PDMClient::setLSHandle(LSHandle *handle) { lshandle_ = handle; }
 bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
                                       void *ctx)
 {
-    int ret    = 0;
+    int ret = 0;
 
     PMLOG_INFO(CONST_MODULE_PC, "connected status:%d \n", connected);
     if (connected)

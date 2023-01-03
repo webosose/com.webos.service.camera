@@ -6,7 +6,7 @@
 typedef enum
 {
     DEVICE_DEVICE_UNDEFINED = -1,
-    DEVICE_V4L2_CAMERA           = 1,
+    DEVICE_V4L2_CAMERA      = 1,
     DEVICE_V4L2_CAMERA_DUMMY,
     DEVICE_REMOTE_CAMERA,
     DEVICE_REMOTE_CAMERA_FAKE,
@@ -39,6 +39,5 @@ struct deviceInfo_t
     std::string clientKey;
     std::string deviceLabel;
 };
-
 
 #endif /* DEVICE_CAMERA_TYPES_H_ */

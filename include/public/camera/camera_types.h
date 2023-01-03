@@ -26,14 +26,12 @@
 #include "camera_log.h"
 #include "luna-service2/lunaservice.h"
 
-
-
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
 
 const std::string kMemtypeShmemMmap = "sharedmemory_mmap";
-const std::string kMemtypeShmem    = "sharedmemory";
-const std::string kMemtypePosixshm = "posixshm";
+const std::string kMemtypeShmem     = "sharedmemory";
+const std::string kMemtypePosixshm  = "posixshm";
 
 /*-----------------------------------------------------------------------------
  (Type Definitions)
@@ -97,7 +95,7 @@ typedef enum
     DEVICE_ERROR_HANDLE_NOT_EXIST,
     DEVICE_ERROR_PREVIEW_NOT_STARTED,
     DEVICE_ERROR_NOT_POSIXSHM,
-	DEVICE_ERROR_APP_PERMISSION,
+    DEVICE_ERROR_APP_PERMISSION,
     DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL,
     DEVICE_ERROR_CLIENT_PID_IS_MISSING
 } DEVICE_RETURN_CODE_T;
@@ -191,13 +189,11 @@ struct CAMERA_PROPERTIES_T
     }
 };
 
-
 typedef struct
 {
     std::string str_memorytype;
     std::string str_memorysource;
 } camera_memory_source_t;
-
 
 void getFormatString(int, char *);
 char *getTypeString(device_t);

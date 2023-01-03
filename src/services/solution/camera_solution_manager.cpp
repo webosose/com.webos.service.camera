@@ -154,7 +154,7 @@ CameraSolutionManager::CameraSolutionManager(void)
     {
         std::shared_ptr<SolutionInfo> info;
         bool ret = SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACEDETECTION, info);
-        if (ret && info->model_ == FACEDETECTION_MODEL_AIF)// default model
+        if (ret && info->model_ == FACEDETECTION_MODEL_AIF) // default model
         {
             lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
         }

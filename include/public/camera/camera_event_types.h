@@ -1,7 +1,6 @@
 #ifndef DEVICE_CAMERA_EVENT_STATE_TYPE_H_
 #define DEVICE_CAMERA_EVENT_STATE_TYPE_H_
 
-
 typedef enum
 {
     DEVICE_EVENT_NONE,

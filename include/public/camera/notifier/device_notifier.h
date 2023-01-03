@@ -25,8 +25,8 @@ class DeviceNotifier
 public:
     using handlercb = std::function<void(void *)>;
 
-//TODO : Remove hadldercb. It is not used
-//TODO : Remove loop. It is not used
+    // TODO : Remove hadldercb. It is not used
+    // TODO : Remove loop. It is not used
     virtual void subscribeToClient(handlercb, GMainLoop *loop) = 0;
     virtual void setLSHandle(LSHandle *)                       = 0;
 };

@@ -21,10 +21,10 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "cam_posixshm.h"
+#include "camera_constants.h"
 #include "camera_hal_types.h"
 #include "camera_types.h"
 #include "camshm.h"
-#include "camera_constants.h"
 #include <condition_variable>
 #include <string>
 #include <thread>

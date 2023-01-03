@@ -26,7 +26,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
 
     jerror *error       = NULL;
     const char *payload = LSMessageGetPayload(message);
-    if(!payload)
+    if (!payload)
     {
         PMLOG_ERROR(CONST_MODULE_AC, "payload is null\n");
         return false;
@@ -127,7 +127,8 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                         PMLOG_INFO(CONST_MODULE_AC, "add camera\n");
 
                         client->mDeviceInfo.deviceLabel = "remote";
-                        client->remoteCamIdx_ = DeviceManager::getInstance().addRemoteCamera(&client->mDeviceInfo);
+                        client->remoteCamIdx_ =
+                            DeviceManager::getInstance().addRemoteCamera(&client->mDeviceInfo);
                         client->sendConnectSoundInput(true);
                         client->sendSetSoundInput(true);
                         client->setState(READY);
@@ -242,7 +243,8 @@ bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceN
 void AppCastClient::setState(APP_CAST_STATE new_state)
 {
     mState = new_state;
-    PMLOG_INFO(CONST_MODULE_AC, "setState : mState = %s (%d)", str_state[static_cast<unsigned int>(mState)].c_str(), mState);
+    PMLOG_INFO(CONST_MODULE_AC, "setState : mState = %s (%d)",
+               str_state[static_cast<unsigned int>(mState)].c_str(), mState);
 }
 
 static bool sendConnectSoundInputCallback(LSHandle *sh, LSMessage *msg, void *ctx)
