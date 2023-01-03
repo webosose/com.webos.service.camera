@@ -125,10 +125,25 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                     if (client->mState == INIT)
                     {
                         PMLOG_INFO(CONST_MODULE_AC, "add camera\n");
+                        DEVICE_LIST_T devInfo;
+                        devInfo.nDeviceNum       = 0;
+                        devInfo.nPortNum         = 0;
+                        devInfo.isPowerOnConnect = true;
+                        devInfo.strVendorName    = (!client->mDeviceInfo.manufacturer.empty())
+                                                       ? client->mDeviceInfo.manufacturer
+                                                       : "LG Electronics";
+                        devInfo.strProductName   = (!client->mDeviceInfo.modelName.empty())
+                                                       ? client->mDeviceInfo.modelName
+                                                       : "ThinQ WebCam";
+                        devInfo.strVendorID      = "RemoteCamera";
+                        devInfo.strProductID     = "RemoteCamera";
+                        devInfo.strDeviceType    = "remote";
+                        devInfo.strDeviceSubtype = "IP-CAM JPEG";
+                        devInfo.strDeviceNode    = "udpsrc=" + client->mDeviceInfo.clientKey;
+                        devInfo.strHostControllerInterface = "";
+                        devInfo.strDeviceKey               = client->mDeviceInfo.clientKey;
+                        client->remoteCamIdx_ = DeviceManager::getInstance().addDevice(&devInfo);
 
-                        client->mDeviceInfo.deviceLabel = "remote";
-                        client->remoteCamIdx_ =
-                            DeviceManager::getInstance().addRemoteCamera(&client->mDeviceInfo);
                         client->sendConnectSoundInput(true);
                         client->sendSetSoundInput(true);
                         client->setState(READY);
@@ -153,7 +168,11 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
             else
             {
                 PMLOG_INFO(CONST_MODULE_AC, "remove camera\n");
-                DeviceManager::getInstance().removeRemoteCamera(client->remoteCamIdx_);
+                if (client->remoteCamIdx_)
+                {
+                    DeviceManager::getInstance().removeDevice(client->remoteCamIdx_);
+                    client->remoteCamIdx_ = 0;
+                }
                 client->sendConnectSoundInput(false);
                 client->setState(INIT);
 

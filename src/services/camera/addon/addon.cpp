@@ -35,16 +35,6 @@ int AddOn::addDevice(DEVICE_LIST_T *devList)
 
 bool AddOn::removeDevice(int dev_idx) { return DeviceManager::getInstance().removeDevice(dev_idx); }
 
-int AddOn::addRemoteCamera(deviceInfo_t *devInfo)
-{
-    return DeviceManager::getInstance().addRemoteCamera(devInfo);
-}
-
-int AddOn::removeRemoteCamera(int dev_idx)
-{
-    return DeviceManager::getInstance().removeRemoteCamera(dev_idx);
-}
-
 bool AddOn::getCurrentDeviceInfo(std::string &productId, std::string &venderId,
                                  std::string &productName)
 {
@@ -272,13 +262,6 @@ int AddOn::Service::getDeviceCounts(std::string type) { return AddOn::getDeviceC
 int AddOn::Service::addDevice(DEVICE_LIST_T *devList) { return AddOn::addDevice(devList); }
 
 bool AddOn::Service::removeDevice(int dev_idx) { return AddOn::removeDevice(dev_idx); }
-
-int AddOn::Service::addRemoteCamera(deviceInfo_t *devInfo)
-{
-    return AddOn::addRemoteCamera(devInfo);
-}
-
-int AddOn::Service::removeRemoteCamera(int dev_idx) { return AddOn::removeRemoteCamera(dev_idx); }
 
 bool AddOn::Service::getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
                                           std::string &productName)

@@ -67,8 +67,6 @@ public:
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
     DEVICE_RETURN_CODE_T updateHandle(int, void *);
 
-    int addRemoteCamera(deviceInfo_t *deviceInfo);
-    int removeRemoteCamera(int);
     int set_appcastclient(AppCastClient *);
     AppCastClient *get_appcastclient();
     bool isRemoteCamera(DEVICE_LIST_T &);

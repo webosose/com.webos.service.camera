@@ -14,8 +14,6 @@ struct ICameraService
     virtual int getDeviceCounts(std::string type) { return 0; }
     virtual int addDevice(DEVICE_LIST_T *devList) { return 0; }
     virtual bool removeDevice(int dev_idx) { return false; }
-    virtual int addRemoteCamera(deviceInfo_t *devInfo) { return 0; }
-    virtual int removeRemoteCamera(int dev_idx) { return 0; }
     virtual bool getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
                                       std::string &productName)
     {

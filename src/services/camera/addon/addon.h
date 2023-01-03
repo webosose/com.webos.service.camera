@@ -14,8 +14,6 @@ private:
     static int getDeviceList(std::vector<int> &);
     static int addDevice(DEVICE_LIST_T *);
     static bool removeDevice(int);
-    static int addRemoteCamera(deviceInfo_t *);
-    static int removeRemoteCamera(int);
     static bool getCurrentDeviceInfo(std::string &, std::string &, std::string &);
 
 private:
@@ -25,8 +23,6 @@ private:
         int getDeviceCounts(std::string) override;
         int addDevice(DEVICE_LIST_T *) override;
         bool removeDevice(int) override;
-        int addRemoteCamera(deviceInfo_t *) override;
-        int removeRemoteCamera(int) override;
         bool getCurrentDeviceInfo(std::string &, std::string &, std::string &) override;
         void getSupportedSolutionList(std::vector<std::string> &,
                                       std::vector<std::string> &) override;
