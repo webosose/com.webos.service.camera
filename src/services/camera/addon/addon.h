@@ -11,7 +11,7 @@ private:
 
 private:
     static int getDeviceCounts(std::string);
-    static int getDeviceList(int *, int *, int *, int *);
+    static int getDeviceList(std::vector<int> &);
     static int addDevice(DEVICE_LIST_T *);
     static bool removeDevice(int);
     static int addRemoteCamera(deviceInfo_t *);
@@ -21,7 +21,7 @@ private:
 private:
     struct Service : public ICameraService
     {
-        int getDeviceList(int *, int *, int *, int *) override;
+        int getDeviceList(std::vector<int> &) override;
         int getDeviceCounts(std::string) override;
         int addDevice(DEVICE_LIST_T *) override;
         bool removeDevice(int) override;

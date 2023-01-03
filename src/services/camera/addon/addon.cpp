@@ -18,9 +18,9 @@ typedef void *(*pfn_destroy_plugin_instance)(void *);
 pfn_create_plugin_instance create_plugin_instance;
 pfn_destroy_plugin_instance destroy_plugin_instance;
 
-int AddOn::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
+int AddOn::getDeviceList(std::vector<int> &idList)
 {
-    return (int)(CommandManager::getDeviceList(pcamdev, pmicdev, pcamsupport, pmicsupport));
+    return (int)(CommandManager::getDeviceList(idList));
 }
 
 int AddOn::getDeviceCounts(std::string type)
@@ -265,10 +265,7 @@ std::vector<std::string> AddOn::getDevicePrivateData(int deviceid)
     return plugin_->getDevicePrivateData(deviceid);
 }
 
-int AddOn::Service::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
-{
-    return AddOn::getDeviceList(pcamdev, pmicdev, pcamsupport, pmicsupport);
-}
+int AddOn::Service::getDeviceList(std::vector<int> &idList) { return AddOn::getDeviceList(idList); }
 
 int AddOn::Service::getDeviceCounts(std::string type) { return AddOn::getDeviceCounts(type); }
 

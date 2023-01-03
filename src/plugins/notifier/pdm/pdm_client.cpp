@@ -32,6 +32,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
     const char *payload = LSMessageGetPayload(message);
     PMLOG_INFO(CONST_MODULE_PC, "payload : %s \n", payload);
     jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
+    std::vector<std::string> newNodeList;
 
     if (jis_valid(jin_obj))
     {
@@ -241,6 +242,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                         dev_info_[camcount].strHostControllerInterface = str_host_controller_inf;
                         dev_info_[camcount].strDeviceKey               = str_devpath_full;
                         dev_info_[camcount].strDeviceType              = "v4l2";
+                        newNodeList.push_back(str_devPath);
 
                         camcount++;
                     }
@@ -248,10 +250,44 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
             } while ((devlistsize > 0) && (devlistindex < devlistsize));
 
             DEVICE_EVENT_STATE_T nCamEvent = DEVICE_EVENT_NONE;
-            DEVICE_EVENT_STATE_T nMicEvent = DEVICE_EVENT_NONE;
-            PMLOG_INFO(CONST_MODULE_PC, "camcount : %d \n", camcount);
+            std::vector<int> idList;
+            DeviceManager::getInstance().getDeviceIdList(idList);
+            std::map<std::string, int> curNodeMap;
 
-            DeviceManager::getInstance().updateList(dev_info_, camcount, &nCamEvent, &nMicEvent);
+            for (auto id : idList)
+            {
+                if (DeviceManager::getInstance().getDeviceType(id) == "v4l2")
+                {
+                    std::string node;
+                    DeviceManager::getInstance().getDeviceNode(id, node);
+                    curNodeMap[node] = id;
+                }
+            }
+
+            PMLOG_INFO(CONST_MODULE_PC, "camcount %d, map.size %d", camcount, curNodeMap.size());
+            if (camcount > (int)curNodeMap.size()) // add Device
+            {
+                nCamEvent = DEVICE_EVENT_STATE_PLUGGED;
+                for (int i = 0; i < camcount; i++)
+                {
+                    if (curNodeMap.find(dev_info_[i].strDeviceNode) == curNodeMap.end())
+                    {
+                        DeviceManager::getInstance().addDevice(&dev_info_[i]);
+                    }
+                }
+            }
+            else if (camcount < (int)curNodeMap.size()) // remove Device
+            {
+                nCamEvent = DEVICE_EVENT_STATE_UNPLUGGED;
+                for (auto it : curNodeMap)
+                {
+                    auto node = find(newNodeList.begin(), newNodeList.end(), it.first);
+                    if (node == newNodeList.end())
+                    {
+                        DeviceManager::getInstance().removeDevice(it.second);
+                    }
+                }
+            }
 
             if (AddOn::hasImplementation())
             {

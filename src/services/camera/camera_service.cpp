@@ -652,46 +652,25 @@ bool CameraService::getCameraList(LSMessage &message)
     else
     {
         // get camera list here
-        int arr_camsupport[CONST_MAX_DEVICE_COUNT], arr_micsupport[CONST_MAX_DEVICE_COUNT];
-        int arr_camdev[CONST_MAX_DEVICE_COUNT], arr_micdev[CONST_MAX_DEVICE_COUNT];
-
-        for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
-        {
-            arr_camdev[i] = arr_micdev[i] = CONST_PARAM_DEFAULT_VALUE;
-            arr_camsupport[i] = arr_micsupport[i] = 0;
-        }
-
-        err_id = CommandManager::getInstance().getDeviceList(arr_camdev, arr_micdev, arr_camsupport,
-                                                             arr_micsupport);
-
+        std::vector<int> idList;
+        err_id = CommandManager::getInstance().getDeviceList(idList);
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK\n");
+            PMLOG_DEBUG("err_id != DEVICE_OK");
             obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                              getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK\n");
+            PMLOG_DEBUG("err_id == DEVICE_OK");
             obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                              getErrorString(err_id));
 
-            char arrlist[20][CONST_MAX_STRING_LENGTH];
-            int n_camcount = 0;
-
-            for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
+            obj_getcameralist.setCameraCount(static_cast<int>(idList.size()));
+            for (unsigned int i = 0; i < idList.size(); i++)
             {
-                if (arr_camdev[i] == CONST_PARAM_DEFAULT_VALUE)
-                    break;
-                snprintf(arrlist[n_camcount], CONST_MAX_STRING_LENGTH, "%s%d",
-                         CONST_DEVICE_NAME_CAMERA, arr_camdev[i]);
-                n_camcount++;
-            }
-
-            obj_getcameralist.setCameraCount(n_camcount);
-            for (unsigned int i = 0; i < n_camcount; i++)
-            {
-                obj_getcameralist.setCameraList(arrlist[i], i);
+                obj_getcameralist.setCameraList(
+                    CONST_DEVICE_NAME_CAMERA + std::to_string(idList[i]), i);
             }
         }
 

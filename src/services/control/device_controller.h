@@ -105,7 +105,6 @@ public:
     DEVICE_RETURN_CODE_T createHandle(void **, std::string);
     DEVICE_RETURN_CODE_T destroyHandle(void *);
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string, camera_device_info_t *);
-    static DEVICE_RETURN_CODE_T getDeviceList(DEVICE_LIST_T *, int *, int *, int *, int *, int);
     DEVICE_RETURN_CODE_T getDeviceProperty(void *, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);

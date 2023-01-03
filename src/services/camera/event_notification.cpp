@@ -140,35 +140,23 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
     case EventType::EVENT_TYPE_CONNECT:
     case EventType::EVENT_TYPE_DISCONNECT:
     {
-        int arr_camsupport[CONST_MAX_DEVICE_COUNT], arr_micsupport[CONST_MAX_DEVICE_COUNT];
-        int arr_camdev[CONST_MAX_DEVICE_COUNT], arr_micdev[CONST_MAX_DEVICE_COUNT];
-
-        for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
+        std::vector<int> idList;
+        if (DEVICE_OK != CommandManager::getInstance().getDeviceList(idList))
         {
-            arr_camdev[i] = arr_micdev[i] = CONST_PARAM_DEFAULT_VALUE;
-            arr_camsupport[i] = arr_micsupport[i] = 0;
-        }
-
-        if (DEVICE_OK != CommandManager::getInstance().getDeviceList(
-                             arr_camdev, arr_micdev, arr_camsupport, arr_micsupport))
-        {
-            PMLOG_INFO(CONST_MODULE_EN, "getDeviceList returns not OK \n");
+            PMLOG_INFO(CONST_MODULE_EN, "getDeviceList returns not OK");
             resultVal = false;
             break;
         }
 
         jvalue_ref deviceListArr = jarray_create(NULL);
 
-        for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
+        for (unsigned int i = 0; i < idList.size(); i++)
         {
-            if (arr_camdev[i] == CONST_PARAM_DEFAULT_VALUE)
-                break;
-
             jvalue_ref deviceListObj          = jobject_create();
             char buf[CONST_MAX_STRING_LENGTH] = {
                 0,
             };
-            snprintf(buf, CONST_MAX_STRING_LENGTH, "%s%d", CONST_DEVICE_NAME_CAMERA, arr_camdev[i]);
+            snprintf(buf, CONST_MAX_STRING_LENGTH, "%s%d", CONST_DEVICE_NAME_CAMERA, idList[i]);
             jobject_put(deviceListObj, J_CSTR_TO_JVAL("id"), jstring_create(buf));
             jarray_append(deviceListArr, deviceListObj);
         }

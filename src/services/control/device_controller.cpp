@@ -867,34 +867,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode,
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getDeviceList(DEVICE_LIST_T *plist, int *pcamdev, int *pmicdev,
-                                                  int *pcamsupport, int *pmicsupport, int ncount)
-{
-    PMLOG_INFO(CONST_MODULE_DC, "started count : %d \n", ncount);
-
-    *pcamdev     = 0;
-    *pmicdev     = 0;
-    *pcamsupport = 0;
-    *pmicsupport = 0;
-    for (int i = 0; i < ncount; i++)
-    {
-        if (plist[i].strDeviceType == "CAM")
-        {
-            pcamdev[i]     = i + 1;
-            pcamsupport[i] = 1;
-        }
-        else if (plist[i].strDeviceType == "MIC")
-        {
-            *pmicdev += 1;
-            pmicsupport[i] = 1;
-        }
-        else
-            PMLOG_INFO(CONST_MODULE_DC, "Unknown device\n");
-    }
-
-    return DEVICE_OK;
-}
-
 DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPERTIES_T *oparams)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started !\n");

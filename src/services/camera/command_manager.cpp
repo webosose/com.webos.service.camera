@@ -133,37 +133,12 @@ DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceid, camera_device_i
     return ret;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport,
-                                                   int *pmicsupport)
+DEVICE_RETURN_CODE_T CommandManager::getDeviceList(std::vector<int> &idList)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "started! \n");
+    PMLOG_INFO(CONST_MODULE_CM, "started!");
 
     // get list of devices connected
-    DEVICE_RETURN_CODE_T ret =
-        DeviceManager::getInstance().getList(pcamdev, pmicdev, pcamsupport, pmicsupport);
-    if (DEVICE_OK != ret)
-    {
-        PMLOG_INFO(CONST_MODULE_CM, "Failed to get device list\n");
-    }
-
-    return ret;
-}
-
-DEVICE_RETURN_CODE_T CommandManager::updateList(DEVICE_LIST_T *plist, int ncount,
-                                                DEVICE_EVENT_STATE_T *pcamevent,
-                                                DEVICE_EVENT_STATE_T *pmicevent)
-{
-    PMLOG_INFO(CONST_MODULE_CM, "ncount : %d\n", ncount);
-
-    // update list of devices
-    DEVICE_RETURN_CODE_T ret =
-        DeviceManager::getInstance().updateList(plist, ncount, pcamevent, pmicevent);
-    if (DEVICE_OK != ret)
-    {
-        PMLOG_INFO(CONST_MODULE_CM, "Failed to update device list\n");
-    }
-
-    return ret;
+    return DeviceManager::getInstance().getDeviceIdList(idList);
 }
 
 DEVICE_RETURN_CODE_T CommandManager::getProperty(int devhandle, CAMERA_PROPERTIES_T *devproperty)

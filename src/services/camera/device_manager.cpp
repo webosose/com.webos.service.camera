@@ -146,28 +146,10 @@ bool DeviceManager::eraseVirtualHandle(int deviceid, int virtualHandle)
     return false;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
-                                            int *pMicSupport) const
+DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "started!");
-
-    int devCount = deviceMap_.size();
-    if (devCount)
-    {
-        int i = 0;
-        for (auto iter : deviceMap_)
-        {
-            pCamDev[i]     = iter.first;
-            pCamSupport[i] = 1;
-            i++;
-        }
-    }
-    else
-    {
-        PMLOG_INFO(CONST_MODULE_DM, "No device detected by PDM!!!\n");
-        return DEVICE_OK;
-    }
-
+    for (auto list : deviceMap_)
+        idList.push_back(list.first);
     return DEVICE_OK;
 }
 
@@ -245,90 +227,6 @@ bool DeviceManager::removeDevice(int deviceid)
     }
     PMLOG_INFO(CONST_MODULE_DM, "can not found device for deviceid : %d", deviceid);
     return false;
-}
-
-DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCount,
-                                               DEVICE_EVENT_STATE_T *pCamEvent,
-                                               DEVICE_EVENT_STATE_T *pMicEvent)
-{
-    PMLOG_INFO(CONST_MODULE_DM, "started! nDevCount : %d \n", nDevCount);
-
-    // Find the number of real V4L2 cameras
-    int numV4L2Cameras = getDeviceCounts("v4l2");
-
-    if (numV4L2Cameras < nDevCount) // Plugged
-    {
-        *pCamEvent = DEVICE_EVENT_STATE_PLUGGED;
-        for (int i = 0; i < nDevCount; i++)
-        {
-            int id = 0;
-            // find exist device
-            for (auto iter : deviceMap_)
-            {
-                if (iter.second.stList.strDeviceNode == pList[i].strDeviceNode &&
-                    iter.second.stList.strDeviceType == pList[i].strDeviceType)
-                {
-                    id = iter.first;
-                    break;
-                }
-            }
-            // insert new camera device
-            if (!id)
-            {
-                addDevice(&pList[i]);
-            }
-        }
-    }
-    else if (numV4L2Cameras > nDevCount) // Unpluged
-    {
-        *pCamEvent = DEVICE_EVENT_STATE_UNPLUGGED;
-        for (auto iter = deviceMap_.begin(); iter != deviceMap_.end();)
-        {
-            bool unplugged = true;
-
-            // Skip cameras except real V4L2 cameras
-            if (iter->second.stList.strDeviceType != "v4l2")
-            {
-                unplugged = false;
-            }
-
-            // Find out which camera is unplugged
-            for (int i = 0; i < nDevCount; i++)
-            {
-                if (iter->second.stList.strDeviceNode == pList[i].strDeviceNode &&
-                    iter->second.stList.strDeviceType == pList[i].strDeviceType)
-                {
-                    unplugged = false;
-                    break;
-                }
-            }
-            if (unplugged)
-            {
-                if (iter->second.isDeviceOpen && iter->second.handleList.size() > 0)
-                {
-                    PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
-                    CommandManager::getInstance().requestPreviewCancel(iter->first);
-                    for (int i = iter->second.handleList.size() - 1; i >= 0; i--)
-                    {
-                        CommandManager::getInstance().stopPreview(iter->second.handleList[i]);
-                        CommandManager::getInstance().close(iter->second.handleList[i]);
-                    }
-                    PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");
-                }
-                removeDevice(iter++->first);
-            }
-            else
-            {
-                iter++;
-            }
-        }
-    }
-    else
-    {
-        PMLOG_INFO(CONST_MODULE_DM, "No event changed!!\n");
-    }
-
-    return DEVICE_OK;
 }
 
 DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *p_info)

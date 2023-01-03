@@ -10,10 +10,7 @@
 struct ICameraService
 {
     virtual ~ICameraService() {}
-    virtual int getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
-    {
-        return -1;
-    }
+    virtual int getDeviceList(std::vector<int> &idList) { return -1; }
     virtual int getDeviceCounts(std::string type) { return 0; }
     virtual int addDevice(DEVICE_LIST_T *devList) { return 0; }
     virtual bool removeDevice(int dev_idx) { return false; }
