@@ -23,7 +23,7 @@ int AddOn::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmic
     return (int)(CommandManager::getDeviceList(pcamdev, pmicdev, pcamsupport, pmicsupport));
 }
 
-int AddOn::getDeviceCounts(DEVICE_TYPE_T type)
+int AddOn::getDeviceCounts(std::string type)
 {
     return DeviceManager::getInstance().getDeviceCounts(type);
 }
@@ -236,15 +236,14 @@ void AddOn::detachPrivateComponentFromDevice(int deviceid,
     plugin_->detachPrivateComponentFromDevice(deviceid, privateStrVecData);
 }
 
-void AddOn::pushDevicePrivateData(int device_id, int dev_idx, DEVICE_TYPE_T type,
-                                  DEVICE_LIST_T *pstList)
+void AddOn::pushDevicePrivateData(int device_id, int dev_idx, DEVICE_LIST_T *pstList)
 {
     if (!plugin_)
     {
         return;
     }
 
-    plugin_->pushDevicePrivateData(device_id, dev_idx, type, pstList);
+    plugin_->pushDevicePrivateData(device_id, dev_idx, pstList);
 }
 
 void AddOn::popDevicePrivateData(int dev_idx)
@@ -271,7 +270,7 @@ int AddOn::Service::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, 
     return AddOn::getDeviceList(pcamdev, pmicdev, pcamsupport, pmicsupport);
 }
 
-int AddOn::Service::getDeviceCounts(DEVICE_TYPE_T type) { return AddOn::getDeviceCounts(type); }
+int AddOn::Service::getDeviceCounts(std::string type) { return AddOn::getDeviceCounts(type); }
 
 int AddOn::Service::addDevice(DEVICE_LIST_T *devList) { return AddOn::addDevice(devList); }
 

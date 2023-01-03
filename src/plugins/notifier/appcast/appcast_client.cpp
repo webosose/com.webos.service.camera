@@ -141,7 +141,7 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                                 strProductName = client->mDeviceInfo.modelName;
 
                             devList.strProductName = strProductName;
-                            devList.strDeviceLabel = "remote";
+                            devList.strDeviceType  = "remote";
                             AddOn::setDeviceEvent(&devList, 1, true, true);
                         }
 

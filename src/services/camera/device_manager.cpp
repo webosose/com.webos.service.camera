@@ -87,22 +87,22 @@ void DeviceManager::getDeviceHandle(int deviceid, void **devicehandle)
     }
 }
 
-DEVICE_TYPE_T DeviceManager::getDeviceType(int deviceid)
+std::string DeviceManager::getDeviceType(int deviceid)
 {
-    DEVICE_TYPE_T devType = DEVICE_DEVICE_UNDEFINED;
+    std::string deviceType = "unknown";
     if (isDeviceIdValid(deviceid))
     {
-        devType = deviceMap_[deviceid].devType;
+        deviceType = deviceMap_[deviceid].stList.strDeviceType;
     }
-    return devType;
+    return deviceType;
 }
 
-int DeviceManager::getDeviceCounts(DEVICE_TYPE_T type)
+int DeviceManager::getDeviceCounts(std::string type)
 {
     int count = 0;
     for (auto iter : deviceMap_)
     {
-        if (iter.second.devType == type)
+        if (iter.second.stList.strDeviceType == type)
             ++count;
     }
 
@@ -187,6 +187,7 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     PMLOG_INFO(CONST_MODULE_DM, "strProductID : %s", devStatus.stList.strProductID.c_str());
     devStatus.stList.strDeviceSubtype = pList->strDeviceSubtype;
     PMLOG_INFO(CONST_MODULE_DM, "strDeviceSubtype : %s", devStatus.stList.strDeviceSubtype.c_str());
+
     devStatus.stList.strDeviceType = pList->strDeviceType;
     PMLOG_INFO(CONST_MODULE_DM, "strDeviceType : %s", devStatus.stList.strDeviceType.c_str());
     devStatus.stList.nDeviceNum = pList->nDeviceNum;
@@ -199,17 +200,6 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     PMLOG_INFO(CONST_MODULE_DM, "strDeviceNode : %s", devStatus.stList.strDeviceNode.c_str());
     devStatus.stList.strDeviceKey = pList->strDeviceKey;
     PMLOG_INFO(CONST_MODULE_DM, "strDeviceKey : %s", devStatus.stList.strDeviceKey.c_str());
-
-    devStatus.stList.strDeviceLabel = pList->strDeviceLabel;
-    PMLOG_INFO(CONST_MODULE_DM, "strDeviceLabel : %s", devStatus.stList.strDeviceLabel.c_str());
-
-    devStatus.devType = DEVICE_V4L2_CAMERA;
-    if (devStatus.stList.strDeviceLabel == "remote")
-        devStatus.devType = DEVICE_REMOTE_CAMERA;
-    else if (devStatus.stList.strDeviceLabel == "dummy")
-        devStatus.devType = DEVICE_V4L2_CAMERA_DUMMY;
-    else if (devStatus.stList.strDeviceLabel == "fake")
-        devStatus.devType = DEVICE_REMOTE_CAMERA_FAKE;
 
     int devidx = 0;
     for (int i = 1; i <= MAX_DEVICE_COUNT; i++)
@@ -233,7 +223,7 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
         return 0;
 
     // Push platform-specific device private data associated with this device */
-    AddOn::pushDevicePrivateData(devidx, devidx, devStatus.devType, pList);
+    AddOn::pushDevicePrivateData(devidx, devidx, pList);
 
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
@@ -264,7 +254,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     PMLOG_INFO(CONST_MODULE_DM, "started! nDevCount : %d \n", nDevCount);
 
     // Find the number of real V4L2 cameras
-    int numV4L2Cameras = getDeviceCounts(DEVICE_V4L2_CAMERA);
+    int numV4L2Cameras = getDeviceCounts("v4l2");
 
     if (numV4L2Cameras < nDevCount) // Plugged
     {
@@ -276,7 +266,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
             for (auto iter : deviceMap_)
             {
                 if (iter.second.stList.strDeviceNode == pList[i].strDeviceNode &&
-                    iter.second.stList.strDeviceLabel == pList[i].strDeviceLabel)
+                    iter.second.stList.strDeviceType == pList[i].strDeviceType)
                 {
                     id = iter.first;
                     break;
@@ -297,7 +287,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
             bool unplugged = true;
 
             // Skip cameras except real V4L2 cameras
-            if (iter->second.devType != DEVICE_V4L2_CAMERA)
+            if (iter->second.stList.strDeviceType != "v4l2")
             {
                 unplugged = false;
             }
@@ -306,7 +296,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
             for (int i = 0; i < nDevCount; i++)
             {
                 if (iter->second.stList.strDeviceNode == pList[i].strDeviceNode &&
-                    iter->second.stList.strDeviceLabel == pList[i].strDeviceLabel)
+                    iter->second.stList.strDeviceType == pList[i].strDeviceType)
                 {
                     unplugged = false;
                     break;
@@ -352,36 +342,11 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
     strdevicenode = deviceMap_[deviceid].stList.strDeviceNode;
 
     DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
-    DEVICE_TYPE_T type       = getDeviceType(deviceid);
-    // debug
-    PMLOG_INFO(CONST_MODULE_DM, "type : %d", (int)type);
-
-    p_info->subsystem = nullptr;
-    switch (type)
-    {
-    case DEVICE_V4L2_CAMERA:
-        p_info->subsystem = cstr_libv4l2.c_str();
-        break;
-    case DEVICE_REMOTE_CAMERA:
-        p_info->subsystem = cstr_libremote.c_str();
-        break;
-    case DEVICE_REMOTE_CAMERA_FAKE:
-        p_info->subsystem = cstr_libfake.c_str();
-        break;
-    case DEVICE_V4L2_CAMERA_DUMMY:
-        p_info->subsystem = cstr_libdummy.c_str();
-        break;
-    default:
-        break;
-    }
-
-    if (p_info->subsystem == nullptr)
-    {
-        PMLOG_INFO(CONST_MODULE_DM, "Invalid subsystem");
-        return DEVICE_RETURN_UNDEFINED;
-    }
-
-    ret = DeviceControl::getDeviceInfo(strdevicenode, p_info);
+    std::string type         = getDeviceType(deviceid);
+    PMLOG_INFO(CONST_MODULE_DM, "type : %s", type.c_str());
+    std::string libname = "lib" + type + "-camera-plugin.so";
+    p_info->subsystem   = libname.c_str();
+    ret                 = DeviceControl::getDeviceInfo(strdevicenode, p_info);
     if (DEVICE_OK != ret)
     {
         PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
@@ -429,12 +394,11 @@ int DeviceManager::addRemoteCamera(deviceInfo_t *deviceInfo)
         (!deviceInfo->manufacturer.empty()) ? deviceInfo->manufacturer : "LG Electronics";
     devInfo.strProductName =
         (!deviceInfo->modelName.empty()) ? deviceInfo->modelName : "ThinQ WebCam";
-    devInfo.strDeviceType        = "CAM";
     devInfo.strDeviceSubtype     = "IP-CAM JPEG";
     std::string remoteDeviceNode = "udpsrc=" + deviceInfo->clientKey;
     devInfo.strDeviceNode        = remoteDeviceNode;
     devInfo.strDeviceKey         = deviceInfo->clientKey;
-    devInfo.strDeviceLabel       = deviceInfo->deviceLabel;
+    devInfo.strDeviceType        = deviceInfo->deviceLabel;
 
     int dev_idx = addDevice(&devInfo);
 
@@ -454,7 +418,7 @@ int DeviceManager::removeRemoteCamera(int dev_idx)
 
     DEVICE_STATUS *pStatus = &deviceMap_[dev_idx];
 
-    if (pStatus->devType != DEVICE_REMOTE_CAMERA && pStatus->devType != DEVICE_REMOTE_CAMERA_FAKE)
+    if (pStatus->stList.strDeviceType != "remote" && pStatus->stList.strDeviceType != "fake")
     {
         PMLOG_INFO(CONST_MODULE_DM, "dev_idx : %d, is not remote camera", dev_idx);
         return 0;
@@ -519,8 +483,6 @@ bool DeviceManager::getCurrentDeviceInfo(std::string &productId, std::string &ve
 {
     for (auto &it : deviceMap_)
     {
-        if (std::string("CAM") != it.second.stList.strDeviceType)
-            continue;
         if (it.second.isDeviceOpen)
         {
             productId   = it.second.stList.strProductID;

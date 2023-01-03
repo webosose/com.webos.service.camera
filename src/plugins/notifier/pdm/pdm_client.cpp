@@ -237,11 +237,10 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                         dev_info_[camcount].strProductName             = str_productname;
                         dev_info_[camcount].strVendorID                = str_vendorid;
                         dev_info_[camcount].strProductID               = str_productid;
-                        dev_info_[camcount].strDeviceType              = str_devicetype;
                         dev_info_[camcount].strDeviceSubtype           = str_productname;
                         dev_info_[camcount].strHostControllerInterface = str_host_controller_inf;
                         dev_info_[camcount].strDeviceKey               = str_devpath_full;
-                        dev_info_[camcount].strDeviceLabel             = "v4l2";
+                        dev_info_[camcount].strDeviceType              = "v4l2";
 
                         camcount++;
                     }

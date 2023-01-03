@@ -10,7 +10,7 @@ private:
     static ICameraServiceAddon *plugin_;
 
 private:
-    static int getDeviceCounts(DEVICE_TYPE_T);
+    static int getDeviceCounts(std::string);
     static int getDeviceList(int *, int *, int *, int *);
     static int addDevice(DEVICE_LIST_T *);
     static bool removeDevice(int);
@@ -22,7 +22,7 @@ private:
     struct Service : public ICameraService
     {
         int getDeviceList(int *, int *, int *, int *) override;
-        int getDeviceCounts(DEVICE_TYPE_T) override;
+        int getDeviceCounts(std::string) override;
         int addDevice(DEVICE_LIST_T *) override;
         bool removeDevice(int) override;
         int addRemoteCamera(deviceInfo_t *) override;
@@ -54,7 +54,7 @@ public:
 
     static void attachPrivateComponentToDevice(int, const std::vector<std::string> &);
     static void detachPrivateComponentFromDevice(int, const std::vector<std::string> &);
-    static void pushDevicePrivateData(int, int, DEVICE_TYPE_T, DEVICE_LIST_T *);
+    static void pushDevicePrivateData(int, int, DEVICE_LIST_T *);
     static void popDevicePrivateData(int);
     static std::vector<std::string> getDevicePrivateData(int);
 };

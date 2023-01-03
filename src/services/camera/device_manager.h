@@ -28,10 +28,9 @@
 typedef struct _DEVICE_STATUS
 {
     // Device
-    void *pcamhandle;      // HAL handle
-    bool isDeviceOpen;     // open or close
-    DEVICE_TYPE_T devType; // CAM or MIC
-    DEVICE_LIST_T stList;  // name, id, node ...
+    void *pcamhandle;     // HAL handle
+    bool isDeviceOpen;    // open or close
+    DEVICE_LIST_T stList; // name, id, node ...
     std::vector<int> handleList;
 } DEVICE_STATUS;
 
@@ -55,8 +54,8 @@ public:
     bool isDeviceValid(int);
     void getDeviceNode(int, std::string &);
     void getDeviceHandle(int, void **);
-    DEVICE_TYPE_T getDeviceType(int);
-    int getDeviceCounts(DEVICE_TYPE_T);
+    std::string getDeviceType(int);
+    int getDeviceCounts(std::string);
     bool addVirtualHandle(int devid, int virtualHandle);
     bool eraseVirtualHandle(int deviceId, int virtualHandle);
     int addDevice(DEVICE_LIST_T *pList);

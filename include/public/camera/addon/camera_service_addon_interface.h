@@ -14,7 +14,7 @@ struct ICameraService
     {
         return -1;
     }
-    virtual int getDeviceCounts(DEVICE_TYPE_T type) { return 0; }
+    virtual int getDeviceCounts(std::string type) { return 0; }
     virtual int addDevice(DEVICE_LIST_T *devList) { return 0; }
     virtual bool removeDevice(int dev_idx) { return false; }
     virtual int addRemoteCamera(deviceInfo_t *devInfo) { return 0; }
@@ -56,8 +56,7 @@ public:
                                                 const std::vector<std::string> &solutions)   = 0;
     virtual void detachPrivateComponentFromDevice(int deviceid,
                                                   const std::vector<std::string> &solutions) = 0;
-    virtual void pushDevicePrivateData(int device_id, int dev_idx, DEVICE_TYPE_T type,
-                                       DEVICE_LIST_T *pstList)                               = 0;
+    virtual void pushDevicePrivateData(int device_id, int dev_idx, DEVICE_LIST_T *pstList)   = 0;
     virtual void popDevicePrivateData(int dev_idx)                                           = 0;
     virtual std::vector<std::string> getDevicePrivateData(int deviceid)                      = 0;
 };

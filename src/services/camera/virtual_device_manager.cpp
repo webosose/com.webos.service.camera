@@ -99,30 +99,15 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     void *p_cam_handle;
 
     DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
-    DEVICE_TYPE_T type       = DeviceManager::getInstance().getDeviceType(devid);
-    switch (type)
-    {
-    case DEVICE_V4L2_CAMERA:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libv4l2);
-        break;
-    case DEVICE_REMOTE_CAMERA:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libremote);
-        break;
-    case DEVICE_REMOTE_CAMERA_FAKE:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libfake);
-        break;
-    case DEVICE_V4L2_CAMERA_DUMMY:
-        ret = objdevicecontrol_.createHandle(&p_cam_handle, cstr_libdummy);
-        break;
-    default:
-        break;
-    }
-
+    std::string type         = DeviceManager::getInstance().getDeviceType(devid);
+    std::string libname      = "lib" + type + "-camera-plugin.so";
+    ret                      = objdevicecontrol_.createHandle(&p_cam_handle, libname);
     if (DEVICE_OK != ret)
     {
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to create handle\n");
         return DEVICE_ERROR_CAN_NOT_OPEN;
     }
+
     DeviceManager::getInstance().updateHandle(devid, p_cam_handle);
     std::string devnode;
     // get the device node of requested camera to be opened

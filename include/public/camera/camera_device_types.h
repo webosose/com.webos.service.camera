@@ -3,17 +3,6 @@
 
 #include "camera_constants.h"
 
-typedef enum
-{
-    DEVICE_DEVICE_UNDEFINED = -1,
-    DEVICE_V4L2_CAMERA      = 1,
-    DEVICE_V4L2_CAMERA_DUMMY,
-    DEVICE_REMOTE_CAMERA,
-    DEVICE_REMOTE_CAMERA_FAKE,
-    DEVICE_MICROPHONE,
-    DEVICE_OTHER
-} DEVICE_TYPE_T;
-
 struct DEVICE_LIST_T
 {
     int nDeviceNum;
@@ -28,7 +17,6 @@ struct DEVICE_LIST_T
     std::string strDeviceNode;
     std::string strHostControllerInterface;
     std::string strDeviceKey;
-    std::string strDeviceLabel;
 };
 
 struct deviceInfo_t
