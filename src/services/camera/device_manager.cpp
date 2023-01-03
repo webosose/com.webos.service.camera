@@ -24,142 +24,77 @@
 
 DeviceManager::DeviceManager() {}
 
-int DeviceManager::findDevNum(int ndevicehandle)
+bool DeviceManager::isDeviceIdValid(int deviceid)
 {
-    int nDeviceID = n_invalid_id;
-    PMLOG_DEBUG("ndevicehandle : %d", ndevicehandle);
-    PMLOG_DEBUG("deviceMap_.count : %d", deviceMap_.size());
-
-    if (ndevicehandle == n_invalid_id)
-        return nDeviceID;
-
-    for (auto iter : deviceMap_)
-    {
-        PMLOG_DEBUG("iter.second.nDevIndex : %d", iter.second.nDevIndex);
-        PMLOG_DEBUG("iter.second.nDeviceID : %d", iter.second.nDeviceID);
-
-        if ((iter.second.nDevIndex == ndevicehandle) || (iter.second.nDeviceID == ndevicehandle))
-        {
-            nDeviceID = iter.first;
-            PMLOG_DEBUG("dev_num is :%d", nDeviceID);
-            break;
-        }
-    }
-    return nDeviceID;
+    if (deviceMap_.find(deviceid) != deviceMap_.end())
+        return true;
+    return false;
 }
 
-bool DeviceManager::setOpenStatus(int deviceID, bool status)
+bool DeviceManager::setDeviceStatus(int deviceid, bool status)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "deviceID %d status : %d \n!!", deviceID, status);
-    int dev_num = findDevNum(deviceID);
-    PMLOG_INFO(CONST_MODULE_DM, "dev_num : %d \n!!", dev_num);
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid %d status : %d \n!!", deviceid, status);
 
-    if (n_invalid_id == dev_num)
+    if (!isDeviceIdValid(deviceid))
         return CONST_PARAM_VALUE_FALSE;
 
-    deviceMap_[dev_num].isDeviceOpen = status;
+    deviceMap_[deviceid].isDeviceOpen = status;
 
     return CONST_PARAM_VALUE_TRUE;
 }
 
-bool DeviceManager::isDeviceOpen(int *deviceID)
+bool DeviceManager::isDeviceOpen(int deviceid)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "started!");
-    int dev_num = findDevNum(*deviceID);
-    if (n_invalid_id == dev_num)
-    {
-        *deviceID = dev_num;
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
+
+    if (!isDeviceIdValid(deviceid))
         return CONST_PARAM_VALUE_FALSE;
-    }
 
-    PMLOG_DEBUG("isDeviceOpen :  *deviceID : %d\n", *deviceID);
-    PMLOG_DEBUG("isDeviceOpen :  deviceMap_[%d].nDeviceID : %d\n", dev_num,
-                deviceMap_[dev_num].nDeviceID);
-
-    if (*deviceID == deviceMap_[dev_num].nDeviceID)
+    PMLOG_DEBUG("deviceMap_[%d].isDeviceOpen : %d", deviceid, deviceMap_[deviceid].isDeviceOpen);
+    if (deviceMap_[deviceid].isDeviceOpen)
     {
-        PMLOG_DEBUG("isDeviceOpen : deviceMap_[%d].isDeviceOpen : %d\n", dev_num,
-                    deviceMap_[dev_num].isDeviceOpen);
-        if (deviceMap_[dev_num].isDeviceOpen)
-        {
-            PMLOG_INFO(CONST_MODULE_DM, "Device is open\n!!");
-            return CONST_PARAM_VALUE_TRUE;
-        }
-        else
-        {
-            PMLOG_INFO(CONST_MODULE_DM, "Device is not open\n!!");
-            return CONST_PARAM_VALUE_FALSE;
-        }
-    }
-    else
-        return CONST_PARAM_VALUE_FALSE;
-}
-
-bool DeviceManager::isDeviceValid(DEVICE_TYPE_T devType, int *deviceID)
-{
-    int dev_num = findDevNum(*deviceID);
-    if (n_invalid_id == dev_num)
-    {
-        *deviceID = dev_num;
-        return CONST_PARAM_VALUE_TRUE;
-    }
-
-    if (TRUE == deviceMap_[dev_num].isDeviceOpen)
-    {
+        PMLOG_INFO(CONST_MODULE_DM, "Device is open!!");
         return CONST_PARAM_VALUE_TRUE;
     }
     else
     {
+        PMLOG_INFO(CONST_MODULE_DM, "Device is not open!!");
         return CONST_PARAM_VALUE_FALSE;
     }
 }
 
-void DeviceManager::getDeviceNode(int *device_id, std::string &strdevicenode)
+bool DeviceManager::isDeviceValid(int deviceid) { return isDeviceIdValid(deviceid); }
+
+void DeviceManager::getDeviceNode(int deviceid, std::string &devicenode)
 {
-    int dev_num = findDevNum(*device_id);
-    if (n_invalid_id == dev_num)
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
+
+    devicenode = "";
+    if (isDeviceIdValid(deviceid))
     {
-        *device_id = dev_num;
-        return;
+        devicenode = deviceMap_[deviceid].stList.strDeviceNode;
     }
-    strdevicenode = deviceMap_[dev_num].stList.strDeviceNode;
-    return;
 }
 
-void DeviceManager::getDeviceHandle(int *device_id, void **devicehandle)
+void DeviceManager::getDeviceHandle(int deviceid, void **devicehandle)
 {
-    int dev_num = findDevNum(*device_id);
-    if (n_invalid_id == dev_num)
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
+
+    *devicehandle = nullptr;
+    if (isDeviceIdValid(deviceid))
     {
-        *device_id = dev_num;
-        return;
+        *devicehandle = deviceMap_[deviceid].pcamhandle;
     }
-    *devicehandle = deviceMap_[dev_num].pcamhandle;
-    return;
 }
 
-int DeviceManager::getDeviceId(int *device_id)
+DEVICE_TYPE_T DeviceManager::getDeviceType(int deviceid)
 {
-    int dev_num = findDevNum(*device_id);
-    if (n_invalid_id == dev_num)
+    DEVICE_TYPE_T devType = DEVICE_DEVICE_UNDEFINED;
+    if (isDeviceIdValid(deviceid))
     {
-        *device_id = dev_num;
-        return 0;
+        devType = deviceMap_[deviceid].devType;
     }
-
-    return deviceMap_[dev_num].nDeviceID;
-}
-
-DEVICE_TYPE_T DeviceManager::getDeviceType(int *device_id)
-{
-    int dev_num = findDevNum(*device_id);
-    if (n_invalid_id == dev_num)
-    {
-        *device_id = dev_num;
-        return DEVICE_DEVICE_UNDEFINED;
-    }
-
-    return deviceMap_[dev_num].devType;
+    return devType;
 }
 
 int DeviceManager::getDeviceCounts(DEVICE_TYPE_T type)
@@ -174,53 +109,35 @@ int DeviceManager::getDeviceCounts(DEVICE_TYPE_T type)
     return count;
 }
 
-bool DeviceManager::addVirtualHandle(int devid, int virtualHandle)
+bool DeviceManager::addVirtualHandle(int deviceid, int virtualHandle)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "devid: %d, virualHandle: %d", devid, virtualHandle);
-    if (deviceMap_.find(devid) != deviceMap_.end())
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, virualHandle : %d", deviceid, virtualHandle);
+    if (isDeviceIdValid(deviceid))
     {
-        deviceMap_[devid].handleList.push_back(virtualHandle);
-        PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d", devid,
-                   deviceMap_[devid].handleList.size());
+        deviceMap_[deviceid].handleList.push_back(virtualHandle);
+        PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d", deviceid,
+                   deviceMap_[deviceid].handleList.size());
         return true;
     }
 
     return false;
 }
 
-bool DeviceManager::eraseVirtualHandle(int deviceId, int virtualHandle)
+bool DeviceManager::eraseVirtualHandle(int deviceid, int virtualHandle)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "deviceId: %d, virtualHandle: %d", deviceId, virtualHandle);
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, virtualHandle : %d", deviceid, virtualHandle);
 
-    // find devid
-    int devid = 0;
-    for (auto iter : deviceMap_)
+    if (isDeviceIdValid(deviceid))
     {
-        PMLOG_INFO(CONST_MODULE_DM, "first: %d, nDeviceID: %d", iter.first, iter.second.nDeviceID);
-        if (iter.second.nDeviceID == deviceId)
-        {
-            devid = iter.first;
-            break;
-        }
-    }
-    if (devid == 0)
-    {
-        PMLOG_INFO(CONST_MODULE_DM, "Cannot found devid");
-        return false;
-    }
-
-    PMLOG_INFO(CONST_MODULE_DM, "devid: %d", devid);
-    if (deviceMap_.find(devid) != deviceMap_.end())
-    {
-        for (auto it = deviceMap_[devid].handleList.begin();
-             it != deviceMap_[devid].handleList.end(); it++)
+        for (auto it = deviceMap_[deviceid].handleList.begin();
+             it != deviceMap_[deviceid].handleList.end(); it++)
         {
             PMLOG_INFO(CONST_MODULE_DM, "cur.handleList : %d", *it);
             if (*it == virtualHandle)
             {
-                deviceMap_[devid].handleList.erase(it);
-                PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d", devid,
-                           deviceMap_[devid].handleList.size());
+                deviceMap_[deviceid].handleList.erase(it);
+                PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d", deviceid,
+                           deviceMap_[deviceid].handleList.size());
                 return true;
             }
         }
@@ -259,7 +176,6 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     DEVICE_STATUS devStatus;
     devStatus.isDeviceOpen = false;
     devStatus.pcamhandle   = nullptr;
-    devStatus.nDeviceID    = n_invalid_id;
 
     devStatus.stList.strVendorName = pList->strVendorName;
     PMLOG_INFO(CONST_MODULE_DM, "strVendorName : %s", devStatus.stList.strVendorName.c_str());
@@ -287,8 +203,6 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     devStatus.stList.strDeviceLabel = pList->strDeviceLabel;
     PMLOG_INFO(CONST_MODULE_DM, "strDeviceLabel : %s", devStatus.stList.strDeviceLabel.c_str());
 
-    devStatus.nDevCount = deviceMap_.size() + 1;
-    PMLOG_INFO(CONST_MODULE_DM, "nDevCount : %d", devStatus.nDevCount);
     devStatus.devType = DEVICE_V4L2_CAMERA;
     if (devStatus.stList.strDeviceLabel == "remote")
         devStatus.devType = DEVICE_REMOTE_CAMERA;
@@ -318,32 +232,28 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList)
     if (devidx == 0)
         return 0;
 
-    devStatus.nDevIndex = devidx;
-    PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
-
     // Push platform-specific device private data associated with this device */
-    AddOn::pushDevicePrivateData(devStatus.nDeviceID, devStatus.nDevIndex, devStatus.devType,
-                                 pList);
+    AddOn::pushDevicePrivateData(devidx, devidx, devStatus.devType, pList);
 
     deviceMap_[devidx] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
     return devidx;
 }
 
-bool DeviceManager::removeDevice(int devid)
+bool DeviceManager::removeDevice(int deviceid)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "devid : %d", devid);
-    auto dev = deviceMap_.find(devid);
-    if (dev != deviceMap_.end())
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
+
+    if (isDeviceIdValid(deviceid))
     {
         // Pop platform-specific private data associated with this device.
-        AddOn::popDevicePrivateData(devid);
+        AddOn::popDevicePrivateData(deviceid);
 
-        deviceMap_.erase(dev);
+        deviceMap_.erase(deviceid);
         PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %d", deviceMap_.size());
         return true;
     }
-    PMLOG_INFO(CONST_MODULE_DM, "can not found device for devid : %d", devid);
+    PMLOG_INFO(CONST_MODULE_DM, "can not found device for deviceid : %d", deviceid);
     return false;
 }
 
@@ -431,30 +341,18 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p_info)
+DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *p_info)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "started ! ndev_id : %d \n", ndev_id);
+    PMLOG_INFO(CONST_MODULE_DM, "started ! deviceid : %d \n", deviceid);
 
-    int ncam_id = findDevNum(ndev_id);
-    if (n_invalid_id == ncam_id)
+    if (!isDeviceIdValid(deviceid))
         return DEVICE_ERROR_NODEVICE;
-
-    PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].nDevIndex : %d \n", ncam_id,
-               deviceMap_[ncam_id].nDevIndex);
 
     std::string strdevicenode;
-    if (deviceMap_[ncam_id].nDevIndex == ndev_id)
-    {
-        strdevicenode = deviceMap_[ncam_id].stList.strDeviceNode;
-    }
-    else
-    {
-        PMLOG_INFO(CONST_MODULE_DM, "Failed to get device number\n");
-        return DEVICE_ERROR_NODEVICE;
-    }
+    strdevicenode = deviceMap_[deviceid].stList.strDeviceNode;
 
     DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
-    DEVICE_TYPE_T type       = getDeviceType(&ndev_id);
+    DEVICE_TYPE_T type       = getDeviceType(deviceid);
     // debug
     PMLOG_INFO(CONST_MODULE_DM, "type : %d", (int)type);
 
@@ -488,14 +386,15 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
     {
         PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
     }
+
     memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
-    strncpy(p_info->str_devicename, deviceMap_[ncam_id].stList.strProductName.c_str(),
+    strncpy(p_info->str_devicename, deviceMap_[deviceid].stList.strProductName.c_str(),
             sizeof(p_info->str_devicename) - 1);
     memset(p_info->str_vendorid, '\0', sizeof(p_info->str_vendorid));
-    strncpy(p_info->str_vendorid, deviceMap_[ncam_id].stList.strVendorID.c_str(),
+    strncpy(p_info->str_vendorid, deviceMap_[deviceid].stList.strVendorID.c_str(),
             sizeof(p_info->str_vendorid) - 1);
     memset(p_info->str_productid, '\0', sizeof(p_info->str_productid));
-    strncpy(p_info->str_productid, deviceMap_[ncam_id].stList.strProductID.c_str(),
+    strncpy(p_info->str_productid, deviceMap_[deviceid].stList.strProductID.c_str(),
             sizeof(p_info->str_productid) - 1);
 
     return ret;
@@ -503,18 +402,12 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
 
 DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d \n", deviceid);
-    int devicehandle = getRandomNumber();
-    int dev_num      = findDevNum(deviceid);
-    if (n_invalid_id == dev_num)
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
+
+    if (!isDeviceIdValid(deviceid))
         return DEVICE_ERROR_NODEVICE;
 
-    if (handle)
-        deviceMap_[dev_num].nDeviceID = devicehandle;
-    deviceMap_[dev_num].pcamhandle = handle;
-
-    // Pass updated handle value to platform-specific device private handler
-    AddOn::updateDevicePrivateHandle(deviceid, devicehandle);
+    deviceMap_[deviceid].pcamhandle = handle;
 
     return DEVICE_OK;
 }

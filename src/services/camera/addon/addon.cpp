@@ -266,15 +266,6 @@ std::vector<std::string> AddOn::getDevicePrivateData(int deviceid)
     return plugin_->getDevicePrivateData(deviceid);
 }
 
-void AddOn::updateDevicePrivateHandle(int deviceid, int devicehandle)
-{
-    if (!plugin_)
-    {
-        return;
-    }
-    plugin_->updateDevicePrivateHandle(deviceid, devicehandle);
-}
-
 int AddOn::Service::getDeviceList(int *pcamdev, int *pmicdev, int *pcamsupport, int *pmicsupport)
 {
     return AddOn::getDeviceList(pcamdev, pmicdev, pcamsupport, pmicsupport);

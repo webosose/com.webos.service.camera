@@ -28,9 +28,6 @@
 typedef struct _DEVICE_STATUS
 {
     // Device
-    int nDeviceID;         // devicehandle - random number
-    int nDevIndex;         // index
-    int nDevCount;         // device count (# of device)
     void *pcamhandle;      // HAL handle
     bool isDeviceOpen;     // open or close
     DEVICE_TYPE_T devType; // CAM or MIC
@@ -44,6 +41,7 @@ private:
     std::map<int, DEVICE_STATUS> deviceMap_;
     int findDevNum(int);
     AppCastClient *appCastClient_{nullptr};
+    bool isDeviceIdValid(int deviceid);
 
 public:
     DeviceManager();
@@ -52,13 +50,12 @@ public:
         static DeviceManager obj;
         return obj;
     }
-    bool setOpenStatus(int, bool);
-    bool isDeviceOpen(int *);
-    bool isDeviceValid(DEVICE_TYPE_T, int *);
-    void getDeviceNode(int *, std::string &);
-    void getDeviceHandle(int *, void **);
-    int getDeviceId(int *);
-    DEVICE_TYPE_T getDeviceType(int *);
+    bool setDeviceStatus(int, bool);
+    bool isDeviceOpen(int);
+    bool isDeviceValid(int);
+    void getDeviceNode(int, std::string &);
+    void getDeviceHandle(int, void **);
+    DEVICE_TYPE_T getDeviceType(int);
     int getDeviceCounts(DEVICE_TYPE_T);
     bool addVirtualHandle(int devid, int virtualHandle);
     bool eraseVirtualHandle(int deviceId, int virtualHandle);

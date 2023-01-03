@@ -57,7 +57,6 @@ public:
     static void pushDevicePrivateData(int, int, DEVICE_TYPE_T, DEVICE_LIST_T *);
     static void popDevicePrivateData(int);
     static std::vector<std::string> getDevicePrivateData(int);
-    static void updateDevicePrivateHandle(int, int);
 };
 
 #endif /* ADDON_H_ */

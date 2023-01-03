@@ -60,7 +60,6 @@ public:
                                        DEVICE_LIST_T *pstList)                               = 0;
     virtual void popDevicePrivateData(int dev_idx)                                           = 0;
     virtual std::vector<std::string> getDevicePrivateData(int deviceid)                      = 0;
-    virtual void updateDevicePrivateHandle(int deviceid, int devicehandle)                   = 0;
 };
 
 #endif /* CAMERA_SERVICE_ADDON_INTERFACE_H_ */

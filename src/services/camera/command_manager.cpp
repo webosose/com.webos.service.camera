@@ -59,7 +59,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     PMLOG_INFO(CONST_MODULE_CM, "deviceid : %d \n", deviceid);
 
     std::string devicenode;
-    DeviceManager::getInstance().getDeviceNode(&deviceid, devicenode);
+    DeviceManager::getInstance().getDeviceNode(deviceid, devicenode);
     PMLOG_INFO(CONST_MODULE_CM, "devicenode : %s \n", devicenode.c_str());
 
     std::multimap<std::string, Device>::iterator it;
