@@ -36,7 +36,7 @@ extern "C"
     public:
         V4l2CameraPlugin();
 
-        virtual int openDevice(std::string) override;
+        virtual int openDevice(std::string, std::string) override;
         virtual int closeDevice() override;
         virtual int setFormat(stream_format_t) override;
         virtual int getFormat(stream_format_t *) override;

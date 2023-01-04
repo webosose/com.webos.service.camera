@@ -12,7 +12,7 @@ private:
 private:
     static int getDeviceCounts(std::string);
     static int getDeviceList(std::vector<int> &);
-    static int addDevice(DEVICE_LIST_T *);
+    static int addDevice(DEVICE_LIST_T *, std::string = "");
     static bool removeDevice(int);
     static int getInfo(int, camera_device_info_t *);
 
@@ -21,7 +21,7 @@ private:
     {
         int getDeviceList(std::vector<int> &) override;
         int getDeviceCounts(std::string) override;
-        int addDevice(DEVICE_LIST_T *) override;
+        int addDevice(DEVICE_LIST_T *, std::string = "") override;
         bool removeDevice(int) override;
         int getInfo(int, camera_device_info_t *) override;
         void getSupportedSolutionList(std::vector<std::string> &,

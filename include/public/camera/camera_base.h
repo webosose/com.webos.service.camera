@@ -27,7 +27,7 @@ class CameraBase
 {
 public:
     virtual ~CameraBase(){};
-    virtual int openDevice(std::string)                      = 0;
+    virtual int openDevice(std::string, std::string)         = 0;
     virtual int closeDevice()                                = 0;
     virtual int setFormat(stream_format_t)                   = 0;
     virtual int getFormat(stream_format_t *)                 = 0;

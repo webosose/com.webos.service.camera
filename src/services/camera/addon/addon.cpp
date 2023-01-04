@@ -28,9 +28,9 @@ int AddOn::getDeviceCounts(std::string type)
     return DeviceManager::getInstance().getDeviceCounts(type);
 }
 
-int AddOn::addDevice(DEVICE_LIST_T *devList)
+int AddOn::addDevice(DEVICE_LIST_T *devList, std::string payload)
 {
-    return DeviceManager::getInstance().addDevice(devList);
+    return DeviceManager::getInstance().addDevice(devList, payload);
 }
 
 bool AddOn::removeDevice(int dev_idx) { return DeviceManager::getInstance().removeDevice(dev_idx); }
@@ -258,7 +258,10 @@ int AddOn::Service::getDeviceList(std::vector<int> &idList) { return AddOn::getD
 
 int AddOn::Service::getDeviceCounts(std::string type) { return AddOn::getDeviceCounts(type); }
 
-int AddOn::Service::addDevice(DEVICE_LIST_T *devList) { return AddOn::addDevice(devList); }
+int AddOn::Service::addDevice(DEVICE_LIST_T *devList, std::string payload)
+{
+    return AddOn::addDevice(devList, payload);
+}
 
 bool AddOn::Service::removeDevice(int dev_idx) { return AddOn::removeDevice(dev_idx); }
 

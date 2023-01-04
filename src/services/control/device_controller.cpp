@@ -195,7 +195,7 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
             memtype = SHMEM_POSIX;
         stopPreview(handle, memtype);
         close(handle);
-        open(handle, strdevicenode_, camera_id_);
+        open(handle, strdevicenode_, camera_id_, payload_);
 
         // set format again
         stream_format_t newstreamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
@@ -453,31 +453,19 @@ void DeviceControl::previewThread()
     return;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode, int ndev_id)
+DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode, int ndev_id,
+                                         std::string payload)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started\n");
 
     strdevicenode_ = devicenode;
     camera_id_     = ndev_id;
+    payload_       = payload;
 
     // open camera device
-    auto ret = camera_hal_if_open_device(handle, devicenode.c_str());
-
+    auto ret = camera_hal_if_open_device(handle, devicenode.c_str(), payload.c_str());
     if (ret != CAMERA_ERROR_NONE)
         return DEVICE_ERROR_CAN_NOT_OPEN;
-
-    if (deviceType_ == "remote")
-    {
-        stream_format_t in_format = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0, 0};
-
-        PMLOG_INFO(CONST_MODULE_DC, "set remote camera data");
-        in_format.userdata =
-            DeviceManager::getInstance().get_appcastclient()->connect_payload.c_str();
-
-        auto ret = camera_hal_if_set_format(handle, in_format);
-        if (ret != CAMERA_ERROR_NONE)
-            return DEVICE_ERROR_UNSUPPORTED_FORMAT;
-    }
 
     return DEVICE_OK;
 }

@@ -43,7 +43,7 @@ V4l2CameraPlugin::V4l2CameraPlugin()
 {
 }
 
-int V4l2CameraPlugin::openDevice(string devname)
+int V4l2CameraPlugin::openDevice(string devname, string payload)
 {
     fd_ = open(devname.c_str(), O_RDWR | O_NONBLOCK);
     if (CAMERA_ERROR_UNKNOWN == fd_)

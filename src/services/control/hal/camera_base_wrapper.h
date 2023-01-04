@@ -25,7 +25,7 @@ extern "C"
 {
 #endif
 
-    int open_device(camera_handle_t *, const char *);
+    int open_device(camera_handle_t *, const char *, const char *);
     int close_device(camera_handle_t *);
     int set_format(camera_handle_t *, stream_format_t);
     int get_format(camera_handle_t *, stream_format_t *);

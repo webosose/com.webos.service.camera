@@ -26,7 +26,7 @@ extern "C"
 
     int camera_hal_if_init(void **, const char *);
     int camera_hal_if_deinit(void *);
-    int camera_hal_if_open_device(void *, const char *);
+    int camera_hal_if_open_device(void *, const char *, const char *payload = nullptr);
     int camera_hal_if_close_device(void *);
     int camera_hal_if_set_format(void *, stream_format_t);
     int camera_hal_if_get_format(void *, stream_format_t *);

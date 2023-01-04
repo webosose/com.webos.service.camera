@@ -109,6 +109,16 @@ int DeviceManager::getDeviceCounts(std::string type)
     return count;
 }
 
+bool DeviceManager::getDeviceUserData(int deviceid, std::string &userData)
+{
+    if (isDeviceIdValid(deviceid))
+    {
+        userData = deviceMap_[deviceid].userData;
+        return true;
+    }
+    return false;
+}
+
 DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
     for (auto list : deviceMap_)
@@ -116,11 +126,12 @@ DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
     return DEVICE_OK;
 }
 
-int DeviceManager::addDevice(DEVICE_LIST_T *pList)
+int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
 {
     DEVICE_STATUS devStatus;
     devStatus.isDeviceOpen = false;
     devStatus.pcamhandle   = nullptr;
+    devStatus.userData     = userData;
 
     devStatus.stList.strVendorName = pList->strVendorName;
     PMLOG_INFO(CONST_MODULE_DM, "strVendorName : %s", devStatus.stList.strVendorName.c_str());
@@ -241,23 +252,4 @@ bool DeviceManager::setDeviceHandle(int deviceid, void *handle)
     deviceMap_[deviceid].pcamhandle = handle;
 
     return true;
-}
-
-int DeviceManager::set_appcastclient(AppCastClient *pData)
-{
-    appCastClient_ = pData;
-    return 1;
-}
-
-AppCastClient *DeviceManager::get_appcastclient() { return appCastClient_; }
-
-void DeviceManager::printCameraStatus()
-{
-    // Print the number of cameras
-    int numV4L2Cameras = 0;
-    for (auto iter : deviceMap_)
-        if (iter.second.stList.strDeviceType == "v4l2")
-            numV4L2Cameras++;
-    PMLOG_INFO(CONST_MODULE_DM, "total_cameras:%d, usb:%d, remote:%d \n", deviceMap_.size(),
-               numV4L2Cameras, deviceMap_.size() - numV4L2Cameras);
 }

@@ -28,8 +28,9 @@
 typedef struct _DEVICE_STATUS
 {
     // Device
-    void *pcamhandle;     // HAL handle
-    bool isDeviceOpen;    // open or close
+    void *pcamhandle;  // HAL handle
+    bool isDeviceOpen; // open or close
+    std::string userData;
     DEVICE_LIST_T stList; // name, id, node ...
     std::vector<int> handleList;
 } DEVICE_STATUS;
@@ -58,15 +59,14 @@ public:
     bool setDeviceHandle(int, void *);
     std::string getDeviceType(int);
     int getDeviceCounts(std::string);
+    bool getDeviceUserData(int, std::string &);
 
-    int addDevice(DEVICE_LIST_T *pList);
+    int addDevice(DEVICE_LIST_T *pList, std::string = "");
     bool removeDevice(int devid);
 
     DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
 
-    int set_appcastclient(AppCastClient *);
-    AppCastClient *get_appcastclient();
     void printCameraStatus();
 };
 

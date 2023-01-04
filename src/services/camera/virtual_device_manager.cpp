@@ -114,8 +114,11 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     DeviceManager::getInstance().getDeviceHandle(devid, &handle);
     PMLOG_INFO(CONST_MODULE_VDM, "handle : %p \n", handle);
 
+    std::string payload = "";
+    DeviceManager::getInstance().getDeviceUserData(devid, payload);
+
     // open the camera here
-    ret = objdevicecontrol_.open(handle, devnode, devid);
+    ret = objdevicecontrol_.open(handle, devnode, devid, payload);
     if (DEVICE_OK != ret)
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
     else

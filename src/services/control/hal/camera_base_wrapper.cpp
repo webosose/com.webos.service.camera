@@ -22,11 +22,11 @@ extern "C"
 {
 #endif
 
-    int open_device(camera_handle_t *h, const char *subsystem)
+    int open_device(camera_handle_t *h, const char *subsystem, const char *payload)
     {
         CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
         if (NULL != camera_base)
-            return camera_base->openDevice(subsystem);
+            return camera_base->openDevice(subsystem, payload);
         else
             return CAMERA_ERROR_UNKNOWN;
     }

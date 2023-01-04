@@ -172,7 +172,6 @@ typedef struct
     int n_format;
     int n_samplingrate;
     int n_codec;
-    const char *subsystem;
 } camera_device_info_t;
 
 #endif

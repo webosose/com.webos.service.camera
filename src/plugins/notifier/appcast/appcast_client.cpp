@@ -142,7 +142,8 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
                         devInfo.strDeviceNode    = "udpsrc=" + client->mDeviceInfo.clientKey;
                         devInfo.strHostControllerInterface = "";
                         devInfo.strDeviceKey               = client->mDeviceInfo.clientKey;
-                        client->remoteCamIdx_ = DeviceManager::getInstance().addDevice(&devInfo);
+                        client->remoteCamIdx_ =
+                            DeviceManager::getInstance().addDevice(&devInfo, payload);
 
                         client->sendConnectSoundInput(true);
                         client->sendSetSoundInput(true);
@@ -196,8 +197,6 @@ AppCastClient::AppCastClient()
     str_state[INIT]  = "INIT";
     str_state[READY] = "READY";
     str_state[PLAY]  = "PLAY";
-
-    DeviceManager::getInstance().set_appcastclient(this);
 }
 
 void AppCastClient::subscribeToClient(handlercb cb, GMainLoop *loop)

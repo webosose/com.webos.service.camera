@@ -13,7 +13,7 @@ struct ICameraService
     virtual ~ICameraService() {}
     virtual int getDeviceList(std::vector<int> &idList) { return -1; }
     virtual int getDeviceCounts(std::string type) { return 0; }
-    virtual int addDevice(DEVICE_LIST_T *devList) { return 0; }
+    virtual int addDevice(DEVICE_LIST_T *devList, std::string payload = "") { return 0; }
     virtual bool removeDevice(int dev_idx) { return false; }
     virtual int getInfo(int deviceid, camera_device_info_t *p_info) { return -1; }
     virtual void getSupportedSolutionList(std::vector<std::string> &supportedList,

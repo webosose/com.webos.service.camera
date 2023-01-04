@@ -90,6 +90,7 @@ private:
     void notifyDeviceFault_();
 
     std::string deviceType_{"unknown"};
+    std::string payload_{""};
 
     std::shared_ptr<CameraSolutionManager> pCameraSolution;
     std::shared_ptr<MemoryListener> pMemoryListener;
@@ -98,7 +99,7 @@ private:
 
 public:
     DeviceControl();
-    DEVICE_RETURN_CODE_T open(void *, std::string, int);
+    DEVICE_RETURN_CODE_T open(void *, std::string, int, std::string);
     DEVICE_RETURN_CODE_T close(void *);
     DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *, LSHandle *, const char *);
     DEVICE_RETURN_CODE_T stopPreview(void *, int);
