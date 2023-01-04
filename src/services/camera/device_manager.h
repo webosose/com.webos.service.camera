@@ -67,8 +67,6 @@ public:
 
     int set_appcastclient(AppCastClient *);
     AppCastClient *get_appcastclient();
-    bool isRemoteCamera(DEVICE_LIST_T &);
-    bool isRemoteCamera(void *);
     void printCameraStatus();
 };
 

@@ -89,8 +89,12 @@ private:
     int camera_id_;
     void notifyDeviceFault_();
 
+    std::string deviceType_{"unknown"};
+
     std::shared_ptr<CameraSolutionManager> pCameraSolution;
     std::shared_ptr<MemoryListener> pMemoryListener;
+
+    static std::string getSubsystem(const std::string deviceType);
 
 public:
     DeviceControl();
@@ -104,7 +108,7 @@ public:
                                       const std::string &);
     DEVICE_RETURN_CODE_T createHandle(void **, std::string);
     DEVICE_RETURN_CODE_T destroyHandle(void *);
-    static DEVICE_RETURN_CODE_T getDeviceInfo(std::string, camera_device_info_t *);
+    static DEVICE_RETURN_CODE_T getDeviceInfo(std::string, std::string, camera_device_info_t *);
     DEVICE_RETURN_CODE_T getDeviceProperty(void *, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);

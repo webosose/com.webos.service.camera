@@ -39,7 +39,7 @@ extern "C"
     int camera_hal_if_set_properties(void *, const void *);
     int camera_hal_if_get_properties(void *, void *);
     int camera_hal_if_get_fd(void *, int *);
-    int camera_hal_if_get_info(const char *, camera_device_info_t *);
+    int camera_hal_if_get_info(const char *, const char *, camera_device_info_t *);
     int camera_hal_if_get_buffer_fd(void *, int *, int *);
 
 #ifdef __cplusplus

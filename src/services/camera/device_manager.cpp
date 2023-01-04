@@ -239,12 +239,10 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
     std::string strdevicenode;
     strdevicenode = deviceMap_[deviceid].stList.strDeviceNode;
 
-    DEVICE_RETURN_CODE_T ret = DEVICE_RETURN_UNDEFINED;
-    std::string type         = getDeviceType(deviceid);
-    PMLOG_INFO(CONST_MODULE_DM, "type : %s", type.c_str());
-    std::string libname = "lib" + type + "-camera-plugin.so";
-    p_info->subsystem   = libname.c_str();
-    ret                 = DeviceControl::getDeviceInfo(strdevicenode, p_info);
+    std::string deviceType = getDeviceType(deviceid);
+    PMLOG_INFO(CONST_MODULE_DM, "deviceType : %s", deviceType.c_str());
+
+    DEVICE_RETURN_CODE_T ret = DeviceControl::getDeviceInfo(strdevicenode, deviceType, p_info);
     if (DEVICE_OK != ret)
     {
         PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
@@ -283,31 +281,13 @@ int DeviceManager::set_appcastclient(AppCastClient *pData)
 
 AppCastClient *DeviceManager::get_appcastclient() { return appCastClient_; }
 
-bool DeviceManager::isRemoteCamera(DEVICE_LIST_T &deviceList)
-{
-    return (deviceList.strDeviceSubtype == "IP-CAM JPEG");
-}
-
-bool DeviceManager::isRemoteCamera(void *camhandle)
-{
-    for (auto iter : deviceMap_)
-    {
-        if (iter.second.pcamhandle == camhandle)
-        {
-            return isRemoteCamera(iter.second.stList);
-        }
-    }
-
-    return false;
-}
-
 void DeviceManager::printCameraStatus()
 {
     // Print the number of cameras
-    int numV4L2Cameras = deviceMap_.size();
+    int numV4L2Cameras = 0;
     for (auto iter : deviceMap_)
-        if (isRemoteCamera(iter.second.stList))
-            numV4L2Cameras--;
+        if (iter.second.stList.strDeviceType == "v4l2")
+            numV4L2Cameras++;
     PMLOG_INFO(CONST_MODULE_DM, "total_cameras:%d, usb:%d, remote:%d \n", deviceMap_.size(),
                numV4L2Cameras, deviceMap_.size() - numV4L2Cameras);
 }

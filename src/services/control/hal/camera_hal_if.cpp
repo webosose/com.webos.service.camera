@@ -495,12 +495,13 @@ extern "C"
         return CAMERA_ERROR_NONE;
     }
 
-    int camera_hal_if_get_info(const char *devicenode, camera_device_info_t *caminfo)
+    int camera_hal_if_get_info(const char *devicenode, const char *subsystem,
+                               camera_device_info_t *caminfo)
     {
         void *handle;
         int retVal;
 
-        retVal = camera_hal_if_init(&handle, caminfo->subsystem);
+        retVal = camera_hal_if_init(&handle, subsystem);
 
         if (CAMERA_ERROR_NONE != retVal)
         {

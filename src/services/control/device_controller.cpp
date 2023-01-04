@@ -466,7 +466,7 @@ DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode, i
     if (ret != CAMERA_ERROR_NONE)
         return DEVICE_ERROR_CAN_NOT_OPEN;
 
-    if (DeviceManager::getInstance().isRemoteCamera(handle))
+    if (deviceType_ == "remote")
     {
         stream_format_t in_format = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0, 0};
 
@@ -820,12 +820,18 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(void *handle, int ncount, CAMER
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string subsystem)
+std::string DeviceControl::getSubsystem(const std::string deviceType)
+{
+    return "lib" + deviceType + "-camera-plugin.so";
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string deviceType)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started \n");
 
     void *p_cam_handle;
-    auto ret = camera_hal_if_init(&p_cam_handle, subsystem.c_str());
+    std::string subsystem = getSubsystem(deviceType);
+    auto ret              = camera_hal_if_init(&p_cam_handle, subsystem.c_str());
     if (ret != CAMERA_ERROR_NONE)
     {
         PMLOG_ERROR(CONST_MODULE_DC, "Failed to create handle\n!!");
@@ -852,12 +858,13 @@ DEVICE_RETURN_CODE_T DeviceControl::destroyHandle(void *handle)
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode,
+DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode, std::string deviceType,
                                                   camera_device_info_t *pinfo)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started \n");
 
-    auto ret = camera_hal_if_get_info(strdevicenode.c_str(), pinfo);
+    std::string subsystem = getSubsystem(deviceType);
+    auto ret              = camera_hal_if_get_info(strdevicenode.c_str(), subsystem.c_str(), pinfo);
     if (ret != CAMERA_ERROR_NONE)
     {
         PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
