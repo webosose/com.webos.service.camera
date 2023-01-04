@@ -389,17 +389,34 @@ void CommandManager::handleCrash()
     PMLOG_INFO(CONST_MODULE_CM, "end freeing resources for abnormal service termination \n");
 }
 
-void CommandManager::requestPreviewCancel(int dev_idx)
+void CommandManager::release(int deviceid)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "requestPreviewCancel() dev_idx : %d\n", dev_idx);
+    PMLOG_INFO(CONST_MODULE_CM, "deviceid : %d", deviceid);
 
-    std::multimap<std::string, Device>::iterator it;
-    for (it = virtualdevmgrobj_map_.begin(); it != virtualdevmgrobj_map_.end(); ++it)
+    std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
+    while (it != virtualdevmgrobj_map_.end())
     {
         Device obj = it->second;
-        if (dev_idx == obj.deviceid)
+        if (deviceid == obj.deviceid)
         {
             obj.ptr->requestPreviewCancel();
+
+            // send request to stop all and close the device
+            obj.ptr->stopCapture(obj.devicehandle);
+            obj.ptr->stopPreview(obj.devicehandle);
+            obj.ptr->close(obj.devicehandle);
+
+            int count = virtualdevmgrobj_map_.count(it->first);
+            if (count == 1)
+            {
+                delete obj.ptr;
+            }
+
+            it = virtualdevmgrobj_map_.erase(it);
+        }
+        else
+        {
+            it++;
         }
     }
 }

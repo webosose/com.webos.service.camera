@@ -56,8 +56,6 @@ public:
     void getDeviceHandle(int, void **);
     std::string getDeviceType(int);
     int getDeviceCounts(std::string);
-    bool addVirtualHandle(int devid, int virtualHandle);
-    bool eraseVirtualHandle(int deviceId, int virtualHandle);
     int addDevice(DEVICE_LIST_T *pList);
     bool removeDevice(int devid);
 

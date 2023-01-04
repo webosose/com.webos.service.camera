@@ -109,43 +109,6 @@ int DeviceManager::getDeviceCounts(std::string type)
     return count;
 }
 
-bool DeviceManager::addVirtualHandle(int deviceid, int virtualHandle)
-{
-    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, virualHandle : %d", deviceid, virtualHandle);
-    if (isDeviceIdValid(deviceid))
-    {
-        deviceMap_[deviceid].handleList.push_back(virtualHandle);
-        PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d", deviceid,
-                   deviceMap_[deviceid].handleList.size());
-        return true;
-    }
-
-    return false;
-}
-
-bool DeviceManager::eraseVirtualHandle(int deviceid, int virtualHandle)
-{
-    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, virtualHandle : %d", deviceid, virtualHandle);
-
-    if (isDeviceIdValid(deviceid))
-    {
-        for (auto it = deviceMap_[deviceid].handleList.begin();
-             it != deviceMap_[deviceid].handleList.end(); it++)
-        {
-            PMLOG_INFO(CONST_MODULE_DM, "cur.handleList : %d", *it);
-            if (*it == virtualHandle)
-            {
-                deviceMap_[deviceid].handleList.erase(it);
-                PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d", deviceid,
-                           deviceMap_[deviceid].handleList.size());
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
 DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
     for (auto list : deviceMap_)
@@ -218,6 +181,13 @@ bool DeviceManager::removeDevice(int deviceid)
 
     if (isDeviceIdValid(deviceid))
     {
+        if (deviceMap_[deviceid].isDeviceOpen)
+        {
+            PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
+            CommandManager::getInstance().release(deviceid);
+            PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");
+        }
+
         // Pop platform-specific private data associated with this device.
         AddOn::popDevicePrivateData(deviceid);
 

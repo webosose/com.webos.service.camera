@@ -76,7 +76,7 @@ public:
 
     void handleCrash();
 
-    void requestPreviewCancel(int);
+    void release(int);
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/
