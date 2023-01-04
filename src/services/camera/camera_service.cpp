@@ -1311,6 +1311,8 @@ int main(int argc, char *argv[])
 
 void signal_handler_service_crash(int sig)
 {
+    PMLOG_INFO(CONST_MODULE_LUNA, "signal(%d) received !!\n", sig);
+
     CommandManager::getInstance().handleCrash();
     exit(1);
 }
@@ -1322,7 +1324,7 @@ void install_handler_service_crash()
     sigact_service_crash.sa_flags = SA_RESTART;
     for (int i = SIGHUP; i <= SIGSYS; i++)
     {
-        if (i == SIGKILL || i == SIGSTOP || i == SIGCHLD)
+        if (i == SIGKILL || i == SIGSTOP || i == SIGCHLD || i == SIGURG || i == SIGCONT)
         {
             continue;
         }
