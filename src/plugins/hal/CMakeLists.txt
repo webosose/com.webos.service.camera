@@ -16,5 +16,4 @@
 
 project(plugins-hal)
 
-add_subdirectory(remote)
 add_subdirectory(v4l2)
