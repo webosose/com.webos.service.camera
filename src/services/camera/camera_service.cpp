@@ -1281,9 +1281,12 @@ bool CameraService::setSolutions(LSMessage &message)
 }
 
 //[Camera Solution Manager] NEW APIs for Solution Manager - end
-
+#include <gst/gst.h>
 int main(int argc, char *argv[])
 {
+    // TBD... 
+    gst_init(NULL, NULL);
+
     install_handler_service_crash();
 
     try

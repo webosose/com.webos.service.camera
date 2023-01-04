@@ -24,6 +24,8 @@ pkg_check_modules(JPEG REQUIRED libjpeg)
 include_directories(${JPEG_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
 
+pkg_check_modules(GST REQUIRED gstreamer-1.0)
+include_directories(${GST_INCLUDE_DIRS})
 
 include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/appcast)
 include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/pdm)
@@ -126,6 +128,7 @@ target_link_libraries(${PROJECT_NAME}
                       ${TFLITE_LIBRARIES}
                       ${OPENCV_LIBRARIES}
                       ${RAPIDJSON_LIBRARIES}
+                      ${GST_LIBRARIES}
                       edgeai-vision
                       )
 
