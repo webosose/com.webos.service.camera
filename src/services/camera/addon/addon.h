@@ -14,7 +14,7 @@ private:
     static int getDeviceList(std::vector<int> &);
     static int addDevice(DEVICE_LIST_T *);
     static bool removeDevice(int);
-    static bool getCurrentDeviceInfo(std::string &, std::string &, std::string &);
+    static int getInfo(int, camera_device_info_t *);
 
 private:
     struct Service : public ICameraService
@@ -23,7 +23,7 @@ private:
         int getDeviceCounts(std::string) override;
         int addDevice(DEVICE_LIST_T *) override;
         bool removeDevice(int) override;
-        bool getCurrentDeviceInfo(std::string &, std::string &, std::string &) override;
+        int getInfo(int, camera_device_info_t *) override;
         void getSupportedSolutionList(std::vector<std::string> &,
                                       std::vector<std::string> &) override;
     };
@@ -45,7 +45,7 @@ public:
     static bool test(LSMessage &);
     static bool isResumeDone();
 
-    static bool toastCameraUsingPopup();
+    static bool toastCameraUsingPopup(int);
     static void logMessagePrivate(std::string);
 
     static void attachPrivateComponentToDevice(int, const std::vector<std::string> &);

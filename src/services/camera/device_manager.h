@@ -61,8 +61,6 @@ public:
     int addDevice(DEVICE_LIST_T *pList);
     bool removeDevice(int devid);
 
-    bool getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
-                              std::string &productName);
     DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
     DEVICE_RETURN_CODE_T updateHandle(int, void *);

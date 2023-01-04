@@ -2,6 +2,7 @@
 #define CAMERA_SERVICE_ADDON_INTERFACE_H_
 
 #include "camera_device_types.h"
+#include "camera_hal_if_types.h"
 #include <luna-service2/lunaservice.h>
 #include <pbnjson.h>
 #include <string>
@@ -14,11 +15,7 @@ struct ICameraService
     virtual int getDeviceCounts(std::string type) { return 0; }
     virtual int addDevice(DEVICE_LIST_T *devList) { return 0; }
     virtual bool removeDevice(int dev_idx) { return false; }
-    virtual bool getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
-                                      std::string &productName)
-    {
-        return false;
-    }
+    virtual int getInfo(int deviceid, camera_device_info_t *p_info) { return -1; }
     virtual void getSupportedSolutionList(std::vector<std::string> &supportedList,
                                           std::vector<std::string> &enabledList)
     {
@@ -43,7 +40,7 @@ public:
     virtual bool test(LSMessage &message)                                                     = 0;
     virtual bool isResumeDone()                                                               = 0;
 
-    virtual bool toastCameraUsingPopup() = 0;
+    virtual bool toastCameraUsingPopup(int deviceid) = 0;
 
     virtual void logMessagePrivate(std::string privateMessage) = 0;
 

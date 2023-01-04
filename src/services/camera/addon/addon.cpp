@@ -35,10 +35,9 @@ int AddOn::addDevice(DEVICE_LIST_T *devList)
 
 bool AddOn::removeDevice(int dev_idx) { return DeviceManager::getInstance().removeDevice(dev_idx); }
 
-bool AddOn::getCurrentDeviceInfo(std::string &productId, std::string &venderId,
-                                 std::string &productName)
+int AddOn::getInfo(int deviceid, camera_device_info_t *p_info)
 {
-    return DeviceManager::getInstance().getCurrentDeviceInfo(productId, venderId, productName);
+    return DeviceManager::getInstance().getInfo(deviceid, p_info);
 }
 
 void AddOn::open()
@@ -188,13 +187,13 @@ bool AddOn::isResumeDone()
     return plugin_->isResumeDone();
 }
 
-bool AddOn::toastCameraUsingPopup()
+bool AddOn::toastCameraUsingPopup(int deviceid)
 {
     if (!plugin_)
     {
         return false;
     }
-    return plugin_->toastCameraUsingPopup();
+    return plugin_->toastCameraUsingPopup(deviceid);
 }
 
 void AddOn::logMessagePrivate(std::string msg)
@@ -263,10 +262,9 @@ int AddOn::Service::addDevice(DEVICE_LIST_T *devList) { return AddOn::addDevice(
 
 bool AddOn::Service::removeDevice(int dev_idx) { return AddOn::removeDevice(dev_idx); }
 
-bool AddOn::Service::getCurrentDeviceInfo(std::string &productId, std::string &vendorId,
-                                          std::string &productName)
+int AddOn::Service::getInfo(int deviceid, camera_device_info_t *p_info)
 {
-    return AddOn::getCurrentDeviceInfo(productId, vendorId, productName);
+    return AddOn::getInfo(deviceid, p_info);
 }
 
 void AddOn::Service::getSupportedSolutionList(std::vector<std::string> &supportedList,
