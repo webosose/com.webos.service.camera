@@ -231,16 +231,16 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
     return ret;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::updateHandle(int deviceid, void *handle)
+bool DeviceManager::setDeviceHandle(int deviceid, void *handle)
 {
     PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
 
     if (!isDeviceIdValid(deviceid))
-        return DEVICE_ERROR_NODEVICE;
+        return false;
 
     deviceMap_[deviceid].pcamhandle = handle;
 
-    return DEVICE_OK;
+    return true;
 }
 
 int DeviceManager::set_appcastclient(AppCastClient *pData)

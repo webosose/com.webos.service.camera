@@ -49,19 +49,21 @@ public:
         static DeviceManager obj;
         return obj;
     }
-    bool setDeviceStatus(int, bool);
+
     bool isDeviceOpen(int);
     bool isDeviceValid(int);
+    bool setDeviceStatus(int, bool);
     void getDeviceNode(int, std::string &);
     void getDeviceHandle(int, void **);
+    bool setDeviceHandle(int, void *);
     std::string getDeviceType(int);
     int getDeviceCounts(std::string);
+
     int addDevice(DEVICE_LIST_T *pList);
     bool removeDevice(int devid);
 
     DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
-    DEVICE_RETURN_CODE_T updateHandle(int, void *);
 
     int set_appcastclient(AppCastClient *);
     AppCastClient *get_appcastclient();

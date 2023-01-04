@@ -104,7 +104,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
         return DEVICE_ERROR_CAN_NOT_OPEN;
     }
 
-    DeviceManager::getInstance().updateHandle(devid, p_cam_handle);
+    DeviceManager::getInstance().setDeviceHandle(devid, p_cam_handle);
     std::string devnode;
     // get the device node of requested camera to be opened
     DeviceManager::getInstance().getDeviceNode(devid, devnode);
@@ -239,7 +239,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
                 {
                     DeviceManager::getInstance().setDeviceStatus(deviceid, FALSE);
                     ret = objdevicecontrol_.destroyHandle(handle);
-                    DeviceManager::getInstance().updateHandle(deviceid, nullptr);
+                    DeviceManager::getInstance().setDeviceHandle(deviceid, nullptr);
                     // remove the virtual device
                     removeVirtualDeviceHandle(devhandle);
                     // since the device is closed, remove the element from map
