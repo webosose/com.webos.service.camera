@@ -48,8 +48,8 @@ public:
                                                 const std::vector<std::string> &solutions)   = 0;
     virtual void detachPrivateComponentFromDevice(int deviceid,
                                                   const std::vector<std::string> &solutions) = 0;
-    virtual void pushDevicePrivateData(int device_id, int dev_idx, DEVICE_LIST_T *pstList)   = 0;
-    virtual void popDevicePrivateData(int dev_idx)                                           = 0;
+    virtual void pushDevicePrivateData(int deviceid, DEVICE_LIST_T *pstList)                 = 0;
+    virtual void popDevicePrivateData(int deviceid)                                          = 0;
     virtual std::vector<std::string> getDevicePrivateData(int deviceid)                      = 0;
 };
 

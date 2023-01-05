@@ -157,33 +157,26 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
     devStatus.stList.strDeviceKey = pList->strDeviceKey;
     PMLOG_INFO(CONST_MODULE_DM, "strDeviceKey : %s", devStatus.stList.strDeviceKey.c_str());
 
-    int devidx = 0;
+    // Assign a new deviceid
+    int deviceid = 0;
     for (int i = 1; i <= MAX_DEVICE_COUNT; i++)
     {
-        bool idx_avaible = true;
-        for (auto iter : deviceMap_)
+        if (!isDeviceIdValid(i))
         {
-            if (iter.first == i)
-            {
-                idx_avaible = false;
-                break;
-            }
-        }
-        if (idx_avaible)
-        {
-            devidx = i;
+            deviceid = i;
             break;
         }
     }
-    if (devidx == 0)
+    if (deviceid == 0)
         return 0;
 
     // Push platform-specific device private data associated with this device */
-    AddOn::pushDevicePrivateData(devidx, devidx, pList);
+    AddOn::pushDevicePrivateData(deviceid, pList);
 
-    deviceMap_[devidx] = devStatus;
-    PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
-    return devidx;
+    deviceMap_[deviceid] = devStatus;
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, deviceMap_.size : %d \n", deviceid,
+               deviceMap_.size());
+    return deviceid;
 }
 
 bool DeviceManager::removeDevice(int deviceid)

@@ -50,7 +50,7 @@ public:
 
     static void attachPrivateComponentToDevice(int, const std::vector<std::string> &);
     static void detachPrivateComponentFromDevice(int, const std::vector<std::string> &);
-    static void pushDevicePrivateData(int, int, DEVICE_LIST_T *);
+    static void pushDevicePrivateData(int, DEVICE_LIST_T *);
     static void popDevicePrivateData(int);
     static std::vector<std::string> getDevicePrivateData(int);
 };

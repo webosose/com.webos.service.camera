@@ -225,23 +225,23 @@ void AddOn::detachPrivateComponentFromDevice(int deviceid,
     plugin_->detachPrivateComponentFromDevice(deviceid, privateStrVecData);
 }
 
-void AddOn::pushDevicePrivateData(int device_id, int dev_idx, DEVICE_LIST_T *pstList)
+void AddOn::pushDevicePrivateData(int deviceid, DEVICE_LIST_T *pstList)
 {
     if (!plugin_)
     {
         return;
     }
 
-    plugin_->pushDevicePrivateData(device_id, dev_idx, pstList);
+    plugin_->pushDevicePrivateData(deviceid, pstList);
 }
 
-void AddOn::popDevicePrivateData(int dev_idx)
+void AddOn::popDevicePrivateData(int deviceid)
 {
     if (!plugin_)
     {
         return;
     }
-    plugin_->popDevicePrivateData(dev_idx);
+    plugin_->popDevicePrivateData(deviceid);
 }
 
 std::vector<std::string> AddOn::getDevicePrivateData(int deviceid)
