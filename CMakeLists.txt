@@ -56,10 +56,5 @@ add_subdirectory(src/plugins)
 add_subdirectory(src/services)
 add_subdirectory(tests)
 
-#TODO : Remove this if getAttachedNonStorageDeviceList parameters are the same
-if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
-    add_definitions(-DUSE_GROUP_SUB_DEVICES)
-endif()
-
 webos_build_system_bus_files()
 webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCONFDIR systemd/system)

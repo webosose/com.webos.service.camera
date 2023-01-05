@@ -136,3 +136,8 @@ install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
 #hal
 add_subdirectory(control/hal)
+
+#TODO : Remove this after getAttachedNonStorageDeviceList parameter unification
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
+    add_definitions(-DUSE_GROUP_SUB_DEVICES)
+endif()
