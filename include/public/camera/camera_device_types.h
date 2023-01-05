@@ -19,13 +19,4 @@ struct DEVICE_LIST_T
     std::string strDeviceKey;
 };
 
-struct deviceInfo_t
-{
-    std::string manufacturer;
-    std::string modelName;
-    std::string deviceName;
-    std::string clientKey;
-    std::string deviceLabel;
-};
-
 #endif /* DEVICE_CAMERA_TYPES_H_ */

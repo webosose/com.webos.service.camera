@@ -18,172 +18,131 @@
 #include "addon.h"
 #include "camera_constants.h"
 #include "device_manager.h"
-#include <pbnjson.hpp>
+#include "json_utils.h"
+#include <nlohmann/json.hpp>
+
+using namespace nlohmann;
+
+struct AppcastMessage
+{
+    deviceInfo_t dev;
+    bool crypto;
+    bool connect;
+    bool returnValue;
+};
+
+void from_json(const json &j, AppcastMessage &a)
+{
+    a.dev.clientKey = get_optional<std::string>(j, "clientKey").value_or("");
+    if (j.contains("deviceInfo"))
+    {
+        auto jdi       = j["deviceInfo"];
+        a.dev.version  = get_optional<std::string>(jdi, "version").value_or("");
+        a.dev.type     = get_optional<std::string>(jdi, "type").value_or("");
+        a.dev.platform = get_optional<std::string>(jdi, "platform").value_or("");
+        a.dev.manufacturer =
+            get_optional<std::string>(jdi, "manufacturer").value_or("LG Electronics");
+        a.dev.modelName  = get_optional<std::string>(jdi, "modelName").value_or("ThinQ WebCam");
+        a.dev.deviceName = get_optional<std::string>(jdi, "deviceName").value_or("");
+    }
+    a.crypto      = false;
+    a.connect     = false;
+    a.returnValue = false;
+    if (j.contains("camera"))
+    {
+        a.connect = true;
+        if (j["camera"].contains("crypto"))
+            a.crypto = true;
+    }
+    a.returnValue = get_optional<bool>(j, "returnValue").value_or(false);
+}
 
 static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
-    PMLOG_INFO(CONST_MODULE_AC, "callback received\n");
+    PMLOG_INFO(CONST_MODULE_AC, "callback received");
 
-    jerror *error       = NULL;
     const char *payload = LSMessageGetPayload(message);
     if (!payload)
     {
-        PMLOG_ERROR(CONST_MODULE_AC, "payload is null\n");
+        PMLOG_ERROR(CONST_MODULE_AC, "payload is null");
         return false;
     }
 
-    jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
-    if (jis_valid(jin_obj))
+    json jdata = json::parse(payload, nullptr, false);
+    if (jdata.is_discarded())
     {
-        bool retvalue;
-        jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
+        PMLOG_ERROR(CONST_MODULE_AC, "payload parsing error!");
+        return false;
+    }
 
-        if (retvalue)
+    AppcastMessage appcast = jdata;
+    if (!appcast.returnValue)
+    {
+        PMLOG_ERROR(CONST_MODULE_AC, "returnValue is not true!");
+        return false;
+    }
+
+    AppCastClient *client = (AppCastClient *)user_data;
+    if (!appcast.connect)
+    {
+        PMLOG_INFO(CONST_MODULE_AC, "remove camera");
+        if (client->remoteCamIdx_)
         {
-            AppCastClient *client = (AppCastClient *)user_data;
-
-            if (client->mState == INIT)
-            {
-
-                jvalue_ref jin_obj_clientKey;
-                if (jobject_get_exists(jin_obj, J_CSTR_TO_BUF("clientKey"), &jin_obj_clientKey))
-                {
-                    raw_buffer clientKey          = jstring_get_fast(jin_obj_clientKey);
-                    client->mDeviceInfo.clientKey = clientKey.m_str ? clientKey.m_str : "";
-                    PMLOG_INFO(CONST_MODULE_AC, "clientKey : %s \n",
-                               client->mDeviceInfo.clientKey.c_str());
-                }
-
-                // deviceInfo
-                jvalue_ref jin_obj_deviceInfo;
-                if (jobject_get_exists(jin_obj, J_CSTR_TO_BUF("deviceInfo"), &jin_obj_deviceInfo))
-                {
-                    PMLOG_INFO(CONST_MODULE_AC, "===== deviceInfo =====\n");
-
-                    jvalue_ref jin_sub_obj;
-                    // version
-                    if (jobject_get_exists(jin_obj_deviceInfo, J_CSTR_TO_BUF("version"),
-                                           &jin_sub_obj))
-                    {
-                        raw_buffer name      = jstring_get_fast(jin_sub_obj);
-                        std::string str_name = name.m_str ? name.m_str : "";
-                        PMLOG_INFO(CONST_MODULE_AC, "version: %s \n", str_name.c_str());
-                    }
-                    // type
-                    if (jobject_get_exists(jin_obj_deviceInfo, J_CSTR_TO_BUF("type"), &jin_sub_obj))
-                    {
-                        raw_buffer name      = jstring_get_fast(jin_sub_obj);
-                        std::string str_name = name.m_str ? name.m_str : "";
-                        PMLOG_INFO(CONST_MODULE_AC, "type: %s \n", str_name.c_str());
-                    }
-                    // platform
-                    if (jobject_get_exists(jin_obj_deviceInfo, J_CSTR_TO_BUF("platform"),
-                                           &jin_sub_obj))
-                    {
-                        raw_buffer name      = jstring_get_fast(jin_sub_obj);
-                        std::string str_name = name.m_str ? name.m_str : "";
-                        PMLOG_INFO(CONST_MODULE_AC, "platform: %s \n", str_name.c_str());
-                    }
-                    // manufacturer
-                    if (jobject_get_exists(jin_obj_deviceInfo, J_CSTR_TO_BUF("manufacturer"),
-                                           &jin_sub_obj))
-                    {
-                        raw_buffer name                  = jstring_get_fast(jin_sub_obj);
-                        client->mDeviceInfo.manufacturer = name.m_str ? name.m_str : "";
-                        PMLOG_INFO(CONST_MODULE_AC, "manufacturer: %s \n",
-                                   client->mDeviceInfo.manufacturer.c_str());
-                    }
-                    // modelName
-                    if (jobject_get_exists(jin_obj_deviceInfo, J_CSTR_TO_BUF("modelName"),
-                                           &jin_sub_obj))
-                    {
-                        raw_buffer name               = jstring_get_fast(jin_sub_obj);
-                        client->mDeviceInfo.modelName = name.m_str ? name.m_str : "";
-                        PMLOG_INFO(CONST_MODULE_AC, "modelName: %s \n",
-                                   client->mDeviceInfo.modelName.c_str());
-                    }
-                    // deviceName
-                    if (jobject_get_exists(jin_obj_deviceInfo, J_CSTR_TO_BUF("deviceName"),
-                                           &jin_sub_obj))
-                    {
-                        raw_buffer name                = jstring_get_fast(jin_sub_obj);
-                        client->mDeviceInfo.deviceName = name.m_str ? name.m_str : "";
-                        PMLOG_INFO(CONST_MODULE_AC, "deviceName: %s \n",
-                                   client->mDeviceInfo.deviceName.c_str());
-                    }
-                }
-            }
-
-            jvalue_ref jin_obj_camera;
-            if (jobject_get_exists(jin_obj, J_CSTR_TO_BUF("camera"), &jin_obj_camera))
-            {
-                // crypto
-                jvalue_ref jin_obj_crypto;
-                if (jobject_get_exists(jin_obj_camera, J_CSTR_TO_BUF("crypto"), &jin_obj_crypto))
-                {
-                    PMLOG_INFO(CONST_MODULE_AC, "===== crypto =====\n");
-                    if (client->mState == INIT)
-                    {
-                        PMLOG_INFO(CONST_MODULE_AC, "add camera\n");
-                        DEVICE_LIST_T devInfo;
-                        devInfo.nDeviceNum       = 0;
-                        devInfo.nPortNum         = 0;
-                        devInfo.isPowerOnConnect = true;
-                        devInfo.strVendorName    = (!client->mDeviceInfo.manufacturer.empty())
-                                                       ? client->mDeviceInfo.manufacturer
-                                                       : "LG Electronics";
-                        devInfo.strProductName   = (!client->mDeviceInfo.modelName.empty())
-                                                       ? client->mDeviceInfo.modelName
-                                                       : "ThinQ WebCam";
-                        devInfo.strVendorID      = "RemoteCamera";
-                        devInfo.strProductID     = "RemoteCamera";
-                        devInfo.strDeviceType    = "remote";
-                        devInfo.strDeviceSubtype = "IP-CAM JPEG";
-                        devInfo.strDeviceNode    = "udpsrc=" + client->mDeviceInfo.clientKey;
-                        devInfo.strHostControllerInterface = "";
-                        devInfo.strDeviceKey               = client->mDeviceInfo.clientKey;
-                        client->remoteCamIdx_ =
-                            DeviceManager::getInstance().addDevice(&devInfo, payload);
-
-                        client->sendConnectSoundInput(true);
-                        client->sendSetSoundInput(true);
-                        client->setState(READY);
-
-                        if (AddOn::hasImplementation())
-                        {
-                            DEVICE_LIST_T devList      = {};
-                            std::string strProductName = "ThinQ WebCam";
-                            if (client->mDeviceInfo.modelName.empty() == false)
-                                strProductName = client->mDeviceInfo.modelName;
-
-                            devList.strProductName = strProductName;
-                            devList.strDeviceType  = "remote";
-                            AddOn::setDeviceEvent(&devList, 1, true, true);
-                        }
-
-                        // Save connect payload of AppCastClient
-                        client->connect_payload = payload;
-                    }
-                }
-            }
-            else
-            {
-                PMLOG_INFO(CONST_MODULE_AC, "remove camera\n");
-                if (client->remoteCamIdx_)
-                {
-                    DeviceManager::getInstance().removeDevice(client->remoteCamIdx_);
-                    client->remoteCamIdx_ = 0;
-                }
-                client->sendConnectSoundInput(false);
-                client->setState(INIT);
-
-                if (AddOn::hasImplementation())
-                {
-                    AddOn::setDeviceEvent(nullptr, 0, true, true);
-                }
-            }
+            DeviceManager::getInstance().removeDevice(client->remoteCamIdx_);
+            client->remoteCamIdx_ = 0;
         }
-        j_release(&jin_obj);
+        client->sendConnectSoundInput(false);
+        client->setState(INIT);
+
+        if (AddOn::hasImplementation())
+        {
+            AddOn::setDeviceEvent(nullptr, 0, true, true);
+        }
+        return true;
+    }
+
+    if (client->mState == INIT && appcast.crypto)
+    {
+        PMLOG_INFO(CONST_MODULE_AC, "add camera");
+        PMLOG_INFO(CONST_MODULE_AC, "clientKey    : %s", appcast.dev.clientKey.c_str());
+        PMLOG_INFO(CONST_MODULE_AC, "version      : %s", appcast.dev.version.c_str());
+        PMLOG_INFO(CONST_MODULE_AC, "type         : %s", appcast.dev.type.c_str());
+        PMLOG_INFO(CONST_MODULE_AC, "platform     : %s", appcast.dev.platform.c_str());
+        PMLOG_INFO(CONST_MODULE_AC, "manufacturer : %s", appcast.dev.manufacturer.c_str());
+        PMLOG_INFO(CONST_MODULE_AC, "modelName    : %s", appcast.dev.modelName.c_str());
+        PMLOG_INFO(CONST_MODULE_AC, "deviceName   : %s", appcast.dev.deviceName.c_str());
+
+        client->mDeviceInfo = appcast.dev;
+        DEVICE_LIST_T devInfo;
+        devInfo.nDeviceNum                 = 0;
+        devInfo.nPortNum                   = 0;
+        devInfo.isPowerOnConnect           = true;
+        devInfo.strVendorName              = client->mDeviceInfo.manufacturer;
+        devInfo.strProductName             = client->mDeviceInfo.modelName;
+        devInfo.strVendorID                = "RemoteCamera";
+        devInfo.strProductID               = "RemoteCamera";
+        devInfo.strDeviceType              = "remote";
+        devInfo.strDeviceSubtype           = "IP-CAM JPEG";
+        devInfo.strDeviceNode              = "udpsrc=" + client->mDeviceInfo.clientKey;
+        devInfo.strHostControllerInterface = "";
+        devInfo.strDeviceKey               = client->mDeviceInfo.clientKey;
+        client->remoteCamIdx_ = DeviceManager::getInstance().addDevice(&devInfo, payload);
+
+        client->sendConnectSoundInput(true);
+        client->sendSetSoundInput(true);
+        client->setState(READY);
+
+        if (AddOn::hasImplementation())
+        {
+            DEVICE_LIST_T devList      = {};
+            std::string strProductName = "ThinQ WebCam";
+            if (client->mDeviceInfo.modelName.empty() == false)
+                strProductName = client->mDeviceInfo.modelName;
+
+            devList.strProductName = strProductName;
+            devList.strDeviceType  = "remote";
+            AddOn::setDeviceEvent(&devList, 1, true, true);
+        }
     }
 
     return true;
@@ -236,7 +195,7 @@ bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceN
 
         // get camera service handle and register cb function with appcast
         retval = LSCall(sh, "luna://com.webos.service.appcasting/getMediaInfo",
-                        "{\"subscribe\":true}", remote_deviceStateCb, ctx, NULL, &lserror);
+                        R"({"subscribe":true})", remote_deviceStateCb, ctx, NULL, &lserror);
         if (!retval)
         {
             PMLOG_ERROR(CONST_MODULE_AC, "%s appcast client uUnable to unregister service",
@@ -270,19 +229,20 @@ static bool sendConnectSoundInputCallback(LSHandle *sh, LSMessage *msg, void *ct
     const char *payload = LSMessageGetPayload(msg);
     PMLOG_INFO(CONST_MODULE_AC, "payload : %s\n", payload);
 
-    jerror *error      = NULL;
-    jvalue_ref jin_obj = jdom_create(j_cstr_to_buffer(payload), jschema_all(), &error);
-    if (jis_valid(jin_obj))
+    json jdata = json::parse(payload);
+    if (jdata.is_discarded())
     {
-        bool retvalue;
-        jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
-        PMLOG_INFO(CONST_MODULE_AC, "retvalue : %d \n", retvalue);
-
-        if (retvalue)
-        {
-        }
+        PMLOG_ERROR(CONST_MODULE_AC, "payload parsing error!");
+        return false;
     }
-    j_release(&jin_obj);
+
+    if (jdata.contains(CONST_PARAM_NAME_RETURNVALUE) &&
+        jdata[CONST_PARAM_NAME_RETURNVALUE].is_boolean())
+    {
+        bool retvalue = jdata[CONST_PARAM_NAME_RETURNVALUE].get<bool>();
+        PMLOG_INFO(CONST_MODULE_AC, "retvalue : %d", retvalue);
+    }
+
     return true;
 }
 
@@ -294,14 +254,11 @@ bool AppCastClient::sendConnectSoundInput(bool connected)
     LSError lserror;
     LSErrorInit(&lserror);
 
-    pbnjson::JValue args = pbnjson::Object();
-    args.put("soundInput", "remote.monitor");
-    args.put("connect", connected);
-
+    auto args       = json{{"soundInput", "remote.monitor"}, {"connect", connected}}.dump();
     std::string uri = "luna://com.webos.service.audio/connectSoundInput";
-    PMLOG_INFO(CONST_MODULE_AC, "%s '%s'\n", uri.c_str(), args.stringify().c_str());
-    retval = LSCall(lshandle_, uri.c_str(), args.stringify().c_str(), sendConnectSoundInputCallback,
-                    NULL, NULL, &lserror);
+    PMLOG_INFO(CONST_MODULE_AC, "%s '%s'\n", uri.c_str(), args.c_str());
+    retval = LSCall(lshandle_, uri.c_str(), args.c_str(), sendConnectSoundInputCallback, NULL, NULL,
+                    &lserror);
     if (!retval)
     {
         PMLOG_ERROR(CONST_MODULE_AC, "%s error", __func__);
@@ -320,13 +277,11 @@ bool AppCastClient::sendSetSoundInput(bool remote)
     LSError lserror;
     LSErrorInit(&lserror);
 
-    pbnjson::JValue args = pbnjson::Object();
-    args.put("soundInput", "remote.monitor");
-
+    auto args       = json{{"soundInput", "remote.monitor"}}.dump();
     std::string uri = "luna://com.webos.service.audio/setSoundInput";
-    PMLOG_INFO(CONST_MODULE_AC, "%s '%s'\n", uri.c_str(), args.stringify().c_str());
-    retval = LSCall(lshandle_, uri.c_str(), args.stringify().c_str(), sendConnectSoundInputCallback,
-                    NULL, NULL, &lserror);
+    PMLOG_INFO(CONST_MODULE_AC, "%s '%s'\n", uri.c_str(), args.c_str());
+    retval = LSCall(lshandle_, uri.c_str(), args.c_str(), sendConnectSoundInputCallback, NULL, NULL,
+                    &lserror);
     if (!retval)
     {
         PMLOG_ERROR(CONST_MODULE_AC, "%s error", __func__);

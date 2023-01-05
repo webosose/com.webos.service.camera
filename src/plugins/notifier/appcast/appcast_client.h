@@ -31,6 +31,17 @@ enum APP_CAST_STATE
     STATE_END // must be last - used to validate app cast state
 };
 
+struct deviceInfo_t
+{
+    std::string clientKey;
+    std::string version;
+    std::string type;
+    std::string platform;
+    std::string manufacturer;
+    std::string modelName;
+    std::string deviceName;
+};
+
 class AppCastClient : public DeviceNotifier
 {
 private:
@@ -51,7 +62,6 @@ public:
     std::string str_state[STATE_END];
 
     deviceInfo_t mDeviceInfo;
-    std::string connect_payload;
     int remoteCamIdx_{0};
 };
 
