@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef JSON_UTILS_H_
-#define JSON_UTILS_H_
+#pragma once
 
 #include "pbnjson.h"
+#include <nlohmann/json.hpp>
+#include <optional>
 
 static inline int deSerialize(const char *strInput, const char *inputSchema, jvalue_ref &objJson)
 {
@@ -42,4 +43,27 @@ static inline int deSerialize(const char *strInput, const char *inputSchema, jva
     return 0;
 }
 
-#endif /*JSON_UTILS_H_*/
+using namespace nlohmann;
+
+template <typename T>
+inline std::optional<T> get_optional(const json &j, const char *key)
+{
+    try
+    {
+        std::optional<T> value;
+        const auto it = j.find(key);
+        if (it != j.end())
+        {
+            value = it->template get<T>();
+        }
+        else
+        {
+            value = std::nullopt;
+        }
+        return value;
+    }
+    catch (json::exception &e)
+    {
+        return std::nullopt;
+    }
+}

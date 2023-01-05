@@ -18,7 +18,6 @@
 #include "camera_types.h"
 #include "command_manager.h"
 #include "json_parser.h"
-#include "json_utils.h"
 
 bool EventNotification::addSubscription(LSHandle *lsHandle, const char *key, LSMessage &message)
 {

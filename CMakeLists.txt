@@ -26,7 +26,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt -Werror=return-type -Wno-stringop-truncation -Wno-stringop-overflow")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt -Werror=return-type -Wno-stringop-truncation -Wno-stringop-overflow -Wno-psabi")
 
 include(FindPkgConfig)
 
