@@ -1,6 +1,8 @@
 {
     "com.webos.service.camera2": [
         "all"
+    ],
+    "com.webos.service.camera2.*": [
+        "all"
     ]
 }
-
