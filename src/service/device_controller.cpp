@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -121,6 +121,10 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
 
     time_t t = time(NULL);
     tm *timePtr = localtime(&t);
+    if (timePtr == NULL) {
+        PMLOG_ERROR(CONST_MODULE_DC, "failed to get local time");
+        return DEVICE_ERROR_FAIL_TO_OPEN_FILE;
+    }
     struct timeval tmnow;
     gettimeofday(&tmnow, NULL);
 
@@ -498,7 +502,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
   cam_handle_  = handle;
   str_memtype_ = memtype;
   sh_ = sh;
-  subskey_ = subskey;
+  subskey_ = (subskey) ? subskey : "";
 
   // get current saved format for device
   stream_format_t streamformat;

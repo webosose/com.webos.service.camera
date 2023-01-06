@@ -1,4 +1,4 @@
-// Copyright (c) 2021 LG Electronics, Inc.
+// Copyright (c) 2021-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -90,6 +90,10 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
 {
   *phShmem = (SHMEM_HANDLE)malloc(sizeof(POSHMEM_COMM_T));
   POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
+  if (pShmemBuffer == NULL) {
+    DEBUG_PRINT("failed to created memory for shm handle");
+    return POSHMEM_COMM_FAIL;
+  }
 
   DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%d\n", *phShmem,
               unitSize, unitNum);

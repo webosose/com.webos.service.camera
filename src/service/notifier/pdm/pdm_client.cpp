@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2020 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
     if (jis_valid(jin_obj))
     {
         bool retvalue;
-        int camcount = 0;
+        unsigned int camcount = 0;
         jboolean_get(jobject_get(jin_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_RETURNVALUE)), &retvalue);
         PMLOG_INFO(CONST_MODULE_PDMCLIENT, "retvalue : %d \n", retvalue);
         if (retvalue)
@@ -128,7 +128,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_DEVICE_TYPE), &jin_obj_devicetype))
                     {
                         raw_buffer device_type = jstring_get_fast(jin_obj_devicetype);
-                        str_devicetype = device_type.m_str;
+                        str_devicetype = (device_type.m_str) ? device_type.m_str : "";
                     }
                     else
                     {
@@ -155,7 +155,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     }
 
                     raw_buffer vendor_name = jstring_get_fast(jin_obj_vendorname);
-                    std::string str_vendorname = vendor_name.m_str;
+                    std::string str_vendorname = (vendor_name.m_str) ? vendor_name.m_str : "";
                     PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorname : %s \n", str_vendorname.c_str());
 
                     // productName
@@ -163,7 +163,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     if (!jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_NAME), &jin_obj_productname))
                         continue;
                     raw_buffer product_name = jstring_get_fast(jin_obj_productname);
-                    std::string str_productname = product_name.m_str;
+                    std::string str_productname = (product_name.m_str) ? product_name.m_str : "";
                     PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productname : %s \n", str_productname.c_str());
 
                     // vendorID
@@ -172,7 +172,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_VENDOR_ID), &jin_obj_vendorid))
                     {
                         raw_buffer vendor_id = jstring_get_fast(jin_obj_vendorid);
-                        str_vendorid = vendor_id.m_str;
+                        str_vendorid = (vendor_id.m_str) ? vendor_id.m_str : "";
                     }
                     PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_vendorid : %s \n", str_vendorid.c_str());
 
@@ -182,7 +182,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     if (jobject_get_exists(jin_array_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PRODUCT_ID), &jin_obj_productid))
                     {
                         raw_buffer product_id = jstring_get_fast(jin_obj_productid);
-                        str_productid = product_id.m_str;
+                        str_productid = (product_id.m_str) ? product_id.m_str : "";
                     }
                     PMLOG_INFO(CONST_MODULE_PDMCLIENT, "str_productid : %s \n", str_productid.c_str());
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -200,7 +200,8 @@ void EventNotification::eventReply(LSHandle * lsHandle, const char* key, void *p
 
   subscriptionReply(lsHandle, key, json_outobj);
 
-  strreply = jvalue_stringify(json_outobj);
+  const char* strvalue = jvalue_stringify(json_outobj);
+  strreply = (strvalue) ? strvalue : "";
   PMLOG_INFO(CONST_MODULE_EVENTMANGER, "eventReply strreply %s\n", strreply.c_str());
   j_release(&json_outobj);
 
@@ -216,7 +217,8 @@ EventNotification::subscriptionJsonString(bool issubscribed)
   jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
               jboolean_create(issubscribed));
 
-  strreply = jvalue_stringify(json_outobj);
+  const char* strvalue = jvalue_stringify(json_outobj);
+  strreply = (strvalue) ? strvalue : "";
   PMLOG_INFO(CONST_MODULE_EVENTMANGER, "subscriptionJsonString strreply %s\n",
              strreply.c_str());
   j_release(&json_outobj);

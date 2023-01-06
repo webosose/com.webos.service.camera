@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -619,7 +619,7 @@ bool CameraService::getCameraList(LSMessage &message)
       obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
 
       char arrlist[20][CONST_MAX_STRING_LENGTH];
-      int n_camcount = 0;
+      unsigned int n_camcount = 0;
 
       for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
       {
@@ -631,7 +631,7 @@ bool CameraService::getCameraList(LSMessage &message)
       }
 
       obj_getcameralist.setCameraCount(n_camcount);
-      for (int i = 0; i < n_camcount; i++)
+      for (unsigned int i = 0; i < n_camcount; i++)
       {
         obj_getcameralist.setCameraList(arrlist[i], i);
       }

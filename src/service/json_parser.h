@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public:
   GetCameraListMethod() { n_camcount_ = 0; }
   ~GetCameraListMethod() {}
 
-  void setCameraList(const std::string& str_id, int count) { str_list_[count] = str_id; }
+  void setCameraList(const std::string& str_id, unsigned int count) { str_list_[count] = str_id; }
   std::string strGetCameraList(int count) const { return str_list_[count]; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)

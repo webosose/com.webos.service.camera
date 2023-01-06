@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -84,6 +84,10 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
 {
   *phShmem = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
   SHMEM_COMM_T *pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
+  if (pShmemBuffer == NULL) {
+    DEBUG_PRINT("failed to create memory for shm handle");
+    return SHMEM_IS_NULL;
+  }
 
   DEBUG_PRINT("hShmem = %p, pKey = %p, unitSize=%d, unitNum=%d\n", *phShmem,
               pShmemKey, unitSize, unitNum);
