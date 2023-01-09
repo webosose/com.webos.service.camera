@@ -834,7 +834,6 @@ void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params
     format.type  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     struct v4l2_frmsizeenum frmsize;
     CLEAR(frmsize);
-    int ncount = 0;
 
     cam_out_params->stResolution.clear();
     while ((-1 != xioctl(fd_, VIDIOC_ENUM_FMT, &format)))

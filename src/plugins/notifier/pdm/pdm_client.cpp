@@ -160,10 +160,10 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
     }
 
     PMLOG_INFO(CONST_MODULE_PC, "camcount %d, map.size %d", camcount, curNodeMap.size());
-    if (camcount > (int)curNodeMap.size()) // add Device
+    if (camcount > (unsigned int)curNodeMap.size()) // add Device
     {
         nCamEvent = DEVICE_EVENT_STATE_PLUGGED;
-        for (int i = 0; i < camcount; i++)
+        for (unsigned int i = 0; i < camcount; i++)
         {
             if (curNodeMap.find(dev_info_[i].strDeviceNode) == curNodeMap.end())
             {
@@ -171,7 +171,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
             }
         }
     }
-    else if (camcount < (int)curNodeMap.size()) // remove Device
+    else if (camcount < (unsigned int)curNodeMap.size()) // remove Device
     {
         nCamEvent = DEVICE_EVENT_STATE_UNPLUGGED;
         for (auto it : curNodeMap)

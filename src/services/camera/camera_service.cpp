@@ -288,7 +288,6 @@ bool CameraService::close(LSMessage &message)
     }
     else
     {
-        bool bRetVal;
         int n_client_pid = obj_close.getClientProcessId();
         if (n_client_pid > 0)
         {

@@ -123,13 +123,13 @@ void getFormatString(int nFormat, char *pFormats)
         switch (CHECK_BIT_POS(nFormat, i))
         {
         case CAMERA_FORMAT_YUV:
-            strncat(pFormats, "YUV|", 4);
+            strncat(pFormats, "YUV|", strlen("YUV|") + 1);
             break;
         case CAMERA_FORMAT_H264ES:
-            strncat(pFormats, "H264ES|", 7);
+            strncat(pFormats, "H264ES|", strlen("H264ES|") + 1);
             break;
         case CAMERA_FORMAT_JPEG:
-            strncat(pFormats, "JPEG|", 5);
+            strncat(pFormats, "JPEG|", strlen("JPEG|") + 1);
             break;
         default:
             break;

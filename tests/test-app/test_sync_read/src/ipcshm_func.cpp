@@ -41,7 +41,8 @@ enum
 
 // structure define
 
-union semun {
+union semun
+{
     int val;
     struct semid_ds *buf;
     unsigned short *array;
@@ -95,6 +96,7 @@ SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSi
 
 // Internal Functions
 
+#if 0
 /*shared memory protocol*/
 static int lockShmem(SHMEM_COMM_T *shmem_buffer)
 {
@@ -112,6 +114,7 @@ static int lockShmem(SHMEM_COMM_T *shmem_buffer)
 
     return semop(shmem_buffer->sema_id, &sema_buffer, 1);
 }
+#endif
 
 static int unlockShmem(SHMEM_COMM_T *shmem_buffer)
 {
@@ -199,7 +202,8 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
 
     *phShmem     = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
     pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
-    if (pShmemBuffer == nullptr) {
+    if (pShmemBuffer == nullptr)
+    {
         DEBUG_PRINT("failed to create shm handle");
         return SHMEM_COMM_FAIL;
     }
@@ -406,7 +410,6 @@ SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSi
                            unsigned char *pExtraData, int extraDataSize)
 {
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
-    int lread_index;
     int lwrite_index;
     int mark;
     int unit_size;
@@ -454,9 +457,9 @@ SHMEM_STATUS_T _WriteShmem(SHMEM_HANDLE hShmem, unsigned char *pData, int dataSi
     // buffer again
     if (lwrite_index == unit_num)
     {
-        DEBUG_PRINT("Overflow write data(read index = %d, write_index = %d, "
+        DEBUG_PRINT("Overflow write data(write_index = %d, "
                     "unit_num = %d)!\n",
-                    lread_index, lwrite_index, *shmem_buffer->unit_num);
+                    lwrite_index, *shmem_buffer->unit_num);
         //*shmem_buffer->mark = (*shmem_buffer->mark) | SHMEM_COMM_MARK_RESET;
         *shmem_buffer->write_index = 0;
 

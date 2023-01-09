@@ -11,15 +11,15 @@ std::string cmd_getcameralist =
     "luna-send -n 1 -f luna://com.webos.service.camera2/getCameraList '{}'";
 std::string cmd_getinfo = "luna-send -n 1 -f luna://com.webos.service.camera2/getInfo '{\"id\": \"";
 std::string cmd_open    = "luna-send -n 1 -f luna://com.webos.service.camera2/open '{\"id\": \"";
-std::string cmd_setformat = "luna-send -n 1 -f "
-                            "luna://com.webos.service.camera2/setFormat "
-                            "'{\"handle\":";
+std::string cmd_setformat    = "luna-send -n 1 -f "
+                               "luna://com.webos.service.camera2/setFormat "
+                               "'{\"handle\":";
 std::string cmd_startpreview = "luna-send -n 1 -f "
                                "luna://com.webos.service.camera2/startPreview "
                                "'{\"handle\":";
-std::string cmd_stoppreview = "luna-send -n 1 -f "
-                              "luna://com.webos.service.camera2/stopPreview "
-                              "'{\"handle\":";
+std::string cmd_stoppreview  = "luna-send -n 1 -f "
+                               "luna://com.webos.service.camera2/stopPreview "
+                               "'{\"handle\":";
 std::string cmd_close = "luna-send -n 1 -f luna://com.webos.service.camera2/close '{\"handle\":";
 
 std::string getStringFromNumber(int number)
@@ -76,6 +76,7 @@ ret_val_t open_start_stop_close(int dummy_pid, int dummy_sig)
         return retval;
     }
     key = parsed["key"].asNumber<int>();
+    (void)key;
 
     // Do something
     for (int i = 0; i < 10; i++)
@@ -177,6 +178,7 @@ ret_val_t open_pid_start_stop_close_pid(int ctx_pid, int dum_sig)
         return retval;
     }
     key = parsed["key"].asNumber<int>();
+    (void)key;
 
     // start of synchronization test
     struct timespec timeout;
@@ -299,6 +301,7 @@ ret_val_t open_pid_sig_start_stop_close_pid(int ctx_pid, int ctx_sig)
         return retval;
     }
     key = parsed["key"].asNumber<int>();
+    (void)key;
 
     // start of synchronization test
     struct timespec timeout;
@@ -416,6 +419,7 @@ ret_val_t open_pid_start_stop_close(int ctx_pid, int dummy_sig)
         return retval;
     }
     key = parsed["key"].asNumber<int>();
+    (void)key;
 
     // start of synchronization test
     struct timespec timeout;
@@ -537,6 +541,7 @@ ret_val_t open_pid_sig_start_stop_close(int ctx_pid, int ctx_sig)
         return retval;
     }
     key = parsed["key"].asNumber<int>();
+    (void)key;
 
     // start of synchronization test
     struct timespec timeout;
@@ -615,9 +620,7 @@ ret_val_t open_invalid_pid_close_invalid_pid(int dummy_pid, int dummy_sig)
 {
     pid_t pid = (pid_t)-1;
     sigset_t set;
-    int signum;
     int handle = -1;
-    int key    = -1;
     std::string command;
     std::string output;
     pbnjson::JValue parsed;
@@ -742,6 +745,7 @@ ret_val_t open_invalid_pid_start_stop_close_invalid_pid(int dummy_pid, int dummy
         return retval;
     }
     key = parsed["key"].asNumber<int>();
+    (void)key;
 
     // start of synchronization test
     struct timespec timeout;
@@ -859,6 +863,7 @@ ret_val_t open_invalid_pid_start_stop_close(int dummy_pid, int dummy_sig)
         return retval;
     }
     key = parsed["key"].asNumber<int>();
+    (void)key;
 
     // start of synchronization test
     struct timespec timeout;

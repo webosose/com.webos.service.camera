@@ -394,7 +394,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size
     }
     if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
     {
-        DEBUG_PRINT("size error(%lu > %lu)!\n", bytesWritten, *shmem_buffer->unit_size);
+        DEBUG_PRINT("size error(%u > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
         return SHMEM_ERROR_RANGE_OUT;
     }
 
@@ -417,7 +417,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pM
     int meta_size    = *shmem_buffer->meta_size;
     int lwrite_index = *shmem_buffer->write_index;
 
-    if (metaSize < meta_size)
+    if ((int)metaSize < meta_size)
     {
         *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
         memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
@@ -437,7 +437,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned char *e
     }
     if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size))
     {
-        DEBUG_PRINT("size error(%lu > %lu)!\n", extraBytes, *shmem_buffer->extra_size);
+        DEBUG_PRINT("size error(%u > %d)!\n", extraBytes, *shmem_buffer->extra_size);
         return SHMEM_ERROR_RANGE_OUT;
     }
     unsigned char *addr =

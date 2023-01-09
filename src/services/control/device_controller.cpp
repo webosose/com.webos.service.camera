@@ -76,7 +76,7 @@ int DeviceControl::n_imagecount_ = 0;
 
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
-      b_issystemvruning_mmap(false), b_issystemvruning(false), cam_handle_(nullptr), shmemfd_(-1),
+      b_issystemvruning(false), b_issystemvruning_mmap(false), cam_handle_(nullptr), shmemfd_(-1),
       usrpbufs_(nullptr), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG), tMutex(),
       tCondVar(), h_shmsystem_(nullptr), h_shmposix_(nullptr), str_imagepath_(cstr_empty),
       str_capturemode_(cstr_oneshot), str_memtype_(""), str_shmemname_(""), cancel_preview_(false),
@@ -241,8 +241,8 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
     camera_hal_if_get_format(handle, &streamformat);
     PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
                streamformat.stream_height);
-    int framesize =
-        streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+    // int framesize =
+    //     streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
     int timeout           = 10000;
     buffer_t frame_buffer = {0};
@@ -442,7 +442,7 @@ void DeviceControl::previewThread()
         {
             auto toc = std::chrono::steady_clock::now();
             auto us  = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-            PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%lu)",
+            PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%u)",
                        cam_handle_, debug_interval * 1000000.0f / us, client_pool_.size());
             tic           = toc;
             debug_counter = 0;
@@ -1078,7 +1078,7 @@ void DeviceControl::broadcast_()
 {
     std::lock_guard<std::mutex> mlock(client_pool_mutex_);
     {
-        PMLOG_DEBUG("Broadcasting to %lu clients\n", client_pool_.size());
+        PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
 
         auto it = client_pool_.begin();
         while (it != client_pool_.end())

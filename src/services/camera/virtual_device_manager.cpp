@@ -70,7 +70,6 @@ int VirtualDeviceManager::getVirtualDeviceHandle(int devid)
 void VirtualDeviceManager::removeVirtualDeviceHandle(int devhandle)
 {
     // remove virtual device handle key value from map
-    int devid = virtualhandle_map_[devhandle].ndeviceid_;
     virtualhandle_map_.erase(devhandle);
     PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %d", virtualhandle_map_.size());
 }
