@@ -18,9 +18,9 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "device_manager.h"
+#include "CameraHalProxy.h"
 #include "addon.h" /* calls platform specific functionality if addon interface has been implemented */
 #include "command_manager.h"
-#include "device_controller.h"
 
 DeviceManager::DeviceManager() {}
 
@@ -221,7 +221,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
         std::string deviceType = getDeviceType(deviceid);
         PMLOG_INFO(CONST_MODULE_DM, "deviceType : %s", deviceType.c_str());
 
-        ret = DeviceControl::getDeviceInfo(strdevicenode, deviceType, p_info);
+        ret = CameraHalProxy::getDeviceInfo(strdevicenode, deviceType, p_info);
 
         if (DEVICE_OK != ret)
         {

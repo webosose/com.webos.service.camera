@@ -19,7 +19,6 @@
  ----------------------------------------------------------------------------*/
 #include "command_manager.h"
 #include "camera_constants.h"
-#include "device_controller.h"
 #include "device_manager.h"
 
 VirtualDeviceManager *CommandManager::getVirtualDeviceMgrObj(int devhandle)
@@ -87,6 +86,12 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
             obj.deviceid     = deviceid;
             obj.clientName   = "";
             virtualdevmgrobj_map_.insert(std::make_pair(devicenode, obj));
+        }
+        else
+        {
+            PMLOG_ERROR(CONST_MODULE_CM, "open fail");
+            if (it == virtualdevmgrobj_map_.end())
+                delete obj.ptr;
         }
         return ret;
     }

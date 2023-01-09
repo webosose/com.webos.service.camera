@@ -1,5 +1,7 @@
 #include "addon.h"
+#ifdef FIX_ME
 #include "camera_solution_manager.h"
+#endif
 #include "camera_types.h"
 #include "command_manager.h"
 #include "device_manager.h"
@@ -273,5 +275,7 @@ int AddOn::Service::getInfo(int deviceid, camera_device_info_t *p_info)
 void AddOn::Service::getSupportedSolutionList(std::vector<std::string> &supportedList,
                                               std::vector<std::string> &enabledList)
 {
+#ifdef FIX_ME
     CameraSolutionManager::getSupportedSolutionList(supportedList, enabledList);
+#endif
 }

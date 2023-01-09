@@ -93,10 +93,10 @@ void VirtualDeviceManager::removeHandlePriorityObj(int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
     // create v4l2 handle
-    void *p_cam_handle;
+    void *p_cam_handle = nullptr; // [FIX_ME] No need to save
 
     std::string deviceType   = DeviceManager::getInstance().getDeviceType(devid);
-    DEVICE_RETURN_CODE_T ret = objdevicecontrol_.createHandle(&p_cam_handle, deviceType);
+    DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHandle(deviceType);
     if (DEVICE_OK != ret)
     {
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to create handle\n");
@@ -117,7 +117,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     DeviceManager::getInstance().getDeviceUserData(devid, payload);
 
     // open the camera here
-    ret = objdevicecontrol_.open(handle, devnode, devid, payload);
+    ret = objcamerahalproxy_.open(devnode, devid, payload);
     if (DEVICE_OK != ret)
         PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
     else
@@ -236,11 +236,11 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
             if (1 == nelements)
             {
                 // close the actual device
-                ret = objdevicecontrol_.close(handle);
+                ret = objcamerahalproxy_.close();
                 if (DEVICE_OK == ret)
                 {
                     DeviceManager::getInstance().setDeviceStatus(deviceid, FALSE);
-                    ret = objdevicecontrol_.destroyHandle(handle);
+                    ret = objcamerahalproxy_.destroyHandle();
                     DeviceManager::getInstance().setDeviceHandle(deviceid, nullptr);
                     // remove the virtual device
                     removeVirtualDeviceHandle(devhandle);
@@ -301,8 +301,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             void *handle;
             DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
             // start preview
-            DEVICE_RETURN_CODE_T ret =
-                objdevicecontrol_.startPreview(handle, memtype, pkey, sh, subskey);
+            DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.startPreview(memtype, pkey, sh, subskey);
             if (DEVICE_OK == ret)
             {
                 // Increament preview count by 1
@@ -324,10 +323,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
                 virtualhandle_map_[devhandle] = obj_devstate;
 
+                objcamerahalproxy_.subscribe();
+
                 // Apply platform-specific policy to solutions if exists.
                 if (AddOn::hasImplementation())
                 {
-                    ret = objdevicecontrol_.enableCameraSolution(
+                    ret = objcamerahalproxy_.enableCameraSolution(
                         AddOn::getDevicePrivateData(deviceid));
                     if (DEVICE_OK != ret)
                         PMLOG_INFO(CONST_MODULE_VDM, "Failed to enable camera solution\n");
@@ -422,7 +423,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
                 void *handle;
                 DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
                 // stop preview
-                DEVICE_RETURN_CODE_T ret = objdevicecontrol_.stopPreview(handle, memtype);
+                DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopPreview(memtype);
                 // reset preview parameters for camera device
                 if (DEVICE_OK == ret)
                 {
@@ -442,6 +443,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
                         poshmkey_ = 0;
                     }
                 }
+                objcamerahalproxy_.unsubscribe();
                 return ret;
             }
             else
@@ -484,7 +486,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
         DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // capture number of images specified by ncount
         DEVICE_RETURN_CODE_T ret =
-            objdevicecontrol_.captureImage(handle, ncount, sformat, imagepath, mode);
+            objcamerahalproxy_.captureImage(ncount, sformat, imagepath, mode);
         return ret;
     }
     else
@@ -545,7 +547,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
             void *handle;
             DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
             // start capture
-            DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startCapture(handle, sformat, imagepath);
+            DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.startCapture(sformat, imagepath);
             if (DEVICE_OK == ret)
             {
                 bcaptureinprogress_ = true;
@@ -609,7 +611,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
                 void *handle;
                 DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
                 // stop capture
-                DEVICE_RETURN_CODE_T ret = objdevicecontrol_.stopCapture(handle);
+                DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopCapture();
                 // reset capture parameters for camera device
                 if (DEVICE_OK == ret)
                 {
@@ -653,7 +655,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getProperty(int devhandle,
         void *handle;
         DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // get property of device opened
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getDeviceProperty(handle, devproperty);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getDeviceProperty(devproperty);
         return ret;
     }
     else
@@ -691,7 +693,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setProperty(int devhandle, CAMERA_PRO
         void *handle;
         DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // set device properties
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.setDeviceProperty(handle, oInfo);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.setDeviceProperty(oInfo);
         return ret;
     }
     else
@@ -728,7 +730,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setFormat(int devhandle, CAMERA_FORMA
         void *handle;
         DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // set format
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.setFormat(handle, oformat);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.setFormat(oformat);
         if (DEVICE_OK == ret)
         {
             sformat_.eFormat = oformat.eFormat;
@@ -758,7 +760,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMA
         void *handle;
         DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // get format of device
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getFormat(handle, oformat);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getFormat(oformat);
         return ret;
     }
     else
@@ -798,20 +800,20 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
 bool VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig, int devhandle,
                                           std::string &outmsg)
 {
-    return objdevicecontrol_.registerClient((pid_t)n_client_pid, n_client_sig, devhandle, outmsg);
+    return objcamerahalproxy_.registerClient((pid_t)n_client_pid, n_client_sig, devhandle, outmsg);
 }
 
 bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string &outmsg)
 {
-    return objdevicecontrol_.unregisterClient((pid_t)n_client_pid, outmsg);
+    return objcamerahalproxy_.unregisterClient((pid_t)n_client_pid, outmsg);
 }
 
 bool VirtualDeviceManager::isRegisteredClient(int devhandle)
 {
-    return objdevicecontrol_.isRegisteredClient(devhandle);
+    return objcamerahalproxy_.isRegisteredClient(devhandle);
 }
 
-void VirtualDeviceManager::requestPreviewCancel() { objdevicecontrol_.requestPreviewCancel(); }
+void VirtualDeviceManager::requestPreviewCancel() { objcamerahalproxy_.requestPreviewCancel(); }
 
 DEVICE_RETURN_CODE_T
 VirtualDeviceManager::getSupportedCameraSolutionInfo(int devhandle,
@@ -825,7 +827,7 @@ VirtualDeviceManager::getSupportedCameraSolutionInfo(int devhandle,
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
         // get supported solutions of device opened
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getSupportedCameraSolutionInfo(solutionsInfo);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getSupportedCameraSolutionInfo(solutionsInfo);
         return ret;
     }
     else
@@ -847,7 +849,7 @@ VirtualDeviceManager::getEnabledCameraSolutionInfo(int devhandle,
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
         // get enabled solutions of device opened
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.getEnabledCameraSolutionInfo(solutionsInfo);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getEnabledCameraSolutionInfo(solutionsInfo);
         return ret;
     }
     else
@@ -870,7 +872,7 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
         // get enabled solutions of device opened
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.enableCameraSolution(solutions);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.enableCameraSolution(solutions);
         if (ret == DEVICE_OK)
         {
             // Attach platform-specific private component to device in order to enforce
@@ -900,7 +902,7 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
         // get disabled solutions of device opened
-        DEVICE_RETURN_CODE_T ret = objdevicecontrol_.disableCameraSolution(solutions);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.disableCameraSolution(solutions);
 
         if (ret == DEVICE_OK)
         {

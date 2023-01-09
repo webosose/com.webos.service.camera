@@ -20,8 +20,8 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#include "CameraHalProxy.h"
 #include "camera_types.h"
-#include "device_controller.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -49,7 +49,7 @@ private:
     std::vector<int> ncapturehandle_;
     CAMERA_FORMAT sformat_;
     // for multi obj
-    DeviceControl objdevicecontrol_;
+    CameraHalProxy objcamerahalproxy_;
 
     bool checkDeviceOpen(int);
     bool checkAppPriorityMap();

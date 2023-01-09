@@ -246,7 +246,7 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
         LSErrorInit(&lserror);
 
         std::string payload = "{\"subscribe\":true,\"category\":\"Video\"";
-#ifdef USE_GROUP_SUB_DEVICES
+#ifdef PLATFORM_OSE
         payload += ",\"groupSubDevices\":true";
 #endif
         payload += "}";
