@@ -53,6 +53,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     LS_CATEGORY_METHOD(getFd)
     LS_CATEGORY_METHOD(setSolutions)
     LS_CATEGORY_METHOD(getSolutions)
+    LS_CATEGORY_METHOD(getFormat)
     LS_CATEGORY_END;
 
     // attach to mainloop and run it
@@ -1281,10 +1282,75 @@ bool CameraService::setSolutions(LSMessage &message)
 }
 
 //[Camera Solution Manager] NEW APIs for Solution Manager - end
+
+bool CameraService::getFormat(LSMessage &message)
+{
+    auto *payload = LSMessageGetPayload(&message);
+
+    DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+
+    GetFormatMethod obj_getFormat;
+    obj_getFormat.getObject(payload, getFormatSchema);
+
+    int ndevhandle = n_invalid_id;
+    int ncamId     = getId(obj_getFormat.getCameraId());
+
+    PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
+
+    if (n_invalid_id == ncamId)
+    {
+        err_id = DEVICE_ERROR_WRONG_PARAM;
+    }
+
+    if (err_id != DEVICE_OK)
+    {
+        PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
+        obj_getFormat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                        getErrorString(err_id));
+    }
+    else
+    {
+        ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
+        PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId,
+                    ndevhandle);
+        if (n_invalid_id != ndevhandle)
+        {
+            CAMERA_FORMAT output_format;
+            err_id = CommandManager::getInstance().getFormat(ndevhandle, &output_format);
+
+            if (DEVICE_OK != err_id)
+            {
+                PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOT_OK err_id(%d)\n", err_id);
+                obj_getFormat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                              getErrorString(err_id));
+            }
+            else
+            {
+                PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
+                obj_getFormat.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
+                                              getErrorString(err_id));
+                obj_getFormat.setCameraFormat(output_format);
+            }
+        }
+        else
+        {
+             err_id = DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+             obj_getFormat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                        getErrorString(err_id));
+        }
+    }
+
+    std::string output_reply = obj_getFormat.createObjectJsonString();
+    LS::Message request(&message);
+    request.respond(output_reply.c_str());
+
+    return true;
+}
+
 #include <gst/gst.h>
 int main(int argc, char *argv[])
 {
-    // TBD... 
+    // TBD...
     gst_init(NULL, NULL);
 
     install_handler_service_crash();

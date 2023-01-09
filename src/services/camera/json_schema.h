@@ -389,4 +389,20 @@ const char *setSolutionsSchema = "{ \
     } \
   } \
 }";
+
+const char *getFormatSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"id\" \
+  ], \
+  \"properties\": { \
+    \"id\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Id Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+    } \
+  } \
+}";
 #endif /*SRC_SERVICE_JSON_SCHEMA_H_*/

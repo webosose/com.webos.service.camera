@@ -2049,3 +2049,73 @@ std::string SetSolutionsMethod::createObjectJsonString() const
 
     return str_reply;
 }
+
+GetFormatMethod::GetFormatMethod() : str_devid_(cstr_empty), ro_params_()
+{
+}
+
+void GetFormatMethod::getObject(const char *input, const char *schemapath)
+{
+    jvalue_ref j_obj;
+    jvalue_ref j_param_obj;
+    int retval = deSerialize(input, schemapath, j_obj);
+
+    if (0 == retval)
+    {
+        j_param_obj       = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+        raw_buffer str_id = jstring_get_fast(j_param_obj);
+
+        if (strstr(str_id.m_str, "camera") == NULL)
+        {
+            setCameraId(cstr_invaliddeviceid);
+        }
+        else
+        {
+            setCameraId(str_id.m_str);
+        }
+    }
+    else
+    {
+        setCameraId(cstr_invaliddeviceid);
+    }
+    j_release(&j_obj);
+}
+
+std::string GetFormatMethod::createObjectJsonString() const
+{
+    jvalue_ref json_outobj = jobject_create();
+    jvalue_ref json_outobjparams = jobject_create();
+
+    std::string str_reply;
+
+    MethodReply obj_reply = getMethodReply();
+
+    if (obj_reply.bGetReturnValue())
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(obj_reply.bGetReturnValue()));
+
+        std::string strformat = getFormatStringFromCode(rGetCameraFormat().eFormat);
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
+                    jstring_create(strformat.c_str()));
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
+                    jnumber_create_i32(rGetCameraFormat().nWidth));
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
+                    jnumber_create_i32(rGetCameraFormat().nHeight));
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
+                    jnumber_create_i32(rGetCameraFormat().nFps));
+
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
+    }
+    else
+    {
+        createJsonStringFailure(obj_reply, json_outobj);
+    }
+
+    const char* str = jvalue_stringify(json_outobj);
+    if (str)
+        str_reply = str;
+    j_release(&json_outobj);
+
+    return str_reply;
+}
