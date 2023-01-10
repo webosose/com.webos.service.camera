@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -198,7 +198,9 @@ typedef struct
 {
   char str_devicename[CONST_MAX_STRING_LENGTH];
   char str_vendorid[CONST_MAX_STRING_LENGTH];
+  char str_vendorname[CONST_MAX_STRING_LENGTH];
   char str_productid[CONST_MAX_STRING_LENGTH];
+  char str_productname[CONST_MAX_STRING_LENGTH];
   device_t n_devicetype;
   int b_builtin;
   int n_cur_fps;            //fps currently set in camera(v4l2)

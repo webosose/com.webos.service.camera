@@ -401,7 +401,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
   if (objreply.bGetReturnValue())
   {
     char strformat[CONST_MAX_STRING_LENGTH];
-    bool supported = WhitelistChecker::getInstance().isSupportedCamera(rGetCameraInfo().str_vendorid, rGetCameraInfo().str_productid);
+    bool supported = WhitelistChecker::getInstance().isSupportedCamera(rGetCameraInfo().str_vendorname,
+                                                                       rGetCameraInfo().str_productname);
 
     getFormatString(rGetCameraInfo().n_format, strformat);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),

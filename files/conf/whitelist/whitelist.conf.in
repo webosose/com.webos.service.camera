@@ -5,6 +5,18 @@
             "vendorName": "Sunplus Innovation Technology Inc."
         },
         {
+            "deviceSubtype": "HD Pro Webcam C920",
+            "vendorName": "Logitech, Inc."
+        },
+        {
+            "deviceSubtype": "Logitech Webcam C930e",
+            "vendorName": "Logitech, Inc."
+        },
+        {
+            "deviceSubtype": "0825",
+            "vendorName": "Logitech, Inc."
+        },
+        {
             "deviceSubtype": "Logitech BRIO",
             "vendorName": "Logitech, Inc."
         },
