@@ -85,6 +85,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
             PMLOG_INFO(CONST_MODULE_CM, "devicehandle : %d \n", *devicehandle);
             obj.devicehandle = *devicehandle;
             obj.deviceid     = deviceid;
+            obj.clientName   = "";
             virtualdevmgrobj_map_.insert(std::make_pair(devicenode, obj));
         }
         return ret;
@@ -361,6 +362,58 @@ bool CommandManager::isRegisteredClientPid(int devhandle)
         return ptr->isRegisteredClient(devhandle);
     }
     return false;
+}
+
+bool CommandManager::setClientDevice(int devhandle, std::string clientName)
+{
+    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    if (n_invalid_id == devhandle)
+        return false;
+
+    std::multimap<std::string, Device>::iterator it;
+    for (it = virtualdevmgrobj_map_.begin(); it != virtualdevmgrobj_map_.end(); ++it)
+    {
+        if (devhandle == it->second.devicehandle)
+        {
+            it->second.clientName = clientName;
+            PMLOG_INFO(CONST_MODULE_CM, "devicehandle : %d, deviceid : %d, clientName : %s",
+                       it->second.devicehandle, it->second.deviceid, it->second.clientName.c_str());
+            return true;
+        }
+    }
+    return false;
+}
+
+void CommandManager::closeClientDevice(std::string clientName)
+{
+    PMLOG_INFO(CONST_MODULE_CM, "clientName : %s", clientName.c_str());
+    std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
+    while (it != virtualdevmgrobj_map_.end())
+    {
+        Device obj = it->second;
+        PMLOG_INFO(CONST_MODULE_CM, "id = %d", obj.deviceid);
+        if (clientName == obj.clientName && nullptr != obj.ptr)
+        {
+            PMLOG_INFO(CONST_MODULE_CM, "stop & close devicehandle : %d", obj.devicehandle);
+
+            // send request to stop all and close the device
+            obj.ptr->stopCapture(obj.devicehandle);
+            obj.ptr->stopPreview(obj.devicehandle);
+            obj.ptr->close(obj.devicehandle);
+
+            int count = virtualdevmgrobj_map_.count(it->first);
+            if (count == 1)
+            {
+                delete obj.ptr;
+            }
+
+            it = virtualdevmgrobj_map_.erase(it);
+        }
+        else
+        {
+            it++;
+        }
+    }
 }
 
 void CommandManager::handleCrash()

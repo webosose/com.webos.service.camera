@@ -31,6 +31,7 @@ public:
     VirtualDeviceManager *ptr;
     int devicehandle;
     int deviceid;
+    std::string clientName;
 };
 
 class CommandManager
@@ -73,6 +74,9 @@ public:
     bool registerClientPid(int, int, int, std::string &);
     bool unregisterClientPid(int, int, std::string &);
     bool isRegisteredClientPid(int);
+
+    bool setClientDevice(int, std::string);
+    void closeClientDevice(std::string);
 
     void handleCrash();
 
