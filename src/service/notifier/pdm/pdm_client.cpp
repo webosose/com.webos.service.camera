@@ -247,7 +247,8 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                 obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_DISCONNECT);
             }
 
-            if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
+            // no need of whitelist check if no device found
+            if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED && camcount > 0)
             {
                 WhitelistChecker::getInstance().check(lsHandle, dev_info_[camcount - 1].strVendorName, dev_info_[camcount - 1].strDeviceSubtype);
             }
