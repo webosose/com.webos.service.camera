@@ -497,6 +497,41 @@ private:
     MethodReply objreply_;
 };
 
+class GetFormatMethod
+{
+public:
+    GetFormatMethod();
+    ~GetFormatMethod() {}
+
+    void setCameraId(const std::string &devid) { str_devid_ = devid; }
+    std::string getCameraId() const { return str_devid_; }
+
+    void setCameraFormat(CAMERA_FORMAT rin_params)
+    {
+        ro_params_.nWidth  = rin_params.nWidth;
+        ro_params_.nHeight = rin_params.nHeight;
+        ro_params_.eFormat = rin_params.eFormat;
+        ro_params_.nFps    = rin_params.nFps;
+    }
+    CAMERA_FORMAT rGetCameraFormat() const { return ro_params_; }
+
+    void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+    {
+        objreply_.setReturnValue(returnvalue);
+        objreply_.setErrorCode(errorcode);
+        objreply_.setErrorText(errortext);
+    }
+    MethodReply getMethodReply() const { return objreply_; }
+
+    void getObject(const char *, const char *);
+    std::string createObjectJsonString() const;
+
+private:
+    std::string str_devid_;
+    CAMERA_FORMAT ro_params_;
+    MethodReply objreply_;
+};
+
 void createJsonStringFailure(MethodReply, jvalue_ref &);
 void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, CAMERA_PROPERTIES_T *, jvalue_ref &);
 void mappingPropertieswithConstValues(std::map<std::string, int> &, CAMERA_PROPERTIES_T *);

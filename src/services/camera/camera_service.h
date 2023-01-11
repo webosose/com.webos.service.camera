@@ -67,6 +67,7 @@ public:
     bool getFd(LSMessage &);
     bool getSolutions(LSMessage &message);
     bool setSolutions(LSMessage &message);
+    bool getFormat(LSMessage &message);
 };
 
 #endif /*CAMERA_SERVICE_H_*/
