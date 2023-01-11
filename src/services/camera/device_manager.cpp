@@ -175,7 +175,7 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
     AddOn::pushDevicePrivateData(deviceid, pList);
 
     deviceMap_[deviceid] = devStatus;
-    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, deviceMap_.size : %d \n", deviceid,
+    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, deviceMap_.size : %zd \n", deviceid,
                deviceMap_.size());
     return deviceid;
 }
@@ -197,7 +197,7 @@ bool DeviceManager::removeDevice(int deviceid)
         AddOn::popDevicePrivateData(deviceid);
 
         deviceMap_.erase(deviceid);
-        PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %d", deviceMap_.size());
+        PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %zd", deviceMap_.size());
         return true;
     }
     PMLOG_INFO(CONST_MODULE_DM, "can not found device for deviceid : %d", deviceid);

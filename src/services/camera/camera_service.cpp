@@ -1154,7 +1154,7 @@ bool CameraService::setSolutions(LSMessage &message)
             // number and parameters number.
             if (str_solutions.size() != candidateSolutionCnt)
             {
-                PMLOG_ERROR(CONST_MODULE_LUNA, "%d invalid parameter existed\n",
+                PMLOG_ERROR(CONST_MODULE_LUNA, "%zd invalid parameter existed\n",
                             str_solutions.size() - candidateSolutionCnt);
                 err_id = DEVICE_ERROR_WRONG_PARAM;
                 obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
@@ -1179,7 +1179,7 @@ bool CameraService::setSolutions(LSMessage &message)
             // number and parameters number.
             if (str_solutions.size() != candidateSolutionCnt)
             {
-                PMLOG_ERROR(CONST_MODULE_LUNA, "%d invalid parameter existed\n",
+                PMLOG_ERROR(CONST_MODULE_LUNA, "%zd invalid parameter existed\n",
                             str_solutions.size() - candidateSolutionCnt);
                 err_id = DEVICE_ERROR_WRONG_PARAM;
                 obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,

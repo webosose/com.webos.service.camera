@@ -159,7 +159,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_PC, "camcount %d, map.size %d", camcount, curNodeMap.size());
+    PMLOG_INFO(CONST_MODULE_PC, "camcount %d, map.size %zd", camcount, curNodeMap.size());
     if (camcount > (unsigned int)curNodeMap.size()) // add Device
     {
         nCamEvent = DEVICE_EVENT_STATE_PLUGGED;

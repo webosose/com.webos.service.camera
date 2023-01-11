@@ -247,7 +247,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
         if (shm_stat.shm_nattch == 1)
             DEBUG_PRINT("we are the first client\n");
 
-        DEBUG_PRINT("shared memory size = %d\n", shm_stat.shm_segsz);
+        DEBUG_PRINT("shared memory size = %zd\n", shm_stat.shm_segsz);
 #endif
         // shared momory size larger than total, we use extra data
         if (shm_stat.shm_segsz > extra_size_offset)
@@ -274,7 +274,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     *pShmemBuffer->write_index = -1;
     *pShmemBuffer->read_index  = -1;
 
-    DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
+    DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %zd, unit_num = %d\n", *pShmemBuffer->unit_size,
                 SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
     return SHMEM_IS_OK;
 }
@@ -394,7 +394,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size
     }
     if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
     {
-        DEBUG_PRINT("size error(%u > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
+        DEBUG_PRINT("size error(%zu > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
         return SHMEM_ERROR_RANGE_OUT;
     }
 
@@ -437,7 +437,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned char *e
     }
     if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size))
     {
-        DEBUG_PRINT("size error(%u > %d)!\n", extraBytes, *shmem_buffer->extra_size);
+        DEBUG_PRINT("size error(%zu > %d)!\n", extraBytes, *shmem_buffer->extra_size);
         return SHMEM_ERROR_RANGE_OUT;
     }
     unsigned char *addr =

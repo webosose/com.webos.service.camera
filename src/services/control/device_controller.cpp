@@ -442,7 +442,7 @@ void DeviceControl::previewThread()
         {
             auto toc = std::chrono::steady_clock::now();
             auto us  = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-            PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%u)",
+            PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%zu)",
                        cam_handle_, debug_interval * 1000000.0f / us, client_pool_.size());
             tic           = toc;
             debug_counter = 0;
@@ -1078,7 +1078,7 @@ void DeviceControl::broadcast_()
 {
     std::lock_guard<std::mutex> mlock(client_pool_mutex_);
     {
-        PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
+        PMLOG_DEBUG("Broadcasting to %zu clients\n", client_pool_.size());
 
         auto it = client_pool_.begin();
         while (it != client_pool_.end())

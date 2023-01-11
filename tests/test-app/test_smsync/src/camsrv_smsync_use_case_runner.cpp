@@ -9,7 +9,10 @@ ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
     ret_val_t val = {0, {0, 0}};
 
     // create pipe descriptors
-    pipe(fd);
+    if(pipe(fd) < 0){
+        printf("pipe error\n");
+        return val;
+    }
 
     int status_child;
 
@@ -41,7 +44,10 @@ ret_val_t run_as_child_process(ret_val_t (*task)(int, int), int iparam)
         close(fd[0]);
 
         // send the value on the write-descriptor.
-        write(fd[1], &retval, sizeof(retval));
+        if(write(fd[1], &retval, sizeof(retval) != sizeof(retval)))
+        {
+            printf("write error\n");
+        }
 
         // close the write descriptor
         close(fd[1]);

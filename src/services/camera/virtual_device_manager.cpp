@@ -63,7 +63,7 @@ int VirtualDeviceManager::getVirtualDeviceHandle(int devid)
     virtualhandle_map_[virtual_devhandle] = obj_devstate;
     PMLOG_INFO(CONST_MODULE_VDM, "devid: %d, virtual_devhandle:%d, ndeviceid_:%d", devid,
                virtual_devhandle, obj_devstate.ndeviceid_);
-    PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %d", virtualhandle_map_.size());
+    PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %zd", virtualhandle_map_.size());
     return virtual_devhandle;
 }
 
@@ -71,7 +71,7 @@ void VirtualDeviceManager::removeVirtualDeviceHandle(int devhandle)
 {
     // remove virtual device handle key value from map
     virtualhandle_map_.erase(devhandle);
-    PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %d", virtualhandle_map_.size());
+    PMLOG_INFO(CONST_MODULE_VDM, "virtualhandle_map_.size = %zd", virtualhandle_map_.size());
 }
 
 std::string VirtualDeviceManager::getAppPriority(int devhandle)
