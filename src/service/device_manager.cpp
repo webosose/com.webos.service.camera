@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -447,12 +447,12 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
   memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
   strncpy(p_info->str_devicename, deviceMap_[ncam_id].stList.strProductName,
           sizeof(p_info->str_devicename)-1);
-  memset(p_info->str_vendorid, '\0', sizeof(p_info->str_vendorid));
-  strncpy(p_info->str_vendorid, deviceMap_[ncam_id].stList.strVendorID,
-          sizeof(p_info->str_vendorid)-1);
-  memset(p_info->str_productid, '\0', sizeof(p_info->str_productid));
-  strncpy(p_info->str_productid, deviceMap_[ncam_id].stList.strProductID,
-          sizeof(p_info->str_productid)-1);
+  memset(p_info->str_vendorname, '\0', sizeof(p_info->str_vendorname));
+  strncpy(p_info->str_vendorname, deviceMap_[ncam_id].stList.strVendorName,
+          sizeof(p_info->str_vendorname)-1);
+  memset(p_info->str_productname, '\0', sizeof(p_info->str_productname));
+  strncpy(p_info->str_productname, deviceMap_[ncam_id].stList.strProductName,
+          sizeof(p_info->str_productname)-1);
 
   return ret;
 }
