@@ -33,6 +33,8 @@ typedef struct _DEVICE_STATUS
     std::string userData;
     DEVICE_LIST_T stList; // name, id, node ...
     std::vector<int> handleList;
+    bool isDeviceInfoSaved;
+    camera_device_info_t deviceInfoDB;
 } DEVICE_STATUS;
 
 class DeviceManager

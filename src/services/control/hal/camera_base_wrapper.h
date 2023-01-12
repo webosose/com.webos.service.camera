@@ -37,7 +37,7 @@ extern "C"
     int stop_capture(camera_handle_t *);
     int set_properties(camera_handle_t *, const void *);
     int get_properties(camera_handle_t *, void *);
-    int get_info(camera_handle_t *, camera_device_info_t *, const char *);
+    int get_info(camera_handle_t *, void *, const char *);
     int get_buffer_fd(camera_handle_t *, int *, int *);
 
 #ifdef __cplusplus

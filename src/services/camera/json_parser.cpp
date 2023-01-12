@@ -405,25 +405,20 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
 {
     jvalue_ref json_outobj     = jobject_create();
     jvalue_ref json_info_obj   = jobject_create();
-    jvalue_ref json_detailsobj = jobject_create();
-    jvalue_ref json_video_obj  = jobject_create();
-    jvalue_ref json_pictureobj = jobject_create();
     std::string strreply;
 
     MethodReply objreply = getMethodReply();
 
     if (objreply.bGetReturnValue())
     {
-        char strformat[CONST_MAX_STRING_LENGTH];
         bool supported =
             AddOn::isSupportedCamera(rGetCameraInfo().str_productid, rGetCameraInfo().str_vendorid);
 
-        getFormatString(rGetCameraInfo().n_format, strformat);
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(objreply.bGetReturnValue()));
 
         jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_NAME),
-                    jstring_create(rGetCameraInfo().str_devicename));
+                    jstring_create(rGetCameraInfo().str_devicename.c_str()));
         jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TYPE),
                     jstring_create(getTypeString(rGetCameraInfo().n_devicetype)));
         jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BUILTIN),
@@ -431,26 +426,18 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
         jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUPPORTED),
                     jboolean_create(supported));
 
-        jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
-                    jnumber_create_i32(rGetCameraInfo().n_maxvideowidth));
-        jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXHEIGHT),
-                    jnumber_create_i32(rGetCameraInfo().n_maxvideoheight));
-        jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
-                    jnumber_create_i32(rGetCameraInfo().n_cur_fps));
-        jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
-                    jstring_create(strformat));
-
-        jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
-                    jnumber_create_i32(rGetCameraInfo().n_maxpicturewidth));
-        jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXHEIGHT),
-                    jnumber_create_i32(rGetCameraInfo().n_maxpictureheight));
-        jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
-                    jstring_create(strformat));
-
-        jobject_put(json_detailsobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VIDEO), json_video_obj);
-        jobject_put(json_detailsobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PICTURE), json_pictureobj);
-
-        jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DETAILS), json_detailsobj);
+        jvalue_ref json_resolutionobj = jobject_create();
+        for (auto const &v : rGetCameraInfo().stResolution)
+        {
+            jvalue_ref json_resolutionarray = jarray_create(0);
+            for (auto const &res : v.c_res)
+            {
+                jarray_append(json_resolutionarray, jstring_create(res.c_str()));
+            }
+            jobject_put(json_resolutionobj, jstring_create(getResolutionString(v.e_format).c_str()),
+                        json_resolutionarray);
+        }
+        jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),json_resolutionobj);
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_INFO), json_info_obj);
     }
     else

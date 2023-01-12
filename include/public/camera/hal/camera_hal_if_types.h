@@ -157,21 +157,4 @@ struct camera_queryctrl_t
     int data[PROPERTY_END][QUERY_END];
 };
 
-typedef struct
-{
-    char str_devicename[CONST_MAX_STRING_LENGTH];
-    char str_vendorid[CONST_MAX_STRING_LENGTH];
-    char str_productid[CONST_MAX_STRING_LENGTH];
-    device_t n_devicetype;
-    int b_builtin;
-    int n_cur_fps; // fps currently set in camera(v4l2)
-    int n_maxvideowidth;
-    int n_maxvideoheight;
-    int n_maxpicturewidth;
-    int n_maxpictureheight;
-    int n_format;
-    int n_samplingrate;
-    int n_codec;
-} camera_device_info_t;
-
 #endif

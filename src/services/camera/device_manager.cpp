@@ -132,6 +132,7 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
     devStatus.isDeviceOpen = false;
     devStatus.pcamhandle   = nullptr;
     devStatus.userData     = userData;
+    devStatus.isDeviceInfoSaved = false;
 
     devStatus.stList.strVendorName = pList->strVendorName;
     PMLOG_INFO(CONST_MODULE_DM, "strVendorName : %s", devStatus.stList.strVendorName.c_str());
@@ -207,30 +208,67 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
 {
     PMLOG_INFO(CONST_MODULE_DM, "started ! deviceid : %d \n", deviceid);
 
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+
     if (!isDeviceIdValid(deviceid))
         return DEVICE_ERROR_NODEVICE;
 
-    std::string strdevicenode;
-    strdevicenode = deviceMap_[deviceid].stList.strDeviceNode;
-
-    std::string deviceType = getDeviceType(deviceid);
-    PMLOG_INFO(CONST_MODULE_DM, "deviceType : %s", deviceType.c_str());
-
-    DEVICE_RETURN_CODE_T ret = DeviceControl::getDeviceInfo(strdevicenode, deviceType, p_info);
-    if (DEVICE_OK != ret)
+    if(!deviceMap_[deviceid].isDeviceInfoSaved)
     {
-        PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
-    }
+        std::string strdevicenode;
+        strdevicenode = deviceMap_[deviceid].stList.strDeviceNode;
 
-    memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
-    strncpy(p_info->str_devicename, deviceMap_[deviceid].stList.strProductName.c_str(),
-            sizeof(p_info->str_devicename) - 1);
-    memset(p_info->str_vendorid, '\0', sizeof(p_info->str_vendorid));
-    strncpy(p_info->str_vendorid, deviceMap_[deviceid].stList.strVendorID.c_str(),
-            sizeof(p_info->str_vendorid) - 1);
-    memset(p_info->str_productid, '\0', sizeof(p_info->str_productid));
-    strncpy(p_info->str_productid, deviceMap_[deviceid].stList.strProductID.c_str(),
-            sizeof(p_info->str_productid) - 1);
+        std::string deviceType = getDeviceType(deviceid);
+        PMLOG_INFO(CONST_MODULE_DM, "deviceType : %s", deviceType.c_str());
+
+        ret = DeviceControl::getDeviceInfo(strdevicenode, deviceType, p_info);
+
+        if (DEVICE_OK != ret)
+        {
+            PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
+            return ret;
+        }
+        //save DB data S
+        deviceMap_[deviceid].deviceInfoDB.stResolution.clear();
+
+        for (auto const &v : p_info->stResolution)
+        {
+            std::vector<std::string> c_res;
+            c_res.clear();
+            c_res.assign(v.c_res.begin(), v.c_res.end());
+            deviceMap_[deviceid].deviceInfoDB.stResolution.emplace_back(c_res, v.e_format);
+        }
+
+        deviceMap_[deviceid].deviceInfoDB.n_devicetype = p_info->n_devicetype;
+        deviceMap_[deviceid].deviceInfoDB.b_builtin    = p_info->b_builtin;
+        PMLOG_INFO(CONST_MODULE_DM, "save DB, deviceid:%d\n", deviceid);
+        //save DB data E
+        p_info->str_devicename = deviceMap_[deviceid].stList.strProductName;
+        p_info->str_vendorid   = deviceMap_[deviceid].stList.strVendorID;
+        p_info->str_productid  = deviceMap_[deviceid].stList.strProductID;
+
+        deviceMap_[deviceid].isDeviceInfoSaved = true;
+    }
+    else
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "load DB, deviceid:%d\n", deviceid);
+        //Load DB data S
+        for (auto const &v : deviceMap_[deviceid].deviceInfoDB.stResolution)
+        {
+            std::vector<std::string> c_res;
+            c_res.clear();
+            c_res.assign(v.c_res.begin(), v.c_res.end());
+            p_info->stResolution.emplace_back(c_res, v.e_format);
+        }
+
+        p_info->n_devicetype = deviceMap_[deviceid].deviceInfoDB.n_devicetype;
+        p_info->b_builtin    = deviceMap_[deviceid].deviceInfoDB.b_builtin;
+        //Load DB data E
+
+        p_info->str_devicename = deviceMap_[deviceid].stList.strProductName;
+        p_info->str_vendorid   = deviceMap_[deviceid].stList.strVendorID;
+        p_info->str_productid  = deviceMap_[deviceid].stList.strProductID;
+    }
 
     return ret;
 }

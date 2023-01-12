@@ -130,11 +130,11 @@ extern "C"
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int get_info(camera_handle_t *h, camera_device_info_t *cam_info, const char *devicenode)
+    int get_info(camera_handle_t *h, void *cam_info, const char *devicenode)
     {
         CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
         if (NULL != camera_base)
-            return camera_base->getInfo(cam_info, devicenode);
+            return camera_base->getInfo(static_cast<camera_device_info_t *>(cam_info), devicenode);
         else
             return CAMERA_ERROR_UNKNOWN;
     }

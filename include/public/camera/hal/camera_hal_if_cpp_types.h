@@ -56,4 +56,13 @@ struct camera_properties_t
     std::vector<camera_resolution_t> stResolution;
 };
 
+struct camera_device_info_t
+{
+    std::string str_devicename;
+    std::string str_vendorid;
+    std::string str_productid;
+    device_t n_devicetype;
+    int b_builtin;
+    std::vector<camera_resolution_t> stResolution;
+};
 #endif

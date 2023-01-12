@@ -18,6 +18,7 @@
 
 #include "camera_hal_if.h"
 #include "camera_hal_types.h"
+#include "camera_hal_if_cpp_types.h"
 
 const char *subsystem     = "libv4l2-camera-plugin.so";
 const char *devname       = "/dev/video0";

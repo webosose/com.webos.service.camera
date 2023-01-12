@@ -629,15 +629,9 @@ int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
 
 int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string devicenode)
 {
-    struct v4l2_format fmt;
-    CLEAR(fmt);
-
     int ret = CAMERA_ERROR_NONE;
-
-    fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-    struct v4l2_capability cap;
     int fd = open(devicenode.c_str(), O_RDWR | O_NONBLOCK, 0);
+
     if (CAMERA_ERROR_UNKNOWN == fd)
     {
         HAL_LOG_INFO(CONST_MODULE_HAL, "cannot open : %s , %d, %s", devicenode.c_str(), errno,
@@ -647,73 +641,75 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
 
     HAL_LOG_INFO(CONST_MODULE_HAL, "fd : %d ", fd);
 
-    if (CAMERA_ERROR_NONE != xioctl(fd, VIDIOC_QUERYCAP, &cap))
-    {
-        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_QUERYCAP failed %d, %s", errno, strerror(errno));
-        ret = CAMERA_ERROR_UNKNOWN;
-    }
+    struct v4l2_fmtdesc format;
+    CLEAR(format);
 
-    // get fps
-    struct v4l2_streamparm streamparm;
-    CLEAR(streamparm);
-    streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    format.index = 0;
+    format.type  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    struct v4l2_frmsizeenum frmsize;
+    CLEAR(frmsize);
 
-    if (CAMERA_ERROR_NONE != xioctl(fd, VIDIOC_G_PARM, &streamparm))
+    cam_info->stResolution.clear();
+    while ((-1 != xioctl(fd, VIDIOC_ENUM_FMT, &format)))
     {
-        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_G_PARM failed %d, %s\n", errno, strerror(errno));
-        ret = CAMERA_ERROR_UNKNOWN;
-    }
-    else
-    {
-        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_G_PARM fps (%d / %d) \n",
-                     streamparm.parm.capture.timeperframe.numerator,
-                     streamparm.parm.capture.timeperframe.denominator);
-        cam_info->n_cur_fps = streamparm.parm.capture.timeperframe.denominator /
-                              streamparm.parm.capture.timeperframe.numerator;
-    }
+        format.index++;
+        frmsize.pixel_format = format.pixelformat;
+        frmsize.index        = 0;
+        struct v4l2_frmivalenum fival;
+        CLEAR(fival);
+        int res_index = 0;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd, VIDIOC_G_FMT, &fmt))
-    {
-        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_G_FMT failed %d, %s", errno, strerror(errno));
-        ret = CAMERA_ERROR_UNKNOWN;
-    }
-    if (CAMERA_ERROR_NONE == ret)
-    {
-        unsigned long width  = fmt.fmt.pix.width;  // Image width
-        unsigned long height = fmt.fmt.pix.height; // Image height
-        int pixelfmt         = 0;                  // Pixel format
-        struct v4l2_fmtdesc format;
-        format.index = 0;
-        format.type  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-        while ((-1 != xioctl(fd, VIDIOC_ENUM_FMT, &format)))
+        std::vector<std::string> v_res;
+        while ((-1 != xioctl(fd, VIDIOC_ENUM_FRAMESIZES, &frmsize)))
         {
-            format.index++;
-            switch (format.pixelformat)
+            if (V4L2_FRMSIZE_TYPE_DISCRETE == frmsize.type)
             {
-            case V4L2_PIX_FMT_YUYV:
-                pixelfmt = pixelfmt | 1;
-                break;
-            case V4L2_PIX_FMT_MJPEG:
-                pixelfmt = pixelfmt | 4;
-                break;
-            case V4L2_PIX_FMT_H264:
-                pixelfmt = pixelfmt | 2;
-                break;
-            default:
-                HAL_LOG_INFO(CONST_MODULE_HAL, "pixelfmt : %d ", pixelfmt);
+                fival.index        = 0;
+                fival.pixel_format = frmsize.pixel_format;
+                fival.width        = frmsize.discrete.width;
+                fival.height       = frmsize.discrete.height;
+                while ((-1 != xioctl(fd, VIDIOC_ENUM_FRAMEINTERVALS, &fival)))
+                {
+                    std::string res =
+                        std::to_string(frmsize.discrete.width) + "," +
+                        std::to_string(frmsize.discrete.height) + "," +
+                        std::to_string(fival.discrete.denominator / fival.discrete.numerator);
+                    HAL_LOG_INFO(CONST_MODULE_HAL, "c_res %s ", res.c_str());
+                    fival.index++;
+                    res_index++;
+                    v_res.emplace_back(res);
+                    if (res_index >= CONST_MAX_INDEX)
+                    {
+                        HAL_LOG_INFO(CONST_MODULE_HAL, "WARN : Exceeded resolution table size!");
+                        break;
+                    }
+                }
+            }
+            else if (V4L2_FRMSIZE_TYPE_STEPWISE == frmsize.type)
+            {
+                std::string res = std::to_string(frmsize.discrete.width) + "," +
+                                  std::to_string(frmsize.discrete.height);
+                res_index++;
+                v_res.emplace_back(res);
+                HAL_LOG_INFO(CONST_MODULE_HAL, "framesize type : V4L2_FRMSIZE_TYPE_STEPWISE");
+            }
+            else if (V4L2_FRMSIZE_TYPE_CONTINUOUS == frmsize.type)
+            {
+                HAL_LOG_INFO(CONST_MODULE_HAL, "framesize type : V4L2_FRMSIZE_TYPE_CONTINUOUS");
             }
 
-            cam_info->n_format           = pixelfmt;
-            cam_info->n_devicetype       = DEVICE_TYPE_CAMERA;
-            cam_info->b_builtin          = false;
-            cam_info->n_maxpictureheight = height;
-            cam_info->n_maxpicturewidth  = width;
-            cam_info->n_maxvideoheight   = height;
-            cam_info->n_maxvideowidth    = width;
+            if (res_index >= CONST_MAX_INDEX)
+                break;
+            frmsize.index++;
         }
+        cam_info->stResolution.emplace_back(v_res, getCameraFormatProperty(format));
     }
+
+    cam_info->n_devicetype       = DEVICE_TYPE_CAMERA;
+    cam_info->b_builtin          = false;
+
     close(fd);
+
     return ret;
 }
 

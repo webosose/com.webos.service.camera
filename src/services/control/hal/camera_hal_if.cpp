@@ -496,7 +496,7 @@ extern "C"
     }
 
     int camera_hal_if_get_info(const char *devicenode, const char *subsystem,
-                               camera_device_info_t *caminfo)
+                               void *caminfo)
     {
         void *handle;
         int retVal;
