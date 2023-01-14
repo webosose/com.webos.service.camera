@@ -1094,7 +1094,11 @@ void DeviceControl::notifyDeviceFault_()
         if (num_subscribers > 0)
         {
             reply = "{\"returnValue\": true, \"eventType\": \"" +
+#ifdef FIX_ME
                     getEventNotificationString(EventType::EVENT_TYPE_DEVICE_FAULT) +
+#else
+                    cstr_devicefault +
+#endif
                     "\", \"id\": \"camera" + std::to_string(camera_id_) + "\"}";
             if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
             {

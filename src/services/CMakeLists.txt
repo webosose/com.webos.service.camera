@@ -20,9 +20,6 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
-pkg_check_modules(GST REQUIRED gstreamer-1.0)
-include_directories(${GST_INCLUDE_DIRS})
-
 include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/appcast)
 include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/pdm)
 
@@ -71,7 +68,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       pthread
                       ${CMAKE_DL_LIBS}
-                      ${GST_LIBRARIES}
                       )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
@@ -83,3 +79,6 @@ add_subdirectory(control/hal)
 if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
     add_definitions(-DPLATFORM_OSE)
 endif()
+
+#CameraHalService
+add_subdirectory(control/service)
