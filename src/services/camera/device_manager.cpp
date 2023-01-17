@@ -172,7 +172,7 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
         return 0;
 
     // Push platform-specific device private data associated with this device */
-    AddOn::pushDevicePrivateData(deviceid, pList);
+    AddOn::notifyDeviceAdded(deviceid, pList[0]);
 
     deviceMap_[deviceid] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, deviceMap_.size : %zd \n", deviceid,
@@ -194,7 +194,7 @@ bool DeviceManager::removeDevice(int deviceid)
         }
 
         // Pop platform-specific private data associated with this device.
-        AddOn::popDevicePrivateData(deviceid);
+        AddOn::notifyDeviceRemoved(deviceid);
 
         deviceMap_.erase(deviceid);
         PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %zd", deviceMap_.size());

@@ -30,27 +30,20 @@ public:
     virtual bool hasImplementation() = 0;
 
     virtual void setCameraService(ICameraService *camera_service) = 0;
+    virtual void initialize(LSHandle *lshandle)                   = 0;
 
-    virtual void initialize(LSHandle *lshandle)                                               = 0;
-    virtual void setSubscriptionForCameraList(LSMessage &message)                             = 0;
-    virtual void setDeviceEvent(DEVICE_LIST_T *devList, int count, bool resumed, bool remote) = 0;
-    virtual bool setPermission(LSMessage &message)                                            = 0;
-    virtual bool isSupportedCamera(std::string productId, std::string vendorId)               = 0;
-    virtual bool isAppPermission(std::string appId)                                           = 0;
-    virtual bool test(LSMessage &message)                                                     = 0;
-    virtual bool isResumeDone()                                                               = 0;
+    virtual void setSubscriptionForCameraList(LSMessage &message)               = 0;
+    virtual bool isSupportedCamera(std::string productId, std::string vendorId) = 0;
+    virtual bool isAppPermission(std::string appId)                             = 0;
 
-    virtual bool toastCameraUsingPopup(int deviceid) = 0;
+    virtual void notifyDeviceAdded(int deviceid, const DEVICE_LIST_T &deviceInfo)             = 0;
+    virtual void notifyDeviceRemoved(int deviceid)                                            = 0;
+    virtual bool notifyDeviceOpened(int deviceid, std::string appId, std::string appPriority) = 0;
 
-    virtual void logMessagePrivate(std::string privateMessage) = 0;
-
-    virtual void attachPrivateComponentToDevice(int deviceid,
-                                                const std::vector<std::string> &solutions)   = 0;
-    virtual void detachPrivateComponentFromDevice(int deviceid,
-                                                  const std::vector<std::string> &solutions) = 0;
-    virtual void pushDevicePrivateData(int deviceid, DEVICE_LIST_T *pstList)                 = 0;
-    virtual void popDevicePrivateData(int deviceid)                                          = 0;
-    virtual std::vector<std::string> getDevicePrivateData(int deviceid)                      = 0;
+    virtual void notifySolutionEnabled(int deviceid, const std::vector<std::string> &solutions) = 0;
+    virtual void notifySolutionDisabled(int deviceid,
+                                        const std::vector<std::string> &solutions)              = 0;
+    virtual std::vector<std::string> getEnabledSolutionList(int deviceid)                       = 0;
 };
 
 #endif /* CAMERA_SERVICE_ADDON_INTERFACE_H_ */

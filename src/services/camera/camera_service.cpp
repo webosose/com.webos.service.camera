@@ -207,11 +207,8 @@ bool CameraService::open(LSMessage &message)
 
             if (AddOn::hasImplementation())
             {
-                if (app_priority == cstr_primary)
-                {
-                    bool res = AddOn::toastCameraUsingPopup(ndev_id);
-                    PMLOG_INFO(CONST_MODULE_LUNA, "toastCameraUsingPopup = %d ", res);
-                }
+                bool res = AddOn::notifyDeviceOpened(ndev_id, app_id, app_priority);
+                PMLOG_INFO(CONST_MODULE_LUNA, "AddOn::notifyDeviceOpened = %d ", res);
             }
 
             addClientWatcher(this->get(), &message, ndevice_handle);

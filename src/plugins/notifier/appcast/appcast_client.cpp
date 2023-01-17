@@ -93,11 +93,6 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
         }
         client->sendConnectSoundInput(false);
         client->setState(INIT);
-
-        if (AddOn::hasImplementation())
-        {
-            AddOn::setDeviceEvent(nullptr, 0, true, true);
-        }
         return true;
     }
 
@@ -131,18 +126,6 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
         client->sendConnectSoundInput(true);
         client->sendSetSoundInput(true);
         client->setState(READY);
-
-        if (AddOn::hasImplementation())
-        {
-            DEVICE_LIST_T devList      = {};
-            std::string strProductName = "ThinQ WebCam";
-            if (client->mDeviceInfo.modelName.empty() == false)
-                strProductName = client->mDeviceInfo.modelName;
-
-            devList.strProductName = strProductName;
-            devList.strDeviceType  = "remote";
-            AddOn::setDeviceEvent(&devList, 1, true, true);
-        }
     }
 
     return true;

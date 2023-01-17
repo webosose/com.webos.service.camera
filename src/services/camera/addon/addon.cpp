@@ -136,23 +136,6 @@ void AddOn::setSubscriptionForCameraList(LSMessage &message)
     }
 }
 
-void AddOn::setDeviceEvent(DEVICE_LIST_T *device_list, int count, bool resumed, bool remote)
-{
-    if (plugin_)
-    {
-        plugin_->setDeviceEvent(device_list, count, resumed, remote);
-    }
-}
-
-bool AddOn::setPermission(LSMessage &message)
-{
-    if (!plugin_)
-    {
-        return true;
-    }
-    return plugin_->setPermission(message);
-}
-
 bool AddOn::isSupportedCamera(std::string str_productId, std::string str_vendorId)
 {
     if (!plugin_)
@@ -171,89 +154,60 @@ bool AddOn::isAppPermission(std::string appId)
     return plugin_->isAppPermission(appId);
 }
 
-bool AddOn::test(LSMessage &message)
-{
-    if (!plugin_)
-    {
-        return true;
-    }
-    return plugin_->test(message);
-}
-
-bool AddOn::isResumeDone()
+bool AddOn::notifyDeviceOpened(int deviceid, std::string appId, std::string appPriority)
 {
     if (!plugin_)
     {
         return false;
     }
-    return plugin_->isResumeDone();
+    return plugin_->notifyDeviceOpened(deviceid, appId, appPriority);
 }
 
-bool AddOn::toastCameraUsingPopup(int deviceid)
-{
-    if (!plugin_)
-    {
-        return false;
-    }
-    return plugin_->toastCameraUsingPopup(deviceid);
-}
-
-void AddOn::logMessagePrivate(std::string msg)
+void AddOn::notifySolutionEnabled(int deviceid, const std::vector<std::string> &privateStrVecData)
 {
     if (!plugin_)
     {
         return;
     }
-    plugin_->logMessagePrivate(msg);
+    plugin_->notifySolutionEnabled(deviceid, privateStrVecData);
 }
 
-void AddOn::attachPrivateComponentToDevice(int deviceid,
-                                           const std::vector<std::string> &privateStrVecData)
+void AddOn::notifySolutionDisabled(int deviceid, const std::vector<std::string> &privateStrVecData)
 {
     if (!plugin_)
     {
         return;
     }
-    plugin_->attachPrivateComponentToDevice(deviceid, privateStrVecData);
+    plugin_->notifySolutionDisabled(deviceid, privateStrVecData);
 }
 
-void AddOn::detachPrivateComponentFromDevice(int deviceid,
-                                             const std::vector<std::string> &privateStrVecData)
-{
-    if (!plugin_)
-    {
-        return;
-    }
-    plugin_->detachPrivateComponentFromDevice(deviceid, privateStrVecData);
-}
-
-void AddOn::pushDevicePrivateData(int deviceid, DEVICE_LIST_T *pstList)
+void AddOn::notifyDeviceAdded(int deviceid, const DEVICE_LIST_T &deviceInfo)
 {
     if (!plugin_)
     {
         return;
     }
 
-    plugin_->pushDevicePrivateData(deviceid, pstList);
+    plugin_->notifyDeviceAdded(deviceid, deviceInfo);
 }
 
-void AddOn::popDevicePrivateData(int deviceid)
+void AddOn::notifyDeviceRemoved(int deviceid)
 {
     if (!plugin_)
     {
         return;
     }
-    plugin_->popDevicePrivateData(deviceid);
+    plugin_->notifyDeviceRemoved(deviceid);
 }
 
-std::vector<std::string> AddOn::getDevicePrivateData(int deviceid)
+std::vector<std::string> AddOn::getEnabledSolutionList(int deviceid)
 {
     if (!plugin_)
     {
         std::vector<std::string> empty{};
         return empty;
     }
-    return plugin_->getDevicePrivateData(deviceid);
+    return plugin_->getEnabledSolutionList(deviceid);
 }
 
 int AddOn::Service::getDeviceList(std::vector<int> &idList) { return AddOn::getDeviceList(idList); }

@@ -184,11 +184,6 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
         }
     }
 
-    if (AddOn::hasImplementation())
-    {
-        AddOn::setDeviceEvent(dev_info_, camcount, AddOn::isResumeDone());
-    }
-
     if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
     {
         PMLOG_INFO(CONST_MODULE_PC, "PLUGGED CamEvent type: %d \n", nCamEvent);
