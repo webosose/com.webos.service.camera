@@ -12,8 +12,7 @@ private:
 private:
     static int getDeviceCounts(std::string);
     static int getDeviceList(std::vector<int> &);
-    static int addDevice(DEVICE_LIST_T *, std::string = "");
-    static bool removeDevice(int);
+    static bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &);
     static int getInfo(int, camera_device_info_t *);
 
 private:
@@ -21,8 +20,7 @@ private:
     {
         int getDeviceList(std::vector<int> &) override;
         int getDeviceCounts(std::string) override;
-        int addDevice(DEVICE_LIST_T *, std::string = "") override;
-        bool removeDevice(int) override;
+        bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &) override;
         int getInfo(int, camera_device_info_t *) override;
         void getSupportedSolutionList(std::vector<std::string> &,
                                       std::vector<std::string> &) override;
@@ -44,6 +42,7 @@ public:
 
     static void notifyDeviceAdded(int, const DEVICE_LIST_T &);
     static void notifyDeviceRemoved(int);
+    static void notifyDeviceListUpdated(std::string, const std::vector<DEVICE_LIST_T> &);
     static bool notifyDeviceOpened(int deviceid, std::string appId, std::string appPriority);
 
     static void notifySolutionEnabled(int, const std::vector<std::string> &);

@@ -86,11 +86,8 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
     if (!appcast.connect)
     {
         PMLOG_INFO(CONST_MODULE_AC, "remove camera");
-        if (client->remoteCamIdx_)
-        {
-            DeviceManager::getInstance().removeDevice(client->remoteCamIdx_);
-            client->remoteCamIdx_ = 0;
-        }
+        DeviceManager::getInstance().updateDeviceList("remote", std::vector<DEVICE_LIST_T>());
+
         client->sendConnectSoundInput(false);
         client->setState(INIT);
         return true;
@@ -121,7 +118,11 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
         devInfo.strDeviceNode              = "udpsrc=" + client->mDeviceInfo.clientKey;
         devInfo.strHostControllerInterface = "";
         devInfo.strDeviceKey               = client->mDeviceInfo.clientKey;
-        client->remoteCamIdx_ = DeviceManager::getInstance().addDevice(&devInfo, payload);
+        devInfo.strUserData                = payload;
+        std::vector<DEVICE_LIST_T> devList;
+        devList.push_back(devInfo);
+
+        DeviceManager::getInstance().updateDeviceList("remote", devList);
 
         client->sendConnectSoundInput(true);
         client->sendSetSoundInput(true);

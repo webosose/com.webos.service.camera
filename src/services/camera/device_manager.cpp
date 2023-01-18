@@ -21,6 +21,8 @@
 #include "CameraHalProxy.h"
 #include "addon.h" /* calls platform specific functionality if addon interface has been implemented */
 #include "command_manager.h"
+#include "event_notification.h"
+#include "whitelist_checker.h"
 
 DeviceManager::DeviceManager() {}
 
@@ -113,50 +115,40 @@ bool DeviceManager::getDeviceUserData(int deviceid, std::string &userData)
 {
     if (isDeviceIdValid(deviceid))
     {
-        userData = deviceMap_[deviceid].userData;
+        userData = deviceMap_[deviceid].stList.strUserData;
         return true;
     }
     return false;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
+DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList, LSHandle *sh)
 {
+    if (sh != nullptr)
+        lshandle_ = sh;
+
     for (auto list : deviceMap_)
         idList.push_back(list.first);
     return DEVICE_OK;
 }
 
-int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
+int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
 {
     DEVICE_STATUS devStatus;
     devStatus.isDeviceOpen      = false;
     devStatus.pcamhandle        = nullptr;
-    devStatus.userData          = userData;
     devStatus.isDeviceInfoSaved = false;
-
-    devStatus.stList.strVendorName = pList->strVendorName;
-    PMLOG_INFO(CONST_MODULE_DM, "strVendorName : %s", devStatus.stList.strVendorName.c_str());
-    devStatus.stList.strProductName = pList->strProductName;
-    PMLOG_INFO(CONST_MODULE_DM, "strProductName : %s", devStatus.stList.strProductName.c_str());
-    devStatus.stList.strVendorID = pList->strVendorID;
-    PMLOG_INFO(CONST_MODULE_DM, "strVendorID : %s", devStatus.stList.strVendorID.c_str());
-    devStatus.stList.strProductID = pList->strProductID;
-    PMLOG_INFO(CONST_MODULE_DM, "strProductID : %s", devStatus.stList.strProductID.c_str());
-    devStatus.stList.strDeviceSubtype = pList->strDeviceSubtype;
-    PMLOG_INFO(CONST_MODULE_DM, "strDeviceSubtype : %s", devStatus.stList.strDeviceSubtype.c_str());
-
-    devStatus.stList.strDeviceType = pList->strDeviceType;
-    PMLOG_INFO(CONST_MODULE_DM, "strDeviceType : %s", devStatus.stList.strDeviceType.c_str());
-    devStatus.stList.nDeviceNum = pList->nDeviceNum;
-    PMLOG_INFO(CONST_MODULE_DM, "nDeviceNum : %d", devStatus.stList.nDeviceNum);
-    devStatus.stList.nPortNum = pList->nPortNum;
-    PMLOG_INFO(CONST_MODULE_DM, "nPortNum : %d", devStatus.stList.nPortNum);
-    devStatus.stList.isPowerOnConnect = pList->isPowerOnConnect;
-    PMLOG_INFO(CONST_MODULE_DM, "isPowerOnConnect : %d", devStatus.stList.isPowerOnConnect);
-    devStatus.stList.strDeviceNode = pList->strDeviceNode;
-    PMLOG_INFO(CONST_MODULE_DM, "strDeviceNode : %s", devStatus.stList.strDeviceNode.c_str());
-    devStatus.stList.strDeviceKey = pList->strDeviceKey;
-    PMLOG_INFO(CONST_MODULE_DM, "strDeviceKey : %s", devStatus.stList.strDeviceKey.c_str());
+    devStatus.stList            = deviceInfo;
+    PMLOG_INFO(CONST_MODULE_DM, "strVendorName    : %s", deviceInfo.strVendorName.c_str());
+    PMLOG_INFO(CONST_MODULE_DM, "strProductName   : %s", deviceInfo.strProductName.c_str());
+    PMLOG_INFO(CONST_MODULE_DM, "strVendorID      : %s", deviceInfo.strVendorID.c_str());
+    PMLOG_INFO(CONST_MODULE_DM, "strProductID     : %s", deviceInfo.strProductID.c_str());
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceSubtype : %s", deviceInfo.strDeviceSubtype.c_str());
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceType    : %s", deviceInfo.strDeviceType.c_str());
+    PMLOG_INFO(CONST_MODULE_DM, "nDeviceNum       : %d", deviceInfo.nDeviceNum);
+    PMLOG_INFO(CONST_MODULE_DM, "nPortNum         : %d", deviceInfo.nPortNum);
+    PMLOG_INFO(CONST_MODULE_DM, "isPowerOnConnect : %d", deviceInfo.isPowerOnConnect);
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceNode    : %s", deviceInfo.strDeviceNode.c_str());
+    PMLOG_INFO(CONST_MODULE_DM, "strDeviceKey     : %s", deviceInfo.strDeviceKey.c_str());
 
     // Assign a new deviceid
     int deviceid = 0;
@@ -172,11 +164,24 @@ int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
         return 0;
 
     // Push platform-specific device private data associated with this device */
-    AddOn::notifyDeviceAdded(deviceid, pList[0]);
+    AddOn::notifyDeviceAdded(deviceid, deviceInfo);
 
     deviceMap_[deviceid] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, deviceMap_.size : %zd \n", deviceid,
                deviceMap_.size());
+
+    if (false == AddOn::hasImplementation())
+    {
+        WhitelistChecker::check(deviceInfo.strProductName, deviceInfo.strVendorName);
+    }
+
+    if (lshandle_)
+    {
+        PMLOG_INFO(CONST_MODULE_PC, "Subscription reply : EventType::EVENT_TYPE_CONNECT");
+        EventNotification obj;
+        obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_CONNECT);
+    }
+
     return deviceid;
 }
 
@@ -184,24 +189,74 @@ bool DeviceManager::removeDevice(int deviceid)
 {
     PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
 
-    if (isDeviceIdValid(deviceid))
+    if (!isDeviceIdValid(deviceid))
     {
-        if (deviceMap_[deviceid].isDeviceOpen)
-        {
-            PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
-            CommandManager::getInstance().release(deviceid);
-            PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");
-        }
-
-        // Pop platform-specific private data associated with this device.
-        AddOn::notifyDeviceRemoved(deviceid);
-
-        deviceMap_.erase(deviceid);
-        PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %zd", deviceMap_.size());
-        return true;
+        PMLOG_INFO(CONST_MODULE_DM, "can not found device for deviceid : %d", deviceid);
+        return false;
     }
-    PMLOG_INFO(CONST_MODULE_DM, "can not found device for deviceid : %d", deviceid);
-    return false;
+
+    if (deviceMap_[deviceid].isDeviceOpen)
+    {
+        PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
+        CommandManager::getInstance().release(deviceid);
+        PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");
+    }
+
+    // Pop platform-specific private data associated with this device.
+    AddOn::notifyDeviceRemoved(deviceid);
+
+    deviceMap_.erase(deviceid);
+    PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %d", deviceMap_.size());
+
+    if (lshandle_)
+    {
+        PMLOG_INFO(CONST_MODULE_PC, "Subscription reply : EventType::EVENT_TYPE_DISCONNECT");
+        EventNotification obj;
+        obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_DISCONNECT);
+    }
+
+    return true;
+}
+
+bool DeviceManager::updateDeviceList(std::string deviceType,
+                                     const std::vector<DEVICE_LIST_T> &deviceList)
+{
+    // find unplugged device & remove device
+    std::vector<int> unpluggedDeviceIdList;
+    for (auto &curDev : deviceMap_)
+    {
+        if (curDev.second.stList.strDeviceType == deviceType)
+        {
+            if (std::find_if(deviceList.begin(), deviceList.end(),
+                             [=](const DEVICE_LIST_T &dev) {
+                                 return dev.strDeviceNode == curDev.second.stList.strDeviceNode;
+                             }) == deviceList.end())
+            {
+                unpluggedDeviceIdList.push_back(curDev.first);
+            }
+        }
+    }
+    for (auto unpluggedId : unpluggedDeviceIdList)
+    {
+        removeDevice(unpluggedId);
+    }
+
+    // find plugged device & add device
+    for (auto &newDev : deviceList)
+    {
+        if (std::find_if(deviceMap_.begin(), deviceMap_.end(),
+                         [=](const std::pair<int, DEVICE_STATUS> &s)
+                         {
+                             return (s.second.stList.strDeviceType == deviceType) &&
+                                    (s.second.stList.strDeviceNode == newDev.strDeviceNode);
+                         }) == deviceMap_.end())
+        {
+            addDevice(newDev);
+        }
+    }
+
+    AddOn::notifyDeviceListUpdated(deviceType, deviceList);
+    return true;
 }
 
 DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *p_info)

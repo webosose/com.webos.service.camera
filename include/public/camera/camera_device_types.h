@@ -17,6 +17,7 @@ struct DEVICE_LIST_T
     std::string strDeviceNode;
     std::string strHostControllerInterface;
     std::string strDeviceKey;
+    std::string strUserData;
 };
 
 #endif /* DEVICE_CAMERA_TYPES_H_ */

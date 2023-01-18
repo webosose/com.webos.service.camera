@@ -62,7 +62,6 @@ public:
     std::string str_state[STATE_END];
 
     deviceInfo_t mDeviceInfo;
-    int remoteCamIdx_{0};
 };
 
 #endif

@@ -30,12 +30,10 @@ int AddOn::getDeviceCounts(std::string type)
     return DeviceManager::getInstance().getDeviceCounts(type);
 }
 
-int AddOn::addDevice(DEVICE_LIST_T *devList, std::string payload)
+bool AddOn::updateDeviceList(std::string deviceType, const std::vector<DEVICE_LIST_T> &deviceList)
 {
-    return DeviceManager::getInstance().addDevice(devList, payload);
-}
-
-bool AddOn::removeDevice(int dev_idx) { return DeviceManager::getInstance().removeDevice(dev_idx); }
+    return DeviceManager::getInstance().updateDeviceList(deviceType, deviceList);
+};
 
 int AddOn::getInfo(int deviceid, camera_device_info_t *p_info)
 {
@@ -200,6 +198,16 @@ void AddOn::notifyDeviceRemoved(int deviceid)
     plugin_->notifyDeviceRemoved(deviceid);
 }
 
+void AddOn::notifyDeviceListUpdated(std::string deviceType,
+                                    const std::vector<DEVICE_LIST_T> &deviceList)
+{
+    if (!plugin_)
+    {
+        return;
+    }
+    plugin_->notifyDeviceListUpdated(deviceType, deviceList);
+}
+
 std::vector<std::string> AddOn::getEnabledSolutionList(int deviceid)
 {
     if (!plugin_)
@@ -214,12 +222,11 @@ int AddOn::Service::getDeviceList(std::vector<int> &idList) { return AddOn::getD
 
 int AddOn::Service::getDeviceCounts(std::string type) { return AddOn::getDeviceCounts(type); }
 
-int AddOn::Service::addDevice(DEVICE_LIST_T *devList, std::string payload)
+bool AddOn::Service::updateDeviceList(std::string deviceType,
+                                      const std::vector<DEVICE_LIST_T> &deviceList)
 {
-    return AddOn::addDevice(devList, payload);
+    return AddOn::updateDeviceList(deviceType, deviceList);
 }
-
-bool AddOn::Service::removeDevice(int dev_idx) { return AddOn::removeDevice(dev_idx); }
 
 int AddOn::Service::getInfo(int deviceid, camera_device_info_t *p_info)
 {

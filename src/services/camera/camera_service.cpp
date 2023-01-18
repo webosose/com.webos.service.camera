@@ -647,7 +647,7 @@ bool CameraService::getCameraList(LSMessage &message)
     {
         // get camera list here
         std::vector<int> idList;
-        err_id = CommandManager::getInstance().getDeviceList(idList);
+        err_id = CommandManager::getInstance().getDeviceList(idList, this->get());
 
         bool bsubscribed =
             event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAMERA_LIST, message);

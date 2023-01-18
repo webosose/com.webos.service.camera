@@ -22,15 +22,15 @@
  ----------------------------------------------------------------------------*/
 #include "appcast_client.h"
 #include "camera_types.h"
+#include "luna-service2/lunaservice.h"
 #include <map>
 #include <vector>
 
 typedef struct _DEVICE_STATUS
 {
     // Device
-    void *pcamhandle;  // HAL handle
-    bool isDeviceOpen; // open or close
-    std::string userData;
+    void *pcamhandle;     // HAL handle
+    bool isDeviceOpen;    // open or close
     DEVICE_LIST_T stList; // name, id, node ...
     std::vector<int> handleList;
     bool isDeviceInfoSaved;
@@ -43,6 +43,7 @@ private:
     std::map<int, DEVICE_STATUS> deviceMap_;
     int findDevNum(int);
     AppCastClient *appCastClient_{nullptr};
+    LSHandle *lshandle_{nullptr};
     bool isDeviceIdValid(int deviceid);
 
 public:
@@ -63,10 +64,11 @@ public:
     int getDeviceCounts(std::string);
     bool getDeviceUserData(int, std::string &);
 
-    int addDevice(DEVICE_LIST_T *pList, std::string = "");
+    int addDevice(const DEVICE_LIST_T &deviceInfo);
     bool removeDevice(int devid);
+    bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &);
 
-    DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
+    DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &, LSHandle *sh = nullptr);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
 
     void printCameraStatus();

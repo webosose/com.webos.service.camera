@@ -13,8 +13,11 @@ struct ICameraService
     virtual ~ICameraService() {}
     virtual int getDeviceList(std::vector<int> &idList) { return -1; }
     virtual int getDeviceCounts(std::string type) { return 0; }
-    virtual int addDevice(DEVICE_LIST_T *devList, std::string payload = "") { return 0; }
-    virtual bool removeDevice(int dev_idx) { return false; }
+    virtual bool updateDeviceList(std::string deviceType,
+                                  const std::vector<DEVICE_LIST_T> &deviceList)
+    {
+        return false;
+    }
     virtual int getInfo(int deviceid, camera_device_info_t *p_info) { return -1; }
     virtual void getSupportedSolutionList(std::vector<std::string> &supportedList,
                                           std::vector<std::string> &enabledList)
@@ -38,6 +41,8 @@ public:
 
     virtual void notifyDeviceAdded(int deviceid, const DEVICE_LIST_T &deviceInfo)             = 0;
     virtual void notifyDeviceRemoved(int deviceid)                                            = 0;
+    virtual void notifyDeviceListUpdated(std::string deviceType,
+                                         const std::vector<DEVICE_LIST_T> &deviceList)        = 0;
     virtual bool notifyDeviceOpened(int deviceid, std::string appId, std::string appPriority) = 0;
 
     virtual void notifySolutionEnabled(int deviceid, const std::vector<std::string> &solutions) = 0;

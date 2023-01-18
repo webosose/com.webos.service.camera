@@ -20,7 +20,6 @@
 #include "device_manager.h"
 #include "event_notification.h"
 #include "json_utils.h"
-#include "whitelist_checker.h"
 #include <glib.h>
 #include <list>
 #include <nlohmann/json.hpp>
@@ -89,9 +88,6 @@ void from_json(const json &j, VideoDevice &v)
     }
 }
 
-// TODO : Add to PDMClient member as std::vector<DEVICE_LIST_T>
-DEVICE_LIST_T dev_info_[MAX_DEVICE_COUNT];
-
 static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
     const char *payload = LSMessageGetPayload(message);
@@ -117,97 +113,33 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
         return false;
     }
 
-    unsigned int camcount = 0;
-    std::vector<std::string> newNodeList;
+    std::vector<DEVICE_LIST_T> devList;
     for (auto jDevice : jPayload["videoDeviceList"])
     {
         VideoDevice device = jDevice;
         for (auto subdevice : device.subDeviceList)
         {
-            dev_info_[camcount]               = device.devInfo;
-            dev_info_[camcount].strDeviceNode = subdevice->devPath;
-            dev_info_[camcount].strDeviceType = "v4l2";
+            DEVICE_LIST_T devInfo;
+            devInfo               = device.devInfo;
+            devInfo.strDeviceNode = subdevice->devPath;
+            devInfo.strDeviceType = "v4l2";
+            devInfo.strUserData   = "";
 
-            PMLOG_INFO(CONST_MODULE_PC, "Vendor ID,Name  : %s, %s",
-                       dev_info_[camcount].strVendorID.c_str(),
-                       dev_info_[camcount].strVendorName.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "Product ID,Name : %s, %s",
-                       dev_info_[camcount].strProductID.c_str(),
-                       dev_info_[camcount].strProductName.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "strDeviceKey    : %s",
-                       dev_info_[camcount].strDeviceKey.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "strDeviceNode   : %s",
-                       dev_info_[camcount].strDeviceNode.c_str());
+            PMLOG_INFO(CONST_MODULE_PC, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
+                       devInfo.strVendorName.c_str());
+            PMLOG_INFO(CONST_MODULE_PC, "Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
+                       devInfo.strProductName.c_str());
+            PMLOG_INFO(CONST_MODULE_PC, "strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
+            PMLOG_INFO(CONST_MODULE_PC, "strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
 
-            newNodeList.push_back(subdevice->devPath);
-            camcount++;
+            devList.push_back(devInfo);
         }
     }
 
-    DEVICE_EVENT_STATE_T nCamEvent = DEVICE_EVENT_NONE;
-    std::vector<int> idList;
-    DeviceManager::getInstance().getDeviceIdList(idList);
-    std::map<std::string, int> curNodeMap;
-
-    for (auto id : idList)
-    {
-        if (DeviceManager::getInstance().getDeviceType(id) == "v4l2")
-        {
-            std::string node;
-            DeviceManager::getInstance().getDeviceNode(id, node);
-            curNodeMap[node] = id;
-        }
-    }
-
-    PMLOG_INFO(CONST_MODULE_PC, "camcount %d, map.size %zd", camcount, curNodeMap.size());
-    if (camcount > (unsigned int)curNodeMap.size()) // add Device
-    {
-        nCamEvent = DEVICE_EVENT_STATE_PLUGGED;
-        for (unsigned int i = 0; i < camcount; i++)
-        {
-            if (curNodeMap.find(dev_info_[i].strDeviceNode) == curNodeMap.end())
-            {
-                DeviceManager::getInstance().addDevice(&dev_info_[i]);
-            }
-        }
-    }
-    else if (camcount < (unsigned int)curNodeMap.size()) // remove Device
-    {
-        nCamEvent = DEVICE_EVENT_STATE_UNPLUGGED;
-        for (auto it : curNodeMap)
-        {
-            auto node = find(newNodeList.begin(), newNodeList.end(), it.first);
-            if (node == newNodeList.end())
-            {
-                DeviceManager::getInstance().removeDevice(it.second);
-            }
-        }
-    }
-
-    if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED)
-    {
-        PMLOG_INFO(CONST_MODULE_PC, "PLUGGED CamEvent type: %d \n", nCamEvent);
-        EventNotification obj;
-        obj.eventReply(lsHandle, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_CONNECT);
-    }
-    else if (nCamEvent == DEVICE_EVENT_STATE_UNPLUGGED)
-    {
-        PMLOG_INFO(CONST_MODULE_PC, "UNPLUGGED CamEvent type: %d \n", nCamEvent);
-        EventNotification obj;
-        obj.eventReply(lsHandle, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_DISCONNECT);
-    }
-
-    if (false == AddOn::hasImplementation())
-    {
-        if (nCamEvent == DEVICE_EVENT_STATE_PLUGGED && camcount)
-        {
-            WhitelistChecker::check(dev_info_[camcount - 1].strProductName,
-                                    dev_info_[camcount - 1].strVendorName);
-        }
-    }
+    DeviceManager::getInstance().updateDeviceList("v4l2", devList);
 
     if (NULL != client->subscribeToDeviceInfoCb_)
-        client->subscribeToDeviceInfoCb_(dev_info_);
+        client->subscribeToDeviceInfoCb_(nullptr);
 
     return true;
 }
@@ -219,8 +151,9 @@ void PDMClient::subscribeToClient(handlercb cb, GMainLoop *loop)
 
     // register to PDM luna service with cb to be called
     subscribeToDeviceInfoCb_ = cb;
-    bool result              = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
-                                                        subscribeToPdmService, this, NULL, &lsregistererror);
+
+    bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
+                                           subscribeToPdmService, this, NULL, &lsregistererror);
     if (!result)
     {
         PMLOG_INFO(CONST_MODULE_PC, "LSRegister Server Status failed");
