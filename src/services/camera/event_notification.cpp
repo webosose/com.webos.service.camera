@@ -15,42 +15,44 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "event_notification.h"
-#include "camera_types.h"
+#include "camera_constants.h"
 #include "command_manager.h"
 #include "json_parser.h"
 
-bool EventNotification::addSubscription(LSHandle *lsHandle, const char *key, LSMessage &message)
+bool EventNotification::addSubscription(LSHandle *lsHandle, std::string key, LSMessage &message)
 {
     LSError error;
     LSErrorInit(&error);
-    int cnt = -1;
 
     if (LSMessageIsSubscription(&message))
     {
         PMLOG_INFO(CONST_MODULE_EN, "LSMessageIsSubscription success");
-        if (!LSSubscriptionAdd(lsHandle, key, &message, &error))
+        if (!LSSubscriptionAdd(lsHandle, key.c_str(), &message, &error))
         {
             PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionAdd failed");
             LSErrorPrint(&error, stderr);
             LSErrorFree(&error);
             return false;
         }
-        cnt = getSubscribeCount(lsHandle, key);
-        PMLOG_INFO(CONST_MODULE_EN, "cnt %d", cnt);
+        (void) getSubscribeCount(lsHandle, key);
         LSErrorFree(&error);
         return true;
+    }
+    else
+    {
+       (void) getSubscribeCount(lsHandle, key);
     }
 
     LSErrorFree(&error);
     return false;
 }
 
-void EventNotification::subscriptionReply(LSHandle *lsHandle, const char *key,
-                                          jvalue_ref output_reply)
+void EventNotification::subscriptionReply(LSHandle *lsHandle, std::string key,
+                                          std::string output_reply)
 {
     LSError error;
     LSErrorInit(&error);
-    if (!LSSubscriptionReply(lsHandle, key, jvalue_tostring_simple(output_reply), &error))
+    if (!LSSubscriptionReply(lsHandle, key.c_str(), output_reply.c_str(), &error))
     {
         PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionReply failed");
         LSErrorPrint(&error, stderr);
@@ -60,55 +62,49 @@ void EventNotification::subscriptionReply(LSHandle *lsHandle, const char *key,
     PMLOG_INFO(CONST_MODULE_EN, "end");
 }
 
-int EventNotification::getSubscribeCount(LSHandle *lsHandle, const char *key)
+int EventNotification::getSubscribeCount(LSHandle *lsHandle, std::string key)
 {
     int ret = -1;
-    ret     = LSSubscriptionGetHandleSubscribersCount(lsHandle, key);
+    ret     = LSSubscriptionGetHandleSubscribersCount(lsHandle, key.c_str());
+    PMLOG_INFO(CONST_MODULE_EN, "cnt:%d, key:%s", ret,  key.c_str());
     return ret;
 }
 
-bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data, void *p_old_data,
-                                      EventType etype)
+bool EventNotification::getJsonString(json &json_outobj, std::string key, EventType etype, void *p_cur_data, void *p_old_data)
 {
     // event type
     std::string event = getEventNotificationString(etype);
-    bool resultVal    = true;
+    bool result_val    = true;
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EVENT), jstring_create(event.c_str()));
+    json_outobj[CONST_PARAM_NAME_EVENT] = event;
+    json_outobj[CONST_PARAM_NAME_SUBSCRIBED] = true;
 
     switch (etype)
     {
     case EventType::EVENT_TYPE_FORMAT:
     {
+        // camera id
+        json_outobj[CONST_PARAM_NAME_ID] = getCameraIdFromKey(key);
+
         if (p_cur_data != nullptr && p_old_data != nullptr)
         {
-            jvalue_ref json_outobjparams = jobject_create();
+            json json_outobjparams;
             CAMERA_FORMAT *cur_format    = static_cast<CAMERA_FORMAT *>(p_cur_data);
             CAMERA_FORMAT *old_format    = static_cast<CAMERA_FORMAT *>(p_old_data);
 
-            if (old_format->nWidth != cur_format->nWidth)
-                jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
-                            jnumber_create_i32(cur_format->nWidth));
-            if (old_format->nHeight != cur_format->nHeight)
-                jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
-                            jnumber_create_i32(cur_format->nHeight));
-            if (old_format->nFps != cur_format->nFps)
-                jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
-                            jnumber_create_i32(cur_format->nFps));
-
-            if (old_format->eFormat != cur_format->eFormat)
+            if (old_format != cur_format)
             {
-                std::string strformat = getFormatStringFromCode(cur_format->eFormat);
-                jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
-                            jstring_create(strformat.c_str()));
+                json_outobjparams[CONST_PARAM_NAME_WIDTH]  = cur_format->nWidth;
+                json_outobjparams[CONST_PARAM_NAME_HEIGHT] = cur_format->nHeight;
+                json_outobjparams[CONST_PARAM_NAME_FPS]    = cur_format->nFps;
+                json_outobjparams[CONST_PARAM_NAME_FORMAT] = getFormatStringFromCode(cur_format->eFormat);
+                json_outobj[CONST_PARAM_NAME_PARAMS] = json_outobjparams;
             }
-            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMATINFO),
-                        json_outobjparams);
         }
         else
         {
             PMLOG_INFO(CONST_MODULE_EN, "event: %d pdata is null", (int)etype);
-            resultVal = false;
+            result_val = false;
         }
         break;
     }
@@ -116,23 +112,38 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
     case EventType::EVENT_TYPE_PROPERTIES:
     {
         // camera id
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ID),
-                    jstring_create(strcamid_.c_str()));
+        json_outobj[CONST_PARAM_NAME_ID] = getCameraIdFromKey(key);
+
         if (p_cur_data != nullptr && p_old_data != nullptr)
         {
-            jvalue_ref json_outobjparams        = jobject_create();
+            json json_outobjparams;
             CAMERA_PROPERTIES_T *cur_properties = static_cast<CAMERA_PROPERTIES_T *>(p_cur_data);
             CAMERA_PROPERTIES_T *old_properties = static_cast<CAMERA_PROPERTIES_T *>(p_old_data);
 
-            createGetPropertiesJsonString(cur_properties, old_properties, json_outobjparams);
-            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PROPERTIESINFO),
-                        json_outobjparams);
+            if(cur_properties != old_properties)
+            {
+                auto json_propertyobj = json::object();
+                for (int i = 0; i < PROPERTY_END; i++)
+                {
+                    if (cur_properties->stGetData.data[i][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE)
+                    {
+                        json_propertyobj[CONST_PARAM_NAME_MIN] = cur_properties->stGetData.data[i][QUERY_MIN];
+                        json_propertyobj[CONST_PARAM_NAME_MAX] = cur_properties->stGetData.data[i][QUERY_MAX];
+                        json_propertyobj[CONST_PARAM_NAME_STEP] = cur_properties->stGetData.data[i][QUERY_STEP];
+                        json_propertyobj[CONST_PARAM_NAME_DEFAULT_VALUE] = cur_properties->stGetData.data[i][QUERY_DEFAULT];
+                        json_propertyobj[CONST_PARAM_NAME_VALUE] = cur_properties->stGetData.data[i][QUERY_VALUE];
+                        json_outobjparams[getParamString(i)] = json_propertyobj;
+                    }
+                }
+                json_outobj[CONST_PARAM_NAME_PARAMS] = json_outobjparams;
+            }
         }
         else
         {
             PMLOG_INFO(CONST_MODULE_EN, "event: %d pdata is null", (int)etype);
-            resultVal = false;
+            result_val = false;
         }
+
         break;
     }
 
@@ -143,75 +154,77 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
         if (DEVICE_OK != CommandManager::getInstance().getDeviceList(idList))
         {
             PMLOG_INFO(CONST_MODULE_EN, "getDeviceList returns not OK");
-            resultVal = false;
+            result_val = false;
             break;
         }
 
-        jvalue_ref deviceListArr = jarray_create(NULL);
+        auto deviceListArr = json::array();
+        auto deviceListObj = json::object();
 
-        for (unsigned int i = 0; i < idList.size(); i++)
+        for (const auto &it : idList)
         {
-            jvalue_ref deviceListObj          = jobject_create();
-            char buf[CONST_MAX_STRING_LENGTH] = {
-                0,
-            };
-            snprintf(buf, CONST_MAX_STRING_LENGTH, "%s%d", CONST_DEVICE_NAME_CAMERA, idList[i]);
-            jobject_put(deviceListObj, J_CSTR_TO_JVAL("id"), jstring_create(buf));
-            jarray_append(deviceListArr, deviceListObj);
+            deviceListObj["id"] =  CONST_DEVICE_NAME_CAMERA + std::to_string(it);
+            deviceListArr.push_back(deviceListObj);
         }
-
-        jobject_put(json_outobj, J_CSTR_TO_JVAL("deviceList"), deviceListArr);
+        json_outobj["deviceList"] = deviceListArr;
 
         break;
     }
 
     default:
     {
-        resultVal = false;
+        result_val = false;
         break;
     }
     }
 
-    return resultVal;
+    return result_val;
 }
 
-void EventNotification::eventReply(LSHandle *lsHandle, const char *key, void *p_cur_data,
-                                   void *p_old_data, EventType etype)
+void EventNotification::eventReply(LSHandle *lsHandle, std::string key, EventType etype, void *p_cur_data,
+                                   void *p_old_data)
 {
-    jvalue_ref json_outobj = jobject_create();
-    std::string strreply;
+    if (getSubscribeCount(lsHandle, key) > 0)
+    {
+        json json_outobj;
+        std::string str_reply;
 
-    PMLOG_INFO(CONST_MODULE_EN, "getSubscribeCount: %d\n", getSubscribeCount(lsHandle, key));
+        json_outobj[CONST_PARAM_NAME_RETURNVALUE] = getJsonString(json_outobj, key, etype, p_cur_data, p_old_data);
+        str_reply = json_outobj.dump();
 
-    bool rerunVal = getJsonString(json_outobj, p_cur_data, p_old_data, etype);
-
-    // return value
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
-                jboolean_create(rerunVal));
-
-    subscriptionReply(lsHandle, key, json_outobj);
-
-    const char *jvalue = jvalue_stringify(json_outobj);
-    if (jvalue)
-        strreply = jvalue;
-    PMLOG_INFO(CONST_MODULE_EN, "strreply %s", strreply.c_str());
-    j_release(&json_outobj);
+        subscriptionReply(lsHandle, key, str_reply);
+        PMLOG_INFO(CONST_MODULE_EN, "str_reply %s", str_reply.c_str());
+    }
 }
 
-std::string EventNotification::subscriptionJsonString(bool issubscribed)
+std::string EventNotification::subscriptionJsonString(bool result)
 {
-    jvalue_ref json_outobj = jobject_create();
-    std::string strreply;
+    json json_outobj;
+    std::string str_reply;
 
-    // return value
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
-                jboolean_create(issubscribed));
+    json_outobj[CONST_PARAM_NAME_SUBSCRIBED] = result;
+    json_outobj[CONST_PARAM_NAME_RETURNVALUE] = true;
+    str_reply = json_outobj.dump();
 
-    const char *jvalue = jvalue_stringify(json_outobj);
-    if (jvalue)
-        strreply = jvalue;
-    PMLOG_INFO(CONST_MODULE_EN, "strreply %s", strreply.c_str());
-    j_release(&json_outobj);
+    PMLOG_INFO(CONST_MODULE_EN, "str_reply %s", str_reply.c_str());
 
-    return strreply;
+    return str_reply;
+}
+
+std::string EventNotification::getEventKeyWithId(int dev_handle, std::string key)
+{
+    std::string str_reply;
+    int deviceid         = CommandManager::getInstance().getCameraId(dev_handle);
+    std::string cameraid = "_camera";
+    cameraid += std::to_string(deviceid);
+    str_reply = key + cameraid;
+    return str_reply;
+}
+
+std::string EventNotification::getCameraIdFromKey(std::string key)
+{
+    std::string str_reply;
+    int split_pos = key.find("_");
+    str_reply = key.substr(split_pos + 1);
+    return str_reply;
 }

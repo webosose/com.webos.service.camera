@@ -54,6 +54,7 @@ int V4l2CameraPlugin::openDevice(string devname, string payload)
     }
     createFourCCPixelFormatMap();
     createCameraPixelFormatMap();
+    createCameraParamMap();
 
     return fd_;
 }
@@ -415,71 +416,14 @@ int V4l2CameraPlugin::setProperties(const camera_properties_t *cam_in_params)
 
     std::map<int, int> gIdWithPropertyValue;
 
-    gIdWithPropertyValue[PROPERTY_BRIGHTNESS]            = cam_in_params->nBrightness;
-    gIdWithPropertyValue[PROPERTY_CONTRAST]              = cam_in_params->nContrast;
-    gIdWithPropertyValue[PROPERTY_SATURATION]            = cam_in_params->nSaturation;
-    gIdWithPropertyValue[PROPERTY_HUE]                   = cam_in_params->nHue;
-    gIdWithPropertyValue[PROPERTY_GAMMA]                 = cam_in_params->nGamma;
-    gIdWithPropertyValue[PROPERTY_GAIN]                  = cam_in_params->nGain;
-    gIdWithPropertyValue[PROPERTY_FREQUENCY]             = cam_in_params->nFrequency;
-    gIdWithPropertyValue[PROPERTY_AUTOWHITEBALANCE]      = cam_in_params->nAutoWhiteBalance;
-    gIdWithPropertyValue[PROPERTY_SHARPNESS]             = cam_in_params->nSharpness;
-    gIdWithPropertyValue[PROPERTY_BACKLIGHTCOMPENSATION] = cam_in_params->nBacklightCompensation;
-    gIdWithPropertyValue[PROPERTY_AUTOEXPOSURE]          = cam_in_params->nAutoExposure;
-    gIdWithPropertyValue[PROPERTY_PAN]                   = cam_in_params->nPan;
-    gIdWithPropertyValue[PROPERTY_TILT]                  = cam_in_params->nTilt;
-    gIdWithPropertyValue[PROPERTY_AUTOFOCUS]             = cam_in_params->nAutoFocus;
-    gIdWithPropertyValue[PROPERTY_ZOOMABSOLUTE]          = cam_in_params->nZoomAbsolute;
-    gIdWithPropertyValue[PROPERTY_WHITEBALANCETEMPERATURE] =
-        cam_in_params->nWhiteBalanceTemperature;
-    gIdWithPropertyValue[PROPERTY_EXPOSURE]      = cam_in_params->nExposure;
-    gIdWithPropertyValue[PROPERTY_FOCUSABSOLUTE] = cam_in_params->nFocusAbsolute;
+    for (int i = 0; i < PROPERTY_END; i++)
+    {
+        gIdWithPropertyValue[i] = cam_in_params->stGetData.data[i][QUERY_VALUE];
+    }
 
     retVal = setV4l2Property(gIdWithPropertyValue);
 
     return retVal;
-}
-
-int V4l2CameraPlugin::findQueryId(int value)
-{
-    if (value == PROPERTY_BRIGHTNESS)
-        return V4L2_CID_BRIGHTNESS;
-    else if (value == PROPERTY_CONTRAST)
-        return V4L2_CID_CONTRAST;
-    else if (value == PROPERTY_SATURATION)
-        return V4L2_CID_SATURATION;
-    else if (value == PROPERTY_HUE)
-        return V4L2_CID_HUE;
-    else if (value == PROPERTY_AUTOWHITEBALANCE)
-        return V4L2_CID_AUTO_WHITE_BALANCE;
-    else if (value == PROPERTY_GAMMA)
-        return V4L2_CID_GAMMA;
-    else if (value == PROPERTY_GAIN)
-        return V4L2_CID_GAIN;
-    else if (value == PROPERTY_FREQUENCY)
-        return V4L2_CID_POWER_LINE_FREQUENCY;
-    else if (value == PROPERTY_WHITEBALANCETEMPERATURE)
-        return V4L2_CID_WHITE_BALANCE_TEMPERATURE;
-    else if (value == PROPERTY_SHARPNESS)
-        return V4L2_CID_SHARPNESS;
-    else if (value == PROPERTY_BACKLIGHTCOMPENSATION)
-        return V4L2_CID_BACKLIGHT_COMPENSATION;
-    else if (value == PROPERTY_AUTOEXPOSURE)
-        return V4L2_CID_EXPOSURE_AUTO;
-    else if (value == PROPERTY_EXPOSURE)
-        return V4L2_CID_EXPOSURE_ABSOLUTE;
-    else if (value == PROPERTY_PAN)
-        return V4L2_CID_PAN_ABSOLUTE;
-    else if (value == PROPERTY_TILT)
-        return V4L2_CID_TILT_ABSOLUTE;
-    else if (value == PROPERTY_FOCUSABSOLUTE)
-        return V4L2_CID_FOCUS_ABSOLUTE;
-    else if (value == PROPERTY_AUTOFOCUS)
-        return V4L2_CID_FOCUS_AUTO;
-    else if (value == PROPERTY_ZOOMABSOLUTE)
-        return V4L2_CID_ZOOM_ABSOLUTE;
-    else
-        return -1;
 }
 
 int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
@@ -487,134 +431,11 @@ int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
     struct v4l2_queryctrl queryctrl;
     int ret = CAMERA_ERROR_UNKNOWN;
 
-    queryctrl.id = V4L2_CID_BRIGHTNESS;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nBrightness,
-                                             cam_out_params->stGetData.data[PROPERTY_BRIGHTNESS]))
+    for (int i = 0; i < PROPERTY_END; i++)
     {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_CONTRAST;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nContrast,
-                                             cam_out_params->stGetData.data[PROPERTY_CONTRAST]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_SATURATION;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nSaturation,
-                                             cam_out_params->stGetData.data[PROPERTY_SATURATION]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_HUE;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nHue,
-                                             cam_out_params->stGetData.data[PROPERTY_HUE]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_AUTO_WHITE_BALANCE;
-    if (CAMERA_ERROR_NONE ==
-        getV4l2Property(queryctrl, &cam_out_params->nAutoWhiteBalance,
-                        cam_out_params->stGetData.data[PROPERTY_AUTOWHITEBALANCE]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_GAMMA;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nGamma,
-                                             cam_out_params->stGetData.data[PROPERTY_GAMMA]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_GAIN;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nGain,
-                                             cam_out_params->stGetData.data[PROPERTY_GAIN]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_POWER_LINE_FREQUENCY;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nFrequency,
-                                             cam_out_params->stGetData.data[PROPERTY_FREQUENCY]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_WHITE_BALANCE_TEMPERATURE;
-    if (CAMERA_ERROR_NONE ==
-        getV4l2Property(queryctrl, &cam_out_params->nWhiteBalanceTemperature,
-                        cam_out_params->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_SHARPNESS;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nSharpness,
-                                             cam_out_params->stGetData.data[PROPERTY_SHARPNESS]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_BACKLIGHT_COMPENSATION;
-    if (CAMERA_ERROR_NONE ==
-        getV4l2Property(queryctrl, &cam_out_params->nBacklightCompensation,
-                        cam_out_params->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_EXPOSURE_AUTO;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nAutoExposure,
-                                             cam_out_params->stGetData.data[PROPERTY_AUTOEXPOSURE]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_EXPOSURE_ABSOLUTE;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nExposure,
-                                             cam_out_params->stGetData.data[PROPERTY_EXPOSURE]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_PAN_ABSOLUTE;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nPan,
-                                             cam_out_params->stGetData.data[PROPERTY_PAN]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_TILT_ABSOLUTE;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nTilt,
-                                             cam_out_params->stGetData.data[PROPERTY_TILT]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_FOCUS_ABSOLUTE;
-    if (CAMERA_ERROR_NONE ==
-        getV4l2Property(queryctrl, &cam_out_params->nFocusAbsolute,
-                        cam_out_params->stGetData.data[PROPERTY_FOCUSABSOLUTE]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_FOCUS_AUTO;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nAutoFocus,
-                                             cam_out_params->stGetData.data[PROPERTY_AUTOFOCUS]))
-    {
-        ret = CAMERA_ERROR_NONE;
-    }
-
-    queryctrl.id = V4L2_CID_ZOOM_ABSOLUTE;
-    if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, &cam_out_params->nZoomAbsolute,
-                                             cam_out_params->stGetData.data[PROPERTY_ZOOMABSOLUTE]))
-    {
-        ret = CAMERA_ERROR_NONE;
+        queryctrl.id = camera_param_map_[i];
+        if (CAMERA_ERROR_NONE == getV4l2Property(queryctrl, cam_out_params->stGetData.data[i]))
+            ret = CAMERA_ERROR_NONE;
     }
 
     getResolutionProperty(cam_out_params);
@@ -722,7 +543,7 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
     {
         if (CONST_PARAM_DEFAULT_VALUE != it.second)
         {
-            queryctrl.id = findQueryId((int)it.first);
+            queryctrl.id = camera_param_map_[it.first];
             if (xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl) != CAMERA_ERROR_NONE)
             {
                 HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_QUERYCTRL[%d] failed %d, %s",
@@ -766,7 +587,7 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
     return CAMERA_ERROR_NONE;
 }
 
-int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *value, int *getData)
+int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *getData)
 {
     if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl))
     {
@@ -789,8 +610,6 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *valu
         return CAMERA_ERROR_UNKNOWN;
     }
 
-    *value = control.value;
-
     HAL_LOG_INFO(CONST_MODULE_HAL, "name=%s min=%d max=%d step=%d default=%d value=%d",
                  queryctrl.name, queryctrl.minimum, queryctrl.maximum, queryctrl.step,
                  queryctrl.default_value, control.value);
@@ -799,6 +618,7 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *valu
     getData[1] = queryctrl.maximum;
     getData[2] = queryctrl.step;
     getData[3] = queryctrl.default_value;
+    getData[4] = control.value;
 
     return CAMERA_ERROR_NONE;
 }
@@ -1204,6 +1024,28 @@ void V4l2CameraPlugin::createCameraPixelFormatMap()
     camera_format_.insert(std::make_pair(V4L2_PIX_FMT_ARGB32, CAMERA_PIXEL_FORMAT_ARGB8888));
     camera_format_.insert(std::make_pair(V4L2_PIX_FMT_MJPEG, CAMERA_PIXEL_FORMAT_JPEG));
     camera_format_.insert(std::make_pair(V4L2_PIX_FMT_H264, CAMERA_PIXEL_FORMAT_H264));
+}
+
+void V4l2CameraPlugin::createCameraParamMap()
+{
+    camera_param_map_.insert(std::make_pair(PROPERTY_BRIGHTNESS, V4L2_CID_BRIGHTNESS));
+    camera_param_map_.insert(std::make_pair(PROPERTY_CONTRAST, V4L2_CID_CONTRAST));
+    camera_param_map_.insert(std::make_pair(PROPERTY_SATURATION, V4L2_CID_SATURATION));
+    camera_param_map_.insert(std::make_pair(PROPERTY_HUE, V4L2_CID_HUE));
+    camera_param_map_.insert(std::make_pair(PROPERTY_AUTOWHITEBALANCE, V4L2_CID_AUTO_WHITE_BALANCE));
+    camera_param_map_.insert(std::make_pair(PROPERTY_GAMMA, V4L2_CID_GAMMA));
+    camera_param_map_.insert(std::make_pair(PROPERTY_GAIN, V4L2_CID_GAIN));
+    camera_param_map_.insert(std::make_pair(PROPERTY_FREQUENCY, V4L2_CID_POWER_LINE_FREQUENCY));
+    camera_param_map_.insert(std::make_pair(PROPERTY_SHARPNESS, V4L2_CID_SHARPNESS));
+    camera_param_map_.insert(std::make_pair(PROPERTY_BACKLIGHTCOMPENSATION, V4L2_CID_BACKLIGHT_COMPENSATION));
+    camera_param_map_.insert(std::make_pair(PROPERTY_AUTOEXPOSURE, V4L2_CID_EXPOSURE_AUTO));
+    camera_param_map_.insert(std::make_pair(PROPERTY_PAN, V4L2_CID_PAN_ABSOLUTE));
+    camera_param_map_.insert(std::make_pair(PROPERTY_TILT, V4L2_CID_TILT_ABSOLUTE));
+    camera_param_map_.insert(std::make_pair(PROPERTY_AUTOFOCUS, V4L2_CID_FOCUS_AUTO));
+    camera_param_map_.insert(std::make_pair(PROPERTY_ZOOMABSOLUTE, V4L2_CID_ZOOM_ABSOLUTE));
+    camera_param_map_.insert(std::make_pair(PROPERTY_WHITEBALANCETEMPERATURE, V4L2_CID_WHITE_BALANCE_TEMPERATURE));
+    camera_param_map_.insert(std::make_pair(PROPERTY_EXPOSURE, V4L2_CID_EXPOSURE_ABSOLUTE));
+    camera_param_map_.insert(std::make_pair(PROPERTY_FOCUSABSOLUTE, V4L2_CID_FOCUS_ABSOLUTE));
 }
 
 unsigned long V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camera_format)

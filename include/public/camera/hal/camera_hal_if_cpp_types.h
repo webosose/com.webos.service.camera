@@ -34,26 +34,8 @@ struct camera_resolution_t
 
 struct camera_properties_t
 {
-    int nBrightness;
-    int nContrast;
-    int nSaturation;
-    int nHue;
-    int nAutoWhiteBalance;
-    int nGamma;
-    int nGain;
-    int nFrequency;
-    int nWhiteBalanceTemperature;
-    int nSharpness;
-    int nBacklightCompensation;
-    int nAutoExposure;
-    int nExposure;
-    int nPan;
-    int nTilt;
-    int nFocusAbsolute;
-    int nAutoFocus;
-    int nZoomAbsolute;
     camera_queryctrl_t stGetData;
-    std::vector<camera_resolution_t> stResolution;
+    std::vector<camera_resolution_t> stResolution; //To do remove
 };
 
 struct camera_device_info_t

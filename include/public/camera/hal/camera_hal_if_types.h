@@ -149,6 +149,7 @@ typedef enum
     QUERY_MAX,
     QUERY_STEP,
     QUERY_DEFAULT,
+    QUERY_VALUE,
     QUERY_END
 } query_ctrl_t;
 

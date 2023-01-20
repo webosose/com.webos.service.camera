@@ -18,25 +18,25 @@
 
 #include "camera_types.h"
 #include <pbnjson.hpp>
+#include <nlohmann/json.hpp>
+
+using namespace nlohmann;
 
 class EventNotification
 {
 public:
-    EventNotification() { strcamid_ = ""; }
-
+    EventNotification() {};
     ~EventNotification() {}
 
-    bool addSubscription(LSHandle *lsHandle, const char *key, LSMessage &message);
-    void eventReply(LSHandle *lsHandle, const char *key, void *p_cur_data, void *p_old_data,
-                    EventType etype);
+    bool addSubscription(LSHandle *lsHandle, std::string key, LSMessage &message);
+    void eventReply(LSHandle *lsHandle, std::string key, EventType etype, void *p_cur_data = nullptr, void *p_old_data = nullptr);
     std::string subscriptionJsonString(bool issubscribed);
-    void setCameraId(const std::string &camid) { strcamid_ = camid; }
-    std::string getCameraId() { return strcamid_; }
+    std::string getEventKeyWithId(int dev_handle, std::string key);
+    int getSubscribeCount(LSHandle *lsHandle, std::string key);
+
 
 private:
-    std::string strcamid_;
-    bool getJsonString(jvalue_ref &json_outobj, void *p_cur_data, void *p_old_data,
-                       EventType etype);
-    int getSubscribeCount(LSHandle *lsHandle, const char *key);
-    void subscriptionReply(LSHandle *lsHandle, const char *key, jvalue_ref output_reply);
+    bool getJsonString(json &json_outobj, std::string key, EventType etype, void *p_cur_data, void *p_old_data);
+    void subscriptionReply(LSHandle *lsHandle, std::string key, std::string output_reply);
+    std::string getCameraIdFromKey(std::string key);
 };

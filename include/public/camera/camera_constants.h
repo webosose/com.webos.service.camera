@@ -116,7 +116,10 @@
 #define CONST_PARAM_NAME_RESOLUTION "resolution"
 #define CONST_PARAM_NAME_FORMATINFO "formatInfo"
 #define CONST_PARAM_NAME_PROPERTIESINFO "propertiesInfo"
-#define CONST_EVENT_NOTIFICATION "getEventNotification"
+#define CONST_EVENT_KEY_DEVICE_FAULT "EventDeviceFault"
+#define CONST_EVENT_KEY_CAMERA_LIST "EventCameraList"
+#define CONST_EVENT_KEY_FORMAT "EventFormat"
+#define CONST_EVENT_KEY_PROPERTIES "EventProperties"
 #define CONST_PARAM_NAME_FPS "fps"
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
@@ -130,6 +133,7 @@
 #define CONST_PARAM_NAME_VALUE "value"
 #define CONST_PARAM_NAME_NOTSUPPORT "not support"
 #define CONST_PARAM_NAME_SOLUTION "solutions"
+#define CONST_PARAM_NAME_SUBSCRIBED "subscribed"
 
 const int n_invalid_id  = -1;
 const int frame_count   = 8;

@@ -53,7 +53,7 @@ private:
 class GetCameraListMethod
 {
 public:
-    GetCameraListMethod() { n_camcount_ = 0; }
+    GetCameraListMethod() { n_camcount_ = 0; b_issubscribed_ = false; }
     ~GetCameraListMethod() {}
 
     void setCameraList(const std::string &str_id, unsigned int count) { str_list_[count] = str_id; }
@@ -72,11 +72,13 @@ public:
 
     static bool getCameraListObject(const char *, const char *);
     std::string createCameraListObjectJsonString() const;
+    void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
 
 private:
     std::string str_list_[CONST_MAX_DEVICE_COUNT];
     MethodReply objreply_;
     int n_camcount_;
+    bool b_issubscribed_;
 };
 
 class OpenMethod
@@ -302,30 +304,12 @@ public:
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
+    void setCameraId(const std::string &devid) { str_devid_ = devid; }
+    std::string getCameraId() const { return str_devid_; }
 
     void setCameraProperties(const CAMERA_PROPERTIES_T &rin_info)
     {
-        ro_camproperties_.nAutoWhiteBalance        = rin_info.nAutoWhiteBalance;
-        ro_camproperties_.nBrightness              = rin_info.nBrightness;
-        ro_camproperties_.nContrast                = rin_info.nContrast;
-        ro_camproperties_.nSaturation              = rin_info.nSaturation;
-        ro_camproperties_.nHue                     = rin_info.nHue;
-        ro_camproperties_.nGamma                   = rin_info.nGamma;
-        ro_camproperties_.nGain                    = rin_info.nGain;
-        ro_camproperties_.nFrequency               = rin_info.nFrequency;
-        ro_camproperties_.nWhiteBalanceTemperature = rin_info.nWhiteBalanceTemperature;
-        ro_camproperties_.nSharpness               = rin_info.nSharpness;
-        ro_camproperties_.nBacklightCompensation   = rin_info.nBacklightCompensation;
-        ro_camproperties_.nAutoExposure            = rin_info.nAutoExposure;
-        ro_camproperties_.nExposure                = rin_info.nExposure;
-        ro_camproperties_.nPan                     = rin_info.nPan;
-        ro_camproperties_.nTilt                    = rin_info.nTilt;
-        ro_camproperties_.nFocusAbsolute           = rin_info.nFocusAbsolute;
-        ro_camproperties_.nAutoFocus               = rin_info.nAutoFocus;
-        ro_camproperties_.nZoomAbsolute            = rin_info.nZoomAbsolute;
-
         // update query data
-
         for (int i = 0; i < PROPERTY_END; i++)
         {
             for (int j = 0; j < QUERY_END; j++)
@@ -335,6 +319,7 @@ public:
         }
 
         // update resolution structure
+        //Todo remove S
         for (auto const &v : rin_info.stResolution)
         {
             std::vector<std::string> c_res;
@@ -342,6 +327,7 @@ public:
             c_res.assign(v.c_res.begin(), v.c_res.end());
             ro_camproperties_.stResolution.emplace_back(c_res, v.e_format);
         }
+        //Todo remove E
     }
     CAMERA_PROPERTIES_T rGetCameraProperties() const { return ro_camproperties_; }
 
@@ -361,11 +347,14 @@ public:
     void getSetPropertiesObject(const char *, const char *);
     std::string createGetPropertiesObjectJsonString() const;
     std::string createSetPropertiesObjectJsonString() const;
+    void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
 
 private:
     int n_devicehandle_;
     CAMERA_PROPERTIES_T ro_camproperties_;
     std::vector<std::string> str_params_;
+    std::string str_devid_;
+    bool b_issubscribed_;
     MethodReply objreply_;
 };
 
@@ -505,6 +494,7 @@ public:
 
     void setCameraId(const std::string &devid) { str_devid_ = devid; }
     std::string getCameraId() const { return str_devid_; }
+    void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
 
     void setCameraFormat(CAMERA_FORMAT rin_params)
     {
@@ -529,14 +519,10 @@ public:
 private:
     std::string str_devid_;
     CAMERA_FORMAT ro_params_;
+    bool b_issubscribed_;
     MethodReply objreply_;
 };
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);
-void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, CAMERA_PROPERTIES_T *, jvalue_ref &);
-void mappingPropertieswithConstValues(std::map<std::string, int> &, CAMERA_PROPERTIES_T *);
-void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
-                                              jvalue_ref &);
-void createGetPropertiesOutputJsonString(const std::string, CAMERA_PROPERTIES_T *, jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/

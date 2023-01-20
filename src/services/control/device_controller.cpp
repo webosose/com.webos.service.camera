@@ -868,49 +868,15 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
 
     camera_properties_t out_params;
 
-    out_params.nPan                     = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nTilt                    = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nContrast                = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nBrightness              = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nSaturation              = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nSharpness               = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nHue                     = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nGain                    = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nGamma                   = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nFrequency               = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nAutoWhiteBalance        = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nBacklightCompensation   = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nExposure                = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nWhiteBalanceTemperature = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nAutoExposure            = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nZoomAbsolute            = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nFocusAbsolute           = CONST_PARAM_DEFAULT_VALUE;
-    out_params.nAutoFocus               = CONST_PARAM_DEFAULT_VALUE;
+    for (int i = 0; i < PROPERTY_END; i++)
+    {
+        out_params.stGetData.data[i][QUERY_VALUE] = CONST_PARAM_DEFAULT_VALUE;
+    }
 
     if (CAMERA_ERROR_NONE != camera_hal_if_get_properties(handle, &out_params))
     {
         return DEVICE_ERROR_UNKNOWN;
     }
-
-    oparams->nPan                     = out_params.nPan;
-    oparams->nTilt                    = out_params.nTilt;
-    oparams->nContrast                = out_params.nContrast;
-    oparams->nBrightness              = out_params.nBrightness;
-    oparams->nSaturation              = out_params.nSaturation;
-    oparams->nSharpness               = out_params.nSharpness;
-    oparams->nHue                     = out_params.nHue;
-    oparams->nGain                    = out_params.nGain;
-    oparams->nGamma                   = out_params.nGamma;
-    oparams->nFrequency               = out_params.nFrequency;
-    oparams->nAutoWhiteBalance        = out_params.nAutoWhiteBalance;
-    oparams->nBacklightCompensation   = out_params.nBacklightCompensation;
-    oparams->nExposure                = out_params.nExposure;
-    oparams->nWhiteBalanceTemperature = out_params.nWhiteBalanceTemperature;
-
-    oparams->nAutoExposure  = out_params.nAutoExposure;
-    oparams->nZoomAbsolute  = out_params.nZoomAbsolute;
-    oparams->nFocusAbsolute = out_params.nFocusAbsolute;
-    oparams->nAutoFocus     = out_params.nAutoFocus;
 
     // update stGetData
     for (int i = 0; i < PROPERTY_END; i++)
@@ -939,24 +905,11 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
     PMLOG_INFO(CONST_MODULE_DC, "started!\n");
 
     camera_properties_t in_params;
-    in_params.nFocusAbsolute           = inparams->nFocusAbsolute;
-    in_params.nAutoFocus               = inparams->nAutoFocus;
-    in_params.nZoomAbsolute            = inparams->nZoomAbsolute;
-    in_params.nPan                     = inparams->nPan;
-    in_params.nTilt                    = inparams->nTilt;
-    in_params.nContrast                = inparams->nContrast;
-    in_params.nBrightness              = inparams->nBrightness;
-    in_params.nSaturation              = inparams->nSaturation;
-    in_params.nSharpness               = inparams->nSharpness;
-    in_params.nHue                     = inparams->nHue;
-    in_params.nAutoExposure            = inparams->nAutoExposure;
-    in_params.nAutoWhiteBalance        = inparams->nAutoWhiteBalance;
-    in_params.nExposure                = inparams->nExposure;
-    in_params.nWhiteBalanceTemperature = inparams->nWhiteBalanceTemperature;
-    in_params.nGain                    = inparams->nGain;
-    in_params.nGamma                   = inparams->nGamma;
-    in_params.nFrequency               = inparams->nFrequency;
-    in_params.nBacklightCompensation   = inparams->nBacklightCompensation;
+
+    for (int i = 0; i < PROPERTY_END; i++)
+    {
+        in_params.stGetData.data[i][QUERY_VALUE] = inparams->stGetData.data[i][QUERY_VALUE];
+    }
 
     camera_hal_if_set_properties(handle, &in_params);
 

@@ -16,6 +16,7 @@
 
 #include "camera_hal_if.h"
 #include "camera_hal_if_cpp_types.h"
+#include "camera_hal_if_types.h"
 #include "camera_hal_types.h"
 #include <poll.h>
 #include <pthread.h>
@@ -45,27 +46,27 @@ void PrintStreamFormat(stream_format_t streamformat)
 void PrintCameraProperties(const camera_properties_t &params)
 {
     HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_PROPERTIES_T : \n");
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    brightness : %d\n", params.nBrightness);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    contrast : %d\n", params.nContrast);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    saturation : %d\n", params.nSaturation);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    hue : %d\n", params.nHue);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    brightness : %d\n", params.stGetData.data[PROPERTY_BRIGHTNESS][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    contrast : %d\n", params.stGetData.data[PROPERTY_CONTRAST][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    saturation : %d\n", params.stGetData.data[PROPERTY_SATURATION][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    hue : %d\n", params.stGetData.data[PROPERTY_HUE][QUERY_VALUE]);
     HAL_LOG_INFO(CONST_MODULE_HAL, "    auto white balance temp : : %d\n",
-                 params.nAutoWhiteBalance);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    gamma : %d\n", params.nGamma);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    gain : %d\n", params.nGain);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.nFrequency);
+                 params.stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    gamma : %d\n", params.stGetData.data[PROPERTY_GAMMA][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    gain : %d\n", params.stGetData.data[PROPERTY_GAIN][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    frequency : %d\n", params.stGetData.data[PROPERTY_FREQUENCY][QUERY_VALUE]);
     HAL_LOG_INFO(CONST_MODULE_HAL, "    white balance temp : %d\n",
-                 params.nWhiteBalanceTemperature);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    sharpness : %d\n", params.nSharpness);
+                 params.stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    sharpness : %d\n", params.stGetData.data[PROPERTY_SHARPNESS][QUERY_VALUE]);
     HAL_LOG_INFO(CONST_MODULE_HAL, "    backlight compensation : %d\n",
-                 params.nBacklightCompensation);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    auto exposure : %d\n", params.nAutoExposure);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    exposure : %d\n", params.nExposure);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    pan : %d\n", params.nPan);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    tilt : %d\n", params.nTilt);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    Absolute focus : %d\n", params.nFocusAbsolute);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    auto focus : %d\n", params.nAutoFocus);
-    HAL_LOG_INFO(CONST_MODULE_HAL, "    zoom : %d\n", params.nZoomAbsolute);
+                 params.stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    auto exposure : %d\n", params.stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    exposure : %d\n", params.stGetData.data[PROPERTY_EXPOSURE][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    pan : %d\n", params.stGetData.data[PROPERTY_PAN][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    tilt : %d\n", params.stGetData.data[PROPERTY_TILT][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    Absolute focus : %d\n", params.stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    auto focus : %d\n", params.stGetData.data[PROPERTY_AUTOFOCUS][QUERY_VALUE]);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "    zoom : %d\n", params.stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_VALUE]);
 }
 
 void writeImageToFile(const void *p, int size)
@@ -127,10 +128,11 @@ int main(int argc, char const *argv[])
     PrintCameraProperties(out_params);
 
     camera_properties_t *in_params = &out_params;
-    in_params->nBrightness         = DEFAULT_BRIGHTNESS;
-    in_params->nContrast           = DEFAULT_CONTRAST;
-    in_params->nSaturation         = DEFAULT_SATURATION;
-    in_params->nAutoWhiteBalance   = DEFAULT_AUTOWHITEBALANCE;
+    in_params->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_VALUE] = DEFAULT_BRIGHTNESS;
+    in_params->stGetData.data[PROPERTY_CONTRAST][QUERY_VALUE] = DEFAULT_CONTRAST;
+    in_params->stGetData.data[PROPERTY_SATURATION][QUERY_VALUE] = DEFAULT_SATURATION;
+    in_params->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_VALUE] = DEFAULT_AUTOWHITEBALANCE;
+
     camera_hal_if_set_properties(p_h_camera, in_params);
 
     camera_properties_t out_params_n;

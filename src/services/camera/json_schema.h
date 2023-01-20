@@ -46,9 +46,6 @@ const char *getInfoSchema = "{ \
 const char *getPropertiesSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
-    \"required\": [ \
-      \"handle\" \
-    ], \
     \"params\": { \
       \"type\": \"array\", \
       \"title\": \"The Params Schema\", \
@@ -64,6 +61,17 @@ const char *getPropertiesSchema = "{ \
         \"type\": \"integer\", \
         \"title\": \"The Handle Schema\", \
         \"default\": 0 \
+      }, \
+      \"id\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Id Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+      }, \
+      \"subscribe\": { \
+      \"type\": \"boolean\", \
+      \"title\": \"The subscribe Schema\", \
+      \"default\": false \
       } \
     } \
 }";
@@ -402,6 +410,11 @@ const char *getFormatSchema = "{ \
       \"title\": \"The Id Schema\", \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
+    }, \
+    \"subscribe\": { \
+      \"type\": \"boolean\", \
+      \"title\": \"The subscribe Schema\", \
+      \"default\": false \
     } \
   } \
 }";

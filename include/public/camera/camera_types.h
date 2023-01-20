@@ -150,42 +150,19 @@ struct CAMERA_FORMAT
 
 struct CAMERA_PROPERTIES_T
 {
-    int nAutoWhiteBalance;
-    int nBrightness;
-    int nContrast;
-    int nSaturation;
-    int nHue;
-    int nGamma;
-    int nGain;
-    int nFrequency;
-    int nWhiteBalanceTemperature;
-    int nSharpness;
-    int nBacklightCompensation;
-    int nAutoExposure;
-    int nExposure;
-    int nPan;
-    int nTilt;
-    int nFocusAbsolute;
-    int nAutoFocus;
-    int nZoomAbsolute;
 
     camera_queryctrl_t stGetData;
-    std::vector<camera_resolution_t> stResolution;
+    std::vector<camera_resolution_t> stResolution; //Todo remove S
 
     bool operator!=(const CAMERA_PROPERTIES_T &);
 
     CAMERA_PROPERTIES_T()
-        : nAutoWhiteBalance(CONST_PARAM_DEFAULT_VALUE), nBrightness(CONST_PARAM_DEFAULT_VALUE),
-          nContrast(CONST_PARAM_DEFAULT_VALUE), nSaturation(CONST_PARAM_DEFAULT_VALUE),
-          nHue(CONST_PARAM_DEFAULT_VALUE), nGamma(CONST_PARAM_DEFAULT_VALUE),
-          nGain(CONST_PARAM_DEFAULT_VALUE), nFrequency(CONST_PARAM_DEFAULT_VALUE),
-          nWhiteBalanceTemperature(CONST_PARAM_DEFAULT_VALUE),
-          nSharpness(CONST_PARAM_DEFAULT_VALUE), nBacklightCompensation(CONST_PARAM_DEFAULT_VALUE),
-          nAutoExposure(CONST_PARAM_DEFAULT_VALUE), nExposure(CONST_PARAM_DEFAULT_VALUE),
-          nPan(CONST_PARAM_DEFAULT_VALUE), nTilt(CONST_PARAM_DEFAULT_VALUE),
-          nFocusAbsolute(CONST_PARAM_DEFAULT_VALUE), nAutoFocus(CONST_PARAM_DEFAULT_VALUE),
-          nZoomAbsolute(CONST_PARAM_DEFAULT_VALUE), stGetData(), stResolution()
+        : stGetData() , stResolution()//Todo remove S
     {
+        for (int i = 0; i < PROPERTY_END; i++)
+        {
+            stGetData.data[i][QUERY_VALUE] = CONST_PARAM_DEFAULT_VALUE;
+        }
     }
 };
 
@@ -203,5 +180,7 @@ void convertFormatToCode(std::string, camera_format_t *);
 std::string getEventNotificationString(EventType);
 std::string getFormatStringFromCode(camera_format_t);
 std::string getResolutionString(camera_format_t);
+std::string getParamString(int properties_enum);
+int getParamNumFromString(std::string str);
 
 #endif /* CAMERA_TYPES_H_ */

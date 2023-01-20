@@ -52,9 +52,8 @@ extern "C"
         virtual int getBufferFd(int *, int *) override;
 
     private:
-        int findQueryId(int value);
         int setV4l2Property(std::map<int, int> &);
-        int getV4l2Property(struct v4l2_queryctrl, int *value, int *);
+        int getV4l2Property(struct v4l2_queryctrl, int *);
         camera_format_t getCameraFormatProperty(struct v4l2_fmtdesc);
         void getResolutionProperty(camera_properties_t *);
 
@@ -71,6 +70,7 @@ extern "C"
 
         void createFourCCPixelFormatMap();
         void createCameraPixelFormatMap();
+        void createCameraParamMap();
         unsigned long getFourCCPixelFormat(camera_pixel_format_t);
         camera_pixel_format_t getCameraPixelFormat(unsigned long);
 
@@ -85,6 +85,7 @@ extern "C"
         int io_mode_;
         std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
         std::map<unsigned long, camera_pixel_format_t> camera_format_;
+        std::map<int, unsigned int> camera_param_map_;
     };
 
 #ifdef __cplusplus
