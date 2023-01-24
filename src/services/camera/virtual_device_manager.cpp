@@ -321,8 +321,9 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 // Apply platform-specific policy to solutions if exists.
                 if (AddOn::hasImplementation())
                 {
-                    ret = objcamerahalproxy_.enableCameraSolution(
-                        AddOn::getEnabledSolutionList(deviceid));
+                    std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
+                    ret                   = objcamerahalproxy_.enableCameraSolution(
+                                          AddOn::getEnabledSolutionList(deviceKey));
                     if (DEVICE_OK != ret)
                         PMLOG_INFO(CONST_MODULE_VDM, "Failed to enable camera solution\n");
                 }
@@ -870,7 +871,8 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
         {
             // Attach platform-specific private component to device in order to enforce
             // platform-specific policy
-            AddOn::notifySolutionEnabled(deviceid, solutions);
+            std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
+            AddOn::notifySolutionEnabled(deviceKey, solutions);
         }
 
         return ret;
@@ -901,7 +903,8 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
         {
             // Detach platform-specific private component from device used for platform-specific
             // policy application
-            AddOn::notifySolutionDisabled(deviceid, solutions);
+            std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
+            AddOn::notifySolutionDisabled(deviceKey, solutions);
         }
 
         return ret;

@@ -99,6 +99,16 @@ std::string DeviceManager::getDeviceType(int deviceid)
     return deviceType;
 }
 
+std::string DeviceManager::getDeviceKey(int deviceid)
+{
+    std::string deviceKey;
+    if (isDeviceIdValid(deviceid))
+    {
+        deviceKey = deviceMap_[deviceid].stList.strDeviceKey;
+    }
+    return deviceKey;
+}
+
 int DeviceManager::getDeviceCounts(std::string type)
 {
     int count = 0;
@@ -163,12 +173,12 @@ int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
     if (deviceid == 0)
         return 0;
 
-    // Push platform-specific device private data associated with this device */
-    AddOn::notifyDeviceAdded(deviceid, deviceInfo);
-
     deviceMap_[deviceid] = devStatus;
     PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d, deviceMap_.size : %zd \n", deviceid,
                deviceMap_.size());
+
+    // Push platform-specific device private data associated with this device */
+    AddOn::notifyDeviceAdded(deviceInfo);
 
     if (false == AddOn::hasImplementation())
     {
@@ -203,9 +213,9 @@ bool DeviceManager::removeDevice(int deviceid)
     }
 
     // Pop platform-specific private data associated with this device.
-    AddOn::notifyDeviceRemoved(deviceid);
-
+    DEVICE_LIST_T devInfo = deviceMap_[deviceid].stList;
     deviceMap_.erase(deviceid);
+    AddOn::notifyDeviceRemoved(devInfo);
     PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %d", deviceMap_.size());
 
     if (lshandle_)

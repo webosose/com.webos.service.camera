@@ -205,12 +205,6 @@ bool CameraService::open(LSMessage &message)
             open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
             open.setDeviceHandle(ndevice_handle);
 
-            if (AddOn::hasImplementation())
-            {
-                bool res = AddOn::notifyDeviceOpened(ndev_id, app_id, app_priority);
-                PMLOG_INFO(CONST_MODULE_LUNA, "AddOn::notifyDeviceOpened = %d ", res);
-            }
-
             addClientWatcher(this->get(), &message, ndevice_handle);
 
             // add the client process Id to client pid pool if the pid is valid

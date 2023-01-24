@@ -33,21 +33,17 @@ public:
     static void close();
 
     static bool hasImplementation();
-
     static void initialize(LSHandle *);
     static void setSubscriptionForCameraList(LSMessage &);
-
     static bool isSupportedCamera(std::string, std::string);
     static bool isAppPermission(std::string);
-
-    static void notifyDeviceAdded(int, const DEVICE_LIST_T &);
-    static void notifyDeviceRemoved(int);
+    static void notifyDeviceAdded(const DEVICE_LIST_T &);
+    static void notifyDeviceRemoved(const DEVICE_LIST_T &);
     static void notifyDeviceListUpdated(std::string, const std::vector<DEVICE_LIST_T> &);
-    static bool notifyDeviceOpened(int deviceid, std::string appId, std::string appPriority);
-
-    static void notifySolutionEnabled(int, const std::vector<std::string> &);
-    static void notifySolutionDisabled(int, const std::vector<std::string> &);
-    static std::vector<std::string> getEnabledSolutionList(int);
+    static bool notifyDeviceOpened(std::string, std::string, std::string);
+    static void notifySolutionEnabled(std::string, const std::vector<std::string> &);
+    static void notifySolutionDisabled(std::string, const std::vector<std::string> &);
+    static std::vector<std::string> getEnabledSolutionList(std::string);
 };
 
 #endif /* ADDON_H_ */

@@ -61,6 +61,7 @@ public:
     void getDeviceHandle(int, void **);
     bool setDeviceHandle(int, void *);
     std::string getDeviceType(int);
+    std::string getDeviceKey(int);
     int getDeviceCounts(std::string);
     bool getDeviceUserData(int, std::string &);
 

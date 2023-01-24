@@ -152,50 +152,50 @@ bool AddOn::isAppPermission(std::string appId)
     return plugin_->isAppPermission(appId);
 }
 
-bool AddOn::notifyDeviceOpened(int deviceid, std::string appId, std::string appPriority)
+bool AddOn::notifyDeviceOpened(std::string deviceKey, std::string appId, std::string appPriority)
 {
     if (!plugin_)
     {
         return false;
     }
-    return plugin_->notifyDeviceOpened(deviceid, appId, appPriority);
+    return plugin_->notifyDeviceOpened(deviceKey, appId, appPriority);
 }
 
-void AddOn::notifySolutionEnabled(int deviceid, const std::vector<std::string> &privateStrVecData)
+void AddOn::notifySolutionEnabled(std::string deviceKey, const std::vector<std::string> &solutions)
 {
     if (!plugin_)
     {
         return;
     }
-    plugin_->notifySolutionEnabled(deviceid, privateStrVecData);
+    plugin_->notifySolutionEnabled(deviceKey, solutions);
 }
 
-void AddOn::notifySolutionDisabled(int deviceid, const std::vector<std::string> &privateStrVecData)
+void AddOn::notifySolutionDisabled(std::string deviceKey, const std::vector<std::string> &solutions)
 {
     if (!plugin_)
     {
         return;
     }
-    plugin_->notifySolutionDisabled(deviceid, privateStrVecData);
+    plugin_->notifySolutionDisabled(deviceKey, solutions);
 }
 
-void AddOn::notifyDeviceAdded(int deviceid, const DEVICE_LIST_T &deviceInfo)
+void AddOn::notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo)
 {
     if (!plugin_)
     {
         return;
     }
 
-    plugin_->notifyDeviceAdded(deviceid, deviceInfo);
+    plugin_->notifyDeviceAdded(deviceInfo);
 }
 
-void AddOn::notifyDeviceRemoved(int deviceid)
+void AddOn::notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo)
 {
     if (!plugin_)
     {
         return;
     }
-    plugin_->notifyDeviceRemoved(deviceid);
+    plugin_->notifyDeviceRemoved(deviceInfo);
 }
 
 void AddOn::notifyDeviceListUpdated(std::string deviceType,
@@ -208,14 +208,14 @@ void AddOn::notifyDeviceListUpdated(std::string deviceType,
     plugin_->notifyDeviceListUpdated(deviceType, deviceList);
 }
 
-std::vector<std::string> AddOn::getEnabledSolutionList(int deviceid)
+std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
 {
     if (!plugin_)
     {
         std::vector<std::string> empty{};
         return empty;
     }
-    return plugin_->getEnabledSolutionList(deviceid);
+    return plugin_->getEnabledSolutionList(deviceKey);
 }
 
 int AddOn::Service::getDeviceList(std::vector<int> &idList) { return AddOn::getDeviceList(idList); }

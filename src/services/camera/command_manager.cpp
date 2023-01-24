@@ -18,6 +18,7 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "command_manager.h"
+#include "addon.h"
 #include "camera_constants.h"
 #include "device_manager.h"
 
@@ -86,6 +87,13 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
             obj.deviceid     = deviceid;
             obj.clientName   = "";
             virtualdevmgrobj_map_.insert(std::make_pair(devicenode, obj));
+
+            if (AddOn::hasImplementation())
+            {
+                std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
+                bool res              = AddOn::notifyDeviceOpened(deviceKey, appId, apppriority);
+                PMLOG_INFO(CONST_MODULE_CM, "AddOn::notifyDeviceOpened = %d ", res);
+            }
         }
         else
         {

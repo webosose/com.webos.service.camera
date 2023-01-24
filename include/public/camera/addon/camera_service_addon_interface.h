@@ -30,25 +30,23 @@ class ICameraServiceAddon
 public:
     virtual ~ICameraServiceAddon() {}
 
-    virtual bool hasImplementation() = 0;
-
-    virtual void setCameraService(ICameraService *camera_service) = 0;
-    virtual void initialize(LSHandle *lshandle)                   = 0;
-
-    virtual void setSubscriptionForCameraList(LSMessage &message)               = 0;
-    virtual bool isSupportedCamera(std::string productId, std::string vendorId) = 0;
-    virtual bool isAppPermission(std::string appId)                             = 0;
-
-    virtual void notifyDeviceAdded(int deviceid, const DEVICE_LIST_T &deviceInfo)             = 0;
-    virtual void notifyDeviceRemoved(int deviceid)                                            = 0;
+    virtual bool hasImplementation()                                                   = 0;
+    virtual void setCameraService(ICameraService *camera_service)                      = 0;
+    virtual void initialize(LSHandle *lshandle)                                        = 0;
+    virtual void setSubscriptionForCameraList(LSMessage &message)                      = 0;
+    virtual bool isSupportedCamera(std::string productID, std::string vendorID)        = 0;
+    virtual bool isAppPermission(std::string appId)                                    = 0;
+    virtual void notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo)                    = 0;
+    virtual void notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo)                  = 0;
     virtual void notifyDeviceListUpdated(std::string deviceType,
-                                         const std::vector<DEVICE_LIST_T> &deviceList)        = 0;
-    virtual bool notifyDeviceOpened(int deviceid, std::string appId, std::string appPriority) = 0;
-
-    virtual void notifySolutionEnabled(int deviceid, const std::vector<std::string> &solutions) = 0;
-    virtual void notifySolutionDisabled(int deviceid,
-                                        const std::vector<std::string> &solutions)              = 0;
-    virtual std::vector<std::string> getEnabledSolutionList(int deviceid)                       = 0;
+                                         const std::vector<DEVICE_LIST_T> &deviceList) = 0;
+    virtual bool notifyDeviceOpened(std::string deviceKey, std::string appId,
+                                    std::string appPriority)                           = 0;
+    virtual void notifySolutionEnabled(std::string deviceKey,
+                                       const std::vector<std::string> &solutions)      = 0;
+    virtual void notifySolutionDisabled(std::string deviceKey,
+                                        const std::vector<std::string> &solutions)     = 0;
+    virtual std::vector<std::string> getEnabledSolutionList(std::string deviceKey)     = 0;
 };
 
 #endif /* CAMERA_SERVICE_ADDON_INTERFACE_H_ */
