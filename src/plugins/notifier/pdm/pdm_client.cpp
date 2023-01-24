@@ -116,7 +116,8 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
     std::vector<DEVICE_LIST_T> devList;
     for (auto jDevice : jPayload["videoDeviceList"])
     {
-        VideoDevice device = jDevice;
+        VideoDevice device          = jDevice;
+        unsigned int subdeviceCount = device.subDeviceList.size();
         for (auto subdevice : device.subDeviceList)
         {
             DEVICE_LIST_T devInfo;
@@ -124,6 +125,14 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
             devInfo.strDeviceNode = subdevice->devPath;
             devInfo.strDeviceType = "v4l2";
             devInfo.strUserData   = "";
+
+            devInfo.strDeviceKey += "/" + devInfo.strVendorID + "/" + devInfo.strProductID;
+            if (subdeviceCount > 1)
+            {
+                devInfo.strDeviceKey += devInfo.strDeviceNode;
+                // NOTE : It is not perfect. strDeviceNode can be changed if another camera is
+                // plugged or unplugged while the TV is off.
+            }
 
             PMLOG_INFO(CONST_MODULE_PC, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
                        devInfo.strVendorName.c_str());
