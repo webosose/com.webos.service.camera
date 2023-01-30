@@ -82,3 +82,6 @@ endif()
 
 #CameraHalService
 add_subdirectory(control/service)
+
+#CameraSolutionService
+add_subdirectory(solution/service)

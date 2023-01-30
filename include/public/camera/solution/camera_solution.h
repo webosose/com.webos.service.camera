@@ -17,6 +17,8 @@
 
 // System dependencies
 #include "camera_hal_if_types.h"
+#include "camshm.h"
+#include "luna-service2/lunaservice.hpp"
 #include <atomic>
 #include <string>
 
@@ -45,7 +47,7 @@ public:
     // interface - pre-defined (could be overridden)
     virtual void setEventListener(CameraSolutionEvent *pEvent) { pEvent_ = pEvent; }
     virtual int32_t getMetaSizeHint(void) { return 0; }
-    virtual void initialize(stream_format_t streamFormat);
+    virtual void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
     virtual void setEnableValue(bool enableValue) { enableStatus_ = enableValue; };
     virtual Property getProperty() { return solutionProperty_; };
     virtual bool isEnabled(void) { return enableStatus_; };
@@ -61,4 +63,7 @@ protected:
     bool enableStatus_{false};
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
     std::atomic<CameraSolutionEvent *> pEvent_{nullptr};
+
+    int shm_key{0};
+    LSHandle *sh_{nullptr};
 };

@@ -57,7 +57,7 @@ public:
     // interface override
     virtual int32_t getMetaSizeHint(void) override;
     virtual std::string getSolutionStr(void) override;
-    virtual void initialize(stream_format_t streamFormat) override;
+    virtual void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh) override;
     virtual void release(void) override;
     // interface override from CameraSolutionAsync
     virtual void processing(void) override;

@@ -142,19 +142,30 @@ void CameraSolutionAsync::run(void)
 
     pthread_setname_np(pthread_self(), "solution_thread");
 
+    SHMEM_HANDLE hShm  = nullptr;
+    SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().OpenShmem(&hShm, shm_key);
+    PMLOG_INFO(LOG_TAG, "OpenShem %d", ret);
+
+    if (ret != SHMEM_IS_OK)
+    {
+        PMLOG_ERROR(LOG_TAG, "Fail : OpenShmem RET => %d\n", ret);
+        return;
+    }
+
     while (checkAlive())
     {
-        WaitResult resWait = wait();
-        if (resWait == TIMEOUT)
+        int len                    = 0;
+        unsigned char *sh_mem_addr = NULL;
+        while (len == 0)
         {
-            popJob();
-            continue;
+            IPCSharedMemory::getInstance().ReadShmem(hShm, &sh_mem_addr, &len);
         }
-        if (resWait == ERROR)
-        {
-            setAlive(false);
-            break;
-        }
+
+        buffer_t inBuf;
+        inBuf.start  = sh_mem_addr;
+        inBuf.length = len;
+        pushJob(inBuf);
+
         if (checkAlive())
         {
             processing();
@@ -164,6 +175,14 @@ void CameraSolutionAsync::run(void)
         }
     }
     postProcessing();
+
+    if (hShm)
+    {
+        SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().CloseShmemory(&hShm);
+        PMLOG_INFO(LOG_TAG, "CloseShmemory %d", ret);
+        if (ret != SHMEM_IS_OK)
+            PMLOG_ERROR(LOG_TAG, "CloseShmemory error %d \n", ret);
+    }
 }
 
 void CameraSolutionAsync::startThread(void)
@@ -241,7 +260,7 @@ void CameraSolutionAsync::pushJob(buffer_t inBuf)
     {
         std::lock_guard<std::mutex> lg(mtxJob_);
         queueJob_.push(std::make_unique<Buffer>((uint8_t *)inBuf.start, inBuf.length));
-        notify();
+        // notify();
     }
 }
 
