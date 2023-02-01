@@ -28,6 +28,7 @@
 #include <poll.h>
 #include <signal.h>
 #include <sys/time.h>
+#include <system_error>
 
 /**
  * need to call directly camera base methods in order to cancel preview when the camera is
