@@ -20,11 +20,6 @@ typedef void *(*pfn_destroy_plugin_instance)(void *);
 pfn_create_plugin_instance create_plugin_instance;
 pfn_destroy_plugin_instance destroy_plugin_instance;
 
-int AddOn::getDeviceList(std::vector<int> &idList)
-{
-    return (int)(CommandManager::getDeviceList(idList));
-}
-
 int AddOn::getDeviceCounts(std::string type)
 {
     return DeviceManager::getInstance().getDeviceCounts(type);
@@ -34,11 +29,6 @@ bool AddOn::updateDeviceList(std::string deviceType, const std::vector<DEVICE_LI
 {
     return DeviceManager::getInstance().updateDeviceList(deviceType, deviceList);
 };
-
-int AddOn::getInfo(int deviceid, camera_device_info_t *p_info)
-{
-    return DeviceManager::getInstance().getInfo(deviceid, p_info);
-}
 
 void AddOn::open()
 {
@@ -126,14 +116,6 @@ void AddOn::initialize(LSHandle *ls_handle)
     }
 }
 
-void AddOn::setSubscriptionForCameraList(LSMessage &message)
-{
-    if (plugin_)
-    {
-        plugin_->setSubscriptionForCameraList(message);
-    }
-}
-
 bool AddOn::isSupportedCamera(std::string str_productId, std::string str_vendorId)
 {
     if (!plugin_)
@@ -218,19 +200,12 @@ std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
     return plugin_->getEnabledSolutionList(deviceKey);
 }
 
-int AddOn::Service::getDeviceList(std::vector<int> &idList) { return AddOn::getDeviceList(idList); }
-
 int AddOn::Service::getDeviceCounts(std::string type) { return AddOn::getDeviceCounts(type); }
 
 bool AddOn::Service::updateDeviceList(std::string deviceType,
                                       const std::vector<DEVICE_LIST_T> &deviceList)
 {
     return AddOn::updateDeviceList(deviceType, deviceList);
-}
-
-int AddOn::Service::getInfo(int deviceid, camera_device_info_t *p_info)
-{
-    return AddOn::getInfo(deviceid, p_info);
 }
 
 void AddOn::Service::getSupportedSolutionList(std::vector<std::string> &supportedList,

@@ -667,8 +667,6 @@ bool CameraService::getCameraList(LSMessage &message)
                     CONST_DEVICE_NAME_CAMERA + std::to_string(idList[i]), i);
             }
         }
-
-        AddOn::setSubscriptionForCameraList(message);
     }
 
     // create json string now for reply

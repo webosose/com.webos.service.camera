@@ -11,17 +11,13 @@ private:
 
 private:
     static int getDeviceCounts(std::string);
-    static int getDeviceList(std::vector<int> &);
     static bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &);
-    static int getInfo(int, camera_device_info_t *);
 
 private:
     struct Service : public ICameraService
     {
-        int getDeviceList(std::vector<int> &) override;
         int getDeviceCounts(std::string) override;
         bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &) override;
-        int getInfo(int, camera_device_info_t *) override;
         void getSupportedSolutionList(std::vector<std::string> &,
                                       std::vector<std::string> &) override;
     };
@@ -34,7 +30,6 @@ public:
 
     static bool hasImplementation();
     static void initialize(LSHandle *);
-    static void setSubscriptionForCameraList(LSMessage &);
     static bool isSupportedCamera(std::string, std::string);
     static bool isAppPermission(std::string);
     static void notifyDeviceAdded(const DEVICE_LIST_T &);
