@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2022 LG Electronics, Inc.
+# Copyright (c) 2019-2023 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -40,6 +40,20 @@ webos_add_compiler_flags(ALL ${PMLOGLIB_CFLAGS_OTHER})
 pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
+
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64")
+pkg_check_modules(EDGEAIVISION edgeai-vision)
+include_directories(${EDGEAIVISION_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${EDGEAIVISION_CFLAGS})
+
+pkg_check_modules(JPEG REQUIRED libjpeg)
+include_directories(${JPEG_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
+
+pkg_check_modules(OPENCV opencv4)
+include_directories(${OPENCV_INCLUDE_DIR})
+webos_add_compiler_flags(ALL ${OPENCV_CFLAGS})
+endif()
 
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
@@ -84,6 +98,17 @@ set (SRC_LIST
 
 ### SOLUTION_AUTOCONTRAST setting End ###
 
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64")
+### SOLUTION_FACEDETECTION_AIF setting Start ###
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AIF_FACEDETECTION")
+
+set (SRC_LIST
+    ${SRC_LIST}
+    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
+    )
+### SOLUTION_FACEDETECTION_AIF setting End ###
+endif()
+
 ### SOLUTION_DUMMY setting Start ###
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_DUMMY")
 
@@ -102,7 +127,7 @@ set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
     )
 message(STATUS "Using json to define supported solutions for variable platform")
-webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+webos_build_configured_file(src/service/solutions/supported_solution_info/${WEBOS_TARGET_MACHINE}/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
 
 ### SOLUTION MANAGER Main setting End ###
 add_executable(${PROJECT_NAME}
@@ -115,6 +140,14 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       pthread
                       camera_hal)
+
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64")
+target_link_libraries(${PROJECT_NAME}
+                      ${EDGEAIVISION_LDFLAGS}
+                      ${JPEG_LDFLAGS}
+                      ${OPENCV_LDFLAGS}
+                      )
+endif()
 
 #hal
 include_directories(${CMAKE_SOURCE_DIR}/src/hal/)

@@ -15,17 +15,8 @@
                 "type": "sync",
                 "metadata" : false
             }
-        },
-        {
-            "name": "FaceDetectionAIF",
-            "params": {
-                "support": false,
-                "type": "sync",
-                "metadata" : false,
-                "algorithm": "AIF"
-            }
         }
-    ]
+   ]
 }
 
 

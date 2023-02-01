@@ -1,0 +1,31 @@
+{
+    "solutions": [
+        {
+            "name": "AutoContrast",
+            "params": {
+                "support": true,
+                "type": "sync",
+                "metadata" : false
+            }
+        },
+        {
+            "name": "Dummy",
+            "params": {
+                "support": true,
+                "type": "sync",
+                "metadata" : false
+            }
+        },
+        {
+            "name": "FaceDetectionAIF",
+            "params": {
+                "support": true,
+                "type": "sync",
+                "metadata" : false,
+                "algorithm": "AIF"
+            }
+        }
+    ]
+}
+
+
