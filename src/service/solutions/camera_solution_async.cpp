@@ -17,6 +17,7 @@
 #include "camera_types.h"
 #include <list>
 #include <numeric>
+#include <system_error>
 
 #define LOG_TAG "CameraSolutionAsync"
 

@@ -1,6 +1,7 @@
 #include "usrptr_handle.h"
 #include "camshm_0-cpy.h"
 #include "camera_hal_types.h" // HAL_LOG_INFO
+#include <cstdlib>
 
 
 usrptr_handle_t * create_usrptr_handle(stream_format_t stream_format, int num_bufs)
