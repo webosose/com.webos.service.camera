@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <errno.h>
 #include <algorithm>
+#include <system_error>
 
 #include "camera_solution_event.h"
 #include "camera_solution_manager.h"
