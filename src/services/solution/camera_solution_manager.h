@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-class CameraSolution;
+class CameraSolutionProxy;
 class CameraSolutionEvent;
 class CameraSolutionManager
 {
@@ -32,7 +32,7 @@ class CameraSolutionManager
 
 public:
     using SolutionNames = std::vector<std::string>;
-    using SolutionList  = std::list<std::unique_ptr<CameraSolution>>;
+    using SolutionList  = std::list<std::unique_ptr<CameraSolutionProxy>>;
 
 public:
     CameraSolutionManager(void);
@@ -42,7 +42,7 @@ public:
     // To process
     void setEventListener(CameraSolutionEvent *pEvent);
     int32_t getMetaSizeHint(void);
-    void initialize(stream_format_t streamFormat);
+    void initialize(stream_format_t streamFormat, int shmKey);
     void release(void);
     void processCapture(buffer_t frame_buffer);
     void processPreview(buffer_t frame_buffer);

@@ -14,11 +14,8 @@
  */
 
 #include "camera_solution_manager.h"
-#include "auto_contrast.hpp"
-#include "camera_solution.h"
+#include "CameraSolutionProxy.h"
 #include "camera_types.h"
-#include "dummy.hpp"
-#include "face_detection_aif.hpp"
 #include <pbnjson.hpp>
 
 enum LgSolutionErrorValue
@@ -144,19 +141,20 @@ CameraSolutionManager::CameraSolutionManager(void)
     getSupportedSolutionList(list, enabledList);
     PMLOG_INFO(CONST_MODULE_SM, "solution list count %zd", list.size());
 
+#ifdef FIX_ME // not support sync solution
     if (std::find(list.begin(), list.end(), SOLUTION_AUTOCONTRAST) != list.end())
         lstSolution_.push_back(std::make_unique<AutoContrast>());
 
     if (std::find(list.begin(), list.end(), SOLUTION_DUMMY) != list.end())
         lstSolution_.push_back(std::make_unique<Dummy>());
-
+#endif
     if (std::find(list.begin(), list.end(), SOLUTION_FACEDETECTION) != list.end())
     {
         std::shared_ptr<SolutionInfo> info;
         bool ret = SupportedSolution::getInstance().getSolutionInfo(SOLUTION_FACEDETECTION, info);
         if (ret && info->model_ == FACEDETECTION_MODEL_AIF) // default model
         {
-            lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
+            lstSolution_.push_back(std::make_unique<CameraSolutionProxy>(SOLUTION_FACEDETECTION));
         }
     }
 }
@@ -182,10 +180,10 @@ int32_t CameraSolutionManager::getMetaSizeHint(void)
     return size;
 }
 
-void CameraSolutionManager::initialize(stream_format_t streamFormat)
+void CameraSolutionManager::initialize(stream_format_t streamFormat, int shmKey)
 {
     for (auto &i : lstSolution_)
-        i->initialize(streamFormat);
+        i->initialize(streamFormat, shmKey);
 }
 
 void CameraSolutionManager::release(void)
@@ -196,6 +194,7 @@ void CameraSolutionManager::release(void)
 
 void CameraSolutionManager::processCapture(buffer_t frame_buffer)
 {
+#ifdef FIX_ME // not support sync solution
     std::lock_guard<std::mutex> lg(mtxApi_);
     for (auto &i : lstSolution_)
     {
@@ -204,10 +203,12 @@ void CameraSolutionManager::processCapture(buffer_t frame_buffer)
             i->processForSnapshot(frame_buffer);
         }
     }
+#endif
 }
 
 void CameraSolutionManager::processPreview(buffer_t frame_buffer)
 {
+#ifdef FIX_ME // not support sync solution
     std::lock_guard<std::mutex> lg(mtxApi_);
     for (auto &i : lstSolution_)
     {
@@ -216,6 +217,7 @@ void CameraSolutionManager::processPreview(buffer_t frame_buffer)
             i->processForPreview(frame_buffer);
         }
     }
+#endif
 }
 
 void CameraSolutionManager::getSupportedSolutionInfo(SolutionNames &names)

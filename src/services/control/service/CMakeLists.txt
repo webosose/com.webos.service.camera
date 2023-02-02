@@ -35,22 +35,15 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS_OTHER})
 
-pkg_check_modules(JPEG REQUIRED libjpeg)
-include_directories(${JPEG_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
-
 pkg_check_modules(GST REQUIRED gstreamer-1.0)
 include_directories(${GST_INCLUDE_DIRS})
-
-include_directories(${CMAKE_SOURCE_DIR}/src/plugins/solution/auto_contrast)
-include_directories(${CMAKE_SOURCE_DIR}/src/plugins/solution/dummy)
-include_directories(${CMAKE_SOURCE_DIR}/src/plugins/solution/face_detection_aif)
 
 include_directories(${CMAKE_SOURCE_DIR}/src/services/control)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/control/hal)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/solution)
+include_directories(${CMAKE_SOURCE_DIR}/src/services/solution/proxy)
 
-# Device Control Service
+# Camera Hal Service
 set(SRC_LIST
     ${CMAKE_CURRENT_SOURCE_DIR}/CameraHalService.cpp
     ${CMAKE_SOURCE_DIR}/src/services/control/device_controller.cpp
@@ -58,48 +51,19 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/control/cam_posixshm.cpp
     )
 
-# Solutions Service
+# Solution Manager / Proxy
 set (SRC_LIST
     ${SRC_LIST}
     ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution_async.cpp
-    )
-
-# plugins/solution
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/plugins/solution/dummy/dummy.cpp
-    ${CMAKE_SOURCE_DIR}/src/plugins/solution/auto_contrast/auto_contrast.cpp
-    ${CMAKE_SOURCE_DIR}/src/plugins/solution/face_detection_aif/face_detection_aif.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/solution/proxy/CameraSolutionProxy.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/control/proxy/LunaClient.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/control/proxy/Process.cpp
     )
 
 ### SOLUTION MANAGER Solution configuration file Start ###
 message(STATUS "Using json to define supported solutions for variable platform")
 webos_build_configured_file(src/services/solution/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
 ### SOLUTION MANAGER Solution configuration file End ###
-
-### SOLUTION MANAGER Add AI Framework Start ###
-# find needed packages
-find_package(PkgConfig)
-pkg_check_modules(TFLITE REQUIRED tensorflowlite)
-pkg_check_modules(OPENCV REQUIRED opencv4)
-pkg_check_modules(RAPIDJSON REQUIRED RapidJSON)
-
-# include directories
-include_directories(
-    ${TFLITE_INCLUDE_DIRS}
-    ${OPENCV_INCLUDE_DIRS}
-    ${RAPIDJSON_INCLUDE_DIRS}
-)
-
-# link directories
-link_directories(
-    ${TFLITE_LIBRARY_DIRS}
-    ${OPENCV_LIBRARY_DIRS}
-    ${RAPIDJSON_LIBRARY_DIRS}
-)
-### SOLUTION MANAGER Add AI Framework End ###
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
@@ -109,9 +73,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${LS2++_LDFLAGS}
                       ${PMLOGLIB_LDFLAGS}
                       camera_hal
-                      ${JPEG_LDFLAGS}
-                      ${OPENCV_LIBRARIES}
-                      edgeai-vision
                       ${GST_LIBRARIES}
                       )
 

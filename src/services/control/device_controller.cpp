@@ -512,11 +512,9 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     buf_size_ =
         streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
-    //[Camera Solution Manager] initialization
     int32_t meta_size = 0;
     if (pCameraSolution != nullptr)
     {
-        pCameraSolution->initialize(streamformat);
         meta_size = pCameraSolution->getMetaSizeHint();
     }
 
@@ -546,6 +544,12 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
         shmemfd_       = *pkey;
         str_shmemname_ = shmname;
+    }
+
+    //[Camera Solution Manager] initialization
+    if (pCameraSolution != nullptr)
+    {
+        pCameraSolution->initialize(streamformat, *pkey);
     }
 
     if (b_isstreamon_ == false)
