@@ -129,9 +129,9 @@ DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 int DeviceManager::addDevice(DEVICE_LIST_T *pList, std::string userData)
 {
     DEVICE_STATUS devStatus;
-    devStatus.isDeviceOpen = false;
-    devStatus.pcamhandle   = nullptr;
-    devStatus.userData     = userData;
+    devStatus.isDeviceOpen      = false;
+    devStatus.pcamhandle        = nullptr;
+    devStatus.userData          = userData;
     devStatus.isDeviceInfoSaved = false;
 
     devStatus.stList.strVendorName = pList->strVendorName;
@@ -213,7 +213,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
     if (!isDeviceIdValid(deviceid))
         return DEVICE_ERROR_NODEVICE;
 
-    if(!deviceMap_[deviceid].isDeviceInfoSaved)
+    if (!deviceMap_[deviceid].isDeviceInfoSaved)
     {
         std::string strdevicenode;
         strdevicenode = deviceMap_[deviceid].stList.strDeviceNode;
@@ -228,7 +228,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
             PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
             return ret;
         }
-        //save DB data S
+        // save DB data S
         deviceMap_[deviceid].deviceInfoDB.stResolution.clear();
 
         for (auto const &v : p_info->stResolution)
@@ -242,7 +242,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
         deviceMap_[deviceid].deviceInfoDB.n_devicetype = p_info->n_devicetype;
         deviceMap_[deviceid].deviceInfoDB.b_builtin    = p_info->b_builtin;
         PMLOG_INFO(CONST_MODULE_DM, "save DB, deviceid:%d\n", deviceid);
-        //save DB data E
+        // save DB data E
         p_info->str_devicename = deviceMap_[deviceid].stList.strProductName;
         p_info->str_vendorid   = deviceMap_[deviceid].stList.strVendorID;
         p_info->str_productid  = deviceMap_[deviceid].stList.strProductID;
@@ -252,7 +252,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
     else
     {
         PMLOG_INFO(CONST_MODULE_DM, "load DB, deviceid:%d\n", deviceid);
-        //Load DB data S
+        // Load DB data S
         for (auto const &v : deviceMap_[deviceid].deviceInfoDB.stResolution)
         {
             std::vector<std::string> c_res;
@@ -263,7 +263,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
 
         p_info->n_devicetype = deviceMap_[deviceid].deviceInfoDB.n_devicetype;
         p_info->b_builtin    = deviceMap_[deviceid].deviceInfoDB.b_builtin;
-        //Load DB data E
+        // Load DB data E
 
         p_info->str_devicename = deviceMap_[deviceid].stList.strProductName;
         p_info->str_vendorid   = deviceMap_[deviceid].stList.strVendorID;

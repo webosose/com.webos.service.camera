@@ -53,7 +53,11 @@ private:
 class GetCameraListMethod
 {
 public:
-    GetCameraListMethod() { n_camcount_ = 0; b_issubscribed_ = false; }
+    GetCameraListMethod()
+    {
+        n_camcount_     = 0;
+        b_issubscribed_ = false;
+    }
     ~GetCameraListMethod() {}
 
     void setCameraList(const std::string &str_id, unsigned int count) { str_list_[count] = str_id; }
@@ -261,11 +265,11 @@ public:
 
     void setCameraInfo(const camera_device_info_t &r_ininfo)
     {
-        ro_info_.str_devicename        = r_ininfo.str_devicename;
-        ro_info_.str_vendorid          = r_ininfo.str_vendorid;
-        ro_info_.str_productid         = r_ininfo.str_productid;
-        ro_info_.b_builtin             = r_ininfo.b_builtin;
-        ro_info_.n_devicetype          = r_ininfo.n_devicetype;
+        ro_info_.str_devicename = r_ininfo.str_devicename;
+        ro_info_.str_vendorid   = r_ininfo.str_vendorid;
+        ro_info_.str_productid  = r_ininfo.str_productid;
+        ro_info_.b_builtin      = r_ininfo.b_builtin;
+        ro_info_.n_devicetype   = r_ininfo.n_devicetype;
 
         // update resolution structure
         for (auto const &v : r_ininfo.stResolution)
@@ -319,7 +323,7 @@ public:
         }
 
         // update resolution structure
-        //Todo remove S
+        // Todo remove S
         for (auto const &v : rin_info.stResolution)
         {
             std::vector<std::string> c_res;
@@ -327,7 +331,7 @@ public:
             c_res.assign(v.c_res.begin(), v.c_res.end());
             ro_camproperties_.stResolution.emplace_back(c_res, v.e_format);
         }
-        //Todo remove E
+        // Todo remove E
     }
     CAMERA_PROPERTIES_T rGetCameraProperties() const { return ro_camproperties_; }
 
@@ -519,6 +523,35 @@ public:
 private:
     std::string str_devid_;
     CAMERA_FORMAT ro_params_;
+    bool b_issubscribed_;
+    MethodReply objreply_;
+};
+
+class EventNotificationMethod
+{
+public:
+    EventNotificationMethod()
+    {
+        b_iserror_      = true;
+        b_issubscribed_ = false;
+    }
+    ~EventNotificationMethod() {}
+
+    void getEventObject(const char *, const char *);
+    void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
+    bool getIsErrorFromParam() { return b_iserror_; }
+    void setIsErrorParam(bool error) { b_iserror_ = error; }
+    void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+    {
+        objreply_.setReturnValue(returnvalue);
+        objreply_.setErrorCode(errorcode);
+        objreply_.setErrorText(errortext);
+    }
+    MethodReply getMethodReply() const { return objreply_; }
+    std::string createObjectJsonString() const;
+
+private:
+    bool b_iserror_;
     bool b_issubscribed_;
     MethodReply objreply_;
 };

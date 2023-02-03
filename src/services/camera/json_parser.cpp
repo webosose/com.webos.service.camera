@@ -59,10 +59,11 @@ std::string GetCameraListMethod::createCameraListObjectJsonString() const
                         jstring_create(strGetCameraList(i).c_str()));
             jarray_append(json_outdevicelistarray, json_outdevicelistitem);
         }
-
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
-                    jboolean_create(b_issubscribed_));
-
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEVICE_LIST),
                     json_outdevicelistarray);
     }
@@ -406,8 +407,8 @@ void GetInfoMethod::getInfoObject(const char *input, const char *schemapath)
 
 std::string GetInfoMethod::createInfoObjectJsonString() const
 {
-    jvalue_ref json_outobj     = jobject_create();
-    jvalue_ref json_info_obj   = jobject_create();
+    jvalue_ref json_outobj   = jobject_create();
+    jvalue_ref json_info_obj = jobject_create();
     std::string strreply;
 
     MethodReply objreply = getMethodReply();
@@ -440,7 +441,7 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
             jobject_put(json_resolutionobj, jstring_create(getResolutionString(v.e_format).c_str()),
                         json_resolutionarray);
         }
-        jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),json_resolutionobj);
+        jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION), json_resolutionobj);
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_INFO), json_info_obj);
     }
     else
@@ -457,7 +458,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
 }
 
 GetSetPropertiesMethod::GetSetPropertiesMethod()
-    : n_devicehandle_(n_invalid_id), ro_camproperties_(), str_params_(), str_devid_(cstr_empty) , b_issubscribed_(false)
+    : n_devicehandle_(n_invalid_id), ro_camproperties_(), str_params_(), str_devid_(cstr_empty),
+      b_issubscribed_(false)
 {
 }
 
@@ -488,10 +490,10 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
 
     if (0 == retval)
     {
-        j_name_id_obj       = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+        j_name_id_obj     = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
         raw_buffer str_id = jstring_get_fast(j_name_id_obj);
 
-        //set camera id
+        // set camera id
         if (strstr(str_id.m_str, "camera") == NULL)
         {
             setCameraId(cstr_invaliddeviceid);
@@ -501,7 +503,7 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
             setCameraId(str_id.m_str);
         }
 
-        //set params
+        // set params
         jvalue_ref params = jobject_get(j_obj, J_CSTR_TO_BUF("params"));
         for (ssize_t i = 0; i != jarray_size(params); i++)
         {
@@ -509,7 +511,7 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
             setParams(strid.m_str);
         }
 
-        //set handle Temporarily keep using handle. Todo remove S
+        // set handle Temporarily keep using handle. Todo remove S
         int devicehandle = n_invalid_id;
         jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
         if (devicehandle == 0)
@@ -517,12 +519,12 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
             devicehandle = n_invalid_id;
         }
         setDeviceHandle(devicehandle);
-        //Todo remove E
+        // Todo remove E
     }
     else
     {
         setCameraId(cstr_invaliddeviceid);
-        setDeviceHandle(n_invalid_id); //Temporarily keep using handle. Todo remove
+        setDeviceHandle(n_invalid_id); // Temporarily keep using handle. Todo remove
     }
 
     j_release(&j_obj);
@@ -547,21 +549,17 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
 
             for (int i = 0; i < PROPERTY_END; i++)
             {
-                if(obj.stGetData.data[i][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE)
+                if (obj.stGetData.data[i][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE)
                 {
                     jvalue_ref json_propertyobj = jobject_create();
-                    jobject_put(
-                        json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN),
-                        jnumber_create_i32(obj.stGetData.data[i][QUERY_MIN]));
-                    jobject_put(
-                        json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX),
-                        jnumber_create_i32(obj.stGetData.data[i][QUERY_MAX]));
-                    jobject_put(
-                        json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),
-                        jnumber_create_i32(obj.stGetData.data[i][QUERY_STEP]));
-                    jobject_put(
-                        json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE),
-                        jnumber_create_i32(obj.stGetData.data[i][QUERY_DEFAULT]));
+                    jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN),
+                                jnumber_create_i32(obj.stGetData.data[i][QUERY_MIN]));
+                    jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX),
+                                jnumber_create_i32(obj.stGetData.data[i][QUERY_MAX]));
+                    jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),
+                                jnumber_create_i32(obj.stGetData.data[i][QUERY_STEP]));
+                    jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE),
+                                jnumber_create_i32(obj.stGetData.data[i][QUERY_DEFAULT]));
                     jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE),
                                 jnumber_create_i32(obj.stGetData.data[i][QUERY_VALUE]));
                     jobject_put(json_outobjparams, jstring_create(getParamString(i).c_str()),
@@ -588,12 +586,12 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
         else
         {
             CAMERA_PROPERTIES_T obj = rGetCameraProperties();
-            for(auto const &it : str_params_)
+            for (auto const &it : str_params_)
             {
                 int param_enum = getParamNumFromString(it);
-                if(param_enum != -1)
+                if (param_enum != -1)
                 {
-                    if( obj.stGetData.data[param_enum][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE )
+                    if (obj.stGetData.data[param_enum][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE)
                     {
                         jvalue_ref json_propertyobj = jobject_create();
                         jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN),
@@ -602,17 +600,23 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
                                     jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_MAX]));
                         jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),
                                     jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_STEP]));
-                        jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE),
-                                    jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_DEFAULT]));
-                        jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE),
-                                    jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_VALUE]));
-                        jobject_put(json_outobjparams, jstring_create((it).c_str()),json_propertyobj);
+                        jobject_put(
+                            json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE),
+                            jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_DEFAULT]));
+                        jobject_put(
+                            json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE),
+                            jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_VALUE]));
+                        jobject_put(json_outobjparams, jstring_create((it).c_str()),
+                                    json_propertyobj);
                     }
                 }
             }
         }
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
-                    jboolean_create(b_issubscribed_));
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
     }
     else
@@ -645,8 +649,8 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
         jvalue_ref jparams;
         for (int i = 0; i < PROPERTY_END; i++)
         {
-             jparams = jobject_get(jobj_params, j_cstr_to_buffer( getParamString(i).c_str() ) );
-             jnumber_get_i32(jparams, &r_camproperties.stGetData.data[i][QUERY_VALUE]);
+            jparams = jobject_get(jobj_params, j_cstr_to_buffer(getParamString(i).c_str()));
+            jnumber_get_i32(jparams, &r_camproperties.stGetData.data[i][QUERY_VALUE]);
         }
         r_camproperties.stResolution.clear();
         setCameraProperties(r_camproperties);
@@ -1004,9 +1008,7 @@ std::string SetSolutionsMethod::createObjectJsonString() const
     return str_reply;
 }
 
-GetFormatMethod::GetFormatMethod() : str_devid_(cstr_empty), ro_params_(), b_issubscribed_(false)
-{
-}
+GetFormatMethod::GetFormatMethod() : str_devid_(cstr_empty), ro_params_(), b_issubscribed_(false) {}
 
 void GetFormatMethod::getObject(const char *input, const char *schemapath)
 {
@@ -1037,7 +1039,7 @@ void GetFormatMethod::getObject(const char *input, const char *schemapath)
 
 std::string GetFormatMethod::createObjectJsonString() const
 {
-    jvalue_ref json_outobj = jobject_create();
+    jvalue_ref json_outobj       = jobject_create();
     jvalue_ref json_outobjparams = jobject_create();
 
     std::string str_reply;
@@ -1058,10 +1060,11 @@ std::string GetFormatMethod::createObjectJsonString() const
                     jnumber_create_i32(rGetCameraFormat().nHeight));
         jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
                     jnumber_create_i32(rGetCameraFormat().nFps));
-
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
-                    jboolean_create(b_issubscribed_));
-
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
     }
     else
@@ -1069,7 +1072,50 @@ std::string GetFormatMethod::createObjectJsonString() const
         createJsonStringFailure(obj_reply, json_outobj);
     }
 
-    const char* str = jvalue_stringify(json_outobj);
+    const char *str = jvalue_stringify(json_outobj);
+    if (str)
+        str_reply = str;
+    j_release(&json_outobj);
+
+    return str_reply;
+}
+
+void EventNotificationMethod::getEventObject(const char *input, const char *schemapath)
+{
+    jvalue_ref j_obj = jobject_create();
+    int retval       = deSerialize(input, schemapath, j_obj);
+
+    if (retval == 0)
+    {
+        setIsErrorParam(false);
+    }
+
+    j_release(&j_obj);
+}
+
+std::string EventNotificationMethod::createObjectJsonString() const
+{
+    jvalue_ref json_outobj = jobject_create();
+    std::string str_reply;
+    MethodReply obj_reply = getMethodReply();
+
+    if (obj_reply.bGetReturnValue())
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(obj_reply.bGetReturnValue()));
+
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
+    }
+    else
+    {
+        createJsonStringFailure(obj_reply, json_outobj);
+    }
+
+    const char *str = jvalue_stringify(json_outobj);
     if (str)
         str_reply = str;
     j_release(&json_outobj);

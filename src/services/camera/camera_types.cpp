@@ -288,9 +288,9 @@ int getParamNumFromString(std::string str)
 
 bool CAMERA_PROPERTIES_T::operator!=(const CAMERA_PROPERTIES_T &new_property)
 {
-    for(int i = 0; i < PROPERTY_END; i++)
+    for (int i = 0; i < PROPERTY_END; i++)
     {
-        if ( this->stGetData.data[i][QUERY_VALUE] != new_property.stGetData.data[i][QUERY_VALUE] )
+        if (this->stGetData.data[i][QUERY_VALUE] != new_property.stGetData.data[i][QUERY_VALUE])
         {
             return true;
         }

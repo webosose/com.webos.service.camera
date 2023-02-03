@@ -152,12 +152,11 @@ struct CAMERA_PROPERTIES_T
 {
 
     camera_queryctrl_t stGetData;
-    std::vector<camera_resolution_t> stResolution; //Todo remove S
+    std::vector<camera_resolution_t> stResolution; // Todo remove S
 
     bool operator!=(const CAMERA_PROPERTIES_T &);
 
-    CAMERA_PROPERTIES_T()
-        : stGetData() , stResolution()//Todo remove S
+    CAMERA_PROPERTIES_T() : stGetData(), stResolution() // Todo remove S
     {
         for (int i = 0; i < PROPERTY_END; i++)
         {

@@ -34,13 +34,13 @@ bool EventNotification::addSubscription(LSHandle *lsHandle, std::string key, LSM
             LSErrorFree(&error);
             return false;
         }
-        (void) getSubscribeCount(lsHandle, key);
+        (void)getSubscribeCount(lsHandle, key);
         LSErrorFree(&error);
         return true;
     }
     else
     {
-       (void) getSubscribeCount(lsHandle, key);
+        (void)getSubscribeCount(lsHandle, key);
     }
 
     LSErrorFree(&error);
@@ -66,18 +66,18 @@ int EventNotification::getSubscribeCount(LSHandle *lsHandle, std::string key)
 {
     int ret = -1;
     ret     = LSSubscriptionGetHandleSubscribersCount(lsHandle, key.c_str());
-    PMLOG_INFO(CONST_MODULE_EN, "cnt:%d, key:%s", ret,  key.c_str());
+    PMLOG_INFO(CONST_MODULE_EN, "cnt:%d, key:%s", ret, key.c_str());
     return ret;
 }
 
-bool EventNotification::getJsonString(json &json_outobj, std::string key, EventType etype, void *p_cur_data, void *p_old_data)
+bool EventNotification::getJsonString(json &json_outobj, std::string key, EventType etype,
+                                      void *p_cur_data, void *p_old_data)
 {
     // event type
     std::string event = getEventNotificationString(etype);
-    bool result_val    = true;
+    bool result_val   = true;
 
     json_outobj[CONST_PARAM_NAME_EVENT] = event;
-    json_outobj[CONST_PARAM_NAME_SUBSCRIBED] = true;
 
     switch (etype)
     {
@@ -89,15 +89,16 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
         if (p_cur_data != nullptr && p_old_data != nullptr)
         {
             json json_outobjparams;
-            CAMERA_FORMAT *cur_format    = static_cast<CAMERA_FORMAT *>(p_cur_data);
-            CAMERA_FORMAT *old_format    = static_cast<CAMERA_FORMAT *>(p_old_data);
+            CAMERA_FORMAT *cur_format = static_cast<CAMERA_FORMAT *>(p_cur_data);
+            CAMERA_FORMAT *old_format = static_cast<CAMERA_FORMAT *>(p_old_data);
 
             if (old_format != cur_format)
             {
                 json_outobjparams[CONST_PARAM_NAME_WIDTH]  = cur_format->nWidth;
                 json_outobjparams[CONST_PARAM_NAME_HEIGHT] = cur_format->nHeight;
                 json_outobjparams[CONST_PARAM_NAME_FPS]    = cur_format->nFps;
-                json_outobjparams[CONST_PARAM_NAME_FORMAT] = getFormatStringFromCode(cur_format->eFormat);
+                json_outobjparams[CONST_PARAM_NAME_FORMAT] =
+                    getFormatStringFromCode(cur_format->eFormat);
                 json_outobj[CONST_PARAM_NAME_PARAMS] = json_outobjparams;
             }
         }
@@ -120,18 +121,23 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
             CAMERA_PROPERTIES_T *cur_properties = static_cast<CAMERA_PROPERTIES_T *>(p_cur_data);
             CAMERA_PROPERTIES_T *old_properties = static_cast<CAMERA_PROPERTIES_T *>(p_old_data);
 
-            if(cur_properties != old_properties)
+            if (cur_properties != old_properties)
             {
                 auto json_propertyobj = json::object();
                 for (int i = 0; i < PROPERTY_END; i++)
                 {
                     if (cur_properties->stGetData.data[i][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE)
                     {
-                        json_propertyobj[CONST_PARAM_NAME_MIN] = cur_properties->stGetData.data[i][QUERY_MIN];
-                        json_propertyobj[CONST_PARAM_NAME_MAX] = cur_properties->stGetData.data[i][QUERY_MAX];
-                        json_propertyobj[CONST_PARAM_NAME_STEP] = cur_properties->stGetData.data[i][QUERY_STEP];
-                        json_propertyobj[CONST_PARAM_NAME_DEFAULT_VALUE] = cur_properties->stGetData.data[i][QUERY_DEFAULT];
-                        json_propertyobj[CONST_PARAM_NAME_VALUE] = cur_properties->stGetData.data[i][QUERY_VALUE];
+                        json_propertyobj[CONST_PARAM_NAME_MIN] =
+                            cur_properties->stGetData.data[i][QUERY_MIN];
+                        json_propertyobj[CONST_PARAM_NAME_MAX] =
+                            cur_properties->stGetData.data[i][QUERY_MAX];
+                        json_propertyobj[CONST_PARAM_NAME_STEP] =
+                            cur_properties->stGetData.data[i][QUERY_STEP];
+                        json_propertyobj[CONST_PARAM_NAME_DEFAULT_VALUE] =
+                            cur_properties->stGetData.data[i][QUERY_DEFAULT];
+                        json_propertyobj[CONST_PARAM_NAME_VALUE] =
+                            cur_properties->stGetData.data[i][QUERY_VALUE];
                         json_outobjparams[getParamString(i)] = json_propertyobj;
                     }
                 }
@@ -163,7 +169,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
 
         for (const auto &it : idList)
         {
-            deviceListObj["id"] =  CONST_DEVICE_NAME_CAMERA + std::to_string(it);
+            deviceListObj["id"] = CONST_DEVICE_NAME_CAMERA + std::to_string(it);
             deviceListArr.push_back(deviceListObj);
         }
         json_outobj["deviceList"] = deviceListArr;
@@ -181,34 +187,21 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
     return result_val;
 }
 
-void EventNotification::eventReply(LSHandle *lsHandle, std::string key, EventType etype, void *p_cur_data,
-                                   void *p_old_data)
+void EventNotification::eventReply(LSHandle *lsHandle, std::string key, EventType etype,
+                                   void *p_cur_data, void *p_old_data)
 {
     if (getSubscribeCount(lsHandle, key) > 0)
     {
         json json_outobj;
         std::string str_reply;
 
-        json_outobj[CONST_PARAM_NAME_RETURNVALUE] = getJsonString(json_outobj, key, etype, p_cur_data, p_old_data);
+        json_outobj[CONST_PARAM_NAME_RETURNVALUE] =
+            getJsonString(json_outobj, key, etype, p_cur_data, p_old_data);
         str_reply = json_outobj.dump();
 
         subscriptionReply(lsHandle, key, str_reply);
         PMLOG_INFO(CONST_MODULE_EN, "str_reply %s", str_reply.c_str());
     }
-}
-
-std::string EventNotification::subscriptionJsonString(bool result)
-{
-    json json_outobj;
-    std::string str_reply;
-
-    json_outobj[CONST_PARAM_NAME_SUBSCRIBED] = result;
-    json_outobj[CONST_PARAM_NAME_RETURNVALUE] = true;
-    str_reply = json_outobj.dump();
-
-    PMLOG_INFO(CONST_MODULE_EN, "str_reply %s", str_reply.c_str());
-
-    return str_reply;
 }
 
 std::string EventNotification::getEventKeyWithId(int dev_handle, std::string key)
@@ -225,6 +218,6 @@ std::string EventNotification::getCameraIdFromKey(std::string key)
 {
     std::string str_reply;
     int split_pos = key.find("_");
-    str_reply = key.substr(split_pos + 1);
+    str_reply     = key.substr(split_pos + 1);
     return str_reply;
 }

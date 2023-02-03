@@ -17,26 +17,26 @@
 #pragma once
 
 #include "camera_types.h"
-#include <pbnjson.hpp>
 #include <nlohmann/json.hpp>
+#include <pbnjson.hpp>
 
 using namespace nlohmann;
 
 class EventNotification
 {
 public:
-    EventNotification() {};
+    EventNotification(){};
     ~EventNotification() {}
 
     bool addSubscription(LSHandle *lsHandle, std::string key, LSMessage &message);
-    void eventReply(LSHandle *lsHandle, std::string key, EventType etype, void *p_cur_data = nullptr, void *p_old_data = nullptr);
-    std::string subscriptionJsonString(bool issubscribed);
+    void eventReply(LSHandle *lsHandle, std::string key, EventType etype,
+                    void *p_cur_data = nullptr, void *p_old_data = nullptr);
     std::string getEventKeyWithId(int dev_handle, std::string key);
     int getSubscribeCount(LSHandle *lsHandle, std::string key);
 
-
 private:
-    bool getJsonString(json &json_outobj, std::string key, EventType etype, void *p_cur_data, void *p_old_data);
+    bool getJsonString(json &json_outobj, std::string key, EventType etype, void *p_cur_data,
+                       void *p_old_data);
     void subscriptionReply(LSHandle *lsHandle, std::string key, std::string output_reply);
     std::string getCameraIdFromKey(std::string key);
 };

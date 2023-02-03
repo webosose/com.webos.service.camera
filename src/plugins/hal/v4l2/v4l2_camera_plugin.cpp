@@ -451,7 +451,7 @@ int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
 int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string devicenode)
 {
     int ret = CAMERA_ERROR_NONE;
-    int fd = open(devicenode.c_str(), O_RDWR | O_NONBLOCK, 0);
+    int fd  = open(devicenode.c_str(), O_RDWR | O_NONBLOCK, 0);
 
     if (CAMERA_ERROR_UNKNOWN == fd)
     {
@@ -526,8 +526,8 @@ int V4l2CameraPlugin::getInfo(camera_device_info_t *cam_info, std::string device
         cam_info->stResolution.emplace_back(v_res, getCameraFormatProperty(format));
     }
 
-    cam_info->n_devicetype       = DEVICE_TYPE_CAMERA;
-    cam_info->b_builtin          = false;
+    cam_info->n_devicetype = DEVICE_TYPE_CAMERA;
+    cam_info->b_builtin    = false;
 
     close(fd);
 
@@ -1032,18 +1032,21 @@ void V4l2CameraPlugin::createCameraParamMap()
     camera_param_map_.insert(std::make_pair(PROPERTY_CONTRAST, V4L2_CID_CONTRAST));
     camera_param_map_.insert(std::make_pair(PROPERTY_SATURATION, V4L2_CID_SATURATION));
     camera_param_map_.insert(std::make_pair(PROPERTY_HUE, V4L2_CID_HUE));
-    camera_param_map_.insert(std::make_pair(PROPERTY_AUTOWHITEBALANCE, V4L2_CID_AUTO_WHITE_BALANCE));
+    camera_param_map_.insert(
+        std::make_pair(PROPERTY_AUTOWHITEBALANCE, V4L2_CID_AUTO_WHITE_BALANCE));
     camera_param_map_.insert(std::make_pair(PROPERTY_GAMMA, V4L2_CID_GAMMA));
     camera_param_map_.insert(std::make_pair(PROPERTY_GAIN, V4L2_CID_GAIN));
     camera_param_map_.insert(std::make_pair(PROPERTY_FREQUENCY, V4L2_CID_POWER_LINE_FREQUENCY));
     camera_param_map_.insert(std::make_pair(PROPERTY_SHARPNESS, V4L2_CID_SHARPNESS));
-    camera_param_map_.insert(std::make_pair(PROPERTY_BACKLIGHTCOMPENSATION, V4L2_CID_BACKLIGHT_COMPENSATION));
+    camera_param_map_.insert(
+        std::make_pair(PROPERTY_BACKLIGHTCOMPENSATION, V4L2_CID_BACKLIGHT_COMPENSATION));
     camera_param_map_.insert(std::make_pair(PROPERTY_AUTOEXPOSURE, V4L2_CID_EXPOSURE_AUTO));
     camera_param_map_.insert(std::make_pair(PROPERTY_PAN, V4L2_CID_PAN_ABSOLUTE));
     camera_param_map_.insert(std::make_pair(PROPERTY_TILT, V4L2_CID_TILT_ABSOLUTE));
     camera_param_map_.insert(std::make_pair(PROPERTY_AUTOFOCUS, V4L2_CID_FOCUS_AUTO));
     camera_param_map_.insert(std::make_pair(PROPERTY_ZOOMABSOLUTE, V4L2_CID_ZOOM_ABSOLUTE));
-    camera_param_map_.insert(std::make_pair(PROPERTY_WHITEBALANCETEMPERATURE, V4L2_CID_WHITE_BALANCE_TEMPERATURE));
+    camera_param_map_.insert(
+        std::make_pair(PROPERTY_WHITEBALANCETEMPERATURE, V4L2_CID_WHITE_BALANCE_TEMPERATURE));
     camera_param_map_.insert(std::make_pair(PROPERTY_EXPOSURE, V4L2_CID_EXPOSURE_ABSOLUTE));
     camera_param_map_.insert(std::make_pair(PROPERTY_FOCUSABSOLUTE, V4L2_CID_FOCUS_ABSOLUTE));
 }
