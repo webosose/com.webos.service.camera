@@ -17,10 +17,6 @@ struct ICameraService
     {
         return false;
     }
-    virtual void getSupportedSolutionList(std::vector<std::string> &supportedList,
-                                          std::vector<std::string> &enabledList)
-    {
-    }
 };
 
 class ICameraServiceAddon

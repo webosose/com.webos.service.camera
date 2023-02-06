@@ -207,11 +207,3 @@ bool AddOn::Service::updateDeviceList(std::string deviceType,
 {
     return AddOn::updateDeviceList(deviceType, deviceList);
 }
-
-void AddOn::Service::getSupportedSolutionList(std::vector<std::string> &supportedList,
-                                              std::vector<std::string> &enabledList)
-{
-#ifdef FIX_ME
-    CameraSolutionManager::getSupportedSolutionList(supportedList, enabledList);
-#endif
-}

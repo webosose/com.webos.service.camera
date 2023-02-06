@@ -18,8 +18,6 @@ private:
     {
         int getDeviceCounts(std::string) override;
         bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &) override;
-        void getSupportedSolutionList(std::vector<std::string> &,
-                                      std::vector<std::string> &) override;
     };
 
     static Service *service_;
