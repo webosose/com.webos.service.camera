@@ -103,14 +103,20 @@ std::map<int, std::string> g_param_string = {
     {properties_t::PROPERTY_FREQUENCY, CONST_PARAM_NAME_FREQUENCY},
     {properties_t::PROPERTY_SHARPNESS, CONST_PARAM_NAME_SHARPNESS},
     {properties_t::PROPERTY_BACKLIGHTCOMPENSATION, CONST_PARAM_NAME_BACKLIGHT_COMPENSATION},
-    {properties_t::PROPERTY_AUTOEXPOSURE, CONST_PARAM_NAME_CONTRAST},
-    {properties_t::PROPERTY_PAN, CONST_PARAM_NAME_CONTRAST},
-    {properties_t::PROPERTY_TILT, CONST_PARAM_NAME_CONTRAST},
-    {properties_t::PROPERTY_AUTOFOCUS, CONST_PARAM_NAME_CONTRAST},
-    {properties_t::PROPERTY_ZOOMABSOLUTE, CONST_PARAM_NAME_CONTRAST},
-    {properties_t::PROPERTY_WHITEBALANCETEMPERATURE, CONST_PARAM_NAME_CONTRAST},
-    {properties_t::PROPERTY_EXPOSURE, CONST_PARAM_NAME_CONTRAST},
-    {properties_t::PROPERTY_FOCUSABSOLUTE, CONST_PARAM_NAME_CONTRAST},
+    {properties_t::PROPERTY_AUTOEXPOSURE, CONST_PARAM_NAME_AUTOEXPOSURE},
+    {properties_t::PROPERTY_PAN, CONST_PARAM_NAME_PAN},
+    {properties_t::PROPERTY_TILT, CONST_PARAM_NAME_TILT},
+    {properties_t::PROPERTY_AUTOFOCUS, CONST_PARAM_NAME_AUTOFOCUS},
+    {properties_t::PROPERTY_ZOOMABSOLUTE, CONST_PARAM_NAME_ZOOM_ABSOLUTE},
+    {properties_t::PROPERTY_WHITEBALANCETEMPERATURE, CONST_PARAM_NAME_WHITEBALANCETEMPERATURE},
+    {properties_t::PROPERTY_EXPOSURE, CONST_PARAM_NAME_EXPOSURE},
+    {properties_t::PROPERTY_FOCUSABSOLUTE, CONST_PARAM_NAME_FOCUS_ABSOLUTE},
+};
+
+std::map<int, std::string> g_query_ctrl_string = {
+    {query_ctrl_t::QUERY_MIN, "min"},     {query_ctrl_t::QUERY_MAX, "max"},
+    {query_ctrl_t::QUERY_STEP, "step"},   {query_ctrl_t::QUERY_DEFAULT, "default"},
+    {query_ctrl_t::QUERY_VALUE, "value"},
 };
 
 int getRandomNumber()
@@ -278,6 +284,33 @@ int getParamNumFromString(std::string str)
     int ret = -1;
 
     for (auto it = g_param_string.begin(); it != g_param_string.end(); ++it)
+    {
+        if (it->second == str)
+            return it->first;
+    }
+
+    return ret;
+}
+
+std::string getQueryString(int query_enum)
+{
+    std::string retstring;
+    std::map<int, std::string>::iterator it;
+
+    it = g_query_ctrl_string.find(query_enum);
+    if (it != g_query_ctrl_string.end())
+        retstring = it->second;
+    else
+        retstring = "";
+
+    return retstring;
+}
+
+int getQueryNumFromString(std::string str)
+{
+    int ret = -1;
+
+    for (auto it = g_query_ctrl_string.begin(); it != g_query_ctrl_string.end(); ++it)
     {
         if (it->second == str)
             return it->first;

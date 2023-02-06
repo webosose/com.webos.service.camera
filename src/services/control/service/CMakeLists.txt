@@ -49,6 +49,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/control/device_controller.cpp
     ${CMAKE_SOURCE_DIR}/src/services/control/camshm.cpp
     ${CMAKE_SOURCE_DIR}/src/services/control/cam_posixshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/camera/camera_types.cpp
     )
 
 # Solution Manager / Proxy

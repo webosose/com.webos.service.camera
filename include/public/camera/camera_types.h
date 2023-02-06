@@ -177,5 +177,7 @@ std::string getFormatStringFromCode(camera_format_t);
 std::string getResolutionString(camera_format_t);
 std::string getParamString(int properties_enum);
 int getParamNumFromString(std::string str);
+std::string getQueryString(int query_enum);
+int getQueryNumFromString(std::string str);
 
 #endif /* CAMERA_TYPES_H_ */

@@ -48,6 +48,7 @@
 #define CONST_DEFAULT_NIMAGE "nimage"
 
 #define CONST_PARAM_NAME_RETURNVALUE "returnValue"
+#define CONST_PARAM_NAME_RETURNCODE "returnCode"
 #define CONST_PARAM_NAME_ERROR_CODE "errorCode"
 #define CONST_PARAM_NAME_ERROR_TEXT "errorText"
 #define CONST_PARAM_NAME_NAME "name"
