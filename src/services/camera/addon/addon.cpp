@@ -107,22 +107,22 @@ bool AddOn::hasImplementation()
     return plugin_->hasImplementation();
 }
 
-void AddOn::initialize(LSHandle *ls_handle)
+void AddOn::initialize(LSHandle *lsHandle)
 {
     if (plugin_)
     {
         plugin_->setCameraService(AddOn::service_);
-        plugin_->initialize(ls_handle);
+        plugin_->initialize(lsHandle);
     }
 }
 
-bool AddOn::isSupportedCamera(std::string str_productId, std::string str_vendorId)
+bool AddOn::isSupportedCamera(std::string productId, std::string vendorId)
 {
     if (!plugin_)
     {
-        return WhitelistChecker::isSupportedCamera(str_productId, str_vendorId);
+        return WhitelistChecker::isSupportedCamera(productId, vendorId);
     }
-    return plugin_->isSupportedCamera(str_productId, str_vendorId);
+    return plugin_->isSupportedCamera(productId, vendorId);
 }
 
 bool AddOn::isAppPermission(std::string appId)
@@ -200,7 +200,10 @@ std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
     return plugin_->getEnabledSolutionList(deviceKey);
 }
 
-int AddOn::Service::getDeviceCounts(std::string type) { return AddOn::getDeviceCounts(type); }
+int AddOn::Service::getDeviceCounts(std::string deviceType)
+{
+    return AddOn::getDeviceCounts(deviceType);
+}
 
 bool AddOn::Service::updateDeviceList(std::string deviceType,
                                       const std::vector<DEVICE_LIST_T> &deviceList)
