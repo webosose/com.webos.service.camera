@@ -22,10 +22,10 @@
  ----------------------------------------------------------------------------*/
 #include "cam_posixshm.h"
 #include "camera_constants.h"
-#include "camera_hal_types.h"
 #include "camera_types.h"
 #include "camshm.h"
 #include <condition_variable>
+#include <plugin_factory.hpp>
 #include <string>
 #include <thread>
 #include <unistd.h>
@@ -95,7 +95,9 @@ private:
     std::shared_ptr<CameraSolutionManager> pCameraSolution;
     std::shared_ptr<MemoryListener> pMemoryListener;
 
-    static std::string getSubsystem(const std::string deviceType);
+    PluginFactory pluginFactory_;
+    IFeaturePtr pFeature_;
+    int halFd_{-1};
 
 public:
     DeviceControl();

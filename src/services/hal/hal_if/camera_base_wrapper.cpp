@@ -15,7 +15,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "camera_base_wrapper.h"
-#include "camera_base.h"
+#include "plugin_interface.hpp"
 
 #ifdef __cplusplus
 extern "C"
@@ -24,126 +24,126 @@ extern "C"
 
     int open_device(camera_handle_t *h, const char *subsystem, const char *payload)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->openDevice(subsystem, payload);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->openDevice(subsystem, payload);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int close_device(camera_handle_t *h)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->closeDevice();
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->closeDevice();
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int set_format(camera_handle_t *h, stream_format_t cam_format)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->setFormat(cam_format);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->setFormat(&cam_format);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int get_format(camera_handle_t *h, stream_format_t *cam_format)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->getFormat(cam_format);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->getFormat(cam_format);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int set_buffer(camera_handle_t *h, int num_buffer, int io_mode, buffer_t **usrpbufs)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->setBuffer(num_buffer, io_mode, usrpbufs);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->setBuffer(num_buffer, io_mode, (void **)usrpbufs);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int get_buffer(camera_handle_t *h, buffer_t *buf)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->getBuffer(buf);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->getBuffer(buf);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int release_buffer(camera_handle_t *h, buffer_t buf)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->releaseBuffer(buf);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->releaseBuffer(&buf);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int destroy_buffer(camera_handle_t *h)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->destroyBuffer();
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->destroyBuffer();
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int start_capture(camera_handle_t *h)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->startCapture();
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->startCapture();
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int stop_capture(camera_handle_t *h)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->stopCapture();
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->stopCapture();
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int set_properties(camera_handle_t *h, const void *cam_params)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->setProperties(static_cast<const camera_properties_t *>(cam_params));
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->setProperties(cam_params);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int get_properties(camera_handle_t *h, void *cam_params)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->getProperties(static_cast<camera_properties_t *>(cam_params));
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->getProperties(cam_params);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int get_info(camera_handle_t *h, void *cam_info, const char *devicenode)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->getInfo(static_cast<camera_device_info_t *>(cam_info), devicenode);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->getInfo(cam_info, devicenode);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
     int get_buffer_fd(camera_handle_t *h, int *buf_fd, int *count)
     {
-        CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
-        if (NULL != camera_base)
-            return camera_base->getBufferFd(buf_fd, count);
+        IHal *hal = static_cast<IHal *>(h->handle);
+        if (NULL != hal)
+            return hal->getBufferFd(buf_fd, count);
         else
             return CAMERA_ERROR_UNKNOWN;
     }

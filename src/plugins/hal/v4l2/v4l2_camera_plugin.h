@@ -17,7 +17,10 @@
 #ifndef V4L2_CAMERA_PLUGIN
 #define V4L2_CAMERA_PLUGIN
 
-#include <camera_base.h>
+#include "camera_hal_if_cpp_types.h"
+#include "camera_hal_if_types.h"
+#include "plugin.hpp"
+#include "plugin_interface.hpp"
 #include <iostream>
 #include <linux/videodev2.h>
 #include <map>
@@ -31,25 +34,33 @@ extern "C"
     void *create_handle();
     void destroy_handle(void *);
 
-    class V4l2CameraPlugin : public CameraBase
+    class V4l2CameraPlugin : public IHal
     {
     public:
         V4l2CameraPlugin();
+        virtual ~V4l2CameraPlugin();
 
-        virtual int openDevice(std::string, std::string) override;
+    public:
+        virtual bool queryInterface(const char *szName, void **ppInterface) override
+        {
+            *ppInterface = static_cast<void *>(static_cast<IHal *>(this));
+            return true;
+        }
+
+        virtual int openDevice(std::string devname, std::string payload) override;
         virtual int closeDevice() override;
-        virtual int setFormat(stream_format_t) override;
-        virtual int getFormat(stream_format_t *) override;
-        virtual int setBuffer(int, int, buffer_t **) override;
-        virtual int getBuffer(buffer_t *) override;
-        virtual int releaseBuffer(buffer_t) override;
+        virtual int setFormat(const void *stream_format) override;
+        virtual int getFormat(void *stream_format) override;
+        virtual int setBuffer(int num_buffer, int io_mode, void **usrbufs) override;
+        virtual int getBuffer(void *outbuf) override;
+        virtual int releaseBuffer(const void *inbuf) override;
         virtual int destroyBuffer() override;
         virtual int startCapture() override;
         virtual int stopCapture() override;
-        virtual int setProperties(const camera_properties_t *) override;
-        virtual int getProperties(camera_properties_t *) override;
-        virtual int getInfo(camera_device_info_t *, std::string) override;
-        virtual int getBufferFd(int *, int *) override;
+        virtual int setProperties(const void *cam_in_param) override;
+        virtual int getProperties(void *cam_out_param) override;
+        virtual int getInfo(void *cam_info, std::string devicenode) override;
+        virtual int getBufferFd(int *bufFd, int *count) override;
 
     private:
         int setV4l2Property(std::map<int, int> &);
