@@ -892,15 +892,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
         }
     }
 
-    // update resolution structure
-    for (auto const &v : out_params.stResolution)
-    {
-        std::vector<std::string> c_res;
-        c_res.clear();
-        c_res.assign(v.c_res.begin(), v.c_res.end());
-        oparams->stResolution.emplace_back(c_res, v.e_format);
-    }
-
     return DEVICE_OK;
 }
 

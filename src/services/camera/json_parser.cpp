@@ -510,16 +510,6 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
             raw_buffer strid = jstring_get_fast(jarray_get(params, i));
             setParams(strid.m_str);
         }
-
-        // set handle Temporarily keep using handle. Todo remove S
-        int devicehandle = n_invalid_id;
-        jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
-        if (devicehandle == 0)
-        {
-            devicehandle = n_invalid_id;
-        }
-        setDeviceHandle(devicehandle);
-        // Todo remove E
     }
     else
     {
@@ -566,22 +556,6 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
                                 json_propertyobj);
                 }
             }
-
-            // add resolution structure Todo remove
-            jvalue_ref json_resolutionobj = jobject_create();
-            for (auto const &v : rGetCameraProperties().stResolution)
-            {
-                jvalue_ref json_resolutionarray = jarray_create(0);
-                for (auto const &res : v.c_res)
-                {
-                    jarray_append(json_resolutionarray, jstring_create(res.c_str()));
-                }
-                jobject_put(json_resolutionobj,
-                            jstring_create(getResolutionString(v.e_format).c_str()),
-                            json_resolutionarray);
-            }
-            jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
-                        json_resolutionobj);
         }
         else
         {
@@ -652,7 +626,7 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
             jparams = jobject_get(jobj_params, j_cstr_to_buffer(getParamString(i).c_str()));
             jnumber_get_i32(jparams, &r_camproperties.stGetData.data[i][QUERY_VALUE]);
         }
-        r_camproperties.stResolution.clear();
+
         setCameraProperties(r_camproperties);
     }
     else

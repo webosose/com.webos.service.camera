@@ -321,17 +321,6 @@ public:
                 ro_camproperties_.stGetData.data[i][j] = rin_info.stGetData.data[i][j];
             }
         }
-
-        // update resolution structure
-        // Todo remove S
-        for (auto const &v : rin_info.stResolution)
-        {
-            std::vector<std::string> c_res;
-            c_res.clear();
-            c_res.assign(v.c_res.begin(), v.c_res.end());
-            ro_camproperties_.stResolution.emplace_back(c_res, v.e_format);
-        }
-        // Todo remove E
     }
     CAMERA_PROPERTIES_T rGetCameraProperties() const { return ro_camproperties_; }
 

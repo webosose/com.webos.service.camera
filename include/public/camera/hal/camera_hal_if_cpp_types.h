@@ -32,12 +32,6 @@ struct camera_resolution_t
     }
 };
 
-struct camera_properties_t
-{
-    camera_queryctrl_t stGetData;
-    std::vector<camera_resolution_t> stResolution; // To do remove
-};
-
 struct camera_device_info_t
 {
     std::string str_devicename;

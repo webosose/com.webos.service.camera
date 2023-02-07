@@ -438,8 +438,6 @@ int V4l2CameraPlugin::getProperties(camera_properties_t *cam_out_params)
             ret = CAMERA_ERROR_NONE;
     }
 
-    getResolutionProperty(cam_out_params);
-
     if (errno == ENODEV) // No such device
     {
         return CAMERA_ERROR_UNKNOWN;
@@ -639,73 +637,6 @@ camera_format_t V4l2CameraPlugin::getCameraFormatProperty(struct v4l2_fmtdesc fo
         break;
     }
     return format_;
-}
-
-void V4l2CameraPlugin::getResolutionProperty(camera_properties_t *cam_out_params)
-{
-    struct v4l2_fmtdesc format;
-    CLEAR(format);
-
-    format.index = 0;
-    format.type  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    struct v4l2_frmsizeenum frmsize;
-    CLEAR(frmsize);
-
-    cam_out_params->stResolution.clear();
-    while ((-1 != xioctl(fd_, VIDIOC_ENUM_FMT, &format)))
-    {
-        format.index++;
-        frmsize.pixel_format = format.pixelformat;
-        frmsize.index        = 0;
-        struct v4l2_frmivalenum fival;
-        CLEAR(fival);
-        int res_index = 0;
-
-        std::vector<std::string> v_res;
-        while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMESIZES, &frmsize)))
-        {
-            if (V4L2_FRMSIZE_TYPE_DISCRETE == frmsize.type)
-            {
-                fival.index        = 0;
-                fival.pixel_format = frmsize.pixel_format;
-                fival.width        = frmsize.discrete.width;
-                fival.height       = frmsize.discrete.height;
-                while ((-1 != xioctl(fd_, VIDIOC_ENUM_FRAMEINTERVALS, &fival)))
-                {
-                    std::string res =
-                        std::to_string(frmsize.discrete.width) + "," +
-                        std::to_string(frmsize.discrete.height) + "," +
-                        std::to_string(fival.discrete.denominator / fival.discrete.numerator);
-                    HAL_LOG_INFO(CONST_MODULE_HAL, "c_res %s ", res.c_str());
-                    fival.index++;
-                    res_index++;
-                    v_res.emplace_back(res);
-                    if (res_index >= CONST_MAX_INDEX)
-                    {
-                        HAL_LOG_INFO(CONST_MODULE_HAL, "WARN : Exceeded resolution table size!");
-                        break;
-                    }
-                }
-            }
-            else if (V4L2_FRMSIZE_TYPE_STEPWISE == frmsize.type)
-            {
-                std::string res = std::to_string(frmsize.discrete.width) + "," +
-                                  std::to_string(frmsize.discrete.height);
-                res_index++;
-                v_res.emplace_back(res);
-                HAL_LOG_INFO(CONST_MODULE_HAL, "framesize type : V4L2_FRMSIZE_TYPE_STEPWISE");
-            }
-            else if (V4L2_FRMSIZE_TYPE_CONTINUOUS == frmsize.type)
-            {
-                HAL_LOG_INFO(CONST_MODULE_HAL, "framesize type : V4L2_FRMSIZE_TYPE_CONTINUOUS");
-            }
-
-            if (res_index >= CONST_MAX_INDEX)
-                break;
-            frmsize.index++;
-        }
-        cam_out_params->stResolution.emplace_back(v_res, getCameraFormatProperty(format));
-    }
 }
 
 int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)

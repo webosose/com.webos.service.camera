@@ -688,15 +688,12 @@ bool CameraService::getProperties(LSMessage &message)
     GetSetPropertiesMethod obj_getproperties;
     obj_getproperties.getPropertiesObject(payload, getPropertiesSchema);
 
-    // int ndevhandle = n_invalid_id;
-    int ndevhandle =
-        obj_getproperties.getDeviceHandle(); // Temporarily keep using handle. Todo remove
-    int ncamId = getId(obj_getproperties.getCameraId());
+    int ndevhandle = n_invalid_id;
+    int ncamId     = getId(obj_getproperties.getCameraId());
 
     PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
 
-    if (n_invalid_id == ncamId &&
-        ndevhandle == n_invalid_id) // Temporarily keep using handle. //if (n_invalid_id == ncamId)
+    if (n_invalid_id == ncamId)
     {
         err_id = DEVICE_ERROR_WRONG_PARAM;
         PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
@@ -705,11 +702,9 @@ bool CameraService::getProperties(LSMessage &message)
     }
     else
     {
-        if (n_invalid_id == ndevhandle) // Temporarily keep using handle. Todo remove
-        {
-            ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
-        }
+        ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
         PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
+
         if (n_invalid_id != ndevhandle)
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);

@@ -158,4 +158,9 @@ struct camera_queryctrl_t
     int data[PROPERTY_END][QUERY_END];
 };
 
+struct camera_properties_t
+{
+    camera_queryctrl_t stGetData;
+};
+
 #endif

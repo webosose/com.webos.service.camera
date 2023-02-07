@@ -55,7 +55,6 @@ extern "C"
         int setV4l2Property(std::map<int, int> &);
         int getV4l2Property(struct v4l2_queryctrl, int *);
         camera_format_t getCameraFormatProperty(struct v4l2_fmtdesc);
-        void getResolutionProperty(camera_properties_t *);
 
         int requestMmapBuffers(int);
         int requestUserptrBuffers(int, buffer_t **);
