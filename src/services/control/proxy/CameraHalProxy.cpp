@@ -173,20 +173,23 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
-                                                  const std::string &imagepat)
+                                                  const std::string &imagepath)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
-    // TBD
-    return DEVICE_OK;
+    json jin;
+    jin[CONST_PARAM_NAME_FORMAT]     = sformat.eFormat;
+    jin[CONST_PARAM_NAME_WIDTH]      = sformat.nWidth;
+    jin[CONST_PARAM_NAME_HEIGHT]     = sformat.nHeight;
+    jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
+
+    return luna_call_sync(__func__, to_string(jin));
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
-
-    // TBD
-    return DEVICE_OK;
+    return luna_call_sync(__func__, "{}");
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sformat,
@@ -195,8 +198,15 @@ DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sfor
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
-    // TBD
-    return DEVICE_OK;
+    json jin;
+    jin["nCount"]                    = ncount;
+    jin[CONST_PARAM_NAME_FORMAT]     = sformat.eFormat;
+    jin[CONST_PARAM_NAME_WIDTH]      = sformat.nWidth;
+    jin[CONST_PARAM_NAME_HEIGHT]     = sformat.nHeight;
+    jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
+    jin[CONST_PARAM_NAME_MODE]       = mode;
+
+    return luna_call_sync(__func__, to_string(jin));
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
