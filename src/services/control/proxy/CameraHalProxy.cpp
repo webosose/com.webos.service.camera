@@ -280,6 +280,19 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
         pinfo->n_devicetype =
             get_optional<device_t>(j, "deviceType").value_or(DEVICE_TYPE_UNDEFINED);
         pinfo->b_builtin = get_optional<int>(j, "builtin").value_or(0);
+
+        auto r = j[CONST_PARAM_NAME_RESOLUTION];
+        for (json::iterator it = r.begin(); it != r.end(); ++it)
+        {
+            std::vector<std::string> v_res;
+            for (const auto &item : it.value())
+            {
+                v_res.emplace_back(item);
+            }
+            camera_format_t eformat;
+            convertFormatToCode(it.key(), &eformat);
+            pinfo->stResolution.emplace_back(v_res, eformat);
+        }
     }
 
     g_main_loop_quit(lp);
@@ -402,8 +415,7 @@ bool CameraHalProxy::isRegisteredClient(int devhandle)
 void CameraHalProxy::requestPreviewCancel()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
-
-    // TBD
+    luna_call_sync(__func__, "{}");
 }
 
 //[Camera Solution Manager] interfaces start
