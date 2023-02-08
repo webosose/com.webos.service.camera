@@ -1,13 +1,17 @@
 #ifndef ADDON_H_
 #define ADDON_H_
 
-#include "camera_service_addon_interface.h"
+#include <plugin_factory.hpp>
+#include <plugin_interface.hpp>
 
 class AddOn
 {
 private:
     static void *handle_;
-    static ICameraServiceAddon *plugin_;
+    static IAddon *plugin_;
+
+    static PluginFactory *pPluginFactory_;
+    static IFeaturePtr pFeature_;
 
 private:
     static int getDeviceCounts(std::string deviceType);
