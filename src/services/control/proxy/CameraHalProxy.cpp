@@ -317,27 +317,44 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
-    // TBD
-    //  update resolution structure
+    json j;
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, "{}", &j);
+
+    if (ret == DEVICE_OK)
     {
-        std::vector<std::string> c_res;
-        c_res.clear();
-        c_res.push_back("320,240,30");
-        c_res.push_back("640,480,30");
-        c_res.push_back("1280,720,30");
-        c_res.push_back("1920,1080,30");
-        oparams->stResolution.emplace_back(c_res, CAMERA_FORMAT_JPEG);
+        for (json::iterator it = j.begin(); it != j.end(); ++it)
+        {
+            if (it.value().is_object() == false)
+                continue;
+
+            int i = getParamNumFromString(it.key());
+            if (i != -1)
+            {
+                json queries = j[it.key()];
+                for (json::iterator q = queries.begin(); q != queries.end(); ++q)
+                {
+                    oparams->stGetData.data[i][getQueryNumFromString(q.key())] = q.value();
+                }
+            }
+        }
     }
 
-    return DEVICE_OK;
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::setDeviceProperty(CAMERA_PROPERTIES_T *inparams)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
-    // TBD
-    return DEVICE_OK;
+    json jin;
+    for (int i = 0; i < PROPERTY_END; i++)
+    {
+        if (inparams->stGetData.data[i][QUERY_VALUE] == CONST_PARAM_DEFAULT_VALUE)
+            continue;
+        jin[getParamString(i)] = inparams->stGetData.data[i][QUERY_VALUE];
+    }
+
+    return luna_call_sync(__func__, to_string(jin));
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::setFormat(CAMERA_FORMAT sformat)
@@ -345,10 +362,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::setFormat(CAMERA_FORMAT sformat)
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json jin;
-    jin["width"]        = sformat.nWidth;
-    jin["height"]       = sformat.nHeight;
-    jin["fps"]          = sformat.nFps;
-    jin["cameraFormat"] = sformat.eFormat;
+    jin[CONST_PARAM_NAME_WIDTH]  = sformat.nWidth;
+    jin[CONST_PARAM_NAME_HEIGHT] = sformat.nHeight;
+    jin[CONST_PARAM_NAME_FPS]    = sformat.nFps;
+    jin[CONST_PARAM_NAME_FORMAT] = sformat.eFormat;
 
     return luna_call_sync(__func__, to_string(jin));
 }
@@ -357,8 +374,19 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
-    // TBD
-    return DEVICE_OK;
+    json j;
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, "{}", &j);
+
+    if (ret == DEVICE_OK)
+    {
+        pformat->nWidth  = get_optional<int>(j, CONST_PARAM_NAME_WIDTH).value_or(0);
+        pformat->nHeight = get_optional<int>(j, CONST_PARAM_NAME_HEIGHT).value_or(0);
+        pformat->nFps    = get_optional<int>(j, CONST_PARAM_NAME_FPS).value_or(0);
+        pformat->eFormat = get_optional<camera_format_t>(j, CONST_PARAM_NAME_FORMAT)
+                               .value_or(CAMERA_FORMAT_UNDEFINED);
+    }
+
+    return ret;
 }
 
 bool CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle, std::string &outmsg)
