@@ -40,18 +40,10 @@ public:
     bool getMetaSizeHint(LSMessage &message);
     bool initialize(LSMessage &message);
     bool setEnableValue(LSMessage &message);
-    bool getProperty(LSMessage &message);
-    bool isEnabled(LSMessage &message);
-    bool getSolutionStr(LSMessage &message);
-    bool processForSnapshot(LSMessage &message);
-    bool processForPreview(LSMessage &message);
     bool release(LSMessage &message);
     bool subscribe(LSMessage &);
 
 private:
-    bool openFrameBuffer(key_t shmemKey);
-    bool readFrameBuffer(SHMEM_HANDLE hShm);
-
     buffer_t frameBuffer;
     SHMEM_HANDLE hShm;
 };

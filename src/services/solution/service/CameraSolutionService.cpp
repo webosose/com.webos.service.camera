@@ -35,11 +35,6 @@ CameraSolutionService::CameraSolutionService(const char *service_name)
     LS_CATEGORY_METHOD(getMetaSizeHint)
     LS_CATEGORY_METHOD(initialize)
     LS_CATEGORY_METHOD(setEnableValue)
-    LS_CATEGORY_METHOD(getProperty)
-    LS_CATEGORY_METHOD(isEnabled)
-    LS_CATEGORY_METHOD(getSolutionStr)
-    LS_CATEGORY_METHOD(processForSnapshot)
-    LS_CATEGORY_METHOD(processForPreview)
     LS_CATEGORY_METHOD(release)
     LS_CATEGORY_METHOD(subscribe)
     LS_CATEGORY_END;
@@ -74,10 +69,12 @@ bool CameraSolutionService::createSolution(LSMessage &message)
         }
     }
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
+
+    j_release(&json_outobj);
 
     return ret;
 }
@@ -90,12 +87,14 @@ bool CameraSolutionService::getMetaSizeHint(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
     jobject_put(json_outobj, J_CSTR_TO_JVAL("metaSizeHint"),
                 jnumber_create_i32(pCameraSolution->getMetaSizeHint()));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
+
+    j_release(&json_outobj);
 
     return ret;
 }
@@ -144,10 +143,12 @@ bool CameraSolutionService::initialize(LSMessage &message)
 
     pCameraSolution->initialize(streamFormat_, shmKey, this->get());
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
+
+    j_release(&json_outobj);
 
     return ret;
 }
@@ -169,90 +170,12 @@ bool CameraSolutionService::setEnableValue(LSMessage &message)
 
     pCameraSolution->setEnableValue(enable);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
 
-    return ret;
-}
-
-bool CameraSolutionService::getProperty(LSMessage &message)
-{
-    bool ret               = false;
-    jvalue_ref json_outobj = jobject_create();
-    auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
-
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
-
-    LS::Message request(&message);
-    request.respond(jvalue_stringify(json_outobj));
-
-    return ret;
-}
-
-bool CameraSolutionService::isEnabled(LSMessage &message)
-{
-    bool ret               = false;
-    jvalue_ref json_outobj = jobject_create();
-    auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
-
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
-
-    LS::Message request(&message);
-    request.respond(jvalue_stringify(json_outobj));
-
-    return ret;
-}
-
-bool CameraSolutionService::getSolutionStr(LSMessage &message)
-{
-    bool ret               = false;
-    jvalue_ref json_outobj = jobject_create();
-    auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
-
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
-
-    LS::Message request(&message);
-    request.respond(jvalue_stringify(json_outobj));
-
-    return ret;
-}
-
-bool CameraSolutionService::processForSnapshot(LSMessage &message)
-{
-    bool ret               = false;
-    jvalue_ref json_outobj = jobject_create();
-    auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
-
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
-
-    LS::Message request(&message);
-    request.respond(jvalue_stringify(json_outobj));
-
-    return ret;
-}
-
-bool CameraSolutionService::processForPreview(LSMessage &message)
-{
-    bool ret               = false;
-    jvalue_ref json_outobj = jobject_create();
-    auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
-
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
-
-    LS::Message request(&message);
-    request.respond(jvalue_stringify(json_outobj));
+    j_release(&json_outobj);
 
     return ret;
 }
@@ -266,10 +189,12 @@ bool CameraSolutionService::release(LSMessage &message)
 
     pCameraSolution->release();
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
+
+    j_release(&json_outobj);
 
     g_main_loop_quit(main_loop_ptr_.get());
     return ret;
@@ -287,23 +212,13 @@ bool CameraSolutionService::subscribe(LSMessage &message)
     LSErrorFree(&error);
 
     jvalue_ref json_outobj = jobject_create();
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("returnValue"), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
 
+    j_release(&json_outobj);
+
     return ret;
-}
-
-bool CameraSolutionService::openFrameBuffer(key_t shmemKey)
-{
-    // TBD
-    return true;
-}
-
-bool CameraSolutionService::readFrameBuffer(SHMEM_HANDLE hShm)
-{
-    // TBD
-    return true;
 }
 
 int main(int argc, char *argv[])
