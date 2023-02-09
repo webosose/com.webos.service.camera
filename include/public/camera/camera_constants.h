@@ -136,8 +136,19 @@
 #define CONST_PARAM_NAME_DEFAULT_VALUE "default"
 #define CONST_PARAM_NAME_VALUE "value"
 #define CONST_PARAM_NAME_NOTSUPPORT "not support"
-#define CONST_PARAM_NAME_SOLUTION "solutions"
+#define CONST_PARAM_NAME_SOLUTIONS "solutions"
 #define CONST_PARAM_NAME_SUBSCRIBED "subscribed"
+#define CONST_PARAM_NAME_CAMERAID "cameraID"
+#define CONST_PARAM_NAME_PAYLOAD "payload"
+#define CONST_PARAM_NAME_MEMTYPE "memType"
+#define CONST_PARAM_NAME_NCOUNT "nCount"
+#define CONST_PARAM_NAME_SUBSYSTEM "subSystem"
+#define CONST_PARAM_NAME_DEVHANDLE "devHandle"
+#define CONST_PARAM_NAME_OUTMSG "outMsg"
+#define CONST_PARAM_NAME_SHMKEY "shmKey"
+#define CONST_PARAM_NAME_BUFFERSIZE "bufferSize"
+#define CONST_PARAM_NAME_ENABLE "enable"
+#define CONST_PARAM_NAME_METASIZE_HINT "metaSizeHint"
 
 const int n_invalid_id  = -1;
 const int frame_count   = 8;
@@ -170,5 +181,6 @@ const std::string cstr_libv4l2         = "libv4l2-camera-plugin.so";
 const std::string cstr_libremote       = "libremote-camera-plugin.so";
 const std::string cstr_libfake         = "libfake-camera-plugin.so";
 const std::string cstr_libdummy        = "libv4l2-camera-plugin-dummy.so";
+const std::string cstr_uricamearhal    = "com.webos.camerahal.";
 
 #endif /*CAMERA_CONST_H_*/

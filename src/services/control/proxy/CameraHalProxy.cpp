@@ -20,8 +20,7 @@
 #include "Process.h"
 #include "json_utils.h"
 
-const std::string CameraHalProcessName      = "com.webos.service.camera2.hal";
-const std::string CameraHalConnectionBaseId = "com.webos.camerahal.";
+const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
 #define COMMAND_TIMEOUT_LONG 3000 // TODO : Is the minimum value sufficient?
 
 static bool cameraHalServiceCb(const char *msg, void *data)
@@ -35,8 +34,8 @@ static bool cameraHalServiceCb(const char *msg, void *data)
         return false;
     }
 
-    std::string eventType = get_optional<std::string>(j, "eventType").value_or("");
-    if (eventType == getEventNotificationString(EventType::EVENT_TYPE_DEVICE_FAULT))
+    std::string event_type = get_optional<std::string>(j, CONST_PARAM_NAME_EVENT).value_or("");
+    if (event_type == getEventNotificationString(EventType::EVENT_TYPE_DEVICE_FAULT))
     {
         CameraHalProxy *client = (CameraHalProxy *)data;
 
@@ -92,7 +91,7 @@ CameraHalProxy::CameraHalProxy()
     g_main_context_unref(c);
 
     // start process
-    std::string uid = CameraHalConnectionBaseId + guid;
+    std::string uid = cstr_uricamearhal + guid;
     service_uri_    = "luna://" + uid + "/";
 
     std::string cmd = "/usr/sbin/" + CameraHalProcessName + " -s" + uid;
@@ -125,9 +124,9 @@ DEVICE_RETURN_CODE_T CameraHalProxy::open(std::string devicenode, int ndev_id, s
                ndev_id, payload.c_str());
 
     json jin;
-    jin["devPath"]  = devicenode;
-    jin["cameraID"] = ndev_id;
-    jin["payload"]  = payload;
+    jin[CONST_PARAM_NAME_DEVICE_PATH] = devicenode;
+    jin[CONST_PARAM_NAME_CAMERAID]    = ndev_id;
+    jin[CONST_PARAM_NAME_PAYLOAD]     = payload;
 
     return luna_call_sync(__func__, to_string(jin));
 }
@@ -149,14 +148,14 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(std::string memtype, int *pkey
     subsKey_ = subskey;
 
     json jin;
-    jin["memType"] = memtype;
+    jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
 
     json j;
     DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), &j);
 
     if (ret == DEVICE_OK)
     {
-        *pkey = get_optional<int>(j, "shmKey").value_or(0);
+        *pkey = get_optional<int>(j, CONST_PARAM_NAME_SHMKEY).value_or(0);
     }
 
     return ret;
@@ -167,7 +166,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
     PMLOG_INFO(CONST_MODULE_CHP, "memtype : %d", memtype);
 
     json jin;
-    jin["memType"] = memtype;
+    jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
 
     return luna_call_sync(__func__, to_string(jin));
 }
@@ -199,7 +198,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sfor
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json jin;
-    jin["nCount"]                    = ncount;
+    jin[CONST_PARAM_NAME_NCOUNT]     = ncount;
     jin[CONST_PARAM_NAME_FORMAT]     = sformat.eFormat;
     jin[CONST_PARAM_NAME_WIDTH]      = sformat.nWidth;
     jin[CONST_PARAM_NAME_HEIGHT]     = sformat.nHeight;
@@ -214,7 +213,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
     PMLOG_INFO(CONST_MODULE_CHP, "subsystem : %s", subsystem.c_str());
 
     json jin;
-    jin["subSystem"] = subsystem;
+    jin[CONST_PARAM_NAME_SUBSYSTEM] = subsystem;
 
     return luna_call_sync(__func__, to_string(jin));
 }
@@ -228,14 +227,14 @@ DEVICE_RETURN_CODE_T CameraHalProxy::destroyHandle()
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
-                                                   std::string deviceType,
+                                                   std::string strdevicetype,
                                                    camera_device_info_t *pinfo)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "device node : %s, device type : %s", strdevicenode.c_str(),
-               deviceType.c_str());
+               strdevicetype.c_str());
 
     // 1. start process
-    std::string serviceName = CameraHalConnectionBaseId + GenerateUniqueID()();
+    std::string serviceName = cstr_uricamearhal + GenerateUniqueID()();
     std::string cmd         = "/usr/sbin/" + CameraHalProcessName + " -s" + serviceName;
 
     std::unique_ptr<Process> proc_ = std::make_unique<Process>(cmd);
@@ -267,9 +266,9 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
     std::string uri = "luna://" + serviceName + "/" + __func__;
 
     json jin;
-    jin["devPath"]      = strdevicenode;
-    jin["subSystem"]    = deviceType;
-    std::string payload = to_string(jin);
+    jin[CONST_PARAM_NAME_DEVICE_PATH] = strdevicenode;
+    jin[CONST_PARAM_NAME_SUBSYSTEM]   = strdevicetype;
+    std::string payload               = to_string(jin);
     PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
@@ -289,8 +288,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
     if (ret == DEVICE_OK)
     {
         pinfo->n_devicetype =
-            get_optional<device_t>(j, "deviceType").value_or(DEVICE_TYPE_UNDEFINED);
-        pinfo->b_builtin = get_optional<int>(j, "builtin").value_or(0);
+            get_optional<device_t>(j, CONST_PARAM_NAME_DEVICE_TYPE).value_or(DEVICE_TYPE_UNDEFINED);
+        pinfo->b_builtin = get_optional<int>(j, CONST_PARAM_NAME_BUILTIN).value_or(0);
 
         auto r = j[CONST_PARAM_NAME_RESOLUTION];
         for (json::iterator it = r.begin(); it != r.end(); ++it)
@@ -405,14 +404,14 @@ bool CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle, std::stri
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json jin;
-    jin["pid"]       = pid;
-    jin["sig"]       = sig;
-    jin["devHandle"] = devhandle;
+    jin[CONST_CLIENT_PROCESS_ID]    = pid;
+    jin[CONST_CLIENT_SIGNAL_NUM]    = sig;
+    jin[CONST_PARAM_NAME_DEVHANDLE] = devhandle;
 
     json j;
     bool ret = luna_call_sync_bool(__func__, to_string(jin), &j);
 
-    outmsg = get_optional<std::string>(j, "outMsg").value_or("");
+    outmsg = get_optional<std::string>(j, CONST_PARAM_NAME_OUTMSG).value_or("");
 
     return ret;
 }
@@ -422,12 +421,12 @@ bool CameraHalProxy::unregisterClient(pid_t pid, std::string &outmsg)
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json jin;
-    jin["pid"] = pid;
+    jin[CONST_CLIENT_PROCESS_ID] = pid;
 
     json j;
     bool ret = luna_call_sync_bool(__func__, to_string(jin), &j);
 
-    outmsg = get_optional<std::string>(j, "outMsg").value_or("");
+    outmsg = get_optional<std::string>(j, CONST_PARAM_NAME_OUTMSG).value_or("");
 
     return ret;
 }
@@ -437,7 +436,7 @@ bool CameraHalProxy::isRegisteredClient(int devhandle)
     PMLOG_INFO(CONST_MODULE_CHP, "handle %d", devhandle);
 
     json jin;
-    jin["devHandle"] = devhandle;
+    jin[CONST_PARAM_NAME_DEVHANDLE] = devhandle;
 
     return luna_call_sync_bool(__func__, to_string(jin));
 }
@@ -460,7 +459,7 @@ CameraHalProxy::getSupportedCameraSolutionInfo(std::vector<std::string> &solutio
 
     if (ret == DEVICE_OK)
     {
-        for (auto s : j["solutions"])
+        for (auto s : j[CONST_PARAM_NAME_SOLUTIONS])
         {
             if (!s.is_string())
                 continue;
@@ -482,7 +481,7 @@ CameraHalProxy::getEnabledCameraSolutionInfo(std::vector<std::string> &solutions
 
     if (ret == DEVICE_OK)
     {
-        for (auto s : j["solutions"])
+        for (auto s : j[CONST_PARAM_NAME_SOLUTIONS])
         {
             if (!s.is_string())
                 continue;
@@ -498,10 +497,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std:
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json jin;
-    jin["solutions"] = json::array();
+    jin[CONST_PARAM_NAME_SOLUTIONS] = json::array();
     for (auto s : solutions)
     {
-        jin["solutions"].push_back(s);
+        jin[CONST_PARAM_NAME_SOLUTIONS].push_back(s);
     }
 
     return luna_call_sync(__func__, to_string(jin));
@@ -512,10 +511,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::disableCameraSolution(const std::vector<std
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json jin;
-    jin["solutions"] = json::array();
+    jin[CONST_PARAM_NAME_SOLUTIONS] = json::array();
     for (auto s : solutions)
     {
-        jin["solutions"].push_back(s);
+        jin[CONST_PARAM_NAME_SOLUTIONS].push_back(s);
     }
 
     return luna_call_sync(__func__, to_string(jin));

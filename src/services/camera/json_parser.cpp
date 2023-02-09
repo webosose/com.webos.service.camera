@@ -863,7 +863,7 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
                 jarray_append(json_supported_solutions_array, json_solution_obj);
             }
 
-            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTION),
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTIONS),
                         json_supported_solutions_array);
         }
     }
@@ -923,7 +923,7 @@ void SetSolutionsMethod::getObject(const char *input, const char *schemapath)
             setCameraId(str_id.m_str);
         }
 
-        j_solutions_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOLUTION));
+        j_solutions_obj = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOLUTIONS));
 
         for (ssize_t i = 0; i != jarray_size(j_solutions_obj); i++)
         {

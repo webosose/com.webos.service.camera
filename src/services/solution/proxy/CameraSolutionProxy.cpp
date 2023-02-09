@@ -18,13 +18,14 @@
 #include "GenerateUniqueID.h"
 #include "LunaClient.h"
 #include "Process.h"
+#include "camera_constants.h"
 #include "camera_log.h"
 #include "camera_solution_event.h"
 #include "json_utils.h"
 
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";
 const std::string CameraSolutionConnectionBaseId = "com.webos.camerasolution.";
-const char *CONST_MODULE_CSP                     = "CameraSolutionProxy";
+const char *const CONST_MODULE_CSP               = "CameraSolutionProxy";
 #define COMMAND_TIMEOUT_LONG 3000 // TODO : Is the minimum value sufficient?
 
 static bool cameraSolutionServiceCb(const char *msg, void *data)
@@ -79,7 +80,7 @@ bool CameraSolutionProxy::createSolution()
     }
 
     std::string guid         = GenerateUniqueID()();
-    std::string service_name = "com.webos.camerahal." + guid;
+    std::string service_name = cstr_uricamearhal + guid;
     luna_client              = std::make_unique<LunaClient>(service_name.c_str(), c);
     g_main_context_unref(c);
 
@@ -94,7 +95,7 @@ bool CameraSolutionProxy::createSolution()
 
     // Send message
     json jin;
-    jin["name"] = solution_name_;
+    jin[CONST_PARAM_NAME_NAME] = solution_name_;
 
     return luna_call_sync(__func__, to_string(jin));
 }
@@ -180,19 +181,19 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
         createSolution();
 
         json jin;
-        jin["pixelFormat"]  = streamFormat_.pixel_format;
-        jin["streamWidth"]  = streamFormat_.stream_width;
-        jin["streamHeight"] = streamFormat_.stream_height;
-        jin["streamFps"]    = streamFormat_.stream_fps;
-        jin["bufferSize"]   = streamFormat_.buffer_size;
-        jin["shmKey"]       = shmKey_;
+        jin[CONST_PARAM_NAME_FORMAT]     = streamFormat_.pixel_format;
+        jin[CONST_PARAM_NAME_WIDTH]      = streamFormat_.stream_width;
+        jin[CONST_PARAM_NAME_HEIGHT]     = streamFormat_.stream_height;
+        jin[CONST_PARAM_NAME_FPS]        = streamFormat_.stream_fps;
+        jin[CONST_PARAM_NAME_BUFFERSIZE] = streamFormat_.buffer_size;
+        jin[CONST_PARAM_NAME_SHMKEY]     = shmKey_;
 
         luna_call_sync("initialize", to_string(jin));
         subscribe();
     }
 
     json jin;
-    jin["enable"] = enableStatus_;
+    jin[CONST_PARAM_NAME_ENABLE] = enableStatus_;
 
     luna_call_sync(__func__, to_string(jin));
 

@@ -21,8 +21,6 @@
 #include "camera_hal_if.h"
 #include "camera_solution_event.h"
 #include "camera_solution_manager.h"
-#include "command_manager.h"
-#include "device_manager.h"
 #include <algorithm>
 #include <ctime>
 #include <errno.h>

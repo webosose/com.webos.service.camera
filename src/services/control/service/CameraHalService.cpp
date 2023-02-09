@@ -19,9 +19,7 @@
 #include <pbnjson.hpp>
 #include <string>
 
-#define CONST_MODULE_CHS "CameraHalService"
-#define MAX_SERVICE_STRING 120
-
+const char *const CONST_MODULE_CHS = "CameraHalService";
 const char *const SUBSCRIPTION_KEY = "cameraHal";
 
 CameraHalService::CameraHalService(const char *service_name)
@@ -66,7 +64,7 @@ CameraHalService::CameraHalService(const char *service_name)
 
 bool CameraHalService::createHandle(LSMessage &message)
 {
-    std::string deviceType;
+    std::string device_type;
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
@@ -74,12 +72,12 @@ bool CameraHalService::createHandle(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    if (parsed.hasKey("subSystem"))
+    if (parsed.hasKey(CONST_PARAM_NAME_SUBSYSTEM))
     {
-        deviceType = parsed["subSystem"].asString().c_str();
+        device_type = parsed[CONST_PARAM_NAME_SUBSYSTEM].asString();
     }
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(&pCamHandle, deviceType);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(&pCamHandle, device_type);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -125,19 +123,19 @@ bool CameraHalService::open(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    if (parsed.hasKey("devPath"))
+    if (parsed.hasKey(CONST_PARAM_NAME_DEVICE_PATH))
     {
-        devicenode = parsed["devPath"].asString().c_str();
+        devicenode = parsed[CONST_PARAM_NAME_DEVICE_PATH].asString();
     }
 
-    if (parsed.hasKey("cameraID"))
+    if (parsed.hasKey(CONST_PARAM_NAME_CAMERAID))
     {
-        ndev_id = parsed["cameraID"].asNumber<int>();
+        ndev_id = parsed[CONST_PARAM_NAME_CAMERAID].asNumber<int>();
     }
 
-    if (parsed.hasKey("payload"))
+    if (parsed.hasKey(CONST_PARAM_NAME_PAYLOAD))
     {
-        payload_ = parsed["payload"].asString().c_str();
+        payload_ = parsed[CONST_PARAM_NAME_PAYLOAD].asString();
     }
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->open(pCamHandle, devicenode, ndev_id, payload_);
@@ -182,9 +180,9 @@ bool CameraHalService::startPreview(LSMessage &message)
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
     std::string memtype;
-    if (parsed.hasKey("memType"))
+    if (parsed.hasKey(CONST_PARAM_NAME_MEMTYPE))
     {
-        memtype = parsed["memType"].asString().c_str();
+        memtype = parsed[CONST_PARAM_NAME_MEMTYPE].asString();
     }
     PMLOG_INFO(CONST_MODULE_CHS, "memtype(%s)", memtype.c_str());
 
@@ -192,7 +190,7 @@ bool CameraHalService::startPreview(LSMessage &message)
         pDeviceControl->startPreview(pCamHandle, memtype, &pkey, this->get(), SUBSCRIPTION_KEY);
     if (ret == DEVICE_OK)
     {
-        jobject_put(json_outobj, J_CSTR_TO_JVAL("shmKey"), jnumber_create_i32(pkey));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHMKEY), jnumber_create_i32(pkey));
     }
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
@@ -215,9 +213,9 @@ bool CameraHalService::stopPreview(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    if (parsed.hasKey("memType"))
+    if (parsed.hasKey(CONST_PARAM_NAME_MEMTYPE))
     {
-        memtype = parsed["memType"].asNumber<int>();
+        memtype = parsed[CONST_PARAM_NAME_MEMTYPE].asNumber<int>();
     }
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->stopPreview(pCamHandle, memtype);
@@ -263,17 +261,17 @@ bool CameraHalService::captureImage(LSMessage &message)
 
     if (parsed.hasKey(CONST_PARAM_NAME_IMAGE_PATH))
     {
-        imagepath = parsed[CONST_PARAM_NAME_IMAGE_PATH].asString().c_str();
+        imagepath = parsed[CONST_PARAM_NAME_IMAGE_PATH].asString();
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_MODE))
     {
-        mode = parsed[CONST_PARAM_NAME_MODE].asString().c_str();
+        mode = parsed[CONST_PARAM_NAME_MODE].asString();
     }
 
-    if (parsed.hasKey("nCount"))
+    if (parsed.hasKey(CONST_PARAM_NAME_NCOUNT))
     {
-        mode = parsed["nCount"].asNumber<int>();
+        ncount = parsed[CONST_PARAM_NAME_NCOUNT].asNumber<int>();
     }
 
     DEVICE_RETURN_CODE_T ret =
@@ -318,7 +316,7 @@ bool CameraHalService::startCapture(LSMessage &message)
 
     if (parsed.hasKey(CONST_PARAM_NAME_IMAGE_PATH))
     {
-        imagepath = parsed[CONST_PARAM_NAME_IMAGE_PATH].asString().c_str();
+        imagepath = parsed[CONST_PARAM_NAME_IMAGE_PATH].asString();
     }
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->startCapture(pCamHandle, sformat, imagepath);
@@ -498,7 +496,7 @@ bool CameraHalService::getFormat(LSMessage &message)
 bool CameraHalService::getDeviceInfo(LSMessage &message)
 {
     std::string strdevicenode;
-    std::string deviceType;
+    std::string device_type;
     camera_device_info_t cameraInfo;
     jvalue_ref json_outobj = jobject_create();
 
@@ -509,22 +507,22 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
 
     if (parsed.hasKey(CONST_PARAM_NAME_DEVICE_PATH))
     {
-        strdevicenode = parsed[CONST_PARAM_NAME_DEVICE_PATH].asString().c_str();
+        strdevicenode = parsed[CONST_PARAM_NAME_DEVICE_PATH].asString();
     }
 
-    if (parsed.hasKey("subSystem"))
+    if (parsed.hasKey(CONST_PARAM_NAME_SUBSYSTEM))
     {
-        deviceType = parsed["subSystem"].asString().c_str();
+        device_type = parsed[CONST_PARAM_NAME_SUBSYSTEM].asString();
     }
-    PMLOG_INFO(CONST_MODULE_CHS, "deviceType(%s)", deviceType.c_str());
+    PMLOG_INFO(CONST_MODULE_CHS, "device_type(%s)", device_type.c_str());
 
     DEVICE_RETURN_CODE_T ret =
-        pDeviceControl->getDeviceInfo(strdevicenode, deviceType, &cameraInfo);
+        pDeviceControl->getDeviceInfo(strdevicenode, device_type, &cameraInfo);
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEVICE_TYPE),
                     jnumber_create_i32(cameraInfo.n_devicetype));
-        jobject_put(json_outobj, J_CSTR_TO_JVAL("buildin"),
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BUILTIN),
                     jnumber_create_i32(cameraInfo.b_builtin));
 
         jvalue_ref json_resolutionobj                   = jobject_create();
@@ -562,7 +560,7 @@ bool CameraHalService::registerClient(LSMessage &message)
 {
     int pid       = 0;
     int sig       = 0;
-    int devHandle = 0;
+    int devhandle = 0;
     std::string payload_;
     jvalue_ref json_outobj = jobject_create();
 
@@ -571,26 +569,27 @@ bool CameraHalService::registerClient(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    if (parsed.hasKey("pid"))
+    if (parsed.hasKey(CONST_CLIENT_PROCESS_ID))
     {
-        pid = parsed["pid"].asNumber<int>();
+        pid = parsed[CONST_CLIENT_PROCESS_ID].asNumber<int>();
     }
 
-    if (parsed.hasKey("sig"))
+    if (parsed.hasKey(CONST_CLIENT_SIGNAL_NUM))
     {
-        sig = parsed["sig"].asNumber<int>();
+        sig = parsed[CONST_CLIENT_SIGNAL_NUM].asNumber<int>();
     }
 
-    if (parsed.hasKey("devHandle"))
+    if (parsed.hasKey(CONST_PARAM_NAME_DEVHANDLE))
     {
-        devHandle = parsed["devHandle"].asNumber<int>();
+        devhandle = parsed[CONST_PARAM_NAME_DEVHANDLE].asNumber<int>();
     }
 
     std::string outmsg;
-    bool ret = pDeviceControl->registerClient(pid, sig, devHandle, outmsg);
+    bool ret = pDeviceControl->registerClient(pid, sig, devhandle, outmsg);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("outMsg"), jstring_create(outmsg.c_str()));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_OUTMSG),
+                jstring_create(outmsg.c_str()));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -612,16 +611,17 @@ bool CameraHalService::unregisterClient(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    if (parsed.hasKey("pid"))
+    if (parsed.hasKey(CONST_CLIENT_PROCESS_ID))
     {
-        pid = parsed["pid"].asNumber<int>();
+        pid = parsed[CONST_CLIENT_PROCESS_ID].asNumber<int>();
     }
 
     std::string outmsg;
     bool ret = pDeviceControl->unregisterClient(pid, outmsg);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
-    jobject_put(json_outobj, J_CSTR_TO_JVAL("outMsg"), jstring_create(outmsg.c_str()));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_OUTMSG),
+                jstring_create(outmsg.c_str()));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -634,7 +634,7 @@ bool CameraHalService::unregisterClient(LSMessage &message)
 
 bool CameraHalService::isRegisteredClient(LSMessage &message)
 {
-    int devHandle = 0;
+    int devhandle = 0;
     std::string payload_;
     jvalue_ref json_outobj = jobject_create();
 
@@ -643,13 +643,13 @@ bool CameraHalService::isRegisteredClient(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    if (parsed.hasKey("devHandle"))
+    if (parsed.hasKey(CONST_PARAM_NAME_DEVHANDLE))
     {
-        devHandle = parsed["devHandle"].asNumber<int>();
+        devhandle = parsed[CONST_PARAM_NAME_DEVHANDLE].asNumber<int>();
     }
 
     std::string outmsg;
-    bool ret = pDeviceControl->isRegisteredClient(devHandle);
+    bool ret = pDeviceControl->isRegisteredClient(devhandle);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
@@ -696,7 +696,7 @@ bool CameraHalService::getSupportedCameraSolutionInfo(LSMessage &message)
         {
             jarray_append(json_solutions_array, jstring_create(solution.c_str()));
         }
-        jobject_put(json_outobj, J_CSTR_TO_JVAL("solutions"), json_solutions_array);
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTIONS), json_solutions_array);
     }
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
@@ -728,7 +728,7 @@ bool CameraHalService::getEnabledCameraSolutionInfo(LSMessage &message)
             jarray_append(json_solutions_array, jstring_create(solution.c_str()));
         }
 
-        jobject_put(json_outobj, J_CSTR_TO_JVAL("solutions"), json_solutions_array);
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTIONS), json_solutions_array);
     }
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -752,9 +752,9 @@ bool CameraHalService::enableCameraSolution(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    if (parsed.hasKey("solutions"))
+    if (parsed.hasKey(CONST_PARAM_NAME_SOLUTIONS))
     {
-        auto obj_solutions = parsed["solutions"];
+        auto obj_solutions = parsed[CONST_PARAM_NAME_SOLUTIONS];
         size_t count       = obj_solutions.arraySize();
         for (size_t i = 0; i < count; i++)
         {
@@ -793,9 +793,9 @@ bool CameraHalService::disableCameraSolution(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    if (parsed.hasKey("solutions"))
+    if (parsed.hasKey(CONST_PARAM_NAME_SOLUTIONS))
     {
-        auto obj_solutions = parsed["solutions"];
+        auto obj_solutions = parsed[CONST_PARAM_NAME_SOLUTIONS];
         size_t count       = obj_solutions.arraySize();
         for (size_t i = 0; i < count; i++)
         {
@@ -848,21 +848,18 @@ bool CameraHalService::subscribe(LSMessage &message)
 #include <gst/gst.h>
 int main(int argc, char *argv[])
 {
+    PMLOG_INFO(CONST_MODULE_CHS, "start");
     gst_init(NULL, NULL);
 
     int c;
-    char service_name[MAX_SERVICE_STRING + 1] = {
-        '\0',
-    };
-    bool service_name_specified = false;
+    std::string serviceName;
 
     while ((c = getopt(argc, argv, "s:")) != -1)
     {
         switch (c)
         {
         case 's':
-            snprintf(service_name, MAX_SERVICE_STRING, "%s", optarg);
-            service_name_specified = true;
+            serviceName = optarg;
             break;
 
         case '?':
@@ -874,7 +871,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    if (!service_name_specified)
+    if (serviceName.empty())
     {
         PMLOG_INFO(CONST_MODULE_CHS, "service name is not specified");
         return 1;
@@ -882,12 +879,14 @@ int main(int argc, char *argv[])
 
     try
     {
-        CameraHalService CameraHalService(service_name);
+        CameraHalService CameraHalService(serviceName.c_str());
     }
     catch (LS::Error &err)
     {
         LSErrorPrint(err, stdout);
         return 1;
     }
+
+    PMLOG_INFO(CONST_MODULE_CHS, "end");
     return 0;
 }

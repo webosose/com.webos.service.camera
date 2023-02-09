@@ -17,7 +17,6 @@
 
 // System dependencies
 #include "camera_hal_if_types.h"
-#include "camshm.h"
 #include "luna-service2/lunaservice.hpp"
 #include <atomic>
 #include <string>

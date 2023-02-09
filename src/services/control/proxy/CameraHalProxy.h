@@ -56,7 +56,7 @@ public:
                                       const std::string &imagepath, const std::string &mode);
     DEVICE_RETURN_CODE_T createHandle(std::string subsystem);
     DEVICE_RETURN_CODE_T destroyHandle();
-    static DEVICE_RETURN_CODE_T getDeviceInfo(std::string strdevicenode, std::string deviceType,
+    static DEVICE_RETURN_CODE_T getDeviceInfo(std::string strdevicenode, std::string strdevicetype,
                                               camera_device_info_t *pinfo);
     DEVICE_RETURN_CODE_T getDeviceProperty(CAMERA_PROPERTIES_T *oparams);
     DEVICE_RETURN_CODE_T setDeviceProperty(CAMERA_PROPERTIES_T *inparams);

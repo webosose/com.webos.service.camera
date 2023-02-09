@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include "camera_hal_if.h"
 #include "camshm.h"
 #include "luna-service2/lunaservice.hpp"
 #include <glib.h>

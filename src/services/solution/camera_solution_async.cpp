@@ -15,6 +15,7 @@
 
 #include "camera_solution_async.h"
 #include "camera_types.h"
+#include "camshm.h"
 #include <list>
 #include <numeric>
 
