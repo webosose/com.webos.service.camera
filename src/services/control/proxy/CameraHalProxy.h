@@ -39,6 +39,7 @@ class CameraHalProxy
 
     DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
                                         json *j = nullptr);
+    bool luna_call_sync_bool(const char *func, const std::string &payload, json *j = nullptr);
 
 public:
     CameraHalProxy();

@@ -283,9 +283,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    bool ret = get_optional<bool>(j, "returnValue").value_or(false);
-    PMLOG_INFO(CONST_MODULE_CHP, "returnValue : %d", ret);
-    if (ret)
+    DEVICE_RETURN_CODE_T ret = get_optional<DEVICE_RETURN_CODE_T>(j, CONST_PARAM_NAME_RETURNCODE)
+                                   .value_or(DEVICE_RETURN_UNDEFINED);
+    PMLOG_INFO(CONST_MODULE_CHP, "%s : %d", CONST_PARAM_NAME_RETURNCODE, ret);
+    if (ret == DEVICE_OK)
     {
         pinfo->n_devicetype =
             get_optional<device_t>(j, "deviceType").value_or(DEVICE_TYPE_UNDEFINED);
@@ -320,7 +321,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
     }
     g_main_loop_unref(lp);
 
-    return DEVICE_OK;
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *oparams)
@@ -409,15 +410,11 @@ bool CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle, std::stri
     jin["devHandle"] = devhandle;
 
     json j;
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), &j);
+    bool ret = luna_call_sync_bool(__func__, to_string(jin), &j);
 
-    if (ret == DEVICE_OK)
-    {
-        outmsg = get_optional<std::string>(j, "outMsg").value_or("");
-        return true;
-    }
+    outmsg = get_optional<std::string>(j, "outMsg").value_or("");
 
-    return false;
+    return ret;
 }
 
 bool CameraHalProxy::unregisterClient(pid_t pid, std::string &outmsg)
@@ -428,13 +425,9 @@ bool CameraHalProxy::unregisterClient(pid_t pid, std::string &outmsg)
     jin["pid"] = pid;
 
     json j;
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), &j);
+    bool ret = luna_call_sync_bool(__func__, to_string(jin), &j);
 
-    if (ret == DEVICE_OK)
-    {
-        outmsg = get_optional<std::string>(j, "outMsg").value_or("");
-        return true;
-    }
+    outmsg = get_optional<std::string>(j, "outMsg").value_or("");
 
     return ret;
 }
@@ -446,14 +439,13 @@ bool CameraHalProxy::isRegisteredClient(int devhandle)
     json jin;
     jin["devHandle"] = devhandle;
 
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin));
-    return (ret == DEVICE_OK) ? true : false;
+    return luna_call_sync_bool(__func__, to_string(jin));
 }
 
 void CameraHalProxy::requestPreviewCancel()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
-    luna_call_sync(__func__, "{}");
+    luna_call_sync_bool(__func__, "{}");
 }
 
 //[Camera Solution Manager] interfaces start
@@ -564,28 +556,48 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT_LONG);
     PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
 
-    bool ret;
+    DEVICE_RETURN_CODE_T ret;
     if (jin)
     {
         *jin = json::parse(resp, nullptr, false);
-        if ((*jin).is_discarded())
-        {
-            PMLOG_ERROR(CONST_MODULE_CHP, "resp parsing error!");
-            return DEVICE_ERROR_UNKNOWN;
-        }
-        ret = get_optional<bool>(*jin, "returnValue").value_or(false);
+        ret  = get_optional<DEVICE_RETURN_CODE_T>(*jin, CONST_PARAM_NAME_RETURNCODE)
+                  .value_or(DEVICE_RETURN_UNDEFINED);
     }
     else
     {
         json j = json::parse(resp, nullptr, false);
-        if (j.is_discarded())
-        {
-            PMLOG_ERROR(CONST_MODULE_CHP, "resp parsing error!");
-            return DEVICE_ERROR_UNKNOWN;
-        }
-        ret = get_optional<bool>(j, "returnValue").value_or(false);
+        ret    = get_optional<DEVICE_RETURN_CODE_T>(j, CONST_PARAM_NAME_RETURNCODE)
+                  .value_or(DEVICE_RETURN_UNDEFINED);
     }
 
-    PMLOG_INFO(CONST_MODULE_CHP, "returnValue : %d", ret);
-    return ret ? DEVICE_OK : DEVICE_ERROR_UNKNOWN;
+    PMLOG_INFO(CONST_MODULE_CHP, "%s : %d", CONST_PARAM_NAME_RETURNCODE, ret);
+    return ret;
+}
+
+bool CameraHalProxy::luna_call_sync_bool(const char *func, const std::string &payload, json *jin)
+{
+    PMLOG_INFO(CONST_MODULE_CHP, "");
+
+    // send message
+    std::string uri = service_uri_ + func;
+    PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
+
+    std::string resp;
+    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT_LONG);
+    PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
+
+    bool ret;
+    if (jin)
+    {
+        *jin = json::parse(resp, nullptr, false);
+        ret  = get_optional<bool>(*jin, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
+    }
+    else
+    {
+        json j = json::parse(resp, nullptr, false);
+        ret    = get_optional<bool>(j, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
+    }
+
+    PMLOG_INFO(CONST_MODULE_CHP, "%s : %d", CONST_PARAM_NAME_RETURNVALUE, ret);
+    return ret;
 }
