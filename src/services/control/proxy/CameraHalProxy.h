@@ -29,8 +29,8 @@ class LunaClient;
 class Process;
 class CameraHalProxy
 {
-    std::unique_ptr<LunaClient> luna_client;
-    std::unique_ptr<Process> process_;
+    std::unique_ptr<LunaClient> luna_client{nullptr};
+    std::unique_ptr<Process> process_{nullptr};
     std::string service_uri_;
 
     GMainLoop *loop_{nullptr};

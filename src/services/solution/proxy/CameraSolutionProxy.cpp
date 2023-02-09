@@ -169,6 +169,12 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
     enableStatus_ = enableValue;
     PMLOG_INFO(CONST_MODULE_CSP, "enable = %d", enableStatus_);
 
+    if (shmKey_ == 0)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "shared memory key is not ready");
+        return;
+    }
+
     if (enableStatus_ && process_ == nullptr)
     {
         createSolution();
@@ -243,6 +249,12 @@ bool CameraSolutionProxy::unsubscribe()
 bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload, json *jin)
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    if (process_ == nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "solution process is not ready");
+        return false;
+    }
 
     // send message
     std::string uri = service_uri_ + func;

@@ -548,6 +548,12 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
+    if (process_ == nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CHP, "hal process is not ready");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
     // send message
     std::string uri = service_uri_ + func;
     PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
@@ -577,6 +583,12 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
 bool CameraHalProxy::luna_call_sync_bool(const char *func, const std::string &payload, json *jin)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
+
+    if (process_ == nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CHP, "hal process is not ready");
+        return false;
+    }
 
     // send message
     std::string uri = service_uri_ + func;
