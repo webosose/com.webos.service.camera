@@ -22,6 +22,7 @@
 #include "camera_constants.h"
 #include "camera_types.h"
 #include "command_manager.h"
+#include "device_manager.h"
 #include "json_schema.h"
 #include "notifier.h"
 #include <pbnjson.hpp>
@@ -61,10 +62,12 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     attachToLoop(main_loop_ptr_.get());
 
     // load/initialize addon before subscription to pdm client
-    AddOn::open();
-    if (AddOn::hasImplementation())
+    pAddon_ = std::make_shared<AddOn>();
+    if (pAddon_->hasImplementation())
     {
-        AddOn::initialize(this->get());
+        pAddon_->initialize(this->get());
+        CommandManager::getInstance().setAddon(pAddon_);
+        DeviceManager::getInstance().setAddon(pAddon_);
     }
     // subscribe to pdm client
     Notifier notifier;
@@ -168,13 +171,13 @@ bool CameraService::open(LSMessage &message)
     std::string app_id = open.getAppId();
     // camera id & appId validation check
     if (cstr_invaliddeviceid == open.getCameraId() ||
-        (AddOn::hasImplementation() && app_id.empty()))
+        (pAddon_->hasImplementation() && app_id.empty()))
     {
         PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
-    else if (!AddOn::isAppPermission(app_id))
+    else if (!pAddon_->isAppPermission(app_id))
     {
         PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::App Permission Fail\n");
         err_id = DEVICE_ERROR_APP_PERMISSION;
@@ -186,7 +189,7 @@ bool CameraService::open(LSMessage &message)
         PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
         std::string app_priority = open.getAppPriority();
         PMLOG_INFO(CONST_MODULE_LUNA, "priority : %s \n", app_priority.c_str());
-        if (AddOn::hasImplementation())
+        if (pAddon_->hasImplementation())
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "appId : %s", app_id.c_str());
         }
@@ -576,6 +579,7 @@ bool CameraService::getInfo(LSMessage &message)
     auto *payload = LSMessageGetPayload(&message);
     PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    bool supported              = false;
 
     GetInfoMethod obj_getinfo;
     obj_getinfo.getInfoObject(payload, getInfoSchema);
@@ -607,11 +611,14 @@ bool CameraService::getInfo(LSMessage &message)
             PMLOG_DEBUG("err_id == DEVICE_OK\n");
             obj_getinfo.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
             obj_getinfo.setCameraInfo(o_camerainfo);
+
+            supported =
+                pAddon_->isSupportedCamera(o_camerainfo.str_productid, o_camerainfo.str_vendorid);
         }
     }
 
     // create json string now for reply
-    std::string output_reply = obj_getinfo.createInfoObjectJsonString();
+    std::string output_reply = obj_getinfo.createInfoObjectJsonString(supported);
     PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);

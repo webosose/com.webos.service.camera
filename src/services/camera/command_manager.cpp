@@ -69,6 +69,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     if (it == virtualdevmgrobj_map_.end())
     {
         obj.ptr = new VirtualDeviceManager;
+        obj.ptr->setAddon(pAddon_);
         PMLOG_INFO(CONST_MODULE_CM, "ptr : %p \n", obj.ptr);
     }
     else
@@ -88,10 +89,10 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
             obj.clientName   = "";
             virtualdevmgrobj_map_.insert(std::make_pair(devicenode, obj));
 
-            if (AddOn::hasImplementation())
+            if (pAddon_ && pAddon_->hasImplementation())
             {
                 std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
-                bool res              = AddOn::notifyDeviceOpened(deviceKey, appId, apppriority);
+                bool res              = pAddon_->notifyDeviceOpened(deviceKey, appId, apppriority);
                 PMLOG_INFO(CONST_MODULE_CM, "AddOn::notifyDeviceOpened = %d ", res);
             }
         }

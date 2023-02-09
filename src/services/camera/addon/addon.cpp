@@ -7,34 +7,14 @@
 
 #define CONST_MODULE_ADDON "ADDON"
 
-void *AddOn::handle_                  = nullptr;
-IAddon *AddOn::plugin_                = nullptr;
-AddOn::Service *AddOn::service_       = nullptr;
-PluginFactory *AddOn::pPluginFactory_ = nullptr;
-IFeaturePtr AddOn::pFeature_;
-
-typedef void *(*pfn_create_plugin_instance)();
-typedef void *(*pfn_destroy_plugin_instance)(void *);
-
-pfn_create_plugin_instance create_plugin_instance;
-pfn_destroy_plugin_instance destroy_plugin_instance;
-
-int AddOn::getDeviceCounts(std::string type)
-{
-    return DeviceManager::getInstance().getDeviceCounts(type);
-}
-
-bool AddOn::updateDeviceList(std::string deviceType, const std::vector<DEVICE_LIST_T> &deviceList)
-{
-    return DeviceManager::getInstance().updateDeviceList(deviceType, deviceList);
-};
-
-void AddOn::open()
+AddOn::AddOn()
 {
     if (!pPluginFactory_)
     {
         pPluginFactory_ = new PluginFactory();
         pFeature_       = pPluginFactory_->createFeature("addon");
+
+        service_ = new Service();
     }
 
     void *pInterface = nullptr;
@@ -42,17 +22,17 @@ void AddOn::open()
     plugin_ = static_cast<IAddon *>(pInterface);
 }
 
-void AddOn::close()
+AddOn::~AddOn()
 {
     if (pPluginFactory_)
     {
         delete pPluginFactory_;
         pPluginFactory_ = nullptr;
     }
-    if (AddOn::service_)
+    if (service_)
     {
-        delete AddOn::service_;
-        AddOn::service_ = nullptr;
+        delete service_;
+        service_ = nullptr;
     }
 }
 
@@ -158,11 +138,11 @@ std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
 
 int AddOn::Service::getDeviceCounts(std::string deviceType)
 {
-    return AddOn::getDeviceCounts(deviceType);
+    return DeviceManager::getInstance().getDeviceCounts(deviceType);
 }
 
 bool AddOn::Service::updateDeviceList(std::string deviceType,
                                       const std::vector<DEVICE_LIST_T> &deviceList)
 {
-    return AddOn::updateDeviceList(deviceType, deviceList);
+    return DeviceManager::getInstance().updateDeviceList(deviceType, deviceList);
 }

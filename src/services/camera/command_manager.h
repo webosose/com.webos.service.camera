@@ -20,6 +20,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#include "addon.h"
 #include "camera_types.h"
 #include "virtual_device_manager.h"
 #include <map>
@@ -41,6 +42,7 @@ private:
 
     VirtualDeviceManager *getVirtualDeviceMgrObj(int);
     void removeVirtualDevMgrObj(int);
+    std::shared_ptr<AddOn> pAddon_;
 
 public:
     static CommandManager &getInstance()
@@ -81,6 +83,7 @@ public:
     void handleCrash();
 
     void release(int);
+    void setAddon(std::shared_ptr<AddOn> &addon) { pAddon_ = addon; }
 };
 
 #endif /*SERVICE_COMMAND_MANAGER_H_*/

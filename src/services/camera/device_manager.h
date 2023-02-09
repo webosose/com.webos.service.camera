@@ -20,6 +20,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#include "addon.h"
 #include "appcast_client.h"
 #include "camera_types.h"
 #include "luna-service2/lunaservice.h"
@@ -45,6 +46,7 @@ private:
     AppCastClient *appCastClient_{nullptr};
     LSHandle *lshandle_{nullptr};
     bool isDeviceIdValid(int deviceid);
+    std::shared_ptr<AddOn> pAddon_;
 
 public:
     DeviceManager();
@@ -73,6 +75,7 @@ public:
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
 
     void printCameraStatus();
+    void setAddon(std::shared_ptr<AddOn> &addon) { pAddon_ = addon; }
 };
 
 #endif /*SERVICE_DEVICE_MANAGER_H_*/

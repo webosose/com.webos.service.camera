@@ -7,16 +7,9 @@
 class AddOn
 {
 private:
-    static void *handle_;
-    static IAddon *plugin_;
-
-    static PluginFactory *pPluginFactory_;
-    static IFeaturePtr pFeature_;
-
-private:
-    static int getDeviceCounts(std::string deviceType);
-    static bool updateDeviceList(std::string deviceType,
-                                 const std::vector<DEVICE_LIST_T> &deviceList);
+    IAddon *plugin_{nullptr};
+    PluginFactory *pPluginFactory_{nullptr};
+    IFeaturePtr pFeature_;
 
 private:
     struct Service : public ICameraService
@@ -25,28 +18,24 @@ private:
         bool updateDeviceList(std::string deviceType,
                               const std::vector<DEVICE_LIST_T> &deviceList) override;
     };
-
-    static Service *service_;
+    Service *service_{nullptr};
 
 public:
-    static void open();
-    static void close();
+    AddOn();
+    virtual ~AddOn();
 
-    static bool hasImplementation();
-    static void initialize(LSHandle *lsHandle);
-    static bool isSupportedCamera(std::string productId, std::string vendorId);
-    static bool isAppPermission(std::string appId);
-    static void notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo);
-    static void notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo);
-    static void notifyDeviceListUpdated(std::string deviceType,
-                                        const std::vector<DEVICE_LIST_T> &deviceList);
-    static bool notifyDeviceOpened(std::string deviceKey, std::string appId,
-                                   std::string appPriority);
-    static void notifySolutionEnabled(std::string deviceKey,
-                                      const std::vector<std::string> &solutions);
-    static void notifySolutionDisabled(std::string deviceKey,
-                                       const std::vector<std::string> &solutions);
-    static std::vector<std::string> getEnabledSolutionList(std::string deviceKey);
+    bool hasImplementation();
+    void initialize(LSHandle *lsHandle);
+    bool isSupportedCamera(std::string productId, std::string vendorId);
+    bool isAppPermission(std::string appId);
+    void notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo);
+    void notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo);
+    void notifyDeviceListUpdated(std::string deviceType,
+                                 const std::vector<DEVICE_LIST_T> &deviceList);
+    bool notifyDeviceOpened(std::string deviceKey, std::string appId, std::string appPriority);
+    void notifySolutionEnabled(std::string deviceKey, const std::vector<std::string> &solutions);
+    void notifySolutionDisabled(std::string deviceKey, const std::vector<std::string> &solutions);
+    std::vector<std::string> getEnabledSolutionList(std::string deviceKey);
 };
 
 #endif /* ADDON_H_ */

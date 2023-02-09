@@ -20,6 +20,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#include "addon.h"
 #include "camera_types.h"
 #include "event_notification.h"
 #include "json_parser.h"
@@ -33,6 +34,7 @@ private:
     mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
 
     EventNotification event_obj;
+    std::shared_ptr<AddOn> pAddon_;
 
     int getId(std::string);
     void createEventMessage(EventType, void *, int, std::string event_key);

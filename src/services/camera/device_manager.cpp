@@ -178,9 +178,9 @@ int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
                deviceMap_.size());
 
     // Push platform-specific device private data associated with this device */
-    AddOn::notifyDeviceAdded(deviceInfo);
+    pAddon_->notifyDeviceAdded(deviceInfo);
 
-    if (false == AddOn::hasImplementation())
+    if (false == pAddon_->hasImplementation())
     {
         WhitelistChecker::check(deviceInfo.strProductName, deviceInfo.strVendorName);
     }
@@ -215,7 +215,7 @@ bool DeviceManager::removeDevice(int deviceid)
     // Pop platform-specific private data associated with this device.
     DEVICE_LIST_T devInfo = deviceMap_[deviceid].stList;
     deviceMap_.erase(deviceid);
-    AddOn::notifyDeviceRemoved(devInfo);
+    pAddon_->notifyDeviceRemoved(devInfo);
     PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %zd", deviceMap_.size());
 
     if (lshandle_)
@@ -265,7 +265,7 @@ bool DeviceManager::updateDeviceList(std::string deviceType,
         }
     }
 
-    AddOn::notifyDeviceListUpdated(deviceType, deviceList);
+    pAddon_->notifyDeviceListUpdated(deviceType, deviceList);
     return true;
 }
 
