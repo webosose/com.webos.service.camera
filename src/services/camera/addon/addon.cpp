@@ -1,7 +1,4 @@
 #include "addon.h"
-#ifdef FIX_ME
-#include "camera_solution_manager.h"
-#endif
 #include "camera_types.h"
 #include "command_manager.h"
 #include "device_manager.h"
