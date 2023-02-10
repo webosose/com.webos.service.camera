@@ -38,32 +38,32 @@ webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS_OTHER})
 pkg_check_modules(GST REQUIRED gstreamer-1.0)
 include_directories(${GST_INCLUDE_DIRS})
 
-include_directories(${CMAKE_SOURCE_DIR}/src/services/control)
-include_directories(${CMAKE_SOURCE_DIR}/src/services/control/hal)
-include_directories(${CMAKE_SOURCE_DIR}/src/services/solution)
-include_directories(${CMAKE_SOURCE_DIR}/src/services/solution/proxy)
+include_directories(${CMAKE_SOURCE_DIR}/src/services/hal)
+include_directories(${CMAKE_SOURCE_DIR}/src/services/hal/hal_if)
+include_directories(${CMAKE_SOURCE_DIR}/src/common/ipc)
+include_directories(${CMAKE_SOURCE_DIR}/src/common/shm)
 
 # Camera Hal Service
 set(SRC_LIST
-    ${CMAKE_CURRENT_SOURCE_DIR}/CameraHalService.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/device_controller.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/camshm.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/cam_posixshm.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/camera/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/CameraHalService.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/device_controller.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/camera_solution_manager.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/CameraSolutionProxy.cpp
     )
 
-# Solution Manager / Proxy
+# common
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/solution/proxy/CameraSolutionProxy.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/proxy/LunaClient.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/proxy/Process.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/camera/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/shm/camshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/shm/cam_posixshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/ipc/LunaClient.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/ipc/Process.cpp
     )
 
 ### SOLUTION MANAGER Solution configuration file Start ###
 message(STATUS "Using json to define supported solutions for variable platform")
-webos_build_configured_file(src/services/solution/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+webos_build_configured_file(files/conf/solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
 ### SOLUTION MANAGER Solution configuration file End ###
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
@@ -78,5 +78,8 @@ target_link_libraries(${PROJECT_NAME}
                       )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
+
+#hal_if
+add_subdirectory(hal_if)
 
 add_subdirectory(files)

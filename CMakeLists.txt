@@ -53,8 +53,15 @@ include_directories(${CMAKE_SOURCE_DIR}/include/private)
 webos_use_gtest()
 
 add_subdirectory(src/plugins)
-add_subdirectory(src/services)
+add_subdirectory(src/services/camera)
+add_subdirectory(src/services/hal)
+add_subdirectory(src/services/solution)
 add_subdirectory(tests)
 
 webos_build_system_bus_files()
 webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCONFDIR systemd/system)
+
+#TODO : [FIX_ME] Remove this by code unification
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
+    add_definitions(-DPLATFORM_OSE)
+endif()

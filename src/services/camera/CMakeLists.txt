@@ -27,7 +27,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/pdm)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/camera)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/camera/addon)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/camera/notifier)
-include_directories(${CMAKE_SOURCE_DIR}/src/services/control/proxy)
+include_directories(${CMAKE_SOURCE_DIR}/src/common/ipc)
 
 # Camera service
 set(SRC_LIST
@@ -36,19 +36,19 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/camera/virtual_device_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/device_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/json_parser.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/camera/camera_types.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/whitelist_checker.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/event_notification.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/addon/addon.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/notifier/notifier.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/camera/CameraHalProxy.cpp
     )
 
-# Control Proxy
+# common
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/services/control/proxy/CameraHalProxy.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/proxy/LunaClient.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/proxy/Process.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/camera/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/ipc/LunaClient.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/ipc/Process.cpp
     )
 
 # plugins/notifier
@@ -71,17 +71,3 @@ target_link_libraries(${PROJECT_NAME}
                       )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
-
-#hal
-add_subdirectory(control/hal)
-
-#TODO : Remove this after code unification
-if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
-    add_definitions(-DPLATFORM_OSE)
-endif()
-
-#CameraHalService
-add_subdirectory(control/service)
-
-#CameraSolutionService
-add_subdirectory(solution/service)

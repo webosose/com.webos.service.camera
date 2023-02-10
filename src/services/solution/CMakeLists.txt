@@ -40,17 +40,15 @@ include_directories(${JPEG_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
 
 include_directories(${CMAKE_SOURCE_DIR}/src/plugins/solution/face_detection_aif)
-
-include_directories(${CMAKE_SOURCE_DIR}/src/services/control)
-include_directories(${CMAKE_SOURCE_DIR}/src/services/control/hal)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/solution)
+include_directories(${CMAKE_SOURCE_DIR}/src/common/shm)
 
 # Camera Solution Service
 set (SRC_LIST
-    ${CMAKE_SOURCE_DIR}/src/services/solution/service/CameraSolutionService.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/solution/CameraSolutionService.cpp
     ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution.cpp
     ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution_async.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/control/camshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/shm/camshm.cpp
     )
 
 # plugins/solution
