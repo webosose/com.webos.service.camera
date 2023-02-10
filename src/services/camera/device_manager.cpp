@@ -216,7 +216,7 @@ bool DeviceManager::removeDevice(int deviceid)
     DEVICE_LIST_T devInfo = deviceMap_[deviceid].stList;
     deviceMap_.erase(deviceid);
     AddOn::notifyDeviceRemoved(devInfo);
-    PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %d", deviceMap_.size());
+    PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %zd", deviceMap_.size());
 
     if (lshandle_)
     {
