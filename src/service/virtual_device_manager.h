@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,10 +43,11 @@ class VirtualDeviceManager
 private:
   std::map<int, DeviceStateMap> virtualhandle_map_;
   std::map<int, std::string> handlepriority_map_;
-  int shmempreview_count_[2];
+  int shmempreview_count_[3];
   bool bcaptureinprogress_;
   int shmkey_;
   int poshmkey_;
+  int shmusrptrkey_;
   std::vector<int> npreviewhandle_;
   std::vector<int> ncapturehandle_;
   CAMERA_FORMAT sformat_;

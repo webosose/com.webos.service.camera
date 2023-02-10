@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2022 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -37,6 +37,7 @@
 
 const std::string kMemtypeShmem = "sharedmemory";
 const std::string kMemtypePosixshm = "posixshm";
+const std::string kMemtypeShmemUsrPtr = "sharedmemory_usrptr";
 
 /*-----------------------------------------------------------------------------
  (Type Definitions)
@@ -139,7 +140,8 @@ typedef enum
 {
   SHMEME_UNKNOWN = -1,
   SHMEM_SYSTEMV  =  0,
-  SHMEM_POSIX
+  SHMEM_POSIX,
+  SHMEM_SYSTEMV_USRPTR
 }SHMEM_TYPE_T;
 
 enum class NotifierClient

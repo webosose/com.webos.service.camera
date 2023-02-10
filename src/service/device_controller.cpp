@@ -78,7 +78,7 @@ DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
       b_issystemvruning(false), b_isshmwritedone_(true), b_issyshmwritedone_(true),
       b_isposhmwritedone_(true), cam_handle_(NULL), shmemfd_(-1), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG),
-      tMutex(), tCondVar(), h_shmposix_(NULL),
+      tMutex(), tCondVar(), h_shmposix_(NULL), h_shmsystem_(NULL),
       str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
       str_shmemname_(""), cancel_preview_(false), buf_size_(0),
       sh_(nullptr), subskey_(""), camera_id_(-1)
@@ -192,8 +192,10 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
     int memtype = -1;
     if(str_memtype_ == kMemtypeShmem)
        memtype = SHMEM_SYSTEMV;
-    else
+    else if (str_memtype_ == kMemtypePosixshm )
        memtype = SHMEM_POSIX;
+    else
+       memtype = SHMEM_SYSTEMV_USRPTR;
     stopPreview(handle, memtype);
     close(handle);
     open(handle, strdevicenode_, camera_id_);
@@ -250,7 +252,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
   {
     if ((retval = poll(poll_set, 1, timeout)) > 0)
     {
-      if (str_memtype_ != kMemtypeShmem) // Non-zero copy version kept as is.
+      if (str_memtype_ != kMemtypeShmemUsrPtr) // Non-zero copy version kept as is.
       {
         frame_buffer.start = malloc(framesize);
       }
@@ -274,7 +276,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
       if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
         return DEVICE_ERROR_CANNOT_WRITE;
 
-      if (str_memtype_ != kMemtypeShmem) // Non-zero copy version kept as is.
+      if (str_memtype_ != kMemtypeShmemUsrPtr) // Non-zero copy version kept as is.
       {
         free(frame_buffer.start);
         frame_buffer.start = nullptr;
@@ -367,7 +369,7 @@ void DeviceControl::previewThread()
     // keep writing data to shared memory
     unsigned int timestamp = 0;
 
-    if(b_issystemvruning)
+    if(b_issystemvruning && str_memtype_ == kMemtypeShmemUsrPtr)
     {
        // now that zero-copy shmem writing is supported for system V shmem
        buffer_t frame_buffer = {0};
@@ -376,7 +378,7 @@ void DeviceControl::previewThread()
        if (retval != CAMERA_ERROR_NONE)
        {
          PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
-		 notifyDeviceFault_();
+		     notifyDeviceFault_();
          break;
        }
        broadcast_();
@@ -392,13 +394,12 @@ void DeviceControl::previewThread()
        if (retval != CAMERA_ERROR_NONE)
        {
          PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
-		 notifyDeviceFault_();
+         notifyDeviceFault_();
          break;
        }
     }
-    else if(b_isposixruning)
+    else
     {
-       // collected and moved whole existing non-zero-cpy version to here.
        buffer_t frame_buffer;
        frame_buffer.start = malloc(framesize);
        auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
@@ -407,24 +408,42 @@ void DeviceControl::previewThread()
          PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
          free(frame_buffer.start);
          frame_buffer.start = nullptr;
-		 notifyDeviceFault_();
+         notifyDeviceFault_();
          break;
        }
-       b_isposhmwritedone_ = false;
-       auto retshmem = IPCPosixSharedMemory::getInstance().WritePosixShmemory(h_shmposix_,
-                    (unsigned char *)frame_buffer.start, frame_buffer.length,
-                    (unsigned char *)&timestamp, sizeof(timestamp));
        //[Camera Solution Manager] process for preview
        if (pCameraSolution != nullptr)
        {
-         pCameraSolution->processPreview(frame_buffer);
+          pCameraSolution->processPreview(frame_buffer);
        }
-
-       if (retshmem != POSHMEM_COMM_OK)
+       if (b_issystemvruning)
        {
-         PMLOG_ERROR(CONST_MODULE_DC, "Write Posix Shared memory error %d \n", retshmem);
+          b_issyshmwritedone_ = false;
+          auto meta           = pMemoryListener->getResult();
+          auto retshmem       = IPCSharedMemory::getInstance().WriteShmemory(
+                    h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
+                    (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
+                     sizeof(timestamp));
+           if (retshmem != SHMEM_COMM_OK)
+           {
+               PMLOG_ERROR(CONST_MODULE_DC, "Write Shared memory error %d \n", retshmem);
+           }
+           broadcast_();
+           b_issyshmwritedone_ = true;
        }
-       b_isposhmwritedone_ = true;
+       if(b_isposixruning)
+       {
+         b_isposhmwritedone_ = false;
+         auto retshmem = IPCPosixSharedMemory::getInstance().WritePosixShmemory(h_shmposix_,
+                      (unsigned char *)frame_buffer.start, frame_buffer.length,
+                      (unsigned char *)&timestamp, sizeof(timestamp));
+
+         if (retshmem != POSHMEM_COMM_OK)
+         {
+           PMLOG_ERROR(CONST_MODULE_DC, "Write Posix Shared memory error %d \n", retshmem);
+         }
+         b_isposhmwritedone_ = true;
+       }
        free(frame_buffer.start);
        frame_buffer.start = nullptr;
 
@@ -520,7 +539,14 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     meta_size = pCameraSolution->getMetaSizeHint();
   }
 
-  // now that system V shmem is placed in HAL Plugin layer for zero-copy and hidden, only posix shmem left alone.
+  if (memtype == kMemtypeShmem)
+  {
+      auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
+          &h_shmsystem_, pkey, buf_size_, meta_size, frame_count, sizeof(unsigned int));
+      if (retshmem != SHMEM_COMM_OK)
+          PMLOG_ERROR(CONST_MODULE_DC, "CreateShmemory error %d \n", retshmem);
+  }
+
   if (memtype == kMemtypePosixshm)
   {
     std::string shmname = "";
@@ -535,7 +561,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
   if(b_isstreamon_ == false)
   {
-    if (memtype == kMemtypePosixshm)
+    if (memtype == kMemtypePosixshm || memtype == kMemtypeShmem)
     {
       // posix shmem routines kept as is.
       auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
@@ -553,9 +579,16 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
       }
 
       b_isstreamon_ = true;
-      b_isposixruning = true;
+      if(memtype == kMemtypePosixshm)
+      {
+        b_isposixruning = true;
+      }
+      else
+      {
+        b_issystemvruning = true;
+      }
     }
-    else if (memtype == kMemtypeShmem)
+    else if (memtype == kMemtypeShmemUsrPtr)
     {
       // system V shmem needs user pointer buffer set-up.
       auto retval = camera_hal_if_set_buffer(handle, 8, IOMODE_USERPTR);
@@ -616,7 +649,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
     if (cancel_preview_ == true)
     {
         stop_capture((camera_handle_t*)handle);
-	destroy_buffer((camera_handle_t*)handle);
+        destroy_buffer((camera_handle_t*)handle);
     }
     else
     {
@@ -646,6 +679,17 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
                 PMLOG_ERROR(CONST_MODULE_DC, "ClosePosixShmemory error %d \n", retshmem);
             }
             h_shmposix_ = NULL;
+        }
+    }
+    else if (memtype == SHMEM_SYSTEMV)
+    {
+        b_issystemvruning = false;
+        if (h_shmsystem_ != nullptr)
+        {
+            auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+            if (retshmem != SHMEM_COMM_OK)
+                PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);
+            h_shmsystem_ = NULL;
         }
     }
     else

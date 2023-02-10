@@ -82,6 +82,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/json_parser.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/service/notifier/pdm/pdm_client.cpp
+    ${CMAKE_SOURCE_DIR}/src/service/camshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/cam_posixshm.cpp
     ${CMAKE_SOURCE_DIR}/src/service/camera_types.cpp
     ${CMAKE_SOURCE_DIR}/src/service/whitelist_checker.cpp

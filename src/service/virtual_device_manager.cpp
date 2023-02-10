@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@
 
 VirtualDeviceManager::VirtualDeviceManager()
     : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_(),
-      bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), sformat_()
+      bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), shmusrptrkey_(0), sformat_()
 {
 }
 
@@ -292,7 +292,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
     }
 
     if ((memtype == kMemtypeShmem && shmempreview_count_[SHMEM_SYSTEMV] == 0)
-         || (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0) )
+         || (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0)
+         || (memtype == kMemtypeShmemUsrPtr && shmempreview_count_[SHMEM_SYSTEMV_USRPTR] == 0) )
     {
       void *handle;
       DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
@@ -307,11 +308,17 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
            shmempreview_count_[SHMEM_SYSTEMV]++;
            shmkey_ = *pkey;
         }
-        else
+        else if(memtype == kMemtypePosixshm)
         {
           obj_devstate.shmemtype = SHMEM_POSIX;
           shmempreview_count_[SHMEM_POSIX]++;
           poshmkey_ = *pkey;
+        }
+        else
+        {
+          obj_devstate.shmemtype = SHMEM_SYSTEMV_USRPTR;
+          shmempreview_count_[SHMEM_SYSTEMV_USRPTR]++;
+          shmusrptrkey_ = *pkey;
         }
       }
       // add to vector the app calling startPreview
@@ -326,8 +333,10 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
       PMLOG_INFO(CONST_MODULE_VDM, "preview already started by other app \n");
       if(memtype == kMemtypeShmem)
           *pkey = shmkey_;
-      else
+      else if(memtype == kMemtypePosixshm)
           *pkey = poshmkey_;
+      else
+          *pkey = shmusrptrkey_;
       // add to vector the app calling startPreview
       npreviewhandle_.push_back(devhandle);
       // update state of device to preview
@@ -338,11 +347,17 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
         obj_devstate.shmemtype = SHMEM_SYSTEMV;
         shmempreview_count_[SHMEM_SYSTEMV]++;
       }
-      else
+      else if(memtype == kMemtypePosixshm)
       {
         obj_devstate.shmemtype = SHMEM_POSIX;
         shmempreview_count_[SHMEM_POSIX]++;
       }
+      else
+      {
+        obj_devstate.shmemtype = SHMEM_SYSTEMV_USRPTR;
+        shmempreview_count_[SHMEM_SYSTEMV_USRPTR]++;
+      }
+
       virtualhandle_map_[devhandle] = obj_devstate;
       return DEVICE_OK;
     }
@@ -423,9 +438,13 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
           {
             shmkey_ = 0;
           }
-          else
+          else if(memtype == SHMEM_POSIX)
           {
             poshmkey_ = 0;
+          }
+          else
+          {
+            shmusrptrkey_ = 0;
           }
         }
         return ret;
