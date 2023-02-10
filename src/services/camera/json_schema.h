@@ -57,11 +57,6 @@ const char *getPropertiesSchema = "{ \
       }\
     },\
     \"properties\": { \
-      \"handle\": { \
-        \"type\": \"integer\", \
-        \"title\": \"The Handle Schema\", \
-        \"default\": 0 \
-      }, \
       \"id\": { \
       \"type\": \"string\", \
       \"title\": \"The Id Schema\", \
