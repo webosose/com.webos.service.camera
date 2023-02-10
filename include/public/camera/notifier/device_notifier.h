@@ -17,7 +17,6 @@
 #ifndef DEVICE_NOTIFIER_H_
 #define DEVICE_NOTIFIER_H_
 
-#include "camera_types.h"
 #include "luna-service2/lunaservice.hpp"
 
 class DeviceNotifier

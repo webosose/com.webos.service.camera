@@ -14,8 +14,8 @@
  */
 
 #include "face_detection_aif.hpp"
+#include "camera_log.h"
 #include "camera_solution_event.h"
-#include "camera_types.h"
 #include <cstdio>
 #include <cstdlib>
 #include <jpeglib.h>

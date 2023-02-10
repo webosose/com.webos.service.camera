@@ -1,7 +1,7 @@
 #ifndef DEVICE_CAMERA_TYPES_H_
 #define DEVICE_CAMERA_TYPES_H_
 
-#include "camera_constants.h"
+//#include "camera_constants.h"
 
 struct DEVICE_LIST_T
 {

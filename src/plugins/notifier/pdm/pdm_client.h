@@ -17,7 +17,6 @@
 #ifndef PDM_CLIENT
 #define PDM_CLIENT
 
-#include "camera_types.h"
 #include "device_notifier.h"
 #include <functional>
 #include <luna-service2/lunaservice.hpp>

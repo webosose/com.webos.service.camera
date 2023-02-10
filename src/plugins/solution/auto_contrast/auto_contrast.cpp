@@ -14,7 +14,7 @@
  */
 
 #include "auto_contrast.hpp"
-#include "camera_types.h"
+#include "camera_log.h"
 #include <math.h>
 #include <sys/time.h>
 

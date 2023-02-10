@@ -14,7 +14,7 @@
  */
 
 #include "dummy.hpp"
-#include "camera_types.h"
+#include "camera_log.h"
 
 #define LOG_TAG "Dummy"
 

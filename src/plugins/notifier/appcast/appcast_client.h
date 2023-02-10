@@ -17,7 +17,6 @@
 #ifndef APPCAST_CLIENT
 #define APPCAST_CLIENT
 
-#include "camera_types.h"
 #include "device_notifier.h"
 #include <functional>
 #include <luna-service2/lunaservice.hpp>
