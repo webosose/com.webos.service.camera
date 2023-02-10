@@ -17,7 +17,6 @@
 #ifndef V4L2_CAMERA_PLUGIN
 #define V4L2_CAMERA_PLUGIN
 
-#include "camera_hal_if_cpp_types.h"
 #include "camera_hal_if_types.h"
 #include "plugin.hpp"
 #include "plugin_interface.hpp"

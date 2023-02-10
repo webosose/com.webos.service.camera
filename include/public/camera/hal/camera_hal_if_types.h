@@ -17,6 +17,9 @@
 #ifndef CAMERA_HAL_IF_TYPES
 #define CAMERA_HAL_IF_TYPES
 
+#include <string>
+#include <vector>
+
 #define CONST_MAX_INDEX 300
 #define CONST_MAX_FORMAT 5
 #define CONST_MAX_STRING_LENGTH 256
@@ -161,6 +164,27 @@ struct camera_queryctrl_t
 struct camera_properties_t
 {
     camera_queryctrl_t stGetData;
+};
+
+struct camera_resolution_t
+{
+    std::vector<std::string> c_res;
+    camera_format_t e_format;
+
+    camera_resolution_t(std::vector<std::string> res, camera_format_t format)
+        : c_res(move(res)), e_format(format)
+    {
+    }
+};
+
+struct camera_device_info_t
+{
+    std::string str_devicename;
+    std::string str_vendorid;
+    std::string str_productid;
+    device_t n_devicetype{DEVICE_TYPE_UNDEFINED};
+    int b_builtin{0};
+    std::vector<camera_resolution_t> stResolution;
 };
 
 #endif

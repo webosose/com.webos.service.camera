@@ -21,7 +21,6 @@
 #include "camera_constants.h"
 #include "camera_device_types.h"
 #include "camera_event_types.h"
-#include "camera_hal_if_cpp_types.h"
 #include "camera_hal_if_types.h"
 #include "camera_log.h"
 #include "luna-service2/lunaservice.h"

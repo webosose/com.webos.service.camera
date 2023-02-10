@@ -15,6 +15,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "camera_base_wrapper.h"
+#include "camera_hal_if_types.h"
 #include "plugin_interface.hpp"
 
 #ifdef __cplusplus
@@ -40,16 +41,16 @@ extern "C"
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int set_format(camera_handle_t *h, stream_format_t cam_format)
+    int set_format(camera_handle_t *h, const void *cam_format)
     {
         IHal *hal = static_cast<IHal *>(h->handle);
         if (NULL != hal)
-            return hal->setFormat(&cam_format);
+            return hal->setFormat(cam_format);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int get_format(camera_handle_t *h, stream_format_t *cam_format)
+    int get_format(camera_handle_t *h, void *cam_format)
     {
         IHal *hal = static_cast<IHal *>(h->handle);
         if (NULL != hal)
@@ -58,16 +59,16 @@ extern "C"
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int set_buffer(camera_handle_t *h, int num_buffer, int io_mode, buffer_t **usrpbufs)
+    int set_buffer(camera_handle_t *h, int num_buffer, int io_mode, void **usrpbufs)
     {
         IHal *hal = static_cast<IHal *>(h->handle);
         if (NULL != hal)
-            return hal->setBuffer(num_buffer, io_mode, (void **)usrpbufs);
+            return hal->setBuffer(num_buffer, io_mode, usrpbufs);
         else
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int get_buffer(camera_handle_t *h, buffer_t *buf)
+    int get_buffer(camera_handle_t *h, void *buf)
     {
         IHal *hal = static_cast<IHal *>(h->handle);
         if (NULL != hal)
@@ -76,11 +77,11 @@ extern "C"
             return CAMERA_ERROR_UNKNOWN;
     }
 
-    int release_buffer(camera_handle_t *h, buffer_t buf)
+    int release_buffer(camera_handle_t *h, const void *buf)
     {
         IHal *hal = static_cast<IHal *>(h->handle);
         if (NULL != hal)
-            return hal->releaseBuffer(&buf);
+            return hal->releaseBuffer(buf);
         else
             return CAMERA_ERROR_UNKNOWN;
     }

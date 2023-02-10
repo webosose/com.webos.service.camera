@@ -22,17 +22,15 @@ extern "C"
 {
 #endif
 
-#include "camera_hal_if_types.h"
-
     int camera_hal_if_init(void **, const char *);
     int camera_hal_if_deinit(void *);
     int camera_hal_if_open_device(void *, const char *, const char *payload = nullptr);
     int camera_hal_if_close_device(void *);
-    int camera_hal_if_set_format(void *, stream_format_t);
-    int camera_hal_if_get_format(void *, stream_format_t *);
-    int camera_hal_if_set_buffer(void *, int, int, buffer_t **);
-    int camera_hal_if_get_buffer(void *, buffer_t *);
-    int camera_hal_if_release_buffer(void *, buffer_t);
+    int camera_hal_if_set_format(void *, const void *);
+    int camera_hal_if_get_format(void *, void *);
+    int camera_hal_if_set_buffer(void *, int, int, void **);
+    int camera_hal_if_get_buffer(void *, void *);
+    int camera_hal_if_release_buffer(void *, const void *);
     int camera_hal_if_destroy_buffer(void *);
     int camera_hal_if_start_capture(void *);
     int camera_hal_if_stop_capture(void *);
