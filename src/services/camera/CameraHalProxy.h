@@ -36,6 +36,8 @@ class CameraHalProxy
     GMainLoop *loop_{nullptr};
     std::unique_ptr<std::thread> loopThread_;
     unsigned long subscribeKey_{0};
+    void *cookie;
+    std::string uid_;
 
     DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
                                         json *j = nullptr);

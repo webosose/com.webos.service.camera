@@ -91,10 +91,10 @@ CameraHalProxy::CameraHalProxy()
     g_main_context_unref(c);
 
     // start process
-    std::string uid = cstr_uricamearhal + guid;
-    service_uri_    = "luna://" + uid + "/";
+    uid_         = cstr_uricamearhal + guid;
+    service_uri_ = "luna://" + uid_ + "/";
 
-    std::string cmd = "/usr/sbin/" + CameraHalProcessName + " -s" + uid;
+    std::string cmd = "/usr/sbin/" + CameraHalProcessName + " -s" + uid_;
     process_        = std::make_unique<Process>(cmd);
 }
 
@@ -523,15 +523,46 @@ DEVICE_RETURN_CODE_T CameraHalProxy::disableCameraSolution(const std::vector<std
 
 bool CameraHalProxy::subscribe()
 {
-    std::string uri = service_uri_ + __func__;
-    bool ret        = luna_client->subscribe(uri.c_str(), "{\"subscribe\":true}", &subscribeKey_,
-                                             cameraHalServiceCb, this);
-    PMLOG_INFO(CONST_MODULE_CHP, "subscribeKey_ %ld, %d ", subscribeKey_, ret);
-    return ret;
+    PMLOG_INFO(CONST_MODULE_CHP, "");
+
+    auto func = [](LSHandle *input_handle, const char *service_name, bool connected,
+                   void *ctx) -> bool
+    {
+        PMLOG_INFO(CONST_MODULE_CHP, "[ServerStatus cb] connected=%d, name=%s\n", connected,
+                   service_name);
+
+        CameraHalProxy *self = static_cast<CameraHalProxy *>(ctx);
+        if (connected)
+        {
+            std::string uri = self->service_uri_ + "subscribe";
+            bool ret        = self->luna_client->subscribe(uri.c_str(), "{\"subscribe\":true}",
+                                                           &self->subscribeKey_, cameraHalServiceCb, self);
+            PMLOG_INFO(CONST_MODULE_CHP, "[ServerStatus cb] subscribeKey_ %ld, %d ",
+                       self->subscribeKey_, ret);
+        }
+        else
+        {
+            PMLOG_INFO(CONST_MODULE_CHP, "[ServerStatus cb] cancel server status");
+            if (!LSCancelServerStatus(input_handle, self->cookie, nullptr))
+            {
+                PMLOG_ERROR(CONST_MODULE_CHP, "[ServerStatus cb]  error LSCancelServerStatus\n");
+            }
+        }
+        return true;
+    };
+
+    if (!LSRegisterServerStatusEx(sh_, uid_.c_str(), func, this, &cookie, nullptr))
+    {
+        PMLOG_ERROR(CONST_MODULE_CHP, "[ServerStatus cb] error LSRegisterServerStatusEx\n");
+    }
+
+    return true;
 }
 
 bool CameraHalProxy::unsubscribe()
 {
+    PMLOG_INFO(CONST_MODULE_CHP, "");
+
     bool ret = true;
     if (subscribeKey_)
     {
