@@ -120,7 +120,7 @@
 #define CONST_PARAM_NAME_RESOLUTION "resolution"
 #define CONST_PARAM_NAME_FORMATINFO "formatInfo"
 #define CONST_PARAM_NAME_PROPERTIESINFO "propertiesInfo"
-#define CONST_EVENT_KEY_DEVICE_FAULT "EventDeviceFault"
+#define CONST_EVENT_KEY_PREVIEW_FAULT "EventPreviewFault"
 #define CONST_EVENT_KEY_CAMERA_LIST "EventCameraList"
 #define CONST_EVENT_KEY_FORMAT "EventFormat"
 #define CONST_EVENT_KEY_PROPERTIES "EventProperties"
@@ -176,7 +176,7 @@ const std::string cstr_burst           = "MODE_BURST";
 const std::string cstr_continuous      = "MODE_CONTINUOUS";
 const std::string cstr_connect         = "device_connect";
 const std::string cstr_disconnect      = "device_disconnect";
-const std::string cstr_devicefault     = "device_fault";
+const std::string cstr_previewfault    = "preview_fault";
 const std::string cstr_libv4l2         = "libv4l2-camera-plugin.so";
 const std::string cstr_libremote       = "libremote-camera-plugin.so";
 const std::string cstr_libfake         = "libfake-camera-plugin.so";

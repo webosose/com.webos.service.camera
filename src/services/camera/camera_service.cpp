@@ -377,7 +377,7 @@ bool CameraService::startPreview(LSMessage &message)
         {
             err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype,
                                                                 &key, this->get(),
-                                                                CONST_EVENT_KEY_DEVICE_FAULT);
+                                                                CONST_EVENT_KEY_PREVIEW_FAULT);
 
             if (DEVICE_OK != err_id)
             {
@@ -902,7 +902,7 @@ bool CameraService::getEventNotification(LSMessage &message)
     else
     {
         bool return_val =
-            event_obj.addSubscription(this->get(), CONST_EVENT_KEY_DEVICE_FAULT, message);
+            event_obj.addSubscription(this->get(), CONST_EVENT_KEY_PREVIEW_FAULT, message);
         obj_jsonparser.setSubcribed(return_val);
         obj_jsonparser.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
     }

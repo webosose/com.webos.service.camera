@@ -128,7 +128,7 @@ enum class EventType
     EVENT_TYPE_PROPERTIES,
     EVENT_TYPE_CONNECT,
     EVENT_TYPE_DISCONNECT,
-    EVENT_TYPE_DEVICE_FAULT,
+    EVENT_TYPE_PREVIEW_FAULT,
 };
 
 enum class CameraDeviceState

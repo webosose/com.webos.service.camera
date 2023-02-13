@@ -1081,13 +1081,13 @@ void DeviceControl::notifyDeviceFault_()
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
         int fd          = -1;
         camera_hal_if_get_fd(cam_handle_, &fd);
-        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying device fault ... num_subscribers = %d\n",
+        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying preview fault ... num_subscribers = %d\n",
                    fd, num_subscribers);
 
         if (num_subscribers > 0)
         {
             reply = "{\"returnValue\": true, \"eventType\": \"" +
-                    getEventNotificationString(EventType::EVENT_TYPE_DEVICE_FAULT) +
+                    getEventNotificationString(EventType::EVENT_TYPE_PREVIEW_FAULT) +
                     "\", \"id\": \"camera" + std::to_string(camera_id_) + "\"}";
             if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
             {
@@ -1096,7 +1096,7 @@ void DeviceControl::notifyDeviceFault_()
                 PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] subscription reply failed\n", fd);
                 return;
             }
-            PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notified device fault event !!\n", fd);
+            PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notified device preview event !!\n", fd);
         }
     }
     LSErrorFree(&lserror);

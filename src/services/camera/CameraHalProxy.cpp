@@ -35,7 +35,7 @@ static bool cameraHalServiceCb(const char *msg, void *data)
     }
 
     std::string event_type = get_optional<std::string>(j, CONST_PARAM_NAME_EVENT).value_or("");
-    if (event_type == getEventNotificationString(EventType::EVENT_TYPE_DEVICE_FAULT))
+    if (event_type == getEventNotificationString(EventType::EVENT_TYPE_PREVIEW_FAULT))
     {
         CameraHalProxy *client = (CameraHalProxy *)data;
 
@@ -47,7 +47,7 @@ static bool cameraHalServiceCb(const char *msg, void *data)
             LSError lserror;
             LSErrorInit(&lserror);
 
-            PMLOG_INFO(CONST_MODULE_CHP, "notifying device fault :  %s", msg);
+            PMLOG_INFO(CONST_MODULE_CHP, "notifying preview fault :  %s", msg);
             if (!LSSubscriptionReply(client->sh_, client->subsKey_.c_str(), msg, &lserror))
             {
                 LSErrorPrint(&lserror, stderr);
@@ -55,7 +55,7 @@ static bool cameraHalServiceCb(const char *msg, void *data)
                 PMLOG_INFO(CONST_MODULE_CHP, "subscription reply failed");
                 return false;
             }
-            PMLOG_INFO(CONST_MODULE_CHP, "notified device fault event !!");
+            PMLOG_INFO(CONST_MODULE_CHP, "notified preview fault event !!");
 
             LSErrorFree(&lserror);
         }

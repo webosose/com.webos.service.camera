@@ -73,11 +73,7 @@ int EventNotification::getSubscribeCount(LSHandle *lsHandle, std::string key)
 bool EventNotification::getJsonString(json &json_outobj, std::string key, EventType etype,
                                       void *p_cur_data, void *p_old_data)
 {
-    // event type
-    std::string event = getEventNotificationString(etype);
-    bool result_val   = true;
-
-    json_outobj[CONST_PARAM_NAME_EVENT] = event;
+    bool result_val = true;
 
     switch (etype)
     {
