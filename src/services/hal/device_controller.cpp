@@ -547,7 +547,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     //[Camera Solution Manager] initialization
     if (pCameraSolution != nullptr)
     {
-        pCameraSolution->initialize(streamformat, *pkey);
+        pCameraSolution->initialize(streamformat, *pkey, sh);
     }
 
     if (b_isstreamon_ == false)
@@ -663,6 +663,12 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started !\n");
 
+    //[]Camera Solution Manager] release
+    if (pCameraSolution != nullptr)
+    {
+        pCameraSolution->release();
+    }
+
     b_isstreamon_ = false;
 
     if (tidPreview.joinable())
@@ -737,11 +743,6 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
         usrpbufs_ = nullptr;
     }
 
-    //[]Camera Solution Manager] release
-    if (pCameraSolution != nullptr)
-    {
-        pCameraSolution->release();
-    }
     return DEVICE_OK;
 }
 

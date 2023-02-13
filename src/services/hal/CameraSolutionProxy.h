@@ -48,13 +48,20 @@ class CameraSolutionProxy
     unsigned long subscribeKey_{0};
 
     int shmKey_{0};
+    LSHandle *sh_;
+    void *cookie;
+    std::string uid_;
+    bool serverConnected_{false};
 
     bool luna_call_sync(const char *func, const std::string &payload, json *j = nullptr);
 
     bool subscribe();
     bool unsubscribe();
     bool createSolution(void);
-    bool destorySolution(void);
+    bool startProcess();
+    bool stopProcess();
+    bool prepareSolution();
+    bool initSolution();
 
 public:
     CameraSolutionProxy(const std::string solution_name);
@@ -62,7 +69,7 @@ public:
 
     void setEventListener(CameraSolutionEvent *pEvent) { pEvent_ = pEvent; }
     int32_t getMetaSizeHint(void);
-    void initialize(stream_format_t streamFormat, int shmKey);
+    void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
     void setEnableValue(bool enableValue);
     Property getProperty(void);
     bool isEnabled(void);

@@ -62,37 +62,6 @@ bool CameraSolutionProxy::createSolution()
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
 
-    GMainContext *c = g_main_context_new();
-    loop_           = g_main_loop_new(c, false);
-
-    try
-    {
-        loopThread_ = std::make_unique<std::thread>(g_main_loop_run, loop_);
-    }
-    catch (const std::system_error &e)
-    {
-        PMLOG_INFO(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
-                   e.code().value(), e.what());
-    }
-
-    while (!g_main_loop_is_running(loop_))
-    {
-    }
-
-    std::string guid         = GenerateUniqueID()();
-    std::string service_name = cstr_uricamearhal + guid;
-    luna_client              = std::make_unique<LunaClient>(service_name.c_str(), c);
-    g_main_context_unref(c);
-
-    // start process
-    std::string uid = CameraSolutionConnectionBaseId + guid;
-    service_uri_    = "luna://" + uid + "/";
-
-    std::string cmd = "/usr/sbin/" + CameraSolutionProcessName + " -s" + uid;
-    process_        = std::make_unique<Process>(cmd);
-
-    g_usleep(1000 * 100); // TODO : need to wait for process running
-
     // Send message
     json jin;
     jin[CONST_PARAM_NAME_NAME] = solution_name_;
@@ -100,11 +69,9 @@ bool CameraSolutionProxy::createSolution()
     return luna_call_sync(__func__, to_string(jin));
 }
 
-bool CameraSolutionProxy::destorySolution()
+bool CameraSolutionProxy::stopProcess()
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
-
-    luna_call_sync("release", "{}");
 
     g_main_loop_quit(loop_);
     if (loopThread_->joinable())
@@ -147,12 +114,14 @@ int32_t CameraSolutionProxy::getMetaSizeHint(void)
     return metaSizeHint;
 }
 
-void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey)
+void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
 {
     PMLOG_INFO(CONST_MODULE_CSP, "shmKey : %d", shmKey);
 
+    // keep informations
     streamFormat_ = streamFormat;
     shmKey_       = shmKey;
+    sh_           = sh;
 }
 
 std::string CameraSolutionProxy::getSolutionStr(void)
@@ -167,8 +136,11 @@ void CameraSolutionProxy::processForPreview(buffer_t inBuf) { PMLOG_INFO(CONST_M
 
 void CameraSolutionProxy::setEnableValue(bool enableValue)
 {
-    enableStatus_ = enableValue;
-    PMLOG_INFO(CONST_MODULE_CSP, "enable = %d", enableStatus_);
+    if (enableStatus_ == enableValue)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "same value %d", enableValue);
+        return;
+    }
 
     if (shmKey_ == 0)
     {
@@ -176,31 +148,36 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
         return;
     }
 
-    if (enableStatus_ && process_ == nullptr)
+    enableStatus_ = enableValue;
+    PMLOG_INFO(CONST_MODULE_CSP, "start : enable = %d", enableStatus_);
+
+    if (enableStatus_)
     {
-        createSolution();
+        // 1. Start process
+        startProcess();
 
-        json jin;
-        jin[CONST_PARAM_NAME_FORMAT]     = streamFormat_.pixel_format;
-        jin[CONST_PARAM_NAME_WIDTH]      = streamFormat_.stream_width;
-        jin[CONST_PARAM_NAME_HEIGHT]     = streamFormat_.stream_height;
-        jin[CONST_PARAM_NAME_FPS]        = streamFormat_.stream_fps;
-        jin[CONST_PARAM_NAME_BUFFERSIZE] = streamFormat_.buffer_size;
-        jin[CONST_PARAM_NAME_SHMKEY]     = shmKey_;
-
-        luna_call_sync("initialize", to_string(jin));
-        subscribe();
+        // When the process starts,
+        // 2. Create solution
+        // 3. Initialize solution
+        // 4. Enable solution
+        // 5. Subscribe to CameraSolutionService
+        prepareSolution();
     }
-
-    json jin;
-    jin[CONST_PARAM_NAME_ENABLE] = enableStatus_;
-
-    luna_call_sync(__func__, to_string(jin));
-
-    if (enableStatus_ == false && process_)
+    else
     {
+        // 1. Disable solution
+        json jin;
+        jin[CONST_PARAM_NAME_ENABLE] = false;
+        luna_call_sync(__func__, to_string(jin));
+
+        // 2. Unsubscribe to CameraSolutionService
         unsubscribe();
-        destorySolution();
+
+        // 3. Release solution
+        luna_call_sync("release", "{}");
+
+        // 4. Stop process
+        stopProcess();
     }
 }
 
@@ -245,6 +222,115 @@ bool CameraSolutionProxy::unsubscribe()
         subscribeKey_ = 0;
     }
     return ret;
+}
+
+bool CameraSolutionProxy::startProcess()
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    // start process
+    std::string guid = GenerateUniqueID()();
+    uid_             = CameraSolutionConnectionBaseId + guid;
+    service_uri_     = "luna://" + uid_ + "/";
+
+    std::string cmd = "/usr/sbin/" + CameraSolutionProcessName + " -s" + uid_;
+    process_        = std::make_unique<Process>(cmd);
+
+    // Luna Client
+    GMainContext *c = g_main_context_new();
+    loop_           = g_main_loop_new(c, false);
+
+    try
+    {
+        loopThread_ = std::make_unique<std::thread>(g_main_loop_run, loop_);
+    }
+    catch (const std::system_error &e)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
+                   e.code().value(), e.what());
+    }
+
+    while (!g_main_loop_is_running(loop_))
+    {
+    }
+
+    std::string service_name = cstr_uricamearhal + guid;
+    luna_client              = std::make_unique<LunaClient>(service_name.c_str(), c);
+    g_main_context_unref(c);
+
+    return true;
+}
+
+bool CameraSolutionProxy::prepareSolution()
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    if (!LSRegisterServerStatusEx(
+            sh_, uid_.c_str(),
+            [](LSHandle *handle, const char *svc_name, bool connected, void *ctx) -> bool
+            {
+                PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] connected=%d, name=%s\n", connected,
+                           svc_name);
+
+                CameraSolutionProxy *self = static_cast<CameraSolutionProxy *>(ctx);
+                if (connected)
+                {
+                    // When the process starts,
+                    // 1. Create solution
+                    self->createSolution();
+
+                    // 2. Initialize solution
+                    self->initSolution();
+
+                    // 3. Enable solution
+                    json jin;
+                    jin[CONST_PARAM_NAME_ENABLE] = true;
+                    self->luna_call_sync("setEnableValue", to_string(jin));
+
+                    // 4. Subscribe to CameraSolutionService
+                    self->subscribe();
+
+                    self->serverConnected_ = true;
+                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] end");
+                }
+                else
+                {
+                    if (self->serverConnected_)
+                    {
+                        PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] cancel server status");
+                        if (!LSCancelServerStatus(handle, self->cookie, nullptr))
+                        {
+                            PMLOG_ERROR(CONST_MODULE_CSP,
+                                        "[ServerStatus cb] error LSCancelServerStatus\n");
+                        }
+
+                        self->serverConnected_ = false;
+                    }
+                }
+                return true;
+            },
+            this, &cookie, nullptr))
+    {
+        PMLOG_ERROR(CONST_MODULE_CSP, "[ServerStatus cb] LSRegisterServerStatusEx FAILED");
+    }
+
+    return true;
+}
+
+bool CameraSolutionProxy::initSolution()
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    // Send message
+    json jin;
+    jin[CONST_PARAM_NAME_FORMAT]     = streamFormat_.pixel_format;
+    jin[CONST_PARAM_NAME_WIDTH]      = streamFormat_.stream_width;
+    jin[CONST_PARAM_NAME_HEIGHT]     = streamFormat_.stream_height;
+    jin[CONST_PARAM_NAME_FPS]        = streamFormat_.stream_fps;
+    jin[CONST_PARAM_NAME_BUFFERSIZE] = streamFormat_.buffer_size;
+    jin[CONST_PARAM_NAME_SHMKEY]     = shmKey_;
+
+    return luna_call_sync("initialize", to_string(jin));
 }
 
 bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload, json *jin)
