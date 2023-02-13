@@ -58,42 +58,6 @@ CameraSolutionProxy::CameraSolutionProxy(const std::string solution_name)
 
 CameraSolutionProxy::~CameraSolutionProxy() { PMLOG_INFO(CONST_MODULE_CSP, ""); }
 
-bool CameraSolutionProxy::createSolution()
-{
-    PMLOG_INFO(CONST_MODULE_CSP, "");
-
-    // Send message
-    json jin;
-    jin[CONST_PARAM_NAME_NAME] = solution_name_;
-
-    return luna_call_sync(__func__, to_string(jin));
-}
-
-bool CameraSolutionProxy::stopProcess()
-{
-    PMLOG_INFO(CONST_MODULE_CSP, "");
-
-    g_main_loop_quit(loop_);
-    if (loopThread_->joinable())
-    {
-        try
-        {
-            loopThread_->join();
-        }
-        catch (const std::system_error &e)
-        {
-            PMLOG_INFO(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
-                       e.code().value(), e.what());
-        }
-    }
-    g_main_loop_unref(loop_);
-
-    process_.reset();
-    process_ = nullptr;
-
-    return true;
-}
-
 int32_t CameraSolutionProxy::getMetaSizeHint(void)
 {
     // 10 * 1 : {"faces":[
@@ -123,16 +87,6 @@ void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, L
     shmKey_       = shmKey;
     sh_           = sh;
 }
-
-std::string CameraSolutionProxy::getSolutionStr(void)
-{
-    PMLOG_INFO(CONST_MODULE_CSP, "%s", solution_name_.c_str());
-    return solution_name_;
-}
-
-void CameraSolutionProxy::processForSnapshot(buffer_t inBuf) { PMLOG_INFO(CONST_MODULE_CSP, ""); }
-
-void CameraSolutionProxy::processForPreview(buffer_t inBuf) { PMLOG_INFO(CONST_MODULE_CSP, ""); }
 
 void CameraSolutionProxy::setEnableValue(bool enableValue)
 {
@@ -181,18 +135,6 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
     }
 }
 
-Property CameraSolutionProxy::getProperty()
-{
-    PMLOG_INFO(CONST_MODULE_CSP, "");
-    return solutionProperty_;
-}
-
-bool CameraSolutionProxy::isEnabled(void)
-{
-    PMLOG_INFO(CONST_MODULE_CSP, "%d", enableStatus_);
-    return enableStatus_;
-}
-
 void CameraSolutionProxy::release()
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
@@ -201,27 +143,6 @@ void CameraSolutionProxy::release()
     {
         setEnableValue(false);
     }
-}
-
-bool CameraSolutionProxy::subscribe()
-{
-    std::string uri = service_uri_ + __func__;
-    bool ret        = luna_client->subscribe(uri.c_str(), "{\"subscribe\":true}", &subscribeKey_,
-                                             cameraSolutionServiceCb, this);
-    PMLOG_INFO(CONST_MODULE_CSP, "subscribeKey_ %ld, %d ", subscribeKey_, ret);
-    return ret;
-}
-
-bool CameraSolutionProxy::unsubscribe()
-{
-    bool ret = true;
-    if (subscribeKey_)
-    {
-        PMLOG_INFO(CONST_MODULE_CSP, "remove subscribeKey_ %ld", subscribeKey_);
-        ret           = luna_client->unsubscribe(subscribeKey_);
-        subscribeKey_ = 0;
-    }
-    return ret;
 }
 
 bool CameraSolutionProxy::startProcess()
@@ -257,6 +178,31 @@ bool CameraSolutionProxy::startProcess()
     std::string service_name = cstr_uricamearhal + guid;
     luna_client              = std::make_unique<LunaClient>(service_name.c_str(), c);
     g_main_context_unref(c);
+
+    return true;
+}
+
+bool CameraSolutionProxy::stopProcess()
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    g_main_loop_quit(loop_);
+    if (loopThread_->joinable())
+    {
+        try
+        {
+            loopThread_->join();
+        }
+        catch (const std::system_error &e)
+        {
+            PMLOG_INFO(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
+                       e.code().value(), e.what());
+        }
+    }
+    g_main_loop_unref(loop_);
+
+    process_.reset();
+    process_ = nullptr;
 
     return true;
 }
@@ -317,6 +263,17 @@ bool CameraSolutionProxy::prepareSolution()
     return true;
 }
 
+bool CameraSolutionProxy::createSolution()
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    // Send message
+    json jin;
+    jin[CONST_PARAM_NAME_NAME] = solution_name_;
+
+    return luna_call_sync(__func__, to_string(jin));
+}
+
 bool CameraSolutionProxy::initSolution()
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
@@ -331,6 +288,27 @@ bool CameraSolutionProxy::initSolution()
     jin[CONST_PARAM_NAME_SHMKEY]     = shmKey_;
 
     return luna_call_sync("initialize", to_string(jin));
+}
+
+bool CameraSolutionProxy::subscribe()
+{
+    std::string uri = service_uri_ + __func__;
+    bool ret        = luna_client->subscribe(uri.c_str(), "{\"subscribe\":true}", &subscribeKey_,
+                                             cameraSolutionServiceCb, this);
+    PMLOG_INFO(CONST_MODULE_CSP, "subscribeKey_ %ld, %d ", subscribeKey_, ret);
+    return ret;
+}
+
+bool CameraSolutionProxy::unsubscribe()
+{
+    bool ret = true;
+    if (subscribeKey_)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "remove subscribeKey_ %ld", subscribeKey_);
+        ret           = luna_client->unsubscribe(subscribeKey_);
+        subscribeKey_ = 0;
+    }
+    return ret;
 }
 
 bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload, json *jin)

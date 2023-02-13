@@ -53,15 +53,14 @@ class CameraSolutionProxy
     std::string uid_;
     bool serverConnected_{false};
 
-    bool luna_call_sync(const char *func, const std::string &payload, json *j = nullptr);
-
-    bool subscribe();
-    bool unsubscribe();
-    bool createSolution(void);
     bool startProcess();
     bool stopProcess();
     bool prepareSolution();
+    bool createSolution();
     bool initSolution();
+    bool subscribe();
+    bool unsubscribe();
+    bool luna_call_sync(const char *func, const std::string &payload, json *j = nullptr);
 
 public:
     CameraSolutionProxy(const std::string solution_name);
@@ -71,12 +70,12 @@ public:
     int32_t getMetaSizeHint(void);
     void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
     void setEnableValue(bool enableValue);
-    Property getProperty(void);
-    bool isEnabled(void);
+    Property getProperty(void) { return solutionProperty_; }
+    bool isEnabled(void) { return enableStatus_; };
 
-    std::string getSolutionStr(void);
-    void processForSnapshot(buffer_t inBuf);
-    void processForPreview(buffer_t inBuf);
+    std::string getSolutionStr(void) { return solution_name_; };
+    void processForSnapshot(buffer_t inBuf){};
+    void processForPreview(buffer_t inBuf){};
     void release(void);
 
     std::atomic<CameraSolutionEvent *> pEvent_{nullptr};
