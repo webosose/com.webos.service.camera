@@ -201,9 +201,6 @@ bool CameraSolutionProxy::stopProcess()
     }
     g_main_loop_unref(loop_);
 
-    process_.reset();
-    process_ = nullptr;
-
     return true;
 }
 
@@ -251,6 +248,7 @@ bool CameraSolutionProxy::prepareSolution()
                         }
 
                         self->serverConnected_ = false;
+                        self->process_.reset();
                     }
                 }
                 return true;

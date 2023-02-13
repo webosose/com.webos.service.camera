@@ -61,29 +61,23 @@ void Process::stop()
 {
     PMLOG_INFO(CONST_MODULE_PR, "pid %d", _pid);
 
-    if (0 == kill(_pid, 0)) // alive check
+    int status    = 0;
+    pid_t waitPid = wait(&status);
+    if (waitPid == -1)
     {
-        g_usleep(1000 * 100);
-        kill(_pid, SIGTERM);
-
-        int status    = 0;
-        pid_t waitPid = wait(&status);
-        if (waitPid == -1)
-        {
-            PMLOG_ERROR(CONST_MODULE_PR, "error : %d", errno);
-        }
-        else
-        {
-            if (WIFEXITED(status))
-            {
-                PMLOG_INFO(CONST_MODULE_PR, "normal exit status %d", WEXITSTATUS(status));
-            }
-            else if (WIFSIGNALED(status))
-            {
-                PMLOG_INFO(CONST_MODULE_PR, "abnormal exit status %d", WTERMSIG(status));
-            }
-        }
-
-        PMLOG_INFO(CONST_MODULE_PR, "exit ok pid %d", waitPid);
+        PMLOG_ERROR(CONST_MODULE_PR, "error : %d", errno);
     }
+    else
+    {
+        if (WIFEXITED(status))
+        {
+            PMLOG_INFO(CONST_MODULE_PR, "normal exit status %d", WEXITSTATUS(status));
+        }
+        else if (WIFSIGNALED(status))
+        {
+            PMLOG_INFO(CONST_MODULE_PR, "abnormal exit status %d", WTERMSIG(status));
+        }
+    }
+
+    PMLOG_INFO(CONST_MODULE_PR, "end pid %d", waitPid);
 }
