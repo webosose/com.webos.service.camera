@@ -596,6 +596,12 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
     else
     {
         createJsonStringFailure(objreply, json_outobj);
+
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
     }
 
     const char *str = jvalue_stringify(json_outobj);
@@ -1044,6 +1050,12 @@ std::string GetFormatMethod::createObjectJsonString() const
     else
     {
         createJsonStringFailure(obj_reply, json_outobj);
+
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
     }
 
     const char *str = jvalue_stringify(json_outobj);

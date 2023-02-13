@@ -702,19 +702,20 @@ bool CameraService::getProperties(LSMessage &message)
     }
     else
     {
+        // add subscription
+        std::string event_key = CONST_EVENT_KEY_PROPERTIES;
+        event_key += "_";
+        event_key += obj_getproperties.getCameraId();
+        bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
+        PMLOG_INFO(CONST_MODULE_LUNA, "bsubscribed (%d) \n", bsubscribed);
+        obj_getproperties.setSubcribed(bsubscribed);
+
         ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
         PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
 
         if (n_invalid_id != ndevhandle)
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
-
-            // add subscription
-            std::string event_key =
-                event_obj.getEventKeyWithId(ndevhandle, CONST_EVENT_KEY_PROPERTIES);
-            bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
-            PMLOG_INFO(CONST_MODULE_LUNA, "bsubscribed (%d) \n", bsubscribed);
-            obj_getproperties.setSubcribed(bsubscribed);
 
             // get properties here
             CAMERA_PROPERTIES_T dev_property;
@@ -1284,15 +1285,18 @@ bool CameraService::getFormat(LSMessage &message)
     }
     else
     {
+        // add subscription
+        std::string event_key = CONST_EVENT_KEY_FORMAT;
+        event_key += "_";
+        event_key += obj_getFormat.getCameraId();
+        bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
+        PMLOG_INFO(CONST_MODULE_LUNA, "bsubscribed (%d) \n", bsubscribed);
+        obj_getFormat.setSubcribed(bsubscribed);
+
         ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
         PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
         if (n_invalid_id != ndevhandle)
         {
-            std::string event_key = event_obj.getEventKeyWithId(ndevhandle, CONST_EVENT_KEY_FORMAT);
-            bool bsubscribed      = event_obj.addSubscription(this->get(), event_key, message);
-            PMLOG_INFO(CONST_MODULE_LUNA, "bsubscribed (%d) \n", bsubscribed);
-            obj_getFormat.setSubcribed(bsubscribed);
-
             CAMERA_FORMAT output_format;
             err_id = CommandManager::getInstance().getFormat(ndevhandle, &output_format);
 
