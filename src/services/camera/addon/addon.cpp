@@ -43,7 +43,7 @@ bool AddOn::hasImplementation()
     return false;
 }
 
-void AddOn::initialize(LSHandle *lsHandle)
+void AddOn::initialize(void *lsHandle)
 {
     if (plugin_)
     {
@@ -97,7 +97,7 @@ void AddOn::notifySolutionDisabled(std::string deviceKey, const std::vector<std:
     plugin_->notifySolutionDisabled(deviceKey, solutions);
 }
 
-void AddOn::notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo)
+void AddOn::notifyDeviceAdded(const void *deviceInfo)
 {
     if (!plugin_)
     {
@@ -107,7 +107,7 @@ void AddOn::notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo)
     plugin_->notifyDeviceAdded(deviceInfo);
 }
 
-void AddOn::notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo)
+void AddOn::notifyDeviceRemoved(const void *deviceInfo)
 {
     if (!plugin_)
     {
@@ -116,8 +116,7 @@ void AddOn::notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo)
     plugin_->notifyDeviceRemoved(deviceInfo);
 }
 
-void AddOn::notifyDeviceListUpdated(std::string deviceType,
-                                    const std::vector<DEVICE_LIST_T> &deviceList)
+void AddOn::notifyDeviceListUpdated(std::string deviceType, const void *deviceList)
 {
     if (!plugin_)
     {
@@ -130,8 +129,7 @@ std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
 {
     if (!plugin_)
     {
-        std::vector<std::string> empty{};
-        return empty;
+        return std::vector<std::string>{};
     }
     return plugin_->getEnabledSolutionList(deviceKey);
 }
@@ -141,8 +139,8 @@ int AddOn::Service::getDeviceCounts(std::string deviceType)
     return DeviceManager::getInstance().getDeviceCounts(deviceType);
 }
 
-bool AddOn::Service::updateDeviceList(std::string deviceType,
-                                      const std::vector<DEVICE_LIST_T> &deviceList)
+bool AddOn::Service::updateDeviceList(std::string deviceType, const void *deviceList)
 {
-    return DeviceManager::getInstance().updateDeviceList(deviceType, deviceList);
+    return DeviceManager::getInstance().updateDeviceList(
+        deviceType, *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
 }

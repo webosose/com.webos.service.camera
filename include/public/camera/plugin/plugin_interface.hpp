@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <string>
+#include <vector>
 
 /**
  * IFeature:
@@ -56,40 +57,30 @@ struct IHal : public IFeature
  * The interface for the addon featurs.
  */
 
-#include "camera_device_types.h"
-#include <luna-service2/lunaservice.h>
-#include <string>
-#include <vector>
-
 struct ICameraService
 {
     virtual ~ICameraService() {}
     virtual int getDeviceCounts(std::string type) { return 0; }
-    virtual bool updateDeviceList(std::string deviceType,
-                                  const std::vector<DEVICE_LIST_T> &deviceList)
-    {
-        return false;
-    }
+    virtual bool updateDeviceList(std::string deviceType, const void *deviceList) { return false; }
 };
 
 struct IAddon : public IFeature
 {
-    virtual bool hasImplementation()                                                   = 0;
-    virtual void setCameraService(ICameraService *camera_service)                      = 0;
-    virtual void initialize(LSHandle *lshandle)                                        = 0;
-    virtual bool isSupportedCamera(std::string productID, std::string vendorID)        = 0;
-    virtual bool isAppPermission(std::string appId)                                    = 0;
-    virtual void notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo)                    = 0;
-    virtual void notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo)                  = 0;
-    virtual void notifyDeviceListUpdated(std::string deviceType,
-                                         const std::vector<DEVICE_LIST_T> &deviceList) = 0;
+    virtual bool hasImplementation()                                                     = 0;
+    virtual void setCameraService(ICameraService *camera_service)                        = 0;
+    virtual void initialize(void *lshandle)                                              = 0;
+    virtual bool isSupportedCamera(std::string productID, std::string vendorID)          = 0;
+    virtual bool isAppPermission(std::string appId)                                      = 0;
+    virtual void notifyDeviceAdded(const void *deviceInfo)                               = 0;
+    virtual void notifyDeviceRemoved(const void *deviceInfo)                             = 0;
+    virtual void notifyDeviceListUpdated(std::string deviceType, const void *deviceList) = 0;
     virtual bool notifyDeviceOpened(std::string deviceKey, std::string appId,
-                                    std::string appPriority)                           = 0;
+                                    std::string appPriority)                             = 0;
     virtual void notifySolutionEnabled(std::string deviceKey,
-                                       const std::vector<std::string> &solutions)      = 0;
+                                       const std::vector<std::string> &solutions)        = 0;
     virtual void notifySolutionDisabled(std::string deviceKey,
-                                        const std::vector<std::string> &solutions)     = 0;
-    virtual std::vector<std::string> getEnabledSolutionList(std::string deviceKey)     = 0;
+                                        const std::vector<std::string> &solutions)       = 0;
+    virtual std::vector<std::string> getEnabledSolutionList(std::string deviceKey)       = 0;
 };
 
 /**
