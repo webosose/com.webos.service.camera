@@ -39,7 +39,7 @@ class CameraHalProxy
     void *cookie;
     std::string uid_;
 
-    DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
+    DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload, int timeout,
                                         json *j = nullptr);
     bool luna_call_sync_bool(const char *func, const std::string &payload, json *j = nullptr);
 

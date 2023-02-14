@@ -26,7 +26,8 @@
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";
 const std::string CameraSolutionConnectionBaseId = "com.webos.camerasolution.";
 const char *const CONST_MODULE_CSP               = "CameraSolutionProxy";
-#define COMMAND_TIMEOUT_LONG 3000 // TODO : Is the minimum value sufficient?
+
+#define COMMAND_TIMEOUT 2000 // ms
 
 static bool cameraSolutionServiceCb(const char *msg, void *data)
 {
@@ -324,7 +325,7 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
     PMLOG_INFO(CONST_MODULE_CSP, "%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
-    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT_LONG);
+    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
     PMLOG_INFO(CONST_MODULE_CSP, "resp : %s", resp.c_str());
 
     bool ret;

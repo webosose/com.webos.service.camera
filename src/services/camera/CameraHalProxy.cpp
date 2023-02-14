@@ -21,7 +21,11 @@
 #include "json_utils.h"
 
 const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
-#define COMMAND_TIMEOUT_LONG 3000 // TODO : Is the minimum value sufficient?
+
+// Please update the following if avcaptureinf/src/VideoCaptureInf_impl.cpp is updated.
+#define COMMAND_TIMEOUT 2000               // ms
+#define COMMAND_TIMEOUT_LONG 3000          // ms
+#define COMMAND_TIMEOUT_STARTPREVIEW 10000 // ms
 
 static bool cameraHalServiceCb(const char *msg, void *data)
 {
@@ -128,7 +132,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::open(std::string devicenode, int ndev_id, s
     jin[CONST_PARAM_NAME_CAMERAID]    = ndev_id;
     jin[CONST_PARAM_NAME_PAYLOAD]     = payload;
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::close()
@@ -136,7 +140,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::close()
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     std::string payload = "{}";
-    return luna_call_sync(__func__, payload);
+    return luna_call_sync(__func__, payload, COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(std::string memtype, int *pkey, LSHandle *sh,
@@ -151,7 +155,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(std::string memtype, int *pkey
     jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
 
     json j;
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), &j);
+    DEVICE_RETURN_CODE_T ret =
+        luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_STARTPREVIEW, &j);
 
     if (ret == DEVICE_OK)
     {
@@ -168,7 +173,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
     json jin;
     jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
@@ -182,13 +187,13 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
     jin[CONST_PARAM_NAME_HEIGHT]     = sformat.nHeight;
     jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
-    return luna_call_sync(__func__, "{}");
+    return luna_call_sync(__func__, "{}", COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sformat,
@@ -205,7 +210,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sfor
     jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
     jin[CONST_PARAM_NAME_MODE]       = mode;
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
@@ -215,7 +220,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
     json jin;
     jin[CONST_PARAM_NAME_SUBSYSTEM] = subsystem;
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::destroyHandle()
@@ -223,7 +228,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::destroyHandle()
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     std::string payload = "{}";
-    return luna_call_sync(__func__, payload);
+    return luna_call_sync(__func__, payload, COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
@@ -272,7 +277,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
     PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
-    lc->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT_LONG);
+    lc->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
     PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
 
     auto j = json::parse(resp, nullptr, false);
@@ -328,7 +333,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json j;
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, "{}", &j);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, "{}", COMMAND_TIMEOUT, &j);
 
     if (ret == DEVICE_OK)
     {
@@ -364,7 +369,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::setDeviceProperty(CAMERA_PROPERTIES_T *inpa
         jin[getParamString(i)] = inparams->stGetData.data[i][QUERY_VALUE];
     }
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::setFormat(CAMERA_FORMAT sformat)
@@ -377,7 +382,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::setFormat(CAMERA_FORMAT sformat)
     jin[CONST_PARAM_NAME_FPS]    = sformat.nFps;
     jin[CONST_PARAM_NAME_FORMAT] = sformat.eFormat;
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
@@ -385,7 +390,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     json j;
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, "{}", &j);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, "{}", COMMAND_TIMEOUT, &j);
 
     if (ret == DEVICE_OK)
     {
@@ -455,7 +460,7 @@ CameraHalProxy::getSupportedCameraSolutionInfo(std::vector<std::string> &solutio
 
     std::string payload = "{}";
     json j;
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, payload, &j);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, payload, COMMAND_TIMEOUT, &j);
 
     if (ret == DEVICE_OK)
     {
@@ -477,7 +482,7 @@ CameraHalProxy::getEnabledCameraSolutionInfo(std::vector<std::string> &solutions
 
     std::string payload = "{}";
     json j;
-    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, payload, &j);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, payload, COMMAND_TIMEOUT, &j);
 
     if (ret == DEVICE_OK)
     {
@@ -503,7 +508,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std:
         jin[CONST_PARAM_NAME_SOLUTIONS].push_back(s);
     }
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::disableCameraSolution(const std::vector<std::string> solutions)
@@ -517,7 +522,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::disableCameraSolution(const std::vector<std
         jin[CONST_PARAM_NAME_SOLUTIONS].push_back(s);
     }
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 //[Camera Solution Manager] interfaces end
 
@@ -574,7 +579,7 @@ bool CameraHalProxy::unsubscribe()
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std::string &payload,
-                                                    json *jin)
+                                                    int timeout, json *jin)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
@@ -589,7 +594,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
-    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT_LONG);
+    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, timeout);
     PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
 
     DEVICE_RETURN_CODE_T ret;
@@ -625,7 +630,7 @@ bool CameraHalProxy::luna_call_sync_bool(const char *func, const std::string &pa
     PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
-    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT_LONG);
+    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
     PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
 
     bool ret;
