@@ -14,8 +14,11 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory(camera-plugin-inspect)
-add_subdirectory(cameraservice)
-add_subdirectory(hal)
-add_subdirectory(test_smsync)
-add_subdirectory(test_sync_read)
+project(camera-plugin-inspect CXX)
+
+set(SRC camera_plugin_inspect.cpp)
+
+add_executable (${PROJECT_NAME} ${SRC})
+target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_BINDIR})

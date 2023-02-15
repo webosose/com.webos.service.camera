@@ -5,9 +5,11 @@
 #include <fstream>
 #include <functional>
 #include <iostream>
+#include <json_utils.h>
 #include <list>
 #include <memory>
 #include <nlohmann/json.hpp>
+#include <optional>
 #include <plugin_interface.hpp>
 #include <string>
 #include <sys/stat.h>
@@ -59,13 +61,14 @@ inline void to_json(json &j, const PluginInfo &p)
 
 inline void from_json(const json &j, PluginInfo &p)
 {
-    j.at("path").get_to(p.strPath_);
-    j.at("name").get_to(p.strName_);
-    j.at("description").get_to(p.strDescription_);
-    j.at("category").get_to(p.strCategory_);
-    j.at("version").get_to(p.strVersion_);
-    j.at("organization").get_to(p.strOrganization_);
-    j.at("features").get_to(p.lstFeatures_);
+    p.strPath_         = get_optional<std::string>(j, "path").value_or("");
+    p.strName_         = get_optional<std::string>(j, "name").value_or("");
+    p.strDescription_  = get_optional<std::string>(j, "description").value_or("");
+    p.strCategory_     = get_optional<std::string>(j, "category").value_or("");
+    p.strVersion_      = get_optional<std::string>(j, "version").value_or("");
+    p.strOrganization_ = get_optional<std::string>(j, "organization").value_or("");
+    p.lstFeatures_ =
+        get_optional<PluginInfo::FeatureList>(j, "features").value_or(PluginInfo::FeatureList());
 }
 
 inline void to_json(json &j, const PluginInfoLst &l)
@@ -91,177 +94,76 @@ public:
     virtual ~PluginRegistry(void) {}
 
 public:
-    bool scan(void)
+    bool readPluginRegistry(void)
     {
-        bool ret                  = true;
-        auto szPluginPath         = std::getenv("PLUGIN_PATH");
-        std::string strPluginPath = szPluginPath == nullptr ? "/usr/lib/camera" : szPluginPath;
-        try
+        std::ifstream ifs(getRegistryFilePath());
+        json jdata = json::parse(ifs, nullptr, false);
+
+        if (jdata.is_discarded())
         {
-            for (const auto &e : std::filesystem::directory_iterator(strPluginPath))
-            {
-                std::string strFileName = e.path().string();
-                const char *path        = strFileName.c_str();
-                struct stat sb;
-                if (stat(path, &sb) == 0 && !(sb.st_mode & S_IFDIR))
-                {
-                    void *handle{nullptr};
-                    std::cout << "PluginRegistry::scan() " << path << std::endl;
-                    handle = dlopen(path, RTLD_LAZY);
-                    if (!handle)
-                    {
-                        std::cout << "dlopen() failed: " << dlerror() << std::endl;
-                        ret = false;
-                        continue;
-                    }
-
-                    auto plugin_init = (plugin_entrypoint)dlsym(handle, "plugin_init");
-                    if (!plugin_init)
-                    {
-                        std::cout << "dlsym() failed @1: " << dlerror() << std::endl;
-                        ret = false;
-                        continue;
-                    }
-
-                    auto pPlugin = plugin_init();
-
-                    lstPluginInfo_.emplace_back(std::make_unique<PluginInfo>(pPlugin, strFileName));
-
-                    delete pPlugin;
-                    dlclose(handle);
-                    handle = nullptr;
-                }
-            }
-        }
-        catch (std::exception &e)
-        {
-            std::cout << "error : " << e.what() << std::endl;
-            ret = false;
-        }
-        return ret;
-    }
-    bool dump(void)
-    {
-        bool ret = false;
-        for (auto &p : lstPluginInfo_)
-        {
-            std::cout << "============================" << std::endl;
-            printPluginInfo(p->strName_);
-            ret = true;
-        }
-        return ret;
-    }
-    bool dumpJson(void)
-    {
-        bool ret = true;
-
-        std::cout << ">>>> Dump Case #1 : dump from list of plugininfo to json" << std::endl;
-        json j = lstPluginInfo_;
-        std::cout << std::setw(4) << j << std::endl;
-
-        std::cout << std::endl;
-        std::cout << ">>>> Dump Case #2 : dump from json to list of plugininfo" << std::endl;
-        PluginInfoLst lst = j;
-        for (auto &it : lst)
-        {
-            std::cout << "Name         : " << it->strName_ << std::endl;
-            std::cout << "Description  : " << it->strDescription_ << std::endl;
-            std::cout << "Category     : " << it->strCategory_ << std::endl;
-            std::cout << "Version      : " << it->strVersion_ << std::endl;
-            std::cout << "Organization : " << it->strOrganization_ << std::endl;
-            std::cout << "Plugin Path  : " << it->strPath_ << std::endl;
-            std::cout << "Number of Featrures (" << it->lstFeatures_.size() << ")" << std::endl;
-            for (auto &n : it->lstFeatures_)
-            {
-                std::cout << "   " << n << std::endl;
-            }
+            std::cout << "registry parsing error : " << getRegistryFilePath() << std::endl;
+            return false;
         }
 
-        return ret;
+        if (lstPluginInfo_.size() > 0)
+            lstPluginInfo_.clear();
+        lstPluginInfo_ = jdata;
+
+        return true;
     }
-    bool dumpJsonFile(void)
-    {
-        bool ret = false;
-        std::ofstream ofs;
-        ofs.open("PluginRegistry.json", std::ios_base::out);
-        json j = lstPluginInfo_;
-        ofs << std::setw(4) << j << std::endl;
-        ofs.close();
-        return ret;
-    }
-    const char *findPluiginNameFromFeatureName(const char *szFeatureName)
+
+    const char *findPluginPathHaveFeature(const char *szFeatureName)
     {
         for (auto &p : lstPluginInfo_)
         {
             auto it = std::find_if(std::begin(p->lstFeatures_), std::end(p->lstFeatures_),
                                    [&szFeatureName](const auto &f) { return szFeatureName == f; });
             if (it != std::end(p->lstFeatures_))
-            {
-                return p->strName_.c_str();
-            }
+                return p->strPath_.c_str();
         }
         return nullptr;
     }
-    const char *getPluginPath(const char *szPluginName)
+
+protected:
+    const char *getPluginDir(void)
     {
-        auto it =
-            std::find_if(std::begin(lstPluginInfo_), std::end(lstPluginInfo_),
-                         [&szPluginName](const auto &p) { return szPluginName == p->strName_; });
+        return getenv("CAMERA_PLUGIN_PATH").value_or("/usr/lib/camera");
+    }
 
-        if (it != std::end(lstPluginInfo_))
-            return it->get()->strPath_.c_str();
-
-        return nullptr;
+    const char *getRegistryFilePath(void)
+    {
+        return getenv("CAMERA_REGISTRY_PATH")
+            .value_or("/usr/lib/camera/camera_plugin_registry.json");
     }
 
 private:
-    void printPluginInfo(std::string &strPluginName)
+    std::optional<const char *> getenv(const char *szEnv)
     {
-        auto it =
-            std::find_if(std::begin(lstPluginInfo_), std::end(lstPluginInfo_),
-                         [&strPluginName](const auto &p) { return strPluginName == p->strName_; });
-
-        if (it != std::end(lstPluginInfo_))
-        {
-            std::cout << "Name         : " << (*it)->strName_ << std::endl;
-            std::cout << "Description  : " << (*it)->strDescription_ << std::endl;
-            std::cout << "Category     : " << (*it)->strCategory_ << std::endl;
-            std::cout << "Version      : " << (*it)->strVersion_ << std::endl;
-            std::cout << "Organization : " << (*it)->strOrganization_ << std::endl;
-            std::cout << "Plugin Path  : " << (*it)->strPath_ << std::endl;
-            std::cout << "Number of Featrures (" << (*it)->lstFeatures_.size() << ")" << std::endl;
-            for (auto &n : (*it)->lstFeatures_)
-            {
-                std::cout << "   " << n << std::endl;
-            }
-        }
+        if (std::getenv(szEnv) != nullptr)
+            return std::getenv(szEnv);
+        else
+            return {};
     }
 
-private:
+protected:
     PluginInfoLst lstPluginInfo_;
 };
 
 class PluginFactory
 {
-    using PluginRegistryPtr = std::unique_ptr<PluginRegistry>;
-
 public:
-    PluginFactory(void)
-    {
-        pRegirsry_ = PluginRegistryPtr(new PluginRegistry());
-        pRegirsry_->scan();
-    }
+    PluginFactory(void) { oRegirsry_.readPluginRegistry(); }
     ~PluginFactory(void) {}
 
 public:
     IFeaturePtr createFeature(const char *szFeatureName)
     {
-        void *handle = nullptr;
-        auto szName  = pRegirsry_->findPluiginNameFromFeatureName(szFeatureName);
-        auto szPath  = pRegirsry_->getPluginPath(szName);
+        auto szPath = oRegirsry_.findPluginPathHaveFeature(szFeatureName);
+        if (szPath == nullptr)
+            return nullptr;
 
         std::cout << "PluginFactory::createFeature() " << szPath << std::endl;
-        handle = dlopen(szPath, RTLD_LAZY);
+        void *handle = dlopen(szPath, RTLD_LAZY);
         if (!handle)
         {
             std::cout << "dlopen() failed: " << dlerror() << std::endl;
@@ -288,11 +190,6 @@ public:
                            });
     }
 
-public:
-    bool dumpAllPlugins(void) { return pRegirsry_->dump(); }
-    bool dumpAllPluginsJson(void) { return pRegirsry_->dumpJson(); }
-    bool dumpAllPluginsJsonFile(void) { return pRegirsry_->dumpJsonFile(); }
-
 private:
-    PluginRegistryPtr pRegirsry_;
+    PluginRegistry oRegirsry_;
 };

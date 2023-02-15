@@ -63,7 +63,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
 
     // load/initialize addon before subscription to pdm client
     pAddon_ = std::make_shared<AddOn>();
-    if (pAddon_->hasImplementation())
+    if (pAddon_ && pAddon_->hasImplementation())
     {
         pAddon_->initialize(this->get());
         CommandManager::getInstance().setAddon(pAddon_);
@@ -171,7 +171,7 @@ bool CameraService::open(LSMessage &message)
     std::string app_id = open.getAppId();
     // camera id & appId validation check
     if (cstr_invaliddeviceid == open.getCameraId() ||
-        (pAddon_->hasImplementation() && app_id.empty()))
+        (pAddon_ && pAddon_->hasImplementation() && app_id.empty()))
     {
         PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
@@ -189,7 +189,7 @@ bool CameraService::open(LSMessage &message)
         PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
         std::string app_priority = open.getAppPriority();
         PMLOG_INFO(CONST_MODULE_LUNA, "priority : %s \n", app_priority.c_str());
-        if (pAddon_->hasImplementation())
+        if (pAddon_ && pAddon_->hasImplementation())
         {
             PMLOG_INFO(CONST_MODULE_LUNA, "appId : %s", app_id.c_str());
         }

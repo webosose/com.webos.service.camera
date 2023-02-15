@@ -319,7 +319,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 objcamerahalproxy_.subscribe();
 
                 // Apply platform-specific policy to solutions if exists.
-                if (pAddon_->hasImplementation())
+                if (pAddon_ && pAddon_->hasImplementation())
                 {
                     std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
                     ret                   = objcamerahalproxy_.enableCameraSolution(
@@ -871,8 +871,11 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
         {
             // Attach platform-specific private component to device in order to enforce
             // platform-specific policy
-            std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
-            pAddon_->notifySolutionEnabled(deviceKey, solutions);
+            if (pAddon_ && pAddon_->hasImplementation())
+            {
+                std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
+                pAddon_->notifySolutionEnabled(deviceKey, solutions);
+            }
         }
 
         return ret;
@@ -903,8 +906,11 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
         {
             // Detach platform-specific private component from device used for platform-specific
             // policy application
-            std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
-            pAddon_->notifySolutionDisabled(deviceKey, solutions);
+            if (pAddon_ && pAddon_->hasImplementation())
+            {
+                std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
+                pAddon_->notifySolutionDisabled(deviceKey, solutions);
+            }
         }
 
         return ret;

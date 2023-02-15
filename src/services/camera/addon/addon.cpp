@@ -13,13 +13,18 @@ AddOn::AddOn()
     {
         pPluginFactory_ = new PluginFactory();
         pFeature_       = pPluginFactory_->createFeature("addon");
-
-        service_ = new Service();
+        if (pFeature_)
+        {
+            service_ = new Service();
+        }
     }
 
-    void *pInterface = nullptr;
-    pFeature_->queryInterface("addon", &pInterface);
-    plugin_ = static_cast<IAddon *>(pInterface);
+    if (pFeature_)
+    {
+        void *pInterface = nullptr;
+        pFeature_->queryInterface("addon", &pInterface);
+        plugin_ = static_cast<IAddon *>(pInterface);
+    }
 }
 
 AddOn::~AddOn()
