@@ -5,6 +5,7 @@
     "camerahal.operation":[
         "com.webos.camerahal.*/createHandle",
         "com.webos.camerahal.*/destroyHandle",
+        "com.webos.camerahal.*/finishProcess",
         "com.webos.camerahal.*/open",
         "com.webos.camerahal.*/startPreview",
         "com.webos.camerahal.*/stopPreview",
