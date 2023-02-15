@@ -31,6 +31,7 @@ using namespace nlohmann;
 class LunaClient;
 class Process;
 struct CameraSolutionEvent;
+enum class State;
 class CameraSolutionProxy
 {
     Property solutionProperty_{LG_SOLUTION_NONE};
@@ -51,7 +52,7 @@ class CameraSolutionProxy
     LSHandle *sh_;
     void *cookie;
     std::string uid_;
-    bool serverConnected_{false};
+    State state_;
 
     bool startProcess();
     bool stopProcess();

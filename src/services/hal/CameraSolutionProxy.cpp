@@ -29,6 +29,13 @@ const char *const CONST_MODULE_CSP               = "CameraSolutionProxy";
 
 #define COMMAND_TIMEOUT 2000 // ms
 
+enum class State
+{
+    INIT,
+    START,
+    CREATE
+};
+
 static bool cameraSolutionServiceCb(const char *msg, void *data)
 {
     PMLOG_INFO(CONST_MODULE_CSP, "%s", msg);
@@ -52,7 +59,7 @@ static bool cameraSolutionServiceCb(const char *msg, void *data)
 }
 
 CameraSolutionProxy::CameraSolutionProxy(const std::string solution_name)
-    : solution_name_(solution_name)
+    : solution_name_(solution_name), state_(State::INIT)
 {
     PMLOG_INFO(CONST_MODULE_CSP, "%s", solution_name_.c_str());
 }
@@ -103,36 +110,45 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
         return;
     }
 
-    enableStatus_ = enableValue;
-    PMLOG_INFO(CONST_MODULE_CSP, "start : enable = %d", enableStatus_);
+    PMLOG_INFO(CONST_MODULE_CSP, "start :  value = %d", enableValue);
 
-    if (enableStatus_)
+    if (enableValue)
     {
-        // 1. Start process
-        startProcess();
+        if (state_ == State::INIT)
+        {
+            state_ = State::START;
 
-        // When the process starts,
-        // 2. Create solution
-        // 3. Initialize solution
-        // 4. Enable solution
-        // 5. Subscribe to CameraSolutionService
-        prepareSolution();
+            // 1. Start process
+            startProcess();
+
+            // When the process starts,
+            // 2. Create solution
+            // 3. Initialize solution
+            // 4. Enable solution
+            // 5. Subscribe to CameraSolutionService
+            prepareSolution();
+        }
     }
     else
     {
-        // 1. Disable solution
-        json jin;
-        jin[CONST_PARAM_NAME_ENABLE] = false;
-        luna_call_sync(__func__, to_string(jin));
+        if (state_ == State::CREATE)
+        {
+            // 1. Disable solution
+            json jin;
+            jin[CONST_PARAM_NAME_ENABLE] = false;
+            luna_call_sync(__func__, to_string(jin));
+            enableStatus_ = false;
+            PMLOG_INFO(CONST_MODULE_CSP, "enableStatus_ %d", enableStatus_);
 
-        // 2. Unsubscribe to CameraSolutionService
-        unsubscribe();
+            // 2. Unsubscribe to CameraSolutionService
+            unsubscribe();
 
-        // 3. Release solution
-        luna_call_sync("release", "{}");
+            // 3. Release solution
+            luna_call_sync("release", "{}");
 
-        // 4. Stop process
-        stopProcess();
+            // 4. Stop process
+            stopProcess();
+        }
     }
 }
 
@@ -230,16 +246,19 @@ bool CameraSolutionProxy::prepareSolution()
                     json jin;
                     jin[CONST_PARAM_NAME_ENABLE] = true;
                     self->luna_call_sync("setEnableValue", to_string(jin));
+                    self->enableStatus_ = true;
+                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] enableStatus_ %d",
+                               self->enableStatus_);
 
                     // 4. Subscribe to CameraSolutionService
                     self->subscribe();
 
-                    self->serverConnected_ = true;
+                    self->state_ = State::CREATE;
                     PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] end");
                 }
                 else
                 {
-                    if (self->serverConnected_)
+                    if (self->state_ == State::CREATE)
                     {
                         PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] cancel server status");
                         if (!LSCancelServerStatus(handle, self->cookie, nullptr))
@@ -248,8 +267,8 @@ bool CameraSolutionProxy::prepareSolution()
                                         "[ServerStatus cb] error LSCancelServerStatus\n");
                         }
 
-                        self->serverConnected_ = false;
                         self->process_.reset();
+                        self->state_ = State::INIT;
                     }
                 }
                 return true;
