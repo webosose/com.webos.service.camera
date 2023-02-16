@@ -66,9 +66,10 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     if (pAddon_ && pAddon_->hasImplementation())
     {
         pAddon_->initialize(this->get());
-        CommandManager::getInstance().setAddon(pAddon_);
-        DeviceManager::getInstance().setAddon(pAddon_);
     }
+    CommandManager::getInstance().setAddon(pAddon_);
+    DeviceManager::getInstance().setAddon(pAddon_);
+
     // subscribe to pdm client
     Notifier notifier;
     notifier.setLSHandle(this->get());

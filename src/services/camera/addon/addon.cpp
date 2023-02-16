@@ -9,18 +9,11 @@
 
 AddOn::AddOn()
 {
-    if (!pPluginFactory_)
-    {
-        pPluginFactory_ = new PluginFactory();
-        pFeature_       = pPluginFactory_->createFeature("addon");
-        if (pFeature_)
-        {
-            service_ = new Service();
-        }
-    }
-
+    pFeature_ = pluginFactory_.createFeature("addon");
     if (pFeature_)
     {
+        service_ = new Service();
+
         void *pInterface = nullptr;
         pFeature_->queryInterface("addon", &pInterface);
         plugin_ = static_cast<IAddon *>(pInterface);
@@ -29,11 +22,6 @@ AddOn::AddOn()
 
 AddOn::~AddOn()
 {
-    if (pPluginFactory_)
-    {
-        delete pPluginFactory_;
-        pPluginFactory_ = nullptr;
-    }
     if (service_)
     {
         delete service_;

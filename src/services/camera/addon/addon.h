@@ -8,7 +8,7 @@ class AddOn
 {
 private:
     IAddon *plugin_{nullptr};
-    PluginFactory *pPluginFactory_{nullptr};
+    PluginFactory pluginFactory_;
     IFeaturePtr pFeature_;
 
 private:
