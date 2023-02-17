@@ -370,7 +370,9 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
                 json queries = j[it.key()];
                 for (json::iterator q = queries.begin(); q != queries.end(); ++q)
                 {
-                    oparams->stGetData.data[i][getQueryNumFromString(q.key())] = q.value();
+                    int n = getQueryNumFromString(q.key());
+                    if (n != -1)
+                        oparams->stGetData.data[i][n] = q.value();
                 }
             }
         }
