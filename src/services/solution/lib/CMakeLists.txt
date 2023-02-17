@@ -14,6 +14,19 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera-common CXX)
+project(camera_solution CXX)
 
-add_subdirectory(lib)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+set(SRC 
+    camera_solution.cpp
+    camera_solution_async.cpp)
+
+add_library(${PROJECT_NAME} SHARED ${SRC})
+
+target_link_libraries(${PROJECT_NAME}
+                      ${PMLOGLIB_LDFLAGS}
+                      ${PBNJSON_CPP_LDFLAGS}
+                      )
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR})

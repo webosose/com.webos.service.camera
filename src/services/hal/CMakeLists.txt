@@ -40,8 +40,6 @@ include_directories(${GST_INCLUDE_DIRS})
 
 include_directories(${CMAKE_SOURCE_DIR}/src/services/hal)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/hal/hal_if)
-include_directories(${CMAKE_SOURCE_DIR}/src/common/ipc)
-include_directories(${CMAKE_SOURCE_DIR}/src/common/shm)
 
 # Camera Hal Service
 set(SRC_LIST
@@ -54,11 +52,8 @@ set(SRC_LIST
 # common
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/common/camera/camera_types.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/shm/camshm.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/shm/cam_posixshm.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/ipc/LunaClient.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/ipc/Process.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/Process.cpp
     )
 
 ### SOLUTION MANAGER Solution configuration file Start ###
@@ -73,8 +68,10 @@ target_link_libraries(${PROJECT_NAME}
                       ${PBNJSON_CPP_LDFLAGS}
                       ${LS2++_LDFLAGS}
                       ${PMLOGLIB_LDFLAGS}
-                      camera_hal
                       ${GST_LIBRARIES}
+                      ${CMAKE_DL_LIBS}
+                      camera_common
+                      pthread
                       )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})

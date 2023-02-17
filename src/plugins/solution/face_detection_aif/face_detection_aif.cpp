@@ -15,7 +15,7 @@
 
 #include "face_detection_aif.hpp"
 #include "camera_log.h"
-#include "camera_solution_event.h"
+#include "plugin.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <jpeglib.h>
@@ -300,4 +300,31 @@ bool FaceDetectionAIF::decodeJpeg(void)
     jpeg_destroy_decompress(&cinfo);
 
     return true;
+}
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+extern "C"
+{
+    IPlugin *plugin_init(void)
+    {
+        Plugin *plg = new Plugin();
+        plg->setName("FaceDetectionAIF");
+        plg->setDescription("Face Detection");
+        plg->setCategory("SOLUTION");
+        plg->setVersion("1.0.0");
+        plg->setOrganization("LG Electronics.");
+        plg->registerFeature<FaceDetectionAIF>("FaceDetection");
+
+        return plg;
+    }
+
+    void __attribute__((constructor)) plugin_load(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
+
+    void __attribute__((destructor)) plugin_unload(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
 }

@@ -16,9 +16,9 @@
 
 #include "CameraHalProxy.h"
 #include "GenerateUniqueID.h"
-#include "LunaClient.h"
 #include "Process.h"
 #include "json_utils.h"
+#include "luna_client.h"
 #include <system_error>
 
 const std::string CameraHalProcessName = "com.webos.service.camera2.hal";

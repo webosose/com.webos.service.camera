@@ -18,7 +18,6 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "device_controller.h"
-#include "camera_solution_event.h"
 #include "camera_solution_manager.h"
 #include <algorithm>
 #include <ctime>

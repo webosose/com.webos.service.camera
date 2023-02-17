@@ -16,12 +16,11 @@
 
 #include "CameraSolutionProxy.h"
 #include "GenerateUniqueID.h"
-#include "LunaClient.h"
 #include "Process.h"
 #include "camera_constants.h"
 #include "camera_log.h"
-#include "camera_solution_event.h"
 #include "json_utils.h"
+#include "luna_client.h"
 #include <system_error>
 
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";

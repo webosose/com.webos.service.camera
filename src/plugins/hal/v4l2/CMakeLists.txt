@@ -23,6 +23,7 @@ set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/v4l2_camera_plugin.cpp)
 add_library(${PROJECT_NAME} SHARED ${SRC})
 
 target_link_libraries(${PROJECT_NAME}
-                      ${PMLOGLIB_LDFLAGS})
+                      ${PMLOGLIB_LDFLAGS}
+                      )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR}/camera)

@@ -87,9 +87,33 @@ struct IAddon : public IFeature
  * IHal:
  * The interface for the solution featurs.
  */
-struct ISolution
+
+//#include "camera_solution.h"
+
+typedef struct jvalue *jvalue_ref;
+struct CameraSolutionEvent
 {
-    virtual int open(void) = 0;
+    virtual void onInitialized(void) {}
+    virtual void onEnabled(void) {}
+    virtual void onDone(jvalue_ref) {}
+    virtual void onDisabled(void) {}
+    virtual void onReleased(void) {}
+};
+
+#include "camera_hal_if_types.h"
+#include <luna-service2/lunaservice.hpp>
+struct ISolution : public IFeature
+{
+    virtual void setEventListener(CameraSolutionEvent *pEvent)                      = 0;
+    virtual int32_t getMetaSizeHint(void)                                           = 0;
+    virtual void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh) = 0;
+    virtual void setEnableValue(bool enableValue)                                   = 0;
+    virtual int getProperty()                                                       = 0;
+    virtual bool isEnabled(void)                                                    = 0;
+    virtual std::string getSolutionStr(void)                                        = 0;
+    virtual void processForSnapshot(buffer_t inBuf)                                 = 0;
+    virtual void processForPreview(buffer_t inBuf)                                  = 0;
+    virtual void release(void)                                                      = 0;
 };
 
 /**

@@ -54,6 +54,13 @@ public:
     virtual ~FaceDetectionAIF(void);
 
 public:
+    virtual bool queryInterface(const char *szName, void **ppInterface) override
+    {
+        *ppInterface = static_cast<void *>(static_cast<ISolution *>(this));
+        return true;
+    }
+
+public:
     // interface override
     virtual int32_t getMetaSizeHint(void) override;
     virtual std::string getSolutionStr(void) override;

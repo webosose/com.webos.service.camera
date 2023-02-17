@@ -1,6 +1,6 @@
 // @@@LICENSE
 //
-// Copyright (C) 2023, LG Electronics, All Right Reserved.
+// Copyright (C) 2021, LG Electronics, All Right Reserved.
 //
 // No part of this source code may be communicated, distributed, reproduced
 // or transmitted in any form or by any means, electronic or mechanical or
@@ -8,15 +8,17 @@
 // LG Electronics.
 //
 // LICENSE@@@
-
 #pragma once
 
 #include <glib.h>
+#include <luna-service2/lunaservice.h>
 #include <map>
 #include <memory>
 #include <string>
 
-using Handler = bool (*)(const char *, void *);
+using Handler         = bool (*)(const char *, void *);
+using RegisterHandler = bool (*)(const char *, bool, void *);
+
 struct LSHandle;
 
 class LunaClient
@@ -29,7 +31,7 @@ public:
     };
 
     LunaClient(void);
-    LunaClient(const char *service_name, GMainContext *ctx = nullptr);
+    LunaClient(const char *serviceName, GMainContext *ctx = nullptr);
     virtual ~LunaClient(void);
 
     bool callSync(const char *uri, const char *param, std::string *result, int timeout = 30);
@@ -40,6 +42,8 @@ public:
                    void *data);
 
     bool unsubscribe(unsigned long subscribeKey);
+
+    bool registerToService(const char *serviceName, RegisterHandler handler, void *data);
 
 private:
     LSHandle *pHandle_{nullptr};

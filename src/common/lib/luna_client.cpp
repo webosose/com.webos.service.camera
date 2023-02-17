@@ -1,6 +1,6 @@
 // @@@LICENSE
 //
-// Copyright (C) 2023, LG Electronics, All Right Reserved.
+// Copyright (C) 2021, LG Electronics, All Right Reserved.
 //
 // No part of this source code may be communicated, distributed, reproduced
 // or transmitted in any form or by any means, electronic or mechanical or
@@ -9,22 +9,35 @@
 //
 // LICENSE@@@
 
-#include "LunaClient.h"
+#include "luna_client.h"
 #include "camera_constants.h"
-#include "camera_log.h"
+#include <camera_log.h>
 #include <glib.h>
-#include <luna-service2/lunaservice.h>
+#include <system_error>
 
 struct AutoLSError : LSError
 {
     AutoLSError(void) { LSErrorInit(this); }
-    ~AutoLSError(void) { LSErrorFree(this); }
+    ~AutoLSError(void)
+    {
+        try
+        {
+            LSErrorFree(this);
+        }
+        catch (const std::system_error &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_LC, "Caught a system_error with code %d meaning %s",
+                        e.code().value(), e.what());
+        }
+        catch (std::bad_cast &err)
+        {
+            PMLOG_ERROR(CONST_MODULE_LC, "Caught a bad_cast %s", err.what());
+        }
+    }
 };
 
 LunaClient::LunaClient(void)
 {
-    PMLOG_INFO(CONST_MODULE_LC, "");
-
     AutoLSError error = {};
     error.message     = nullptr;
     if (!LSRegister(nullptr, &pHandle_, &error))
@@ -38,13 +51,11 @@ LunaClient::LunaClient(void)
     }
 }
 
-LunaClient::LunaClient(const char *service_name, GMainContext *ctx)
+LunaClient::LunaClient(const char *serviceName, GMainContext *ctx)
 {
-    PMLOG_INFO(CONST_MODULE_LC, "%s", service_name);
-
     AutoLSError error = {};
     error.message     = nullptr;
-    if (!LSRegister(service_name, &pHandle_, &error))
+    if (!LSRegister(serviceName, &pHandle_, &error))
     {
         PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
     }
@@ -62,8 +73,6 @@ LunaClient::LunaClient(const char *service_name, GMainContext *ctx)
 
 LunaClient::~LunaClient(void)
 {
-    PMLOG_INFO(CONST_MODULE_LC, "");
-
     try
     {
         AutoLSError error = {};
@@ -96,12 +105,6 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
         pHandle_, uri, param,
         +[](LSHandle *h, LSMessage *m, void *d)
         {
-            if (m == nullptr)
-            {
-                PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR");
-                return false;
-            }
-
             Ctx *pCtx = static_cast<Ctx *>(d);
             // 1. Check whether error with including time out.
             if (!LSMessageIsHubErrorMessage(m))
@@ -181,6 +184,43 @@ bool LunaClient::callAsync(const char *uri, const char *param, Handler handler, 
     return ret;
 }
 
+bool LunaClient::registerToService(const char *serviceName, RegisterHandler handler, void *data)
+{
+    struct RegisterHandlerWrapper
+    {
+        RegisterHandler callback;
+        void *data;
+    };
+
+    AutoLSError error               = {};
+    error.message                   = nullptr;
+    bool ret                        = false;
+    RegisterHandlerWrapper *wrapper = new RegisterHandlerWrapper;
+    wrapper->callback               = handler;
+    wrapper->data                   = data;
+
+    PMLOG_DEBUG("serviceName=%s", serviceName);
+    ret = LSRegisterServerStatusEx(
+        pHandle_, serviceName,
+        +[](LSHandle *h, const char *s, bool b, void *d)
+        {
+            RegisterHandlerWrapper *wrapper = (RegisterHandlerWrapper *)d;
+            wrapper->callback(s, b, wrapper->data);
+            delete wrapper;
+            return true;
+        },
+        (void *)wrapper, NULL, &error);
+
+    if (!ret)
+    {
+        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        delete wrapper;
+    }
+
+    PMLOG_DEBUG("ret=%d", ret);
+    return ret;
+}
+
 bool LunaClient::subscribe(const char *uri, const char *param, unsigned long *subscribeKey,
                            Handler handler, void *data)
 {
@@ -218,7 +258,6 @@ bool LunaClient::subscribe(const char *uri, const char *param, unsigned long *su
 bool LunaClient::unsubscribe(unsigned long subscribeKey)
 {
     AutoLSError error = {};
-    error.message     = nullptr;
 
     PMLOG_DEBUG("subscribeKey=%ld", subscribeKey);
     if (!LSCallCancel(pHandle_, subscribeKey, &error))

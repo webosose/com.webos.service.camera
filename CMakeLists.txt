@@ -58,6 +58,7 @@ if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} ST
     add_definitions(-DPLATFORM_OSE)
 endif()
 
+add_subdirectory(src/common)
 add_subdirectory(src/plugins)
 add_subdirectory(src/services/camera)
 add_subdirectory(src/services/hal)

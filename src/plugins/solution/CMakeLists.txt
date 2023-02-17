@@ -14,6 +14,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera-common CXX)
+project(plugins-solution)
 
-add_subdirectory(lib)
+add_subdirectory(face_detection_aif)

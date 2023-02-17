@@ -14,7 +14,6 @@
  */
 
 #include "camera_solution.h"
-#include "camera_solution_event.h"
 #include "camera_types.h"
 
 #define LOG_TAG "CameraSolution"

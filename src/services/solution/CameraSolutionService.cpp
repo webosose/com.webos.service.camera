@@ -15,7 +15,6 @@
 
 #include "CameraSolutionService.h"
 #include "camera_types.h"
-#include "face_detection_aif.hpp"
 #include <pbnjson.hpp>
 #include <string>
 
@@ -23,7 +22,7 @@ const char *const CONST_MODULE_CSS     = "CameraSolutionService";
 const char *const SOL_SUBSCRIPTION_KEY = "cameraSolution";
 
 CameraSolutionService::CameraSolutionService(const char *service_name)
-    : LS::Handle(LS::registerService(service_name)), pCameraSolution(nullptr)
+    : LS::Handle(LS::registerService(service_name))
 {
     PMLOG_INFO(CONST_MODULE_CSS, "Start : %s", service_name);
 
@@ -56,10 +55,16 @@ bool CameraSolutionService::createSolution(LSMessage &message)
     {
         solutionName = parsed[CONST_PARAM_NAME_NAME].asString();
 
-        if (solutionName.compare(SOLUTION_FACEDETECTION) == 0)
+        if (solutionName.compare("FaceDetection") == 0)
         {
-            pCameraSolution = std::make_unique<FaceDetectionAIF>();
-            if (pCameraSolution)
+            pFeature_ = pluginFactory_.createFeature("FaceDetection");
+            if (pFeature_)
+            {
+                void *pInterface = nullptr;
+                pFeature_->queryInterface("FaceDetection", &pInterface);
+                pSolution_ = static_cast<ISolution *>(pInterface);
+            }
+            if (pSolution_)
             {
                 ret = true;
             }
@@ -85,8 +90,9 @@ bool CameraSolutionService::getMetaSizeHint(LSMessage &message)
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_METASIZE_HINT),
-                jnumber_create_i32(pCameraSolution->getMetaSizeHint()));
+    if (pSolution_)
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_METASIZE_HINT),
+                    jnumber_create_i32(pSolution_->getMetaSizeHint()));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -139,7 +145,10 @@ bool CameraSolutionService::initialize(LSMessage &message)
         PMLOG_INFO(CONST_MODULE_CSS, "shmkey %d", shmkey);
     }
 
-    pCameraSolution->initialize(streamFormat_, shmkey, this->get());
+    if (pSolution_)
+        pSolution_->initialize(streamFormat_, shmkey, this->get());
+    else
+        ret = false;
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
@@ -166,7 +175,8 @@ bool CameraSolutionService::setEnableValue(LSMessage &message)
         enableValue = parsed[CONST_PARAM_NAME_ENABLE].asBool();
     }
 
-    pCameraSolution->setEnableValue(enableValue);
+    if (pSolution_)
+        pSolution_->setEnableValue(enableValue);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
@@ -185,7 +195,8 @@ bool CameraSolutionService::release(LSMessage &message)
     auto *payload          = LSMessageGetPayload(&message);
     PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
 
-    pCameraSolution->release();
+    if (pSolution_)
+        pSolution_->release();
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 

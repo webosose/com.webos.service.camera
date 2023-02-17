@@ -17,6 +17,7 @@
 
 #include "camshm.h"
 #include "luna-service2/lunaservice.hpp"
+#include "plugin_factory.hpp"
 #include <glib.h>
 
 class CameraSolution;
@@ -25,7 +26,9 @@ class CameraSolutionService : public LS::Handle
     using mainloop          = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
     mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
 
-    std::unique_ptr<CameraSolution> pCameraSolution;
+    PluginFactory pluginFactory_;
+    IFeaturePtr pFeature_;
+    ISolution *pSolution_{nullptr};
 
 public:
     CameraSolutionService(const char *service_name);
