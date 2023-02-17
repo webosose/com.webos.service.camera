@@ -27,6 +27,13 @@ const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
 #define COMMAND_TIMEOUT_LONG 3000          // ms
 #define COMMAND_TIMEOUT_STARTPREVIEW 10000 // ms
 
+enum class State
+{
+    INIT,
+    CREATE,
+    DESTROY
+};
+
 static bool cameraHalServiceCb(const char *msg, void *data)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "%s", msg);
@@ -68,7 +75,7 @@ static bool cameraHalServiceCb(const char *msg, void *data)
     return true;
 }
 
-CameraHalProxy::CameraHalProxy()
+CameraHalProxy::CameraHalProxy() : state_(State::INIT)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
@@ -104,7 +111,16 @@ CameraHalProxy::CameraHalProxy()
 
 CameraHalProxy::~CameraHalProxy()
 {
-    PMLOG_INFO(CONST_MODULE_CHP, "");
+    PMLOG_INFO(CONST_MODULE_CHP, "state_ %d", static_cast<int>(state_));
+
+    if (state_ == State::CREATE)
+    {
+        destroyHandle();
+    }
+    else if (state_ == State::INIT)
+    {
+        finishProcess();
+    }
 
     g_main_loop_quit(loop_);
     if (loopThread_->joinable())
@@ -216,19 +232,25 @@ DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sfor
 DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "subsystem : %s", subsystem.c_str());
+    state_ = State::CREATE;
 
     json jin;
     jin[CONST_PARAM_NAME_SUBSYSTEM] = subsystem;
-
     return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::destroyHandle()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
+    state_ = State::DESTROY;
 
-    std::string payload = "{}";
-    return luna_call_sync(__func__, payload, COMMAND_TIMEOUT);
+    return luna_call_sync(__func__, "{}", COMMAND_TIMEOUT);
+}
+
+DEVICE_RETURN_CODE_T CameraHalProxy::finishProcess()
+{
+    PMLOG_INFO(CONST_MODULE_CHP, "");
+    return luna_call_sync(__func__, "{}", COMMAND_TIMEOUT);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,

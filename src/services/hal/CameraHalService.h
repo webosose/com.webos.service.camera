@@ -37,6 +37,7 @@ public:
 
     bool createHandle(LSMessage &message);
     bool destroyHandle(LSMessage &message);
+    bool finishProcess(LSMessage &message);
     bool open(LSMessage &message);
     bool close(LSMessage &message);
     bool startPreview(LSMessage &message);
