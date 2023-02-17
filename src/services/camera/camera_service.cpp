@@ -218,9 +218,9 @@ bool CameraService::open(LSMessage &message)
                                "Try register client process Id %d with signal number %d ...",
                                n_client_pid, n_client_sig);
                     std::string outmsg;
-                    bool bRetVal = CommandManager::getInstance().registerClientPid(
+                    DEVICE_RETURN_CODE_T retVal = CommandManager::getInstance().registerClientPid(
                         ndevice_handle, n_client_pid, n_client_sig, outmsg);
-                    if (bRetVal == true)
+                    if (retVal == DEVICE_OK)
                     {
                         PMLOG_INFO(CONST_MODULE_LUNA, "%s", outmsg.c_str());
                         open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,

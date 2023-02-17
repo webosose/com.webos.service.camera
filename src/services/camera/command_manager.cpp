@@ -338,8 +338,8 @@ DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, int *shmfd)
     return DEVICE_ERROR_HANDLE_NOT_EXIST;
 }
 
-bool CommandManager::registerClientPid(int devhandle, int n_client_pid, int n_client_sig,
-                                       std::string &outmsg)
+DEVICE_RETURN_CODE_T CommandManager::registerClientPid(int devhandle, int n_client_pid,
+                                                       int n_client_sig, std::string &outmsg)
 {
     PMLOG_INFO(CONST_MODULE_CM, "n_client_pid : %d\n", n_client_pid);
 
@@ -350,10 +350,11 @@ bool CommandManager::registerClientPid(int devhandle, int n_client_pid, int n_cl
     }
     outmsg = "No virtual device manager available for registering the client of pid " +
              std::to_string(n_client_pid);
-    return false;
+    return DEVICE_ERROR_UNKNOWN;
 }
 
-bool CommandManager::unregisterClientPid(int devhandle, int n_client_pid, std::string &outmsg)
+DEVICE_RETURN_CODE_T CommandManager::unregisterClientPid(int devhandle, int n_client_pid,
+                                                         std::string &outmsg)
 {
     PMLOG_INFO(CONST_MODULE_CM, "n_client_pid : %d\n", n_client_pid);
 
@@ -364,7 +365,7 @@ bool CommandManager::unregisterClientPid(int devhandle, int n_client_pid, std::s
     }
     outmsg = "No virtual device manager available for unregistering the client of pid " +
              std::to_string(n_client_pid);
-    return false;
+    return DEVICE_ERROR_UNKNOWN;
 }
 
 bool CommandManager::isRegisteredClientPid(int devhandle)

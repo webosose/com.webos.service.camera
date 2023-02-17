@@ -43,7 +43,6 @@ class CameraHalProxy
 
     DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload, int timeout,
                                         json *j = nullptr);
-    bool luna_call_sync_bool(const char *func, const std::string &payload, json *j = nullptr);
 
 public:
     CameraHalProxy();
@@ -68,8 +67,8 @@ public:
     DEVICE_RETURN_CODE_T setFormat(CAMERA_FORMAT sformat);
     DEVICE_RETURN_CODE_T getFormat(CAMERA_FORMAT *pformat);
 
-    bool registerClient(pid_t, int, int, std::string &outmsg);
-    bool unregisterClient(pid_t, std::string &outmsg);
+    DEVICE_RETURN_CODE_T registerClient(pid_t, int, int, std::string &outmsg);
+    DEVICE_RETURN_CODE_T unregisterClient(pid_t, std::string &outmsg);
     bool isRegisteredClient(int devhandle);
 
     void requestPreviewCancel();

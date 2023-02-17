@@ -76,8 +76,8 @@ public:
     DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
     DEVICE_RETURN_CODE_T getFd(int, int *);
 
-    bool registerClient(int, int, int, std::string &);
-    bool unregisterClient(int, std::string &);
+    DEVICE_RETURN_CODE_T registerClient(int, int, int, std::string &);
+    DEVICE_RETURN_CODE_T unregisterClient(int, std::string &);
     bool isRegisteredClient(int);
 
     void requestPreviewCancel();

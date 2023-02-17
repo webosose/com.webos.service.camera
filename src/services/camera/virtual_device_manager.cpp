@@ -791,13 +791,13 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
     return DEVICE_OK;
 }
 
-bool VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig, int devhandle,
-                                          std::string &outmsg)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig,
+                                                          int devhandle, std::string &outmsg)
 {
     return objcamerahalproxy_.registerClient((pid_t)n_client_pid, n_client_sig, devhandle, outmsg);
 }
 
-bool VirtualDeviceManager::unregisterClient(int n_client_pid, std::string &outmsg)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::unregisterClient(int n_client_pid, std::string &outmsg)
 {
     return objcamerahalproxy_.unregisterClient((pid_t)n_client_pid, outmsg);
 }

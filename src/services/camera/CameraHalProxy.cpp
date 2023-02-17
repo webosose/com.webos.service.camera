@@ -426,7 +426,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
     return ret;
 }
 
-bool CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle, std::string &outmsg)
+DEVICE_RETURN_CODE_T CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle,
+                                                    std::string &outmsg)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
@@ -436,14 +437,14 @@ bool CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle, std::stri
     jin[CONST_PARAM_NAME_DEVHANDLE] = devhandle;
 
     json j;
-    bool ret = luna_call_sync_bool(__func__, to_string(jin), &j);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT, &j);
 
     outmsg = get_optional<std::string>(j, CONST_PARAM_NAME_OUTMSG).value_or("");
 
     return ret;
 }
 
-bool CameraHalProxy::unregisterClient(pid_t pid, std::string &outmsg)
+DEVICE_RETURN_CODE_T CameraHalProxy::unregisterClient(pid_t pid, std::string &outmsg)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
@@ -451,7 +452,7 @@ bool CameraHalProxy::unregisterClient(pid_t pid, std::string &outmsg)
     jin[CONST_CLIENT_PROCESS_ID] = pid;
 
     json j;
-    bool ret = luna_call_sync_bool(__func__, to_string(jin), &j);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT, &j);
 
     outmsg = get_optional<std::string>(j, CONST_PARAM_NAME_OUTMSG).value_or("");
 
@@ -465,13 +466,16 @@ bool CameraHalProxy::isRegisteredClient(int devhandle)
     json jin;
     jin[CONST_PARAM_NAME_DEVHANDLE] = devhandle;
 
-    return luna_call_sync_bool(__func__, to_string(jin));
+    json j;
+    luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT, &j);
+
+    return get_optional<bool>(j, CONST_PARAM_NAME_REGISTER).value_or(false);
 }
 
 void CameraHalProxy::requestPreviewCancel()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "");
-    luna_call_sync_bool(__func__, "{}");
+    luna_call_sync(__func__, "{}", COMMAND_TIMEOUT);
 }
 
 //[Camera Solution Manager] interfaces start
@@ -634,39 +638,5 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     }
 
     PMLOG_INFO(CONST_MODULE_CHP, "%s : %d", CONST_PARAM_NAME_RETURNCODE, ret);
-    return ret;
-}
-
-bool CameraHalProxy::luna_call_sync_bool(const char *func, const std::string &payload, json *jin)
-{
-    PMLOG_INFO(CONST_MODULE_CHP, "");
-
-    if (process_ == nullptr)
-    {
-        PMLOG_INFO(CONST_MODULE_CHP, "hal process is not ready");
-        return false;
-    }
-
-    // send message
-    std::string uri = service_uri_ + func;
-    PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
-
-    std::string resp;
-    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
-    PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
-
-    bool ret;
-    if (jin)
-    {
-        *jin = json::parse(resp, nullptr, false);
-        ret  = get_optional<bool>(*jin, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
-    }
-    else
-    {
-        json j = json::parse(resp, nullptr, false);
-        ret    = get_optional<bool>(j, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
-    }
-
-    PMLOG_INFO(CONST_MODULE_CHP, "%s : %d", CONST_PARAM_NAME_RETURNVALUE, ret);
     return ret;
 }

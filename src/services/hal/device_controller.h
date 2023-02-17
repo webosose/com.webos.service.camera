@@ -115,8 +115,8 @@ public:
     DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
     DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
 
-    bool registerClient(pid_t, int, int, std::string &outmsg);
-    bool unregisterClient(pid_t, std::string &outmsg);
+    DEVICE_RETURN_CODE_T registerClient(pid_t, int, int, std::string &outmsg);
+    DEVICE_RETURN_CODE_T unregisterClient(pid_t, std::string &outmsg);
     bool isRegisteredClient(int devhandle);
 
     void requestPreviewCancel();

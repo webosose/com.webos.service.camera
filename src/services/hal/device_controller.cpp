@@ -962,7 +962,8 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
     return CAMERA_FORMAT_UNDEFINED;
 }
 
-bool DeviceControl::registerClient(pid_t pid, int sig, int devhandle, std::string &outmsg)
+DEVICE_RETURN_CODE_T DeviceControl::registerClient(pid_t pid, int sig, int devhandle,
+                                                   std::string &outmsg)
 {
     std::lock_guard<std::mutex> mlock(client_pool_mutex_);
     {
@@ -975,19 +976,19 @@ bool DeviceControl::registerClient(pid_t pid, int sig, int devhandle, std::strin
             client_pool_.push_back(p);
             outmsg = "The client of pid " + std::to_string(pid) + " registered with sig " +
                      std::to_string(sig) + " :: OK";
-            return true;
+            return DEVICE_OK;
         }
         else
         {
             outmsg =
                 "The client of pid " + std::to_string(pid) + " is already registered :: ignored";
             PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
-            return false;
+            return DEVICE_ERROR_UNKNOWN;
         }
     }
 }
 
-bool DeviceControl::unregisterClient(pid_t pid, std::string &outmsg)
+DEVICE_RETURN_CODE_T DeviceControl::unregisterClient(pid_t pid, std::string &outmsg)
 {
     std::lock_guard<std::mutex> mlock(client_pool_mutex_);
     {
@@ -999,13 +1000,13 @@ bool DeviceControl::unregisterClient(pid_t pid, std::string &outmsg)
             client_pool_.erase(it);
             outmsg = "The client of pid " + std::to_string(pid) + " unregistered :: OK";
             PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
-            return true;
+            return DEVICE_OK;
         }
         else
         {
             outmsg = "No client of pid " + std::to_string(pid) + " exists :: ignored";
             PMLOG_INFO(CONST_MODULE_DC, "%s", outmsg.c_str());
-            return false;
+            return DEVICE_ERROR_UNKNOWN;
         }
     }
 }

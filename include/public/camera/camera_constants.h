@@ -149,6 +149,7 @@
 #define CONST_PARAM_NAME_BUFFERSIZE "bufferSize"
 #define CONST_PARAM_NAME_ENABLE "enable"
 #define CONST_PARAM_NAME_METASIZE_HINT "metaSizeHint"
+#define CONST_PARAM_NAME_REGISTER "register"
 
 const int n_invalid_id  = -1;
 const int frame_count   = 8;

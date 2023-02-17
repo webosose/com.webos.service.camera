@@ -607,9 +607,9 @@ bool CameraHalService::registerClient(LSMessage &message)
     }
 
     std::string outmsg;
-    bool ret = pDeviceControl->registerClient(pid, sig, devhandle, outmsg);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->registerClient(pid, sig, devhandle, outmsg);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_OUTMSG),
                 jstring_create(outmsg.c_str()));
 
@@ -639,9 +639,9 @@ bool CameraHalService::unregisterClient(LSMessage &message)
     }
 
     std::string outmsg;
-    bool ret = pDeviceControl->unregisterClient(pid, outmsg);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->unregisterClient(pid, outmsg);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_OUTMSG),
                 jstring_create(outmsg.c_str()));
 
@@ -671,9 +671,10 @@ bool CameraHalService::isRegisteredClient(LSMessage &message)
     }
 
     std::string outmsg;
-    bool ret = pDeviceControl->isRegisteredClient(devhandle);
+    bool is_registered = pDeviceControl->isRegisteredClient(devhandle);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_REGISTER),
+                jboolean_create(is_registered));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));

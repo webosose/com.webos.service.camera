@@ -71,8 +71,8 @@ public:
     int getCameraId(int);
     int getCameraHandle(int);
 
-    bool registerClientPid(int, int, int, std::string &);
-    bool unregisterClientPid(int, int, std::string &);
+    DEVICE_RETURN_CODE_T registerClientPid(int, int, int, std::string &);
+    DEVICE_RETURN_CODE_T unregisterClientPid(int, int, std::string &);
     bool isRegisteredClientPid(int);
 
     bool setClientDevice(int, std::string);
