@@ -1,0 +1,18 @@
+{
+    "camerasolution.query": [
+
+    ],
+    "camerasolution.operation":[
+        "com.webos.camerasolution.*/setEventListener",
+        "com.webos.camerasolution.*/getMetaSizeHint",
+        "com.webos.camerasolution.*/initialize",
+        "com.webos.camerasolution.*/setEnableValue",
+        "com.webos.camerasolution.*/getProperty",
+        "com.webos.camerasolution.*/isEnabled",
+        "com.webos.camerasolution.*/getSolutionStr",
+        "com.webos.camerasolution.*/processForSnapshot",
+        "com.webos.camerasolution.*/processForPreview",
+        "com.webos.camerasolution.*/release",
+        "com.webos.camerasolution.*/subscribe"
+    ]
+}

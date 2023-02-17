@@ -1,6 +1,8 @@
 {
     "com.webos.service.camera2": [
-        "physicaldevice.query"
+        "all"
+    ],
+    "com.webos.service.camera2.*": [
+        "all"
     ]
 }
-

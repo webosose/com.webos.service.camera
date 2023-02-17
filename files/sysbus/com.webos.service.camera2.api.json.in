@@ -17,7 +17,8 @@
                 "com.webos.service.camera2/getEventNotification",
                 "com.webos.service.camera2/getFd",
                 "com.webos.service.camera2/getSolutions",
-                "com.webos.service.camera2/setSolutions"
+                "com.webos.service.camera2/setSolutions",
+                "com.webos.service.camera2/getFormat"
         ]
 }
 
