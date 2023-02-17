@@ -124,6 +124,22 @@ public:
         return nullptr;
     }
 
+    std::vector<std::string> getFeatureList(const char *szCategoryName)
+    {
+        std::vector<std::string> list;
+        for (auto &p : lstPluginInfo_)
+        {
+            if (p->strCategory_ == szCategoryName)
+            {
+                for (auto &f : p->lstFeatures_)
+                {
+                    list.push_back(f);
+                }
+            }
+        }
+        return list;
+    }
+
 protected:
     const char *getPluginDir(void)
     {
@@ -188,6 +204,11 @@ public:
                                if (dlclose(handle) != 0)
                                    std::cout << "failed to run dlcose" << std::endl;
                            });
+    }
+
+    std::vector<std::string> getFeatureList(const char *szCategoryName)
+    {
+        return oRegirsry_.getFeatureList(szCategoryName);
     }
 
 private:

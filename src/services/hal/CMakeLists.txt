@@ -56,11 +56,6 @@ set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/common/Process.cpp
     )
 
-### SOLUTION MANAGER Solution configuration file Start ###
-message(STATUS "Using json to define supported solutions for variable platform")
-webos_build_configured_file(files/conf/solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
-### SOLUTION MANAGER Solution configuration file End ###
-
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
 target_link_libraries(${PROJECT_NAME}

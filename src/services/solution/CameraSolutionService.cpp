@@ -54,14 +54,13 @@ bool CameraSolutionService::createSolution(LSMessage &message)
     if (parsed.hasKey(CONST_PARAM_NAME_NAME))
     {
         solutionName = parsed[CONST_PARAM_NAME_NAME].asString();
-
-        if (solutionName.compare("FaceDetection") == 0)
+        if (!solutionName.empty())
         {
-            pFeature_ = pluginFactory_.createFeature("FaceDetection");
+            pFeature_ = pluginFactory_.createFeature(solutionName.c_str());
             if (pFeature_)
             {
                 void *pInterface = nullptr;
-                pFeature_->queryInterface("FaceDetection", &pInterface);
+                pFeature_->queryInterface(solutionName.c_str(), &pInterface);
                 pSolution_ = static_cast<ISolution *>(pInterface);
             }
             if (pSolution_)
