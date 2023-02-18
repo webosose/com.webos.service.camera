@@ -146,7 +146,7 @@ bool CameraSolutionService::initialize(LSMessage &message)
     }
 
     if (pSolution_)
-        pSolution_->initialize(streamFormat_, shmkey, this->get());
+        pSolution_->initialize(&streamFormat_, shmkey, this->get());
     else
         ret = false;
 

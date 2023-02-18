@@ -32,8 +32,8 @@ Dummy::~Dummy(void)
 
 std::string Dummy::getSolutionStr(void) { return SOLUTION_DUMMY; }
 
-void Dummy::processForSnapshot(buffer_t inBuf) {}
+void Dummy::processForSnapshot(const void *inBuf) {}
 
-void Dummy::processForPreview(buffer_t inBuf) {}
+void Dummy::processForPreview(const void *inBuf) {}
 
 void Dummy::release(void) { PMLOG_INFO(LOG_TAG, ""); }

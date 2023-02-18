@@ -26,7 +26,7 @@ public:
 public:
     // interface override
     virtual std::string getSolutionStr(void) override;
-    virtual void processForSnapshot(buffer_t inBuf) override;
-    virtual void processForPreview(buffer_t inBuf) override;
+    virtual void processForSnapshot(const void *inBuf) override;
+    virtual void processForPreview(const void *inBuf) override;
     virtual void release(void) override;
 };

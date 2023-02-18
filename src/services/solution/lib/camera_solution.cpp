@@ -18,12 +18,12 @@
 
 #define LOG_TAG "CameraSolution"
 
-void CameraSolution::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
+void CameraSolution::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
     PMLOG_INFO(LOG_TAG, "%s", getSolutionStr().c_str());
-    streamFormat_ = streamFormat;
+    streamFormat_ = *static_cast<const stream_format_t *>(streamFormat);
     shm_key       = shmKey;
-    sh_           = sh;
+    sh_           = static_cast<LSHandle *>(lsHandle);
 
     if (pEvent_)
         (pEvent_.load())->onInitialized();

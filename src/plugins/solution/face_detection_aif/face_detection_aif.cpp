@@ -48,7 +48,7 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
 
 std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION; }
 
-void FaceDetectionAIF::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
+void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
     PMLOG_INFO(LOG_TAG, "");
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
@@ -82,7 +82,7 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat, int shmKey, LSHa
     PMLOG_INFO(LOG_TAG, "aif_param = %s", param.c_str());
     EdgeAIVision::getInstance().createDetector(type, param);
 
-    CameraSolution::initialize(streamFormat, shmKey, sh);
+    CameraSolution::initialize(streamFormat, shmKey, lsHandle);
     PMLOG_INFO(LOG_TAG, "");
 }
 
@@ -165,7 +165,7 @@ void FaceDetectionAIF::processing(void)
         jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
 
         if (pEvent_ && getMetaSizeHint() > 0)
-            (pEvent_.load())->onDone(jsonOutObj);
+            (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
 
         // Subscription reply
         if (sh_)
@@ -207,7 +207,7 @@ void FaceDetectionAIF::postProcessing(void)
     jvalue_ref jsonFaceArray = jarray_create(nullptr);
     jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
     if (pEvent_ && getMetaSizeHint() > 0)
-        (pEvent_.load())->onDone(jsonOutObj);
+        (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
 
     // Subscription reply
     if (sh_)

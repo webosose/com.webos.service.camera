@@ -51,7 +51,8 @@ static bool cameraSolutionServiceCb(const char *msg, void *data)
     if (client->pEvent_)
     {
         jvalue_ref jsonFaceInfo = jdom_create(j_cstr_to_buffer(msg), jschema_all(), NULL);
-        (client->pEvent_.load())->onDone(jsonFaceInfo); // Send face info to DeviceController
+        (client->pEvent_.load())
+            ->onDone(jvalue_stringify(jsonFaceInfo)); // Send face info to DeviceController
         j_release(&jsonFaceInfo);
     }
 

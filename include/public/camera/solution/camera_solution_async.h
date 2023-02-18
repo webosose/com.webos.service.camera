@@ -50,8 +50,8 @@ public:
 public:
     // interface override
     virtual void setEnableValue(bool enableValue) override;
-    virtual void processForSnapshot(buffer_t inBuf) override;
-    virtual void processForPreview(buffer_t inBuf) override;
+    virtual void processForSnapshot(const void *inBuf) override;
+    virtual void processForPreview(const void *inBuf) override;
     virtual void release(void) override;
 
 protected:

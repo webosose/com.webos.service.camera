@@ -22,11 +22,15 @@
 #include <algorithm>
 #include <ctime>
 #include <errno.h>
+#include <json_utils.h>
+#include <nlohmann/json.hpp>
 #include <pbnjson.h>
 #include <poll.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <system_error>
+
+using namespace nlohmann;
 
 /**
  * need to call directly camera base methods in order to cancel preview when the camera is
@@ -36,36 +40,39 @@
 struct MemoryListener : public CameraSolutionEvent
 {
     MemoryListener(void) { PMLOG_INFO(CONST_MODULE_DC, ""); }
-    virtual ~MemoryListener(void)
-    {
-        if (jsonResult_ != nullptr)
-            j_release(&jsonResult_);
-        jsonResult_ = nullptr;
-        PMLOG_INFO(CONST_MODULE_DC, "");
-    }
+    virtual ~MemoryListener(void) { PMLOG_INFO(CONST_MODULE_DC, ""); }
     virtual void onInitialized(void) override { PMLOG_INFO(CONST_MODULE_DC, "It's initialized!!"); }
-    virtual void onDone(jvalue_ref jsonObj) override
+    virtual void onDone(const char *szResult) override
     {
         std::lock_guard<std::mutex> lg(mtxResult_);
         // TODO : We need to composite more than one results.
         //        e.g) {"faces":[{...}, {...}], "poses":[{...}, {...}]}
-        j_release(&jsonResult_);
-        jsonResult_ = jvalue_copy(jsonObj);
-        PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jvalue_stringify(jsonResult_));
+        json jResult = json::parse(szResult, nullptr, false);
+        if (jResult.is_discarded())
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "message parsing error!");
+            return;
+        }
+
+        for (auto &[key, val] : jResult.items())
+        {
+            if (key == "returnValue")
+                continue;
+            jsonResult_[key] = val;
+        }
+        PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jsonResult_.dump().c_str());
     }
     std::string getResult(void)
     {
         std::lock_guard<std::mutex> lg(mtxResult_);
-        if (jsonResult_ != nullptr)
+        if (!jsonResult_.is_null())
         {
-            const char *jvalue = jvalue_stringify(jsonResult_);
-            if (jvalue)
-                return jvalue;
+            return jsonResult_.dump();
         }
         return "";
     }
     std::mutex mtxResult_;
-    jvalue_ref jsonResult_{nullptr};
+    json jsonResult_;
 };
 
 int DeviceControl::n_imagecount_ = 0;

@@ -133,9 +133,15 @@ void CameraSolutionAsync::setEnableValue(bool enableValue)
     }
 }
 
-void CameraSolutionAsync::processForSnapshot(buffer_t inBuf) { pushJob(inBuf); }
+void CameraSolutionAsync::processForSnapshot(const void *inBuf)
+{
+    pushJob(*static_cast<const buffer_t *>(inBuf));
+}
 
-void CameraSolutionAsync::processForPreview(buffer_t inBuf) { pushJob(inBuf); }
+void CameraSolutionAsync::processForPreview(const void *inBuf)
+{
+    pushJob(*static_cast<const buffer_t *>(inBuf));
+}
 
 void CameraSolutionAsync::run(void)
 {

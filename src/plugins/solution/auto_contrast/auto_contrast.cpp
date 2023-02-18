@@ -41,10 +41,10 @@ AutoContrast::~AutoContrast(void)
 
 std::string AutoContrast::getSolutionStr(void) { return SOLUTION_AUTOCONTRAST; }
 
-void AutoContrast::processForSnapshot(buffer_t inBuf)
+void AutoContrast::processForSnapshot(const void *inBuf)
 {
     PMLOG_INFO(LOG_TAG, "");
-    doAutoContrastProcessing(inBuf);
+    doAutoContrastProcessing(*static_cast<buffer_t *>(inBuf));
 }
 
 void AutoContrast::processForPreview(buffer_t inBuf) { doAutoContrastProcessing(inBuf); }
