@@ -22,6 +22,7 @@
 #include "camera_log.h"
 #include "camera_solution_event.h"
 #include "json_utils.h"
+#include <system_error>
 
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";
 const std::string CameraSolutionConnectionBaseId = "com.webos.camerasolution.";
