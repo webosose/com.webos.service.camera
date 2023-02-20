@@ -17,7 +17,6 @@
 #ifndef NOTIFIER_H_
 #define NOTIFIER_H_
 
-#include "camera_types.h"
 #include "luna-service2/lunaservice.hpp"
 #include <functional>
 #include <iostream>
@@ -40,7 +39,7 @@ public:
     }
     virtual ~Notifier();
 
-    void addNotifier(NotifierClient, GMainLoop *loop);
+    void addNotifiers(GMainLoop *loop);
     void setLSHandle(LSHandle *);
 
 private:

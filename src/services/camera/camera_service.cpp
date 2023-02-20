@@ -73,10 +73,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     // subscribe to pdm client
     Notifier notifier;
     notifier.setLSHandle(this->get());
-    notifier.addNotifier(NotifierClient::NOTIFIER_CLIENT_PDM, main_loop_ptr_.get());
-
-    // subscribe to appcast client
-    notifier.addNotifier(NotifierClient::NOTIFIER_CLIENT_APPCAST, main_loop_ptr_.get());
+    notifier.addNotifiers(main_loop_ptr_.get());
 
     // run the gmainloop
     g_main_loop_run(main_loop_ptr_.get());

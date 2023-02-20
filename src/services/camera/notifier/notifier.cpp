@@ -32,43 +32,25 @@ Notifier::~Notifier()
     }
 }
 
-void Notifier::addNotifier(NotifierClient client, GMainLoop *loop)
+void Notifier::addNotifiers(GMainLoop *loop)
 {
-    PMLOG_INFO(CONST_MODULE_NOTIFIER, "client : %d\n", (int)client);
-
-    if (client == NotifierClient::NOTIFIER_CLIENT_PDM)
+    auto lstFeatNames = pPluginFactory_->getFeatureList("NOTIFIER");
+    for (auto &f : lstFeatNames)
     {
-        IFeaturePtr pFeature = pPluginFactory_->createFeature("pdm");
+        PMLOG_INFO(CONST_MODULE_NOTIFIER, "client : %s", f.c_str());
+        IFeaturePtr pFeature = pPluginFactory_->createFeature(f.c_str());
         if (pFeature)
         {
             void *pInterface = nullptr;
-            if (pFeature->queryInterface("pdm", &pInterface))
+            if (pFeature->queryInterface(f.c_str(), &pInterface))
             {
                 pFeatureList_.push_back(std::move(pFeature));
-                notifierMap_["pdm"] = static_cast<INotifier *>(pInterface);
-                INotifier *pdm      = notifierMap_["pdm"]; // points to PDM object
-                pdm->setLSHandle(lshandle_);
-                registerCallback(pdm, updateDeviceListCb, loop);
+                notifierMap_[f.c_str()] = static_cast<INotifier *>(pInterface);
+                INotifier *noti         = notifierMap_[f.c_str()];
+                noti->setLSHandle(lshandle_);
+                registerCallback(noti, updateDeviceListCb, loop);
                 PMLOG_INFO(CONST_MODULE_NOTIFIER,
-                           "Notifier \'%s\' instance created and ready : OK!", "pdm");
-            }
-        }
-    }
-    else if (client == NotifierClient::NOTIFIER_CLIENT_APPCAST)
-    {
-        IFeaturePtr pFeature = pPluginFactory_->createFeature("appcast");
-        if (pFeature)
-        {
-            void *pInterface = nullptr;
-            if (pFeature->queryInterface("appcast", &pInterface))
-            {
-                pFeatureList_.push_back(std::move(pFeature));
-                notifierMap_["appcast"] = static_cast<INotifier *>(pInterface);
-                INotifier *appcast      = notifierMap_["appcast"];
-                appcast->setLSHandle(lshandle_);
-                registerCallback(appcast, updateDeviceListCb, loop);
-                PMLOG_INFO(CONST_MODULE_NOTIFIER,
-                           "Notifier \'%s\' instance created and ready : OK!", "appcast");
+                           "Notifier \'%s\' instance created and ready : OK!", f.c_str());
             }
         }
     }
