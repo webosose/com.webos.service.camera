@@ -18,6 +18,7 @@
 #include "camshm.h"
 #include <list>
 #include <numeric>
+#include <system_error>
 
 #define LOG_TAG "CameraSolutionAsync"
 
