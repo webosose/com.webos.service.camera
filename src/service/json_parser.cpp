@@ -1482,7 +1482,8 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
     createJsonStringFailure(obj_reply, json_outobj);
   }
 
-  str_reply = jvalue_stringify(json_outobj);
+  const char* strValue = jvalue_stringify(json_outobj);
+  str_reply = (strValue) ? strValue : "";
   j_release(&json_outobj);
 
   return str_reply;
@@ -1584,7 +1585,8 @@ std::string SetSolutionsMethod::createObjectJsonString() const
     createJsonStringFailure(obj_reply, json_outobj);
   }
 
-  str_reply = jvalue_stringify(json_outobj);
+  const char* strValue = jvalue_stringify(json_outobj);
+  str_reply = (strValue) ? strValue : "";
   j_release(&json_outobj);
 
   return str_reply;

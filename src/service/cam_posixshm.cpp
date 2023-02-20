@@ -138,7 +138,7 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
 
   unsigned char *pSharedmem = (unsigned char *)mmap(NULL, shmemSize,
                                   PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
-  if (pSharedmem == MAP_FAILED)
+  if (pSharedmem == MAP_FAILED || pSharedmem == NULL)
   {
     DEBUG_PRINT("mmap failed \n");
     return POSHMEM_COMM_FAIL;

@@ -65,8 +65,8 @@ struct MemoryListener : public CameraSolutionEvent
     std::lock_guard<std::mutex> lg(mtxResult_);
     if (jsonResult_ == nullptr)
       return "";
-    else
-      return jvalue_stringify(jsonResult_);
+    const char* strValue = jvalue_stringify(jsonResult_);
+    return (strValue) ? strValue : "";
   }
   std::mutex mtxResult_;
   jvalue_ref jsonResult_{nullptr};
