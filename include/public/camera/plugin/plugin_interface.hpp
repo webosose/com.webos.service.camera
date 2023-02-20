@@ -1,5 +1,7 @@
 #pragma once
 #include <cstddef>
+#include <functional>
+#include <glib.h>
 #include <string>
 #include <vector>
 
@@ -112,12 +114,16 @@ struct ISolution : public IFeature
 };
 
 /**
- * IHal:
+ * INotifier:
  * The interface for the notifier featurs.
  */
-struct INotifier
+struct INotifier : public IFeature
 {
-    virtual int open(void) = 0;
+public:
+    using handlercb = std::function<bool(std::string notifierType, const void *deviceList)>;
+
+    virtual void subscribeToClient(handlercb, GMainLoop *loop) = 0;
+    virtual void setLSHandle(void *lshandle)                   = 0;
 };
 
 /**

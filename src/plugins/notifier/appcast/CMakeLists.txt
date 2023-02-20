@@ -14,9 +14,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera-plugins CXX)
+project(appcastclient CXX)
 
-#add_subdirectory(addon)
-add_subdirectory(hal)
-add_subdirectory(notifier)
-add_subdirectory(solution)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/appcast_client.cpp)
+
+add_library(${PROJECT_NAME} SHARED ${SRC})
+
+target_link_libraries(${PROJECT_NAME}
+                      ${PMLOGLIB_LDFLAGS}
+		      ${LS2++_LDFLAGS}
+                      )
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR}/camera)

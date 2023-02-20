@@ -17,7 +17,7 @@
 #ifndef APPCAST_CLIENT
 #define APPCAST_CLIENT
 
-#include "device_notifier.h"
+#include "plugin_interface.hpp"
 #include <functional>
 #include <luna-service2/lunaservice.hpp>
 
@@ -41,26 +41,48 @@ struct deviceInfo_t
     std::string deviceName;
 };
 
-class AppCastClient : public DeviceNotifier
+#ifdef __cplusplus
+extern "C"
 {
-private:
-    static bool subscribeToAppcastService(LSHandle *sh, const char *serviceName, bool connected,
-                                          void *ctx);
-    LSHandle *lshandle_;
+#endif
 
-public:
-    AppCastClient();
-    virtual ~AppCastClient() {}
-    virtual void subscribeToClient(handlercb, GMainLoop *loop) override;
-    virtual void setLSHandle(LSHandle *);
-    void setState(APP_CAST_STATE);
-    bool sendConnectSoundInput(bool);
-    bool sendSetSoundInput(bool);
+    class AppCastClient : public INotifier
+    {
+    private:
+        static bool subscribeToAppcastService(LSHandle *sh, const char *serviceName, bool connected,
+                                              void *ctx);
+        LSHandle *lshandle_;
 
-    APP_CAST_STATE mState;
-    std::string str_state[STATE_END];
+    public:
+        AppCastClient();
+        virtual ~AppCastClient();
 
-    deviceInfo_t mDeviceInfo;
-};
+    public:
+        virtual bool queryInterface(const char *szName, void **pInterface) override
+        {
+            *pInterface = static_cast<void *>(static_cast<INotifier *>(this));
+            return true;
+        }
+
+        virtual void subscribeToClient(handlercb, GMainLoop *loop) override;
+        virtual void setLSHandle(void *lshandle) override;
+
+    public:
+        void setState(APP_CAST_STATE);
+        bool sendConnectSoundInput(bool);
+        bool sendSetSoundInput(bool);
+
+        APP_CAST_STATE mState;
+        std::string str_state[STATE_END];
+
+        deviceInfo_t mDeviceInfo;
+
+    public:
+        handlercb updateDeviceList;
+    };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

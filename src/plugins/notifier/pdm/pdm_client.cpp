@@ -15,11 +15,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "pdm_client.h"
-#include "addon.h"
 #include "camera_constants.h"
-#include "device_manager.h"
-#include "event_notification.h"
+#include "camera_device_types.h"
+#include "camera_log.h"
 #include "json_utils.h"
+#include "plugin.hpp"
 #include <glib.h>
 #include <list>
 #include <nlohmann/json.hpp>
@@ -144,10 +144,8 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
         }
     }
 
-    DeviceManager::getInstance().updateDeviceList("v4l2", devList);
-
-    if (NULL != client->subscribeToDeviceInfoCb_)
-        client->subscribeToDeviceInfoCb_(nullptr);
+    if (NULL != client->updateDeviceList)
+        client->updateDeviceList("v4l2", &devList);
 
     return true;
 }
@@ -158,7 +156,7 @@ void PDMClient::subscribeToClient(handlercb cb, GMainLoop *loop)
     LSErrorInit(&lsregistererror);
 
     // register to PDM luna service with cb to be called
-    subscribeToDeviceInfoCb_ = cb;
+    this->updateDeviceList = cb;
 
     bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
                                            subscribeToPdmService, this, NULL, &lsregistererror);
@@ -168,7 +166,7 @@ void PDMClient::subscribeToClient(handlercb cb, GMainLoop *loop)
     }
 }
 
-void PDMClient::setLSHandle(LSHandle *handle) { lshandle_ = handle; }
+void PDMClient::setLSHandle(void *handle) { lshandle_ = (LSHandle *)handle; }
 
 bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
                                       void *ctx)
@@ -209,4 +207,31 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
     }
 
     return ret;
+}
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+extern "C"
+{
+    IPlugin *plugin_init(void)
+    {
+        Plugin *plg = new Plugin();
+        plg->setName("PDM Notifier");
+        plg->setDescription("PDM Client for Camera Notifier");
+        plg->setCategory("NOTIFIER");
+        plg->setVersion("1.0.0");
+        plg->setOrganization("LG Electronics.");
+        plg->registerFeature<PDMClient>("pdm");
+
+        return plg;
+    }
+
+    void __attribute__((constructor)) plugin_load(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
+
+    void __attribute__((destructor)) plugin_unload(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
 }

@@ -25,7 +25,6 @@ CameraSolutionManager::CameraSolutionManager(void)
     getSupportedSolutionList(list, enabledList);
     PMLOG_INFO(CONST_MODULE_SM, "solution list count %zd", list.size());
 
-
     if (std::find(list.begin(), list.end(), SOLUTION_AUTOCONTRAST) != list.end())
         lstSolution_.push_back(std::make_unique<AutoContrast>());
 

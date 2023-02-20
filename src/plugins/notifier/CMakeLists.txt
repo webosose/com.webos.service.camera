@@ -14,9 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera-plugins CXX)
+project(plugins-notifier)
 
-#add_subdirectory(addon)
-add_subdirectory(hal)
-add_subdirectory(notifier)
-add_subdirectory(solution)
+add_subdirectory(pdm)
+add_subdirectory(appcast)

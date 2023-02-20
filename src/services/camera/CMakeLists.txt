@@ -49,13 +49,6 @@ set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/common/Process.cpp
     )
 
-# plugins/notifier
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/plugins/notifier/pdm/pdm_client.cpp
-    ${CMAKE_SOURCE_DIR}/src/plugins/notifier/appcast/appcast_client.cpp
-    )
-
 add_executable(${PROJECT_NAME}
                ${SRC_LIST})
 

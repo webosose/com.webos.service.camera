@@ -15,10 +15,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "appcast_client.h"
-#include "addon.h"
 #include "camera_constants.h"
-#include "device_manager.h"
+#include "camera_device_types.h"
+#include "camera_log.h"
 #include "json_utils.h"
+#include "plugin.hpp"
 #include <nlohmann/json.hpp>
 
 using namespace nlohmann;
@@ -86,8 +87,11 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
     if (!appcast.connect)
     {
         PMLOG_INFO(CONST_MODULE_AC, "remove camera");
-        DeviceManager::getInstance().updateDeviceList("remote", std::vector<DEVICE_LIST_T>{});
-
+        if (client->updateDeviceList)
+        {
+            std::vector<DEVICE_LIST_T> empty{};
+            client->updateDeviceList("remote", (const void *)&empty);
+        }
         client->sendConnectSoundInput(false);
         client->setState(INIT);
         return true;
@@ -122,7 +126,8 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
         std::vector<DEVICE_LIST_T> devList;
         devList.push_back(devInfo);
 
-        DeviceManager::getInstance().updateDeviceList("remote", devList);
+        if (NULL != client->updateDeviceList)
+            client->updateDeviceList("remote", &devList);
 
         client->sendConnectSoundInput(true);
         client->sendSetSoundInput(true);
@@ -142,12 +147,16 @@ AppCastClient::AppCastClient()
     str_state[PLAY]  = "PLAY";
 }
 
+AppCastClient::~AppCastClient() {}
+
 void AppCastClient::subscribeToClient(handlercb cb, GMainLoop *loop)
 {
     LSError lsregistererror;
     LSErrorInit(&lsregistererror);
 
     // register to appcast luna service
+    this->updateDeviceList = cb;
+
     bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.appcasting",
                                            subscribeToAppcastService, this, NULL, &lsregistererror);
     if (!result)
@@ -156,7 +165,7 @@ void AppCastClient::subscribeToClient(handlercb cb, GMainLoop *loop)
     }
 }
 
-void AppCastClient::setLSHandle(LSHandle *handle) { lshandle_ = handle; }
+void AppCastClient::setLSHandle(void *handle) { lshandle_ = (LSHandle *)handle; }
 
 bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceName, bool connected,
                                               void *ctx)
@@ -274,4 +283,31 @@ bool AppCastClient::sendSetSoundInput(bool remote)
     }
 
     return retval;
+}
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+extern "C"
+{
+    IPlugin *plugin_init(void)
+    {
+        Plugin *plg = new Plugin();
+        plg->setName("AppCast Notifier");
+        plg->setDescription("AppCast Client for Camera Notifier");
+        plg->setCategory("NOTIFIER");
+        plg->setVersion("1.0.0");
+        plg->setOrganization("LG Electronics.");
+        plg->registerFeature<AppCastClient>("appcast");
+
+        return plg;
+    }
+
+    void __attribute__((constructor)) plugin_load(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
+
+    void __attribute__((destructor)) plugin_unload(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
 }
