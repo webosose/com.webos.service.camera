@@ -48,7 +48,7 @@ extern "C"
             return true;
         }
 
-        virtual void subscribeToClient(handlercb, GMainLoop *loop) override;
+        virtual void subscribeToClient(handlercb cb, void *mainLoop) override;
         virtual void setLSHandle(void *lshandle) override;
 
     public:

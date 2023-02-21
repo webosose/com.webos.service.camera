@@ -150,7 +150,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
     return true;
 }
 
-void PDMClient::subscribeToClient(handlercb cb, GMainLoop *loop)
+void PDMClient::subscribeToClient(handlercb cb, void *mainLoop)
 {
     LSError lsregistererror;
     LSErrorInit(&lsregistererror);

@@ -149,7 +149,7 @@ AppCastClient::AppCastClient()
 
 AppCastClient::~AppCastClient() {}
 
-void AppCastClient::subscribeToClient(handlercb cb, GMainLoop *loop)
+void AppCastClient::subscribeToClient(handlercb cb, void *mainLoop)
 {
     LSError lsregistererror;
     LSErrorInit(&lsregistererror);

@@ -1,7 +1,6 @@
 #pragma once
 #include <cstddef>
 #include <functional>
-#include <glib.h>
 #include <string>
 #include <vector>
 
@@ -122,8 +121,8 @@ struct INotifier : public IFeature
 public:
     using handlercb = std::function<bool(std::string notifierType, const void *deviceList)>;
 
-    virtual void subscribeToClient(handlercb, GMainLoop *loop) = 0;
-    virtual void setLSHandle(void *lshandle)                   = 0;
+    virtual void subscribeToClient(handlercb cb, void *mainLoop) = 0;
+    virtual void setLSHandle(void *lshandle)                     = 0;
 };
 
 /**
