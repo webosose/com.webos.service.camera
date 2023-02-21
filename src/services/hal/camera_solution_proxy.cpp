@@ -14,13 +14,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "CameraSolutionProxy.h"
-#include "GenerateUniqueID.h"
-#include "Process.h"
+#include "camera_solution_proxy.h"
 #include "camera_constants.h"
 #include "camera_log.h"
+#include "generate_unique_id.h"
 #include "json_utils.h"
 #include "luna_client.h"
+#include "process.h"
 #include <system_error>
 
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";

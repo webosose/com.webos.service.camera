@@ -6,7 +6,7 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    CameraHalService.h
+ * @Filename    camera_hal_service.h
  * @contact     Multimedia_TP-Camera@lge.com
  *
  * Description  Camera HAL service

@@ -43,17 +43,17 @@ include_directories(${CMAKE_SOURCE_DIR}/src/services/hal/hal_if)
 
 # Camera Hal Service
 set(SRC_LIST
-    ${CMAKE_SOURCE_DIR}/src/services/hal/CameraHalService.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/camera_hal_service.cpp
     ${CMAKE_SOURCE_DIR}/src/services/hal/device_controller.cpp
     ${CMAKE_SOURCE_DIR}/src/services/hal/camera_solution_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/hal/CameraSolutionProxy.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/camera_solution_proxy.cpp
     )
 
 # common
 set (SRC_LIST
     ${SRC_LIST}
     ${CMAKE_SOURCE_DIR}/src/services/common/camera_types.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/common/Process.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/process.cpp
     )
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})

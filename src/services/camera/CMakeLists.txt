@@ -39,14 +39,14 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/camera/event_notification.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/addon/addon.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/notifier/notifier.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/camera/CameraHalProxy.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/camera/camera_hal_proxy.cpp
     )
 
 # common
 set (SRC_LIST
     ${SRC_LIST}
     ${CMAKE_SOURCE_DIR}/src/services/common/camera_types.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/common/Process.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/process.cpp
     )
 
 add_executable(${PROJECT_NAME}

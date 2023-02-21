@@ -14,7 +14,7 @@
  */
 
 #include "camera_solution_manager.h"
-#include "CameraSolutionProxy.h"
+#include "camera_solution_proxy.h"
 #include "camera_types.h"
 #include "plugin_factory.hpp"
 

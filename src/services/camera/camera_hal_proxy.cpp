@@ -14,11 +14,11 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "CameraHalProxy.h"
-#include "GenerateUniqueID.h"
-#include "Process.h"
+#include "camera_hal_proxy.h"
+#include "generate_unique_id.h"
 #include "json_utils.h"
 #include "luna_client.h"
+#include "process.h"
 #include <system_error>
 
 const std::string CameraHalProcessName = "com.webos.service.camera2.hal";

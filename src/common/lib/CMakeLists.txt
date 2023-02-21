@@ -19,8 +19,8 @@ project(camera_common CXX)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SRC 
-    camshm.cpp
-    cam_posixshm.cpp
+    ipc_shared_memory.cpp
+    ipc_posix_shared_memory.cpp
     luna_client.cpp
     )
 

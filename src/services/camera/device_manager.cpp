@@ -18,8 +18,8 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "device_manager.h"
-#include "CameraHalProxy.h"
 #include "addon.h" /* calls platform specific functionality if addon interface has been implemented */
+#include "camera_hal_proxy.h"
 #include "command_manager.h"
 #include "event_notification.h"
 #include "whitelist_checker.h"

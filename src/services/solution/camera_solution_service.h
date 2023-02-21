@@ -6,7 +6,7 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    CameraSolutionService.h
+ * @Filename    camera_solution_service.h
  * @contact     Multimedia_TP-Camera@lge.com
  *
  * Description  Camera Solution service
@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "camshm.h"
+#include "ipc_shared_memory.h"
 #include "luna-service2/lunaservice.hpp"
 #include "plugin_factory.hpp"
 #include <glib.h>

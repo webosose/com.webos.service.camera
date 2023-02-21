@@ -15,7 +15,7 @@
 
 #include "camera_solution_async.h"
 #include "camera_types.h"
-#include "camshm.h"
+#include "ipc_shared_memory.h"
 #include <list>
 #include <numeric>
 #include <system_error>

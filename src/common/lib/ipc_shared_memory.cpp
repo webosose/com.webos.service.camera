@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "camshm.h"
+#include "ipc_shared_memory.h"
 #include "camera_types.h"
 #include <errno.h>
 #include <fcntl.h>

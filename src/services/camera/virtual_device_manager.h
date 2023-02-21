@@ -20,8 +20,8 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
-#include "CameraHalProxy.h"
 #include "addon.h"
+#include "camera_hal_proxy.h"
 #include "camera_types.h"
 #include <map>
 #include <string>

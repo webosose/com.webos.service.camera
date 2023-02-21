@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "cam_posixshm.h"
+#include "ipc_posix_shared_memory.h"
 #include "PmLogLib.h"
 #include "camera_constants.h"
 #include "camera_types.h"

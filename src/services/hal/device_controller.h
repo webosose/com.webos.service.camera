@@ -20,10 +20,10 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
-#include "cam_posixshm.h"
 #include "camera_constants.h"
 #include "camera_types.h"
-#include "camshm.h"
+#include "ipc_posix_shared_memory.h"
+#include "ipc_shared_memory.h"
 #include <condition_variable>
 #include <plugin_factory.hpp>
 #include <string>

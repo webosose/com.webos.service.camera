@@ -14,7 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include "Process.h"
+#include "process.h"
 #include "camera_types.h"
 #include <iterator>
 #include <sstream>

@@ -6,14 +6,14 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    CameraHalService.cpp
+ * @Filename    camera_hal_service.cpp
  * @contact     Multimedia_TP-Camera@lge.com
  *
  * Description  Camera HAL service
  *
  */
 
-#include "CameraHalService.h"
+#include "camera_hal_service.h"
 #include "camera_types.h"
 #include "device_controller.h"
 #include <pbnjson.hpp>

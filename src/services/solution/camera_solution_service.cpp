@@ -6,14 +6,14 @@
  * stored in a retrieval system, or transmitted by any means without
  * prior written Permission of LG Electronics Inc.
 
- * @Filename    CameraSolutionService.cpp
+ * @Filename    camera_solution_service.cpp
  * @contact     Multimedia_TP-Camera@lge.com
  *
  * Description  Camera Solution service
  *
  */
 
-#include "CameraSolutionService.h"
+#include "camera_solution_service.h"
 #include "camera_types.h"
 #include <pbnjson.hpp>
 #include <string>
