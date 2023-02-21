@@ -14,7 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(v4l2-camera-plugin CXX)
+project(hal-v4l2 CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

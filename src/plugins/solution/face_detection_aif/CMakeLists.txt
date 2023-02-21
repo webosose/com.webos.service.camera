@@ -14,7 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(facedetetion-solution-plugin CXX)
+project(solution-facedetection-aif CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

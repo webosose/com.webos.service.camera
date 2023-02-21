@@ -60,9 +60,7 @@ endif()
 
 add_subdirectory(src/common)
 add_subdirectory(src/plugins)
-add_subdirectory(src/services/camera)
-add_subdirectory(src/services/hal)
-add_subdirectory(src/services/solution)
+add_subdirectory(src/services)
 add_subdirectory(tests)
 
 webos_build_system_bus_files()

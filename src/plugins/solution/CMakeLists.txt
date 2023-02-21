@@ -14,6 +14,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(plugins-solution)
-
+#add_subdirectory(dummy)
+#add_subdirectory(auto_contrast)
 add_subdirectory(face_detection_aif)

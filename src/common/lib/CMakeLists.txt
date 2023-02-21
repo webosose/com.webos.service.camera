@@ -31,4 +31,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${LS2++_LDFLAGS}
                      )
 
+set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
+
 webos_build_library(NAME ${PROJECT_NAME})

@@ -14,6 +14,6 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory(camera)
 add_subdirectory(hal)
-add_subdirectory(notifier)
 add_subdirectory(solution)

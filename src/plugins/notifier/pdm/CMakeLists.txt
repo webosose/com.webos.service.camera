@@ -14,7 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(pdmclient CXX)
+project(notifier-pdm CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 

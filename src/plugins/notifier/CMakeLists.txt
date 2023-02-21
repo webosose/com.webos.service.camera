@@ -14,7 +14,5 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(plugins-notifier)
-
 add_subdirectory(pdm)
 add_subdirectory(appcast)

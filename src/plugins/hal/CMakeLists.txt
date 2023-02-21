@@ -14,6 +14,4 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(plugins-hal)
-
 add_subdirectory(v4l2)
