@@ -597,6 +597,8 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
     {
         createJsonStringFailure(objreply, json_outobj);
 
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
+
         if (b_issubscribed_ == true)
         {
             jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
