@@ -61,7 +61,16 @@ CameraSolutionProxy::CameraSolutionProxy(const std::string solution_name)
     PMLOG_INFO(CONST_MODULE_CSP, "%s", solution_name_.c_str());
 }
 
-CameraSolutionProxy::~CameraSolutionProxy() { PMLOG_INFO(CONST_MODULE_CSP, ""); }
+CameraSolutionProxy::~CameraSolutionProxy()
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    // If release() has not been called before
+    if (process_)
+    {
+        release();
+    }
+}
 
 int32_t CameraSolutionProxy::getMetaSizeHint(void)
 {
@@ -91,9 +100,17 @@ void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, L
     streamFormat_ = streamFormat;
     shmKey_       = shmKey;
     sh_           = sh;
+
+    startThread();
 }
 
 void CameraSolutionProxy::setEnableValue(bool enableValue)
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "enableValue %d", enableValue);
+    pushJob(enableValue);
+}
+
+void CameraSolutionProxy::processing(bool enableValue)
 {
     if (enableStatus_ == enableValue)
     {
@@ -120,13 +137,13 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
         createSolution();
         initSolution();
 
-        luna_call_sync(__func__, to_string(jin));
+        luna_call_sync("setEnableValue", to_string(jin));
 
         subscribe();
     }
     else
     {
-        luna_call_sync(__func__, to_string(jin));
+        luna_call_sync("setEnableValue", to_string(jin));
 
         // Call this after setEnableValue false to get postProcessing callback
         unsubscribe();
@@ -143,10 +160,8 @@ void CameraSolutionProxy::release()
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
 
-    if (enableStatus_)
-    {
-        setEnableValue(false);
-    }
+    stopThread();
+    processing(false);
 }
 
 bool CameraSolutionProxy::startProcess()
@@ -323,4 +338,107 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
 
     PMLOG_INFO(CONST_MODULE_CSP, "returnValue : %d", ret);
     return ret;
+}
+
+void CameraSolutionProxy::run()
+{
+    PMLOG_INFO(CONST_MODULE_CSP, "thread start");
+
+    pthread_setname_np(pthread_self(), "solution_proxy_thread");
+
+    while (checkAlive())
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "wait for job");
+        bool resWait = wait();
+        if (resWait == false)
+        {
+            setAlive(false);
+            break;
+        }
+        if (checkAlive())
+        {
+            processing(queueJob_.front());
+            popJob();
+        }
+    }
+
+    PMLOG_INFO(CONST_MODULE_CSP, "thread end");
+}
+
+void CameraSolutionProxy::startThread()
+{
+    if (threadJob_ == nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "Thread Start");
+        try
+        {
+            setAlive(true);
+            threadJob_ = std::make_unique<std::thread>([&](void) { run(); });
+        }
+        catch (const std::system_error &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system error with code %d meaning %s",
+                        e.code().value(), e.what());
+        }
+    }
+}
+
+void CameraSolutionProxy::stopThread()
+{
+    if (threadJob_ != nullptr && threadJob_->joinable())
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "Thread Closing");
+        try
+        {
+            setAlive(false);
+            notify();
+            threadJob_->join();
+        }
+        catch (const std::system_error &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system error with code %d meaning %s",
+                        e.code().value(), e.what());
+        }
+        threadJob_.reset();
+        PMLOG_INFO(CONST_MODULE_CSP, "Thread Closed. queue job size %d", queueJob_.size());
+    }
+}
+
+void CameraSolutionProxy::notify(void) { cv_.notify_all(); }
+
+bool CameraSolutionProxy::wait()
+{
+    bool res = true;
+    try
+    {
+        std::unique_lock<std::mutex> lock(m_);
+        cv_.wait(lock);
+    }
+    catch (std::system_error &e)
+    {
+        PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
+                    e.code().value(), e.what());
+        res = false;
+    }
+
+    return res;
+}
+
+void CameraSolutionProxy::pushJob(int inValue)
+{
+    if (queueJob_.empty())
+    {
+        std::lock_guard<std::mutex> lg(mtxJob_);
+        queueJob_.push(inValue);
+        notify();
+    }
+}
+
+void CameraSolutionProxy::popJob()
+{
+    std::lock_guard<std::mutex> lg(mtxJob_);
+    if (!queueJob_.empty())
+    {
+        queueJob_.pop();
+    }
 }

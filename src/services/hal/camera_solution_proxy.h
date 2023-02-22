@@ -20,6 +20,7 @@
 #include "camera_hal_types.h"
 #include "camera_solution.h"
 #include <atomic>
+#include <condition_variable>
 #include <glib.h>
 #include <memory>
 #include <string>
@@ -49,6 +50,13 @@ class CameraSolutionProxy
     void *cookie{nullptr};
     std::string uid_;
 
+    std::condition_variable cv_;
+    std::mutex m_;
+    std::mutex mtxJob_;
+    std::queue<int> queueJob_;
+    std::unique_ptr<std::thread> threadJob_;
+    std::atomic<bool> bAlive_{false};
+
     bool startProcess();
     bool stopProcess();
     bool createSolution();
@@ -56,6 +64,18 @@ class CameraSolutionProxy
     bool subscribe();
     bool unsubscribe();
     bool luna_call_sync(const char *func, const std::string &payload);
+
+    void run();
+    void processing(bool enableValue);
+    void startThread();
+    void stopThread();
+    void notify();
+    bool wait();
+    bool checkAlive() { return bAlive_; }
+    void setAlive(bool bAlive) { bAlive_ = bAlive; }
+
+    void pushJob(int inValue);
+    void popJob();
 
 public:
     CameraSolutionProxy(const std::string solution_name);
