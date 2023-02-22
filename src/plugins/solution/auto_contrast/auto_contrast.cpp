@@ -18,7 +18,7 @@
 #include <math.h>
 #include <sys/time.h>
 
-#define LOG_TAG "AutoContrast"
+#define LOG_TAG "SOLUTION:AutoContrast"
 
 void brightnessEnhancement(unsigned char *inputY, unsigned char *inputUV, int width, int height,
                            int stride, int frameSize, int minY, int maxY, int enhanceLevel);

@@ -22,6 +22,8 @@
 #include "plugin.hpp"
 #include <nlohmann/json.hpp>
 
+#define LOG_TAG "NOTIFIER:AppCastClient"
+
 using namespace nlohmann;
 
 struct AppcastMessage
@@ -60,33 +62,33 @@ void from_json(const json &j, AppcastMessage &a)
 
 static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
 {
-    PMLOG_INFO(CONST_MODULE_AC, "callback received");
+    PMLOG_INFO(LOG_TAG, "callback received");
 
     const char *payload = LSMessageGetPayload(message);
     if (!payload)
     {
-        PMLOG_ERROR(CONST_MODULE_AC, "payload is null");
+        PMLOG_ERROR(LOG_TAG, "payload is null");
         return false;
     }
 
     json jdata = json::parse(payload, nullptr, false);
     if (jdata.is_discarded())
     {
-        PMLOG_ERROR(CONST_MODULE_AC, "payload parsing error!");
+        PMLOG_ERROR(LOG_TAG, "payload parsing error!");
         return false;
     }
 
     AppcastMessage appcast = jdata;
     if (!appcast.returnValue)
     {
-        PMLOG_ERROR(CONST_MODULE_AC, "returnValue is not true!");
+        PMLOG_ERROR(LOG_TAG, "returnValue is not true!");
         return false;
     }
 
     AppCastClient *client = (AppCastClient *)user_data;
     if (!appcast.connect)
     {
-        PMLOG_INFO(CONST_MODULE_AC, "remove camera");
+        PMLOG_INFO(LOG_TAG, "remove camera");
         if (client->updateDeviceList)
         {
             std::vector<DEVICE_LIST_T> empty{};
@@ -99,14 +101,14 @@ static bool remote_deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *u
 
     if (client->mState == INIT && appcast.crypto)
     {
-        PMLOG_INFO(CONST_MODULE_AC, "add camera");
-        PMLOG_INFO(CONST_MODULE_AC, "clientKey    : %s", appcast.dev.clientKey.c_str());
-        PMLOG_INFO(CONST_MODULE_AC, "version      : %s", appcast.dev.version.c_str());
-        PMLOG_INFO(CONST_MODULE_AC, "type         : %s", appcast.dev.type.c_str());
-        PMLOG_INFO(CONST_MODULE_AC, "platform     : %s", appcast.dev.platform.c_str());
-        PMLOG_INFO(CONST_MODULE_AC, "manufacturer : %s", appcast.dev.manufacturer.c_str());
-        PMLOG_INFO(CONST_MODULE_AC, "modelName    : %s", appcast.dev.modelName.c_str());
-        PMLOG_INFO(CONST_MODULE_AC, "deviceName   : %s", appcast.dev.deviceName.c_str());
+        PMLOG_INFO(LOG_TAG, "add camera");
+        PMLOG_INFO(LOG_TAG, "clientKey    : %s", appcast.dev.clientKey.c_str());
+        PMLOG_INFO(LOG_TAG, "version      : %s", appcast.dev.version.c_str());
+        PMLOG_INFO(LOG_TAG, "type         : %s", appcast.dev.type.c_str());
+        PMLOG_INFO(LOG_TAG, "platform     : %s", appcast.dev.platform.c_str());
+        PMLOG_INFO(LOG_TAG, "manufacturer : %s", appcast.dev.manufacturer.c_str());
+        PMLOG_INFO(LOG_TAG, "modelName    : %s", appcast.dev.modelName.c_str());
+        PMLOG_INFO(LOG_TAG, "deviceName   : %s", appcast.dev.deviceName.c_str());
 
         client->mDeviceInfo = appcast.dev;
         DEVICE_LIST_T devInfo;
@@ -161,7 +163,7 @@ void AppCastClient::subscribeToClient(handlercb cb, void *mainLoop)
                                            subscribeToAppcastService, this, NULL, &lsregistererror);
     if (!result)
     {
-        PMLOG_INFO(CONST_MODULE_AC, "LSRegister Server Status failed");
+        PMLOG_INFO(LOG_TAG, "LSRegister Server Status failed");
     }
 }
 
@@ -173,13 +175,13 @@ bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceN
     int retval = 0;
     int ret    = 0;
 
-    PMLOG_INFO(CONST_MODULE_AC, "connected status:%d \n", connected);
+    PMLOG_INFO(LOG_TAG, "connected status:%d \n", connected);
     if (connected)
     {
         // Check sanity
         if (!sh)
         {
-            PMLOG_ERROR(CONST_MODULE_AC, "%s LSHandle is null", __func__);
+            PMLOG_ERROR(LOG_TAG, "%s LSHandle is null", __func__);
             return ret;
         }
 
@@ -191,8 +193,7 @@ bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceN
                         R"({"subscribe":true})", remote_deviceStateCb, ctx, NULL, &lserror);
         if (!retval)
         {
-            PMLOG_ERROR(CONST_MODULE_AC, "%s appcast client uUnable to unregister service",
-                        __func__);
+            PMLOG_ERROR(LOG_TAG, "%s appcast client uUnable to unregister service", __func__);
             ret = -1;
         }
 
@@ -204,7 +205,7 @@ bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceN
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_AC, "connected value is false");
+        PMLOG_INFO(LOG_TAG, "connected value is false");
     }
 
     return ret;
@@ -213,19 +214,19 @@ bool AppCastClient::subscribeToAppcastService(LSHandle *sh, const char *serviceN
 void AppCastClient::setState(APP_CAST_STATE new_state)
 {
     mState = new_state;
-    PMLOG_INFO(CONST_MODULE_AC, "setState : mState = %s (%d)",
+    PMLOG_INFO(LOG_TAG, "setState : mState = %s (%d)",
                str_state[static_cast<unsigned int>(mState)].c_str(), mState);
 }
 
 static bool sendConnectSoundInputCallback(LSHandle *sh, LSMessage *msg, void *ctx)
 {
     const char *payload = LSMessageGetPayload(msg);
-    PMLOG_INFO(CONST_MODULE_AC, "payload : %s\n", payload);
+    PMLOG_INFO(LOG_TAG, "payload : %s\n", payload);
 
     json jdata = json::parse(payload);
     if (jdata.is_discarded())
     {
-        PMLOG_ERROR(CONST_MODULE_AC, "payload parsing error!");
+        PMLOG_ERROR(LOG_TAG, "payload parsing error!");
         return false;
     }
 
@@ -233,7 +234,7 @@ static bool sendConnectSoundInputCallback(LSHandle *sh, LSMessage *msg, void *ct
         jdata[CONST_PARAM_NAME_RETURNVALUE].is_boolean())
     {
         bool retvalue = jdata[CONST_PARAM_NAME_RETURNVALUE].get<bool>();
-        PMLOG_INFO(CONST_MODULE_AC, "retvalue : %d", retvalue);
+        PMLOG_INFO(LOG_TAG, "retvalue : %d", retvalue);
     }
 
     return true;
@@ -241,7 +242,7 @@ static bool sendConnectSoundInputCallback(LSHandle *sh, LSMessage *msg, void *ct
 
 bool AppCastClient::sendConnectSoundInput(bool connected)
 {
-    PMLOG_INFO(CONST_MODULE_AC, "connected=%d", connected);
+    PMLOG_INFO(LOG_TAG, "connected=%d", connected);
 
     bool retval;
     LSError lserror;
@@ -249,12 +250,12 @@ bool AppCastClient::sendConnectSoundInput(bool connected)
 
     auto args       = json{{"soundInput", "remote.monitor"}, {"connect", connected}}.dump();
     std::string uri = "luna://com.webos.service.audio/connectSoundInput";
-    PMLOG_INFO(CONST_MODULE_AC, "%s '%s'\n", uri.c_str(), args.c_str());
+    PMLOG_INFO(LOG_TAG, "%s '%s'\n", uri.c_str(), args.c_str());
     retval = LSCall(lshandle_, uri.c_str(), args.c_str(), sendConnectSoundInputCallback, NULL, NULL,
                     &lserror);
     if (!retval)
     {
-        PMLOG_ERROR(CONST_MODULE_AC, "%s error", __func__);
+        PMLOG_ERROR(LOG_TAG, "%s error", __func__);
         LSErrorPrint(&lserror, stderr);
         LSErrorFree(&lserror);
     }
@@ -264,7 +265,7 @@ bool AppCastClient::sendConnectSoundInput(bool connected)
 
 bool AppCastClient::sendSetSoundInput(bool remote)
 {
-    PMLOG_INFO(CONST_MODULE_AC, "remote=%d", remote);
+    PMLOG_INFO(LOG_TAG, "remote=%d", remote);
 
     bool retval;
     LSError lserror;
@@ -272,12 +273,12 @@ bool AppCastClient::sendSetSoundInput(bool remote)
 
     auto args       = json{{"soundInput", "remote.monitor"}}.dump();
     std::string uri = "luna://com.webos.service.audio/setSoundInput";
-    PMLOG_INFO(CONST_MODULE_AC, "%s '%s'\n", uri.c_str(), args.c_str());
+    PMLOG_INFO(LOG_TAG, "%s '%s'\n", uri.c_str(), args.c_str());
     retval = LSCall(lshandle_, uri.c_str(), args.c_str(), sendConnectSoundInputCallback, NULL, NULL,
                     &lserror);
     if (!retval)
     {
-        PMLOG_ERROR(CONST_MODULE_AC, "%s error", __func__);
+        PMLOG_ERROR(LOG_TAG, "%s error", __func__);
         LSErrorPrint(&lserror, stderr);
         LSErrorFree(&lserror);
     }

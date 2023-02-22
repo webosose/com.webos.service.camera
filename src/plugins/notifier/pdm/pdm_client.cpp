@@ -25,6 +25,8 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 
+#define LOG_TAG "NOTIFIER:PDMClient"
+
 using namespace nlohmann;
 
 struct PdmResponse
@@ -91,24 +93,24 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 {
     const char *payload = LSMessageGetPayload(message);
     PDMClient *client   = (PDMClient *)user_data;
-    PMLOG_INFO(CONST_MODULE_PC, "payload : %s \n", payload);
+    PMLOG_INFO(LOG_TAG, "payload : %s \n", payload);
 
     json jPayload = json::parse(payload, nullptr, false);
     if (jPayload.is_discarded())
     {
-        PMLOG_INFO(CONST_MODULE_PC, "payload parsing fail!");
+        PMLOG_INFO(LOG_TAG, "payload parsing fail!");
         return false;
     }
 
     PdmResponse pdm = jPayload;
     if (!pdm.returnValue)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "retvalue fail!");
+        PMLOG_INFO(LOG_TAG, "retvalue fail!");
         return false;
     }
     if (!pdm.videoDeviceList)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "deviceListInfo empty!");
+        PMLOG_INFO(LOG_TAG, "deviceListInfo empty!");
         return false;
     }
 
@@ -133,12 +135,12 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                 // plugged or unplugged while the TV is off.
             }
 
-            PMLOG_INFO(CONST_MODULE_PC, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
+            PMLOG_INFO(LOG_TAG, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
                        devInfo.strVendorName.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
+            PMLOG_INFO(LOG_TAG, "Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
                        devInfo.strProductName.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
+            PMLOG_INFO(LOG_TAG, "strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
+            PMLOG_INFO(LOG_TAG, "strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
 
             devList.push_back(devInfo);
         }
@@ -162,7 +164,7 @@ void PDMClient::subscribeToClient(handlercb cb, void *mainLoop)
                                            subscribeToPdmService, this, NULL, &lsregistererror);
     if (!result)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "LSRegister Server Status failed");
+        PMLOG_INFO(LOG_TAG, "LSRegister Server Status failed");
     }
 }
 
@@ -173,7 +175,7 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
 {
     int ret = 0;
 
-    PMLOG_INFO(CONST_MODULE_PC, "connected status:%d \n", connected);
+    PMLOG_INFO(LOG_TAG, "connected status:%d \n", connected);
     if (connected)
     {
         LSError lserror;
@@ -191,7 +193,7 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
 
         if (!retval)
         {
-            PMLOG_INFO(CONST_MODULE_PC, "PDM client Unable to unregister service\n");
+            PMLOG_INFO(LOG_TAG, "PDM client Unable to unregister service\n");
             ret = -1;
         }
 
@@ -203,7 +205,7 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_PC, "connected value is false");
+        PMLOG_INFO(LOG_TAG, "connected value is false");
     }
 
     return ret;

@@ -16,7 +16,7 @@
 #include "dummy.hpp"
 #include "camera_log.h"
 
-#define LOG_TAG "Dummy"
+#define LOG_TAG "SOLUTION:Dummy"
 
 Dummy::Dummy(void)
 {

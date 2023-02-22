@@ -188,7 +188,7 @@ int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
 
     if (lshandle_)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "Subscription reply : EventType::EVENT_TYPE_CONNECT");
+        PMLOG_INFO(CONST_MODULE_DM, "Subscription reply : EventType::EVENT_TYPE_CONNECT");
         EventNotification obj;
         obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_CONNECT);
     }
@@ -223,7 +223,7 @@ bool DeviceManager::removeDevice(int deviceid)
 
     if (lshandle_)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "Subscription reply : EventType::EVENT_TYPE_DISCONNECT");
+        PMLOG_INFO(CONST_MODULE_DM, "Subscription reply : EventType::EVENT_TYPE_DISCONNECT");
         EventNotification obj;
         obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_DISCONNECT);
     }

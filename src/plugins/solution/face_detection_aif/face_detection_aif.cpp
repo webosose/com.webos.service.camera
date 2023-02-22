@@ -27,7 +27,7 @@ using namespace cv;
 
 namespace rj = rapidjson;
 
-#define LOG_TAG "FaceDetectionAIF"
+#define LOG_TAG "SOLUTION:FaceDetectionAIF"
 
 #define AIF_PARAM_FILE "/home/root/aif_param.json"
 
