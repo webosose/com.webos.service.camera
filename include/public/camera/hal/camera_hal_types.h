@@ -13,51 +13,178 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-/*Only Use for HAL*/
 
 #ifndef CAMERA_HAL_TYPES
 #define CAMERA_HAL_TYPES
 
-#include "PmLogLib.h"
-#include <mutex>
-#include <stdio.h>
+#include <string>
+#include <vector>
 
-#define CLEAR(x) memset(&(x), 0, sizeof(x))
-#define CONST_MODULE_HAL "HAL"
-
-#define CONST_PARAM_DEFAULT_VALUE -999
+#define CONST_MAX_INDEX 300
+#define CONST_MAX_FORMAT 5
+#define CONST_MAX_STRING_LENGTH 256
+#define CONST_MAX_BUFFER_NUM 6
+#define CONST_MAX_PROPERTY_NUM 20
 
 typedef enum
 {
-    CAMERA_HAL_STATE_UNKNOWN = 0,
-    CAMERA_HAL_STATE_INIT,
-    CAMERA_HAL_STATE_OPEN,
-    CAMERA_HAL_STATE_STREAMING
-} camera_hal_state_t;
+    CAMERA_ERROR_UNKNOWN = -1,
+    CAMERA_ERROR_NONE    = 0,
+    CAMERA_ERROR_INVALID_PARAMETER,
+    CAMERA_ERROR_INVALID_STATE,
+    CAMERA_ERROR_DEVICE_OPEN,
+    CAMERA_ERROR_DEVICE_CLOSE,
+    CAMERA_ERROR_DEVICE_NOT_FOUND,
+    CAMERA_ERROR_PLUGIN_NOT_FOUND,
+    CAMERA_ERROR_CREATE_HANDLE,
+    CAMERA_ERROR_DESTROY_HANDLE,
+    CAMERA_ERROR_SET_FORMAT,
+    CAMERA_ERROR_GET_FORMAT,
+    CAMERA_ERROR_SET_BUFFER,
+    CAMERA_ERROR_GET_BUFFER,
+    CAMERA_ERROR_RELEASE_BUFFER,
+    CAMERA_ERROR_DESTROY_BUFFER,
+    CAMERA_ERROR_START_CAPTURE,
+    CAMERA_ERROR_STOP_CAPTURE,
+    CAMERA_ERROR_GET_IMAGE,
+    CAMERA_ERROR_SET_PROPERTIES,
+    CAMERA_ERROR_GET_PROPERTIES,
+    CAMERA_ERROR_GET_INFO,
+    CAMERA_ERROR_SET_CALLBACK,
+    CAMERA_ERROR_REMOVE_CALLBACK,
+    CAMERA_ERROR_NO_DEVICE,
+    CAMERA_ERROR_GET_BUFFER_FD
+} camera_error_t;
+
+typedef enum
+{
+    /* YUV */
+    CAMERA_PIXEL_FORMAT_NV12 = 0x0000,
+    CAMERA_PIXEL_FORMAT_NV21,
+    CAMERA_PIXEL_FORMAT_I420,
+    CAMERA_PIXEL_FORMAT_YV12,
+    CAMERA_PIXEL_FORMAT_YUYV,
+    CAMERA_PIXEL_FORMAT_UYVY,
+
+    /* RGB */
+    CAMERA_PIXEL_FORMAT_BGRA8888,
+    CAMERA_PIXEL_FORMAT_ARGB8888,
+
+    /* ENCODED */
+    CAMERA_PIXEL_FORMAT_JPEG,
+    CAMERA_PIXEL_FORMAT_H264,
+
+    /* MAX */
+    CAMERA_PIXEL_FORMAT_MAX
+} camera_pixel_format_t;
+
+typedef enum
+{
+    DEVICE_TYPE_UNDEFINED = -1,
+    DEVICE_TYPE_CAMERA    = 1,
+    DEVICE_TYPE_MICROPHONE,
+    DEVICE_TYPE_OTHER
+} device_t;
+
+typedef enum
+{
+    CAMERA_FORMAT_UNDEFINED = -1,
+    CAMERA_FORMAT_YUV       = 1,
+    CAMERA_FORMAT_H264ES    = 2,
+    CAMERA_FORMAT_JPEG      = 4,
+} camera_format_t;
+
+typedef enum
+{
+    IOMODE_UNKNOWN = -1,
+    IOMODE_READ    = 0,
+    IOMODE_MMAP,
+    IOMODE_USERPTR,
+    IOMODE_DMABUF
+} io_mode_t;
 
 /*Structures*/
 
 typedef struct
 {
-    void *h_plugin;
-    void *handle;
-    int fd;
-    int current_state;
-    std::mutex lock;
-} camera_handle_t;
+    camera_pixel_format_t pixel_format;
+    unsigned int stream_width;
+    unsigned int stream_height;
+    int stream_fps;
+    unsigned int buffer_size;
+    const char *userdata;
+} stream_format_t;
 
-static inline PmLogContext getHALLunaPmLogContext()
+typedef struct
 {
-    static PmLogContext usLogContext = 0;
-    if (0 == usLogContext)
-    {
-        PmLogGetContext("HAL", &usLogContext);
-    }
-    return usLogContext;
-}
+    void *start;
+    unsigned long length;
+    int index;
+    int fd;
+} buffer_t;
 
-#define HAL_LOG_INFO(module, FORMAT__, ...)                                                        \
-    PmLogInfo(getHALLunaPmLogContext(), module, 0, "%s():%d " FORMAT__, __FUNCTION__, __LINE__,    \
-              ##__VA_ARGS__)
+typedef enum
+{
+    PROPERTY_BRIGHTNESS = 0,
+    PROPERTY_CONTRAST,
+    PROPERTY_SATURATION,
+    PROPERTY_HUE,
+    PROPERTY_AUTOWHITEBALANCE,
+    PROPERTY_GAMMA,
+    PROPERTY_GAIN,
+    PROPERTY_FREQUENCY,
+    PROPERTY_SHARPNESS,
+    PROPERTY_BACKLIGHTCOMPENSATION,
+    PROPERTY_AUTOEXPOSURE,
+    PROPERTY_PAN,
+    PROPERTY_TILT,
+    PROPERTY_AUTOFOCUS,
+    PROPERTY_ZOOMABSOLUTE,
+    PROPERTY_WHITEBALANCETEMPERATURE,
+    PROPERTY_EXPOSURE,
+    PROPERTY_FOCUSABSOLUTE,
+    PROPERTY_END
+} properties_t;
+
+typedef enum
+{
+    QUERY_MIN = 0,
+    QUERY_MAX,
+    QUERY_STEP,
+    QUERY_DEFAULT,
+    QUERY_VALUE,
+    QUERY_END
+} query_ctrl_t;
+
+struct camera_queryctrl_t
+{
+    int data[PROPERTY_END][QUERY_END];
+};
+
+struct camera_properties_t
+{
+    camera_queryctrl_t stGetData;
+};
+
+struct camera_resolution_t
+{
+    std::vector<std::string> c_res;
+    camera_format_t e_format;
+
+    camera_resolution_t(std::vector<std::string> res, camera_format_t format)
+        : c_res(move(res)), e_format(format)
+    {
+    }
+};
+
+struct camera_device_info_t
+{
+    std::string str_devicename;
+    std::string str_vendorid;
+    std::string str_productid;
+    device_t n_devicetype{DEVICE_TYPE_UNDEFINED};
+    int b_builtin{0};
+    std::vector<camera_resolution_t> stResolution;
+};
 
 #endif

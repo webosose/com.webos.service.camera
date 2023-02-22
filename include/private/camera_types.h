@@ -20,7 +20,7 @@
 #include "PmLogLib.h"
 #include "camera_constants.h"
 #include "camera_device_types.h"
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "camera_log.h"
 #include "luna-service2/lunaservice.h"
 

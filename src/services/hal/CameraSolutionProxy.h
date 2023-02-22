@@ -17,7 +17,7 @@
 #ifndef __CAMERA_SOLUTION_PROXY__
 #define __CAMERA_SOLUTION_PROXY__
 
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "camera_solution.h"
 #include <atomic>
 #include <glib.h>

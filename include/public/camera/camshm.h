@@ -17,8 +17,8 @@
 #ifndef CAMSHM_H_
 #define CAMSHM_H_
 
-#include "camera_hal_if_types.h" // buffer_t
-#include <stddef.h>              // size_t
+#include "camera_hal_types.h" // buffer_t
+#include <stddef.h>           // size_t
 #include <sys/shm.h>
 
 typedef enum

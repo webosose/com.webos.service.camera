@@ -15,7 +15,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "camera_base_wrapper.h"
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "plugin_interface.hpp"
 
 #ifdef __cplusplus

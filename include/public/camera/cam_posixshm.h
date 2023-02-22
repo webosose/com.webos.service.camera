@@ -17,8 +17,8 @@
 #ifndef CAMPOSHM_H_
 #define CAMPOSHM_H_
 
-#include "camera_hal_if_types.h" // buffer_t
-#include <stddef.h>              // size_t
+#include "camera_hal_types.h"
+#include <stddef.h>
 #include <string>
 #include <sys/shm.h>
 

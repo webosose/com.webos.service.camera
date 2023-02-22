@@ -16,7 +16,7 @@
 #pragma once
 
 // System dependencies
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "luna-service2/lunaservice.hpp"
 #include "plugin_interface.hpp"
 #include <atomic>

@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "camera_types.h"
 #include <list>
 #include <memory>

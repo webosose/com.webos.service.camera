@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "camera_solution.h"
 #include <atomic>
 #include <condition_variable>
