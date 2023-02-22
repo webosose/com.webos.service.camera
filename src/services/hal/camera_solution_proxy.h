@@ -28,7 +28,6 @@
 class LunaClient;
 class Process;
 struct CameraSolutionEvent;
-enum class State;
 class CameraSolutionProxy
 {
     Property solutionProperty_{LG_SOLUTION_NONE};
@@ -49,11 +48,9 @@ class CameraSolutionProxy
     LSHandle *sh_{nullptr};
     void *cookie{nullptr};
     std::string uid_;
-    State state_;
 
     bool startProcess();
     bool stopProcess();
-    bool prepareSolution();
     bool createSolution();
     bool initSolution();
     bool subscribe();

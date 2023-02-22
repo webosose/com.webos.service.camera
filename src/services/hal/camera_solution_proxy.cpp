@@ -32,13 +32,6 @@ const char *const CONST_MODULE_CSP               = "CameraSolutionProxy";
 
 #define COMMAND_TIMEOUT 2000 // ms
 
-enum class State
-{
-    INIT,
-    START,
-    CREATE
-};
-
 static bool cameraSolutionServiceCb(const char *msg, void *data)
 {
     PMLOG_INFO(CONST_MODULE_CSP, "%s", msg);
@@ -63,7 +56,7 @@ static bool cameraSolutionServiceCb(const char *msg, void *data)
 }
 
 CameraSolutionProxy::CameraSolutionProxy(const std::string solution_name)
-    : solution_name_(solution_name), state_(State::INIT)
+    : solution_name_(solution_name)
 {
     PMLOG_INFO(CONST_MODULE_CSP, "%s", solution_name_.c_str());
 }
@@ -104,7 +97,7 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
 {
     if (enableStatus_ == enableValue)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "same value %d", enableValue);
+        PMLOG_INFO(CONST_MODULE_CSP, "same as current value %d", enableValue);
         return;
     }
 
@@ -114,46 +107,36 @@ void CameraSolutionProxy::setEnableValue(bool enableValue)
         return;
     }
 
-    PMLOG_INFO(CONST_MODULE_CSP, "start :  value = %d", enableValue);
+    PMLOG_INFO(CONST_MODULE_CSP, "start : enableValue = %d", enableValue);
+
+    enableStatus_ = enableValue;
+    json jin;
+    jin[CONST_PARAM_NAME_ENABLE] = enableStatus_;
 
     if (enableValue)
     {
-        if (state_ == State::INIT)
-        {
-            state_ = State::START;
+        startProcess();
 
-            // 1. Start process
-            startProcess();
+        createSolution();
+        initSolution();
 
-            // When the process starts,
-            // 2. Create solution
-            // 3. Initialize solution
-            // 4. Enable solution
-            // 5. Subscribe to CameraSolutionService
-            prepareSolution();
-        }
+        luna_call_sync(__func__, to_string(jin));
+
+        subscribe();
     }
     else
     {
-        if (state_ == State::CREATE)
-        {
-            // 1. Disable solution
-            json jin;
-            jin[CONST_PARAM_NAME_ENABLE] = false;
-            luna_call_sync(__func__, to_string(jin));
-            enableStatus_ = false;
-            PMLOG_INFO(CONST_MODULE_CSP, "enableStatus_ %d", enableStatus_);
+        luna_call_sync(__func__, to_string(jin));
 
-            // 2. Unsubscribe to CameraSolutionService
-            unsubscribe();
+        // Call this after setEnableValue false to get postProcessing callback
+        unsubscribe();
 
-            // 3. Release solution
-            luna_call_sync("release", "{}");
+        luna_call_sync("release", "{}");
 
-            // 4. Stop process
-            stopProcess();
-        }
+        stopProcess();
     }
+
+    PMLOG_INFO(CONST_MODULE_CSP, "end :  enableStatus_ = %d", enableStatus_);
 }
 
 void CameraSolutionProxy::release()
@@ -222,65 +205,7 @@ bool CameraSolutionProxy::stopProcess()
     }
     g_main_loop_unref(loop_);
 
-    return true;
-}
-
-bool CameraSolutionProxy::prepareSolution()
-{
-    PMLOG_INFO(CONST_MODULE_CSP, "");
-
-    if (!LSRegisterServerStatusEx(
-            sh_, uid_.c_str(),
-            [](LSHandle *handle, const char *svc_name, bool connected, void *ctx) -> bool
-            {
-                PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] connected=%d, name=%s\n", connected,
-                           svc_name);
-
-                CameraSolutionProxy *self = static_cast<CameraSolutionProxy *>(ctx);
-                if (connected)
-                {
-                    // When the process starts,
-                    // 1. Create solution
-                    self->createSolution();
-
-                    // 2. Initialize solution
-                    self->initSolution();
-
-                    // 3. Enable solution
-                    json jin;
-                    jin[CONST_PARAM_NAME_ENABLE] = true;
-                    self->luna_call_sync("setEnableValue", to_string(jin));
-                    self->enableStatus_ = true;
-                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] enableStatus_ %d",
-                               self->enableStatus_);
-
-                    // 4. Subscribe to CameraSolutionService
-                    self->subscribe();
-
-                    self->state_ = State::CREATE;
-                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] end");
-                }
-                else
-                {
-                    if (self->state_ == State::CREATE)
-                    {
-                        PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] cancel server status");
-                        if (!LSCancelServerStatus(handle, self->cookie, nullptr))
-                        {
-                            PMLOG_ERROR(CONST_MODULE_CSP,
-                                        "[ServerStatus cb] error LSCancelServerStatus\n");
-                        }
-
-                        self->process_.reset();
-                        self->state_ = State::INIT;
-                    }
-                }
-                return true;
-            },
-            this, &cookie, nullptr))
-    {
-        PMLOG_ERROR(CONST_MODULE_CSP, "[ServerStatus cb] LSRegisterServerStatusEx FAILED");
-    }
+    process_.reset();
 
     return true;
 }
@@ -314,11 +239,42 @@ bool CameraSolutionProxy::initSolution()
 
 bool CameraSolutionProxy::subscribe()
 {
-    std::string uri = service_uri_ + __func__;
-    bool ret        = luna_client->subscribe(uri.c_str(), "{\"subscribe\":true}", &subscribeKey_,
-                                             cameraSolutionServiceCb, this);
-    PMLOG_INFO(CONST_MODULE_CSP, "subscribeKey_ %ld, %d ", subscribeKey_, ret);
-    return ret;
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
+    if (!LSRegisterServerStatusEx(
+            sh_, uid_.c_str(),
+            [](LSHandle *handle, const char *svc_name, bool connected, void *ctx) -> bool
+            {
+                PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] connected=%d, name=%s\n", connected,
+                           svc_name);
+
+                CameraSolutionProxy *self = static_cast<CameraSolutionProxy *>(ctx);
+                if (connected)
+                {
+                    std::string uri = self->service_uri_ + "subscribe";
+                    bool ret = self->luna_client->subscribe(uri.c_str(), "{\"subscribe\":true}",
+                                                            &(self->subscribeKey_),
+                                                            cameraSolutionServiceCb, self);
+                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] subscribeKey_ %ld, %d ",
+                               self->subscribeKey_, ret);
+                }
+                else
+                {
+                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] cancel server status");
+                    if (!LSCancelServerStatus(handle, self->cookie, nullptr))
+                    {
+                        PMLOG_ERROR(CONST_MODULE_CSP,
+                                    "[ServerStatus cb] error LSCancelServerStatus\n");
+                    }
+                }
+                return true;
+            },
+            this, &cookie, nullptr))
+    {
+        PMLOG_ERROR(CONST_MODULE_CSP, "[ServerStatus cb] LSRegisterServerStatusEx FAILED");
+    }
+
+    return true;
 }
 
 bool CameraSolutionProxy::unsubscribe()
