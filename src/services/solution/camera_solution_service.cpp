@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
         switch (c)
         {
         case 's':
-            serviceName = optarg;
+            serviceName = optarg ? optarg : "";
             break;
 
         case '?':

@@ -46,8 +46,8 @@ class CameraSolutionProxy
     unsigned long subscribeKey_{0};
 
     int shmKey_{0};
-    LSHandle *sh_;
-    void *cookie;
+    LSHandle *sh_{nullptr};
+    void *cookie{nullptr};
     std::string uid_;
     State state_;
 

@@ -264,7 +264,9 @@ void FaceDetectionAIF::sendReply(jvalue_ref jsonObj)
 
         if (num_subscribers > 0)
         {
-            reply = jvalue_stringify(jsonObj);
+            const char *str = jvalue_stringify(jsonObj);
+            if (str)
+                reply = str;
             if (!LSSubscriptionReply(sh_, SOL_SUBSCRIPTION_KEY, reply.c_str(), &lserror))
             {
                 LSErrorPrint(&lserror, stderr);

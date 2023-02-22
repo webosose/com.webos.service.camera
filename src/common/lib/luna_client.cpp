@@ -110,7 +110,9 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
             if (!LSMessageIsHubErrorMessage(m))
                 pCtx->bRet_ = true;
             // 2. Processing message
-            pCtx->pstrResult_->assign(LSMessageGetPayload(m));
+            const auto *payload = LSMessageGetPayload(m);
+            if (payload)
+                pCtx->pstrResult_->assign(payload);
             // 3. Notify
             pCtx->bDone_ = true;
             PMLOG_INFO(CONST_MODULE_LC, "[%p] reply\n", g_thread_self());

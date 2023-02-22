@@ -1023,7 +1023,10 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
 
             CommandManager::getInstance().closeClientDevice(service_name);
 
-            LSCancelServerStatus(input_handle, cookie->second, nullptr);
+            if (!LSCancelServerStatus(input_handle, cookie->second, nullptr))
+            {
+                PMLOG_ERROR(CONST_MODULE_LUNA, "LSCancelServerStatus fail");
+            }
 
             self->clientCookieMap_.erase(service_name);
         }

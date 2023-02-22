@@ -30,7 +30,6 @@ using namespace nlohmann;
 
 class LunaClient;
 class Process;
-enum class State;
 class CameraHalProxy
 {
     std::unique_ptr<LunaClient> luna_client{nullptr};
@@ -40,10 +39,16 @@ class CameraHalProxy
     GMainLoop *loop_{nullptr};
     std::unique_ptr<std::thread> loopThread_;
     unsigned long subscribeKey_{0};
-    void *cookie;
+    void *cookie{nullptr};
     std::string uid_;
-    State state_;
     json jOut;
+
+    enum class State
+    {
+        INIT,
+        CREATE,
+        DESTROY
+    } state_;
 
     DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
                                         int timeout = COMMAND_TIMEOUT);
@@ -86,7 +91,7 @@ public:
 
     bool subscribe();
     bool unsubscribe();
-    LSHandle *sh_;
+    LSHandle *sh_{nullptr};
     std::string subsKey_;
 };
 

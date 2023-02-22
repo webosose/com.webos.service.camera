@@ -241,7 +241,7 @@ bool DeviceManager::updateDeviceList(std::string deviceType,
         if (curDev.second.stList.strDeviceType == deviceType)
         {
             if (std::find_if(deviceList.begin(), deviceList.end(),
-                             [=](const DEVICE_LIST_T &dev) {
+                             [&](const DEVICE_LIST_T &dev) {
                                  return dev.strDeviceNode == curDev.second.stList.strDeviceNode;
                              }) == deviceList.end())
             {
@@ -258,7 +258,7 @@ bool DeviceManager::updateDeviceList(std::string deviceType,
     for (auto &newDev : deviceList)
     {
         if (std::find_if(deviceMap_.begin(), deviceMap_.end(),
-                         [=](const std::pair<int, DEVICE_STATUS> &s)
+                         [&](const std::pair<int, DEVICE_STATUS> &s)
                          {
                              return (s.second.stList.strDeviceType == deviceType) &&
                                     (s.second.stList.strDeviceNode == newDev.strDeviceNode);

@@ -343,6 +343,12 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
         return false;
     }
 
+    if (func == nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "no method name");
+        return false;
+    }
+
     // send message
     std::string uri = service_uri_ + func;
     PMLOG_INFO(CONST_MODULE_CSP, "%s '%s'", uri.c_str(), payload.c_str());

@@ -27,13 +27,6 @@ const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
 #define COMMAND_TIMEOUT_LONG 3000          // ms
 #define COMMAND_TIMEOUT_STARTPREVIEW 10000 // ms
 
-enum class State
-{
-    INIT,
-    CREATE,
-    DESTROY
-};
-
 static bool cameraHalServiceCb(const char *msg, void *data)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "%s", msg);
@@ -163,7 +156,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(std::string memtype, int *pkey
     PMLOG_INFO(CONST_MODULE_CHP, "");
 
     sh_      = sh;
-    subsKey_ = subskey;
+    subsKey_ = subskey ? subskey : "";
 
     json jin;
     jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
@@ -355,13 +348,13 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
                 continue;
 
             int i = getParamNumFromString(it.key());
-            if (i != -1)
+            if (i >= 0)
             {
                 json queries = jOut[it.key()];
                 for (json::iterator q = queries.begin(); q != queries.end(); ++q)
                 {
                     int n = getQueryNumFromString(q.key());
-                    if (n != -1)
+                    if (n >= 0)
                         oparams->stGetData.data[i][n] = q.value();
                 }
             }
@@ -602,6 +595,12 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     if (process_ == nullptr)
     {
         PMLOG_INFO(CONST_MODULE_CHP, "hal process is not ready");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    if (func == nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CHP, "no method name");
         return DEVICE_ERROR_UNKNOWN;
     }
 
