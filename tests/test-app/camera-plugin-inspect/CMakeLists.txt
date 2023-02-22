@@ -19,6 +19,8 @@ project(camera-plugin-inspect CXX)
 set(SRC camera_plugin_inspect.cpp)
 
 add_executable (${PROJECT_NAME} ${SRC})
-target_link_libraries(${PROJECT_NAME} ${CMAKE_DL_LIBS})
+target_link_libraries(${PROJECT_NAME}
+                      ${CMAKE_DL_LIBS}
+                      ${GLIB2_LDFLAGS})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_BINDIR})
