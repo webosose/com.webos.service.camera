@@ -73,6 +73,7 @@ public:
 private:
     bool detectFace(void);
     bool decodeJpeg(void);
+    void sendReply(jvalue_ref jsonObj);
 
 private:
     RawImage oDecodedImage_;

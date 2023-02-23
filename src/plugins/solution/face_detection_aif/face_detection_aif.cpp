@@ -167,34 +167,7 @@ void FaceDetectionAIF::processing(void)
         if (pEvent_ && getMetaSizeHint() > 0)
             (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
 
-        // Subscription reply
-        if (sh_)
-        {
-            int num_subscribers = 0;
-            std::string reply;
-            LSError lserror;
-            LSErrorInit(&lserror);
-
-            {
-                std::string subskey_ = "cameraSolution";
-                num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
-                PMLOG_INFO(LOG_TAG, "cnt %d", num_subscribers);
-
-                if (num_subscribers > 0)
-                {
-                    reply = jvalue_stringify(jsonOutObj);
-                    if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
-                    {
-                        LSErrorPrint(&lserror, stderr);
-                        LSErrorFree(&lserror);
-                        PMLOG_INFO(LOG_TAG, "subscription reply failed");
-                        return;
-                    }
-                    PMLOG_INFO(LOG_TAG, "subscription reply ok");
-                }
-            }
-            LSErrorFree(&lserror);
-        }
+        sendReply(jsonOutObj);
 
         j_release(&jsonOutObj);
     } while (0);
@@ -209,34 +182,9 @@ void FaceDetectionAIF::postProcessing(void)
     if (pEvent_ && getMetaSizeHint() > 0)
         (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
 
-    // Subscription reply
-    if (sh_)
-    {
-        int num_subscribers = 0;
-        std::string reply;
-        LSError lserror;
-        LSErrorInit(&lserror);
+    sendReply(jsonOutObj);
 
-        {
-            std::string subskey_ = "cameraSolution";
-            num_subscribers      = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
-            PMLOG_INFO(LOG_TAG, "cnt %d", num_subscribers);
-
-            if (num_subscribers > 0)
-            {
-                reply = jvalue_stringify(jsonOutObj);
-                if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
-                {
-                    LSErrorPrint(&lserror, stderr);
-                    LSErrorFree(&lserror);
-                    PMLOG_INFO(LOG_TAG, "subscription reply failed");
-                    return;
-                }
-                PMLOG_INFO(LOG_TAG, "subscription reply ok");
-            }
-        }
-        LSErrorFree(&lserror);
-    }
+    j_release(&jsonOutObj);
 }
 
 bool FaceDetectionAIF::detectFace(void)
@@ -300,6 +248,35 @@ bool FaceDetectionAIF::decodeJpeg(void)
     jpeg_destroy_decompress(&cinfo);
 
     return true;
+}
+
+void FaceDetectionAIF::sendReply(jvalue_ref jsonObj)
+{
+    if (sh_)
+    {
+        int num_subscribers = 0;
+        std::string reply;
+        LSError lserror;
+        LSErrorInit(&lserror);
+
+        num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, SOL_SUBSCRIPTION_KEY);
+        PMLOG_DEBUG("cnt %d", num_subscribers);
+
+        if (num_subscribers > 0)
+        {
+            reply = jvalue_stringify(jsonObj);
+            if (!LSSubscriptionReply(sh_, SOL_SUBSCRIPTION_KEY, reply.c_str(), &lserror))
+            {
+                LSErrorPrint(&lserror, stderr);
+                LSErrorFree(&lserror);
+                PMLOG_ERROR(LOG_TAG, "subscription reply failed");
+                return;
+            }
+            PMLOG_DEBUG("subscription reply ok");
+        }
+
+        LSErrorFree(&lserror);
+    }
 }
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)

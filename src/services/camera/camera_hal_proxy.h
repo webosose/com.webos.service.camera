@@ -25,6 +25,9 @@
 
 using namespace nlohmann;
 
+// Please update the following if avcaptureinf/src/VideoCaptureInf_impl.cpp is updated.
+#define COMMAND_TIMEOUT 2000 // ms
+
 class LunaClient;
 class Process;
 enum class State;
@@ -40,9 +43,11 @@ class CameraHalProxy
     void *cookie;
     std::string uid_;
     State state_;
+    json jOut;
 
-    DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload, int timeout,
-                                        json *j = nullptr);
+    DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
+                                        int timeout = COMMAND_TIMEOUT);
+    DEVICE_RETURN_CODE_T finishProcess();
 
 public:
     CameraHalProxy();
@@ -59,7 +64,6 @@ public:
                                       const std::string &imagepath, const std::string &mode);
     DEVICE_RETURN_CODE_T createHandle(std::string subsystem);
     DEVICE_RETURN_CODE_T destroyHandle();
-    DEVICE_RETURN_CODE_T finishProcess();
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string strdevicenode, std::string strdevicetype,
                                               camera_device_info_t *pinfo);
     DEVICE_RETURN_CODE_T getDeviceProperty(CAMERA_PROPERTIES_T *oparams);

@@ -24,6 +24,8 @@
 #include <queue>
 #include <thread>
 
+const char *const SOL_SUBSCRIPTION_KEY = "cameraSolution";
+
 class CameraSolutionAsync : public CameraSolution
 {
 public:

@@ -14,12 +14,12 @@
  */
 
 #include "camera_solution_service.h"
+#include "camera_solution_async.h"
 #include "camera_types.h"
 #include <pbnjson.hpp>
 #include <string>
 
-const char *const CONST_MODULE_CSS     = "CameraSolutionService";
-const char *const SOL_SUBSCRIPTION_KEY = "cameraSolution";
+const char *const CONST_MODULE_CSS = "CameraSolutionService";
 
 CameraSolutionService::CameraSolutionService(const char *service_name)
     : LS::Handle(LS::registerService(service_name))

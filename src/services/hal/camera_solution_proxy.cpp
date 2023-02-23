@@ -21,7 +21,10 @@
 #include "json_utils.h"
 #include "luna_client.h"
 #include "process.h"
+#include <nlohmann/json.hpp>
 #include <system_error>
+
+using namespace nlohmann;
 
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";
 const std::string CameraSolutionConnectionBaseId = "com.webos.camerasolution.";
@@ -185,8 +188,8 @@ bool CameraSolutionProxy::startProcess()
     }
     catch (const std::system_error &e)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
-                   e.code().value(), e.what());
+        PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
+                    e.code().value(), e.what());
     }
 
     while (!g_main_loop_is_running(loop_))
@@ -213,8 +216,8 @@ bool CameraSolutionProxy::stopProcess()
         }
         catch (const std::system_error &e)
         {
-            PMLOG_INFO(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
-                       e.code().value(), e.what());
+            PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
+                        e.code().value(), e.what());
         }
     }
     g_main_loop_unref(loop_);
@@ -330,7 +333,7 @@ bool CameraSolutionProxy::unsubscribe()
     return ret;
 }
 
-bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload, json *jin)
+bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload)
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
 
@@ -348,27 +351,13 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
     PMLOG_INFO(CONST_MODULE_CSP, "resp : %s", resp.c_str());
 
-    bool ret;
-    if (jin)
+    json j = json::parse(resp, nullptr, false);
+    if (j.is_discarded())
     {
-        *jin = json::parse(resp, nullptr, false);
-        if ((*jin).is_discarded())
-        {
-            PMLOG_ERROR(CONST_MODULE_CSP, "resp parsing error!");
-            return false;
-        }
-        ret = get_optional<bool>(*jin, "returnValue").value_or(false);
+        PMLOG_ERROR(CONST_MODULE_CSP, "resp parsing error!");
+        return false;
     }
-    else
-    {
-        json j = json::parse(resp, nullptr, false);
-        if (j.is_discarded())
-        {
-            PMLOG_ERROR(CONST_MODULE_CSP, "resp parsing error!");
-            return false;
-        }
-        ret = get_optional<bool>(j, "returnValue").value_or(false);
-    }
+    bool ret = get_optional<bool>(j, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
 
     PMLOG_INFO(CONST_MODULE_CSP, "returnValue : %d", ret);
     return ret;

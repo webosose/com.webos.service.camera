@@ -22,11 +22,8 @@
 #include <atomic>
 #include <glib.h>
 #include <memory>
-#include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
-
-using namespace nlohmann;
 
 class LunaClient;
 class Process;
@@ -61,7 +58,7 @@ class CameraSolutionProxy
     bool initSolution();
     bool subscribe();
     bool unsubscribe();
-    bool luna_call_sync(const char *func, const std::string &payload, json *j = nullptr);
+    bool luna_call_sync(const char *func, const std::string &payload);
 
 public:
     CameraSolutionProxy(const std::string solution_name);
