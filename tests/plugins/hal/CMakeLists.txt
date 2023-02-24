@@ -17,7 +17,7 @@
 set(UNIT_TEST_SOURCES
     test_cam_hal.cpp )
 
-include_directories(${CMAKE_SOURCE_DIR}/src/services/control/hal)
+include_directories(${CMAKE_SOURCE_DIR}/src/services/hal/hal_if)
 
 add_executable (test_cam_hal ${UNIT_TEST_SOURCES})
 target_link_libraries (test_cam_hal ${WEBOS_GTEST_LIBRARIES} camera_hal)

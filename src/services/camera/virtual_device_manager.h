@@ -20,7 +20,8 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
-#include "CameraHalProxy.h"
+#include "addon.h"
+#include "camera_hal_proxy.h"
 #include "camera_types.h"
 #include <map>
 #include <string>
@@ -50,6 +51,7 @@ private:
     CAMERA_FORMAT sformat_;
     // for multi obj
     CameraHalProxy objcamerahalproxy_;
+    std::shared_ptr<AddOn> pAddon_;
 
     bool checkDeviceOpen(int);
     bool checkAppPriorityMap();
@@ -86,6 +88,8 @@ public:
     DEVICE_RETURN_CODE_T getEnabledCameraSolutionInfo(int, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string>);
     DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string>);
+
+    void setAddon(std::shared_ptr<AddOn> &addon) { pAddon_ = addon; }
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

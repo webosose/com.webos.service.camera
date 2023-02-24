@@ -27,7 +27,6 @@ include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/pdm)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/camera)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/camera/addon)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/camera/notifier)
-include_directories(${CMAKE_SOURCE_DIR}/src/common/ipc)
 
 # Camera service
 set(SRC_LIST
@@ -40,22 +39,14 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/camera/event_notification.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/addon/addon.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/notifier/notifier.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/camera/CameraHalProxy.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/camera/camera_hal_proxy.cpp
     )
 
 # common
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/common/camera/camera_types.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/ipc/LunaClient.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/ipc/Process.cpp
-    )
-
-# plugins/notifier
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/plugins/notifier/pdm/pdm_client.cpp
-    ${CMAKE_SOURCE_DIR}/src/plugins/notifier/appcast/appcast_client.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/process.cpp
     )
 
 add_executable(${PROJECT_NAME}
@@ -68,6 +59,7 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       pthread
                       ${CMAKE_DL_LIBS}
+                      camera_common
                       )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})

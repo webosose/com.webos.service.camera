@@ -15,16 +15,17 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "pdm_client.h"
-#include "addon.h"
 #include "camera_constants.h"
-#include "device_manager.h"
-#include "event_notification.h"
+#include "camera_device_types.h"
+#include "camera_log.h"
 #include "json_utils.h"
+#include "plugin.hpp"
 #include <glib.h>
 #include <list>
 #include <nlohmann/json.hpp>
 #include <optional>
-#include <pbnjson.hpp>
+
+#define LOG_TAG "NOTIFIER:PDMClient"
 
 using namespace nlohmann;
 
@@ -92,24 +93,24 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
 {
     const char *payload = LSMessageGetPayload(message);
     PDMClient *client   = (PDMClient *)user_data;
-    PMLOG_INFO(CONST_MODULE_PC, "payload : %s \n", payload);
+    PMLOG_INFO(LOG_TAG, "payload : %s \n", payload);
 
     json jPayload = json::parse(payload, nullptr, false);
     if (jPayload.is_discarded())
     {
-        PMLOG_INFO(CONST_MODULE_PC, "payload parsing fail!");
+        PMLOG_INFO(LOG_TAG, "payload parsing fail!");
         return false;
     }
 
     PdmResponse pdm = jPayload;
     if (!pdm.returnValue)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "retvalue fail!");
+        PMLOG_INFO(LOG_TAG, "retvalue fail!");
         return false;
     }
     if (!pdm.videoDeviceList)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "deviceListInfo empty!");
+        PMLOG_INFO(LOG_TAG, "deviceListInfo empty!");
         return false;
     }
 
@@ -134,49 +135,47 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                 // plugged or unplugged while the TV is off.
             }
 
-            PMLOG_INFO(CONST_MODULE_PC, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
+            PMLOG_INFO(LOG_TAG, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
                        devInfo.strVendorName.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
+            PMLOG_INFO(LOG_TAG, "Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
                        devInfo.strProductName.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
-            PMLOG_INFO(CONST_MODULE_PC, "strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
+            PMLOG_INFO(LOG_TAG, "strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
+            PMLOG_INFO(LOG_TAG, "strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
 
             devList.push_back(devInfo);
         }
     }
 
-    DeviceManager::getInstance().updateDeviceList("v4l2", devList);
-
-    if (NULL != client->subscribeToDeviceInfoCb_)
-        client->subscribeToDeviceInfoCb_(nullptr);
+    if (NULL != client->updateDeviceList)
+        client->updateDeviceList("v4l2", &devList);
 
     return true;
 }
 
-void PDMClient::subscribeToClient(handlercb cb, GMainLoop *loop)
+void PDMClient::subscribeToClient(handlercb cb, void *mainLoop)
 {
     LSError lsregistererror;
     LSErrorInit(&lsregistererror);
 
     // register to PDM luna service with cb to be called
-    subscribeToDeviceInfoCb_ = cb;
+    this->updateDeviceList = cb;
 
     bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
                                            subscribeToPdmService, this, NULL, &lsregistererror);
     if (!result)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "LSRegister Server Status failed");
+        PMLOG_INFO(LOG_TAG, "LSRegister Server Status failed");
     }
 }
 
-void PDMClient::setLSHandle(LSHandle *handle) { lshandle_ = handle; }
+void PDMClient::setLSHandle(void *handle) { lshandle_ = (LSHandle *)handle; }
 
 bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
                                       void *ctx)
 {
     int ret = 0;
 
-    PMLOG_INFO(CONST_MODULE_PC, "connected status:%d \n", connected);
+    PMLOG_INFO(LOG_TAG, "connected status:%d \n", connected);
     if (connected)
     {
         LSError lserror;
@@ -194,7 +193,7 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
 
         if (!retval)
         {
-            PMLOG_INFO(CONST_MODULE_PC, "PDM client Unable to unregister service\n");
+            PMLOG_INFO(LOG_TAG, "PDM client Unable to unregister service\n");
             ret = -1;
         }
 
@@ -206,8 +205,35 @@ bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, boo
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_PC, "connected value is false");
+        PMLOG_INFO(LOG_TAG, "connected value is false");
     }
 
     return ret;
+}
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+extern "C"
+{
+    IPlugin *plugin_init(void)
+    {
+        Plugin *plg = new Plugin();
+        plg->setName("PDM Notifier");
+        plg->setDescription("PDM Client for Camera Notifier");
+        plg->setCategory("NOTIFIER");
+        plg->setVersion("1.0.0");
+        plg->setOrganization("LG Electronics.");
+        plg->registerFeature<PDMClient>("pdm");
+
+        return plg;
+    }
+
+    void __attribute__((constructor)) plugin_load(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
+
+    void __attribute__((destructor)) plugin_unload(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
 }

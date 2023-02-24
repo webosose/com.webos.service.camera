@@ -15,35 +15,52 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #include "notifier.h"
+#include "device_manager.h"
 
-void Notifier::addNotifier(NotifierClient client, GMainLoop *loop)
+static bool updateDeviceListCb(std::string deviceType, const void *deviceList)
 {
-    PMLOG_INFO(CONST_MODULE_NOTIFIER, "client : %d\n", (int)client);
+    return DeviceManager::getInstance().updateDeviceList(
+        deviceType, *((std::vector<DEVICE_LIST_T> *)deviceList));
+}
 
-    if (client == NotifierClient::NOTIFIER_CLIENT_PDM)
+Notifier::~Notifier()
+{
+    if (pPluginFactory_)
     {
-        p_client_notifier_ = &pdm_; // points to PDM object
-        if (nullptr != p_client_notifier_)
-        {
-            p_client_notifier_->setLSHandle(lshandle_);
-            registerCallback(NULL, loop);
-        }
+        delete pPluginFactory_;
+        pPluginFactory_ = nullptr;
     }
-    else if (client == NotifierClient::NOTIFIER_CLIENT_APPCAST)
+}
+
+void Notifier::addNotifiers(GMainLoop *loop)
+{
+    auto lstFeatNames = pPluginFactory_->getFeatureList("NOTIFIER");
+    for (auto &f : lstFeatNames)
     {
-        p_client_notifier_ = &appcast_; // points to appcast object
-        if (nullptr != p_client_notifier_)
+        PMLOG_INFO(CONST_MODULE_NOTIFIER, "client : %s", f.c_str());
+        IFeaturePtr pFeature = pPluginFactory_->createFeature(f.c_str());
+        if (pFeature)
         {
-            p_client_notifier_->setLSHandle(lshandle_);
-            registerCallback(NULL, loop);
+            void *pInterface = nullptr;
+            if (pFeature->queryInterface(f.c_str(), &pInterface))
+            {
+                pFeatureList_.push_back(std::move(pFeature));
+                notifierMap_[f.c_str()] = static_cast<INotifier *>(pInterface);
+                INotifier *noti         = notifierMap_[f.c_str()];
+                noti->setLSHandle(lshandle_);
+                registerCallback(noti, updateDeviceListCb, loop);
+                PMLOG_INFO(CONST_MODULE_NOTIFIER,
+                           "Notifier \'%s\' instance created and ready : OK!", f.c_str());
+            }
         }
     }
 }
 
-void Notifier::registerCallback(DeviceNotifier::handlercb deviceinfo, GMainLoop *loop)
+void Notifier::registerCallback(INotifier *notifier, INotifier::handlercb updateDeviceList,
+                                GMainLoop *loop)
 {
-    if (nullptr != p_client_notifier_)
-        p_client_notifier_->subscribeToClient(deviceinfo, loop);
+    if (nullptr != notifier)
+        notifier->subscribeToClient(updateDeviceList, loop);
 }
 
 void Notifier::setLSHandle(LSHandle *handle) { lshandle_ = handle; }

@@ -40,31 +40,21 @@ include_directories(${GST_INCLUDE_DIRS})
 
 include_directories(${CMAKE_SOURCE_DIR}/src/services/hal)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/hal/hal_if)
-include_directories(${CMAKE_SOURCE_DIR}/src/common/ipc)
-include_directories(${CMAKE_SOURCE_DIR}/src/common/shm)
 
 # Camera Hal Service
 set(SRC_LIST
-    ${CMAKE_SOURCE_DIR}/src/services/hal/CameraHalService.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/camera_hal_service.cpp
     ${CMAKE_SOURCE_DIR}/src/services/hal/device_controller.cpp
     ${CMAKE_SOURCE_DIR}/src/services/hal/camera_solution_manager.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/hal/CameraSolutionProxy.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/camera_solution_proxy.cpp
     )
 
 # common
 set (SRC_LIST
     ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/common/camera/camera_types.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/shm/camshm.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/shm/cam_posixshm.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/ipc/LunaClient.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/ipc/Process.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/camera_types.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/common/process.cpp
     )
-
-### SOLUTION MANAGER Solution configuration file Start ###
-message(STATUS "Using json to define supported solutions for variable platform")
-webos_build_configured_file(files/conf/solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
-### SOLUTION MANAGER Solution configuration file End ###
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
@@ -73,8 +63,10 @@ target_link_libraries(${PROJECT_NAME}
                       ${PBNJSON_CPP_LDFLAGS}
                       ${LS2++_LDFLAGS}
                       ${PMLOGLIB_LDFLAGS}
-                      camera_hal
                       ${GST_LIBRARIES}
+                      ${CMAKE_DL_LIBS}
+                      camera_common
+                      pthread
                       )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})

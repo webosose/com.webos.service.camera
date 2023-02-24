@@ -14,6 +14,4 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera-common CXX)
-
-#add_subdirectory()
+add_subdirectory(lib)

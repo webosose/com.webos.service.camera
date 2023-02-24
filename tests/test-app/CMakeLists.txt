@@ -14,6 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+add_subdirectory(camera-plugin-inspect)
 add_subdirectory(cameraservice)
 add_subdirectory(hal)
 add_subdirectory(test_smsync)

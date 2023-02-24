@@ -18,7 +18,6 @@
 #define CAMERA_BASE_WRAPPER
 
 #include "camera_hal_if_types.h"
-#include "camera_hal_types.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -27,11 +26,11 @@ extern "C"
 
     int open_device(camera_handle_t *, const char *, const char *);
     int close_device(camera_handle_t *);
-    int set_format(camera_handle_t *, stream_format_t);
-    int get_format(camera_handle_t *, stream_format_t *);
-    int set_buffer(camera_handle_t *, int, int, buffer_t **);
-    int get_buffer(camera_handle_t *, buffer_t *);
-    int release_buffer(camera_handle_t *, buffer_t);
+    int set_format(camera_handle_t *, const void *);
+    int get_format(camera_handle_t *, void *);
+    int set_buffer(camera_handle_t *, int, int, void **);
+    int get_buffer(camera_handle_t *, void *);
+    int release_buffer(camera_handle_t *, const void *);
     int destroy_buffer(camera_handle_t *);
     int start_capture(camera_handle_t *);
     int stop_capture(camera_handle_t *);

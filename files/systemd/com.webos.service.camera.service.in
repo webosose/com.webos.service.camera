@@ -16,8 +16,8 @@
 
 [Unit]
 Description=webos - "%n"
-Requires=ls-hubd.service physical-device-manager.service
-After=ls-hubd.service physical-device-manager.service
+Requires=camera-registry.service ls-hubd.service physical-device-manager.service
+After=camera-registry.service ls-hubd.service physical-device-manager.service
 
 [Service]
 Type=simple

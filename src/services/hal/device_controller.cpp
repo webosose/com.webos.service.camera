@@ -18,57 +18,61 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "device_controller.h"
-#include "camera_hal_if.h"
-#include "camera_solution_event.h"
 #include "camera_solution_manager.h"
 #include <algorithm>
 #include <ctime>
 #include <errno.h>
+#include <json_utils.h>
+#include <nlohmann/json.hpp>
 #include <pbnjson.h>
 #include <poll.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <system_error>
 
+using namespace nlohmann;
+
 /**
  * need to call directly camera base methods in order to cancel preview when the camera is
  * disconnected.
  */
-#include "camera_base_wrapper.h"
 
 struct MemoryListener : public CameraSolutionEvent
 {
     MemoryListener(void) { PMLOG_INFO(CONST_MODULE_DC, ""); }
-    virtual ~MemoryListener(void)
-    {
-        if (jsonResult_ != nullptr)
-            j_release(&jsonResult_);
-        jsonResult_ = nullptr;
-        PMLOG_INFO(CONST_MODULE_DC, "");
-    }
+    virtual ~MemoryListener(void) { PMLOG_INFO(CONST_MODULE_DC, ""); }
     virtual void onInitialized(void) override { PMLOG_INFO(CONST_MODULE_DC, "It's initialized!!"); }
-    virtual void onDone(jvalue_ref jsonObj) override
+    virtual void onDone(const char *szResult) override
     {
         std::lock_guard<std::mutex> lg(mtxResult_);
         // TODO : We need to composite more than one results.
         //        e.g) {"faces":[{...}, {...}], "poses":[{...}, {...}]}
-        j_release(&jsonResult_);
-        jsonResult_ = jvalue_copy(jsonObj);
-        PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jvalue_stringify(jsonResult_));
+        json jResult = json::parse(szResult, nullptr, false);
+        if (jResult.is_discarded())
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "message parsing error!");
+            return;
+        }
+
+        for (auto &[key, val] : jResult.items())
+        {
+            if (key == "returnValue")
+                continue;
+            jsonResult_[key] = val;
+        }
+        PMLOG_INFO(CONST_MODULE_DC, "Solution Result: %s", jsonResult_.dump().c_str());
     }
     std::string getResult(void)
     {
         std::lock_guard<std::mutex> lg(mtxResult_);
-        if (jsonResult_ != nullptr)
+        if (!jsonResult_.is_null())
         {
-            const char *jvalue = jvalue_stringify(jsonResult_);
-            if (jvalue)
-                return jvalue;
+            return jsonResult_.dump();
         }
         return "";
     }
     std::mutex mtxResult_;
-    jvalue_ref jsonResult_{nullptr};
+    json jsonResult_;
 };
 
 int DeviceControl::n_imagecount_ = 0;
@@ -161,10 +165,10 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
 
     // get current saved format for device
     stream_format_t streamformat;
-    auto retval = camera_hal_if_get_format(handle, &streamformat);
+    auto retval = static_cast<IHal *>(cam_handle_)->getFormat(&streamformat);
     if (retval != CAMERA_ERROR_NONE)
     {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_format failed \n");
+        PMLOG_ERROR(CONST_MODULE_DC, "getFormat failed");
         return DEVICE_ERROR_UNKNOWN;
     }
 
@@ -204,12 +208,15 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
         // error handling
         if (newstreamformat.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
             return DEVICE_ERROR_UNSUPPORTED_FORMAT;
-        retval = camera_hal_if_set_format(handle, newstreamformat);
+
+        retval = static_cast<IHal *>(cam_handle_)->setFormat(&newstreamformat);
         if (retval != CAMERA_ERROR_NONE)
         {
-            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_format failed \n");
+            PMLOG_ERROR(CONST_MODULE_DC, "setFormat failed");
+
             // if set format fails then reset format to preview format
-            camera_hal_if_set_format(handle, streamformat);
+            static_cast<IHal *>(cam_handle_)->setFormat(&streamformat);
+
             // save pixel format for saving captured image
             epixelformat_ = streamformat.pixel_format;
         }
@@ -227,9 +234,8 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
 
 DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncount) const
 {
-    int fd      = -1;
-    auto retval = camera_hal_if_get_fd(handle, &fd);
-    PMLOG_INFO(CONST_MODULE_DC, "camera_hal_if_get_fd fd : %d \n", fd);
+    int fd = halFd_;
+    int retval;
     struct pollfd poll_set[]
     {
         {.fd = fd, .events = POLLIN},
@@ -237,7 +243,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
 
     // get current saved format for device
     stream_format_t streamformat;
-    camera_hal_if_get_format(handle, &streamformat);
+    static_cast<IHal *>(cam_handle_)->getFormat(&streamformat);
     PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
                streamformat.stream_height);
     // int framesize =
@@ -250,10 +256,10 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
     {
         if ((retval = poll(poll_set, 1, timeout)) > 0)
         {
-            retval = camera_hal_if_get_buffer(handle, &frame_buffer);
+            static_cast<IHal *>(cam_handle_)->getBuffer(&frame_buffer);
             if (CAMERA_ERROR_NONE != retval)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "getBuffer failed");
                 return DEVICE_ERROR_UNKNOWN;
             }
             PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
@@ -276,10 +282,10 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
                 writeImageToFile(frame_buffer.start, frame_buffer.length))
                 return DEVICE_ERROR_CANNOT_WRITE;
 
-            retval = camera_hal_if_release_buffer(handle, frame_buffer);
+            static_cast<IHal *>(cam_handle_)->releaseBuffer(&frame_buffer);
             if (retval != CAMERA_ERROR_NONE)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "releaseBuffer failed");
                 return DEVICE_ERROR_UNKNOWN;
             }
         }
@@ -346,7 +352,7 @@ void DeviceControl::previewThread()
 
     // get current saved format for device
     stream_format_t streamformat;
-    camera_hal_if_get_format(cam_handle_, &streamformat);
+    static_cast<IHal *>(cam_handle_)->getFormat(&streamformat);
     PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
                streamformat.stream_height);
 
@@ -365,10 +371,10 @@ void DeviceControl::previewThread()
 
         buffer_t frame_buffer = {0};
 
-        auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
+        auto retval = static_cast<IHal *>(cam_handle_)->getBuffer(&frame_buffer);
         if (retval != CAMERA_ERROR_NONE)
         {
-            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
+            PMLOG_ERROR(CONST_MODULE_DC, "getBuffer failed");
 
             notifyDeviceFault_();
             break;
@@ -429,10 +435,10 @@ void DeviceControl::previewThread()
             IPCPosixSharedMemory::getInstance().IncrementWriteIndex(h_shmposix_);
         }
 
-        retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
+        retval = static_cast<IHal *>(cam_handle_)->releaseBuffer(&frame_buffer);
         if (retval != CAMERA_ERROR_NONE)
         {
-            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
+            PMLOG_ERROR(CONST_MODULE_DC, "releaseBuffer failed");
             notifyDeviceFault_();
             break;
         }
@@ -461,11 +467,13 @@ DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode, i
     camera_id_     = ndev_id;
     payload_       = payload;
 
-    // open camera device
-    auto ret = camera_hal_if_open_device(handle, devicenode.c_str(), payload.c_str());
-    if (ret != CAMERA_ERROR_NONE)
+    auto ret = static_cast<IHal *>(handle)->openDevice(devicenode.c_str(), payload.c_str());
+    if (ret == CAMERA_ERROR_UNKNOWN)
+    {
+        PMLOG_INFO(CONST_MODULE_DC, "open fail!");
         return DEVICE_ERROR_CAN_NOT_OPEN;
-
+    }
+    halFd_ = ret;
     return DEVICE_OK;
 }
 
@@ -473,22 +481,15 @@ DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started \n");
 
-    if (cancel_preview_ == true)
+    auto ret = static_cast<IHal *>(handle)->closeDevice();
+    halFd_   = -1;
+    if (ret != CAMERA_ERROR_NONE)
     {
-        if (-1 == close_device((camera_handle_t *)handle))
-        {
-            return DEVICE_ERROR_CAN_NOT_CLOSE;
-        }
-        return DEVICE_OK;
+        PMLOG_INFO(CONST_MODULE_DC, "fail");
+        return DEVICE_ERROR_CAN_NOT_OPEN;
     }
-    else
-    {
-        // close device
-        auto ret = camera_hal_if_close_device(handle);
-        if (ret != CAMERA_ERROR_NONE)
-            return DEVICE_ERROR_CAN_NOT_CLOSE;
-        return DEVICE_OK;
-    }
+    PMLOG_INFO(CONST_MODULE_DC, "success");
+    return DEVICE_OK;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memtype, int *pkey,
@@ -503,7 +504,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
     // get current saved format for device
     stream_format_t streamformat;
-    camera_hal_if_get_format(handle, &streamformat);
+    static_cast<IHal *>(handle)->getFormat(&streamformat);
     PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
                streamformat.stream_height);
 
@@ -567,20 +568,21 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
                                                                  usrpbufs_, nullptr);
 
             // frame_count = 8 (see "constants.h")
-            auto retval = camera_hal_if_set_buffer(handle, frame_count, IOMODE_USERPTR, &usrpbufs_);
+            auto retval = static_cast<IHal *>(handle)->setBuffer(frame_count, IOMODE_USERPTR,
+                                                                 (void **)&usrpbufs_);
             if (retval != CAMERA_ERROR_NONE)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "setBuffer failed");
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
                 IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
                 return DEVICE_ERROR_UNKNOWN;
             }
 
-            retval = camera_hal_if_start_capture(handle);
+            retval = static_cast<IHal *>(handle)->startCapture();
             if (retval != CAMERA_ERROR_NONE)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "startCapture failed");
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
                 IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
@@ -592,17 +594,17 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
         }
         else if (memtype == kMemtypeShmemMmap)
         {
-            auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP, nullptr);
+            auto retval = static_cast<IHal *>(handle)->setBuffer(4, IOMODE_MMAP, nullptr);
             if (retval != CAMERA_ERROR_NONE)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "setBuffer failed");
                 return DEVICE_ERROR_UNKNOWN;
             }
 
-            retval = camera_hal_if_start_capture(handle);
+            retval = static_cast<IHal *>(handle)->startCapture();
             if (retval != CAMERA_ERROR_NONE)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "startCapture failed");
                 return DEVICE_ERROR_UNKNOWN;
             }
 
@@ -625,10 +627,11 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
                                                                       usrpbufs_, nullptr);
 
             // frame_count = 8 (see "constants.h")
-            auto retval = camera_hal_if_set_buffer(handle, frame_count, IOMODE_USERPTR, &usrpbufs_);
+            auto retval = static_cast<IHal *>(handle)->setBuffer(frame_count, IOMODE_USERPTR,
+                                                                 (void **)&usrpbufs_);
             if (retval != CAMERA_ERROR_NONE)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "setBuffer failed");
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
                 IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
@@ -637,10 +640,10 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
                 return DEVICE_ERROR_UNKNOWN;
             }
 
-            retval = camera_hal_if_start_capture(handle);
+            retval = static_cast<IHal *>(handle)->startCapture();
             if (retval != CAMERA_ERROR_NONE)
             {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed \n");
+                PMLOG_ERROR(CONST_MODULE_DC, "startCapture failed");
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
                 IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
@@ -689,21 +692,22 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
 
     if (cancel_preview_ == true)
     {
-        stop_capture((camera_handle_t *)handle);
-        destroy_buffer((camera_handle_t *)handle);
+        static_cast<IHal *>(handle)->stopCapture();
+        static_cast<IHal *>(handle)->destroyBuffer();
     }
     else
     {
-        auto retval = camera_hal_if_stop_capture(handle);
+        auto retval = static_cast<IHal *>(handle)->stopCapture();
         if (retval != CAMERA_ERROR_NONE)
         {
-            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_stop_capture failed \n");
+            PMLOG_ERROR(CONST_MODULE_DC, "stopCapture failed");
             return DEVICE_ERROR_UNKNOWN;
         }
-        retval = camera_hal_if_destroy_buffer(handle);
+
+        retval = static_cast<IHal *>(handle)->destroyBuffer();
         if (retval != CAMERA_ERROR_NONE)
         {
-            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_destroy_buffer failed \n");
+            PMLOG_ERROR(CONST_MODULE_DC, "destroyBuffer failed");
             return DEVICE_ERROR_UNKNOWN;
         }
     }
@@ -812,58 +816,52 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(void *handle, int ncount, CAMER
     return DEVICE_OK;
 }
 
-std::string DeviceControl::getSubsystem(const std::string deviceType)
-{
-    return "lib" + deviceType + "-camera-plugin.so";
-}
-
 DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string deviceType)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started \n");
 
-    void *p_cam_handle;
-    std::string subsystem = getSubsystem(deviceType);
-    auto ret              = camera_hal_if_init(&p_cam_handle, subsystem.c_str());
-    if (ret != CAMERA_ERROR_NONE)
-    {
-        PMLOG_ERROR(CONST_MODULE_DC, "Failed to create handle\n!!");
-        *handle = NULL;
+    pFeature_ = pluginFactory_.createFeature(deviceType.c_str());
+    if (pFeature_ == nullptr)
         return DEVICE_ERROR_UNKNOWN;
-    }
-    PMLOG_INFO(CONST_MODULE_DC, "p_cam_handle : %p \n", p_cam_handle);
-    *handle = p_cam_handle;
 
-    return DEVICE_OK;
+    void *pInterface = nullptr;
+    if (pFeature_->queryInterface(deviceType.c_str(), &pInterface))
+    {
+        *handle = pInterface;
+        return DEVICE_OK;
+    }
+    return DEVICE_ERROR_UNKNOWN;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::destroyHandle(void *handle)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started \n");
-
+#if 0
     auto ret = camera_hal_if_deinit(handle);
     if (ret != CAMERA_ERROR_NONE)
     {
         PMLOG_ERROR(CONST_MODULE_DC, "Failed to destroy handle\n!!");
         return DEVICE_ERROR_UNKNOWN;
     }
-
+#endif
     return DEVICE_OK;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode, std::string deviceType,
                                                   camera_device_info_t *pinfo)
 {
-    PMLOG_INFO(CONST_MODULE_DC, "started \n");
+    PMLOG_INFO(CONST_MODULE_DC, "started strdevicenode : %s, deviceType : %s",
+               strdevicenode.c_str(), deviceType.c_str());
 
-    std::string subsystem = getSubsystem(deviceType);
-    auto ret              = camera_hal_if_get_info(strdevicenode.c_str(), subsystem.c_str(), pinfo);
-    if (ret != CAMERA_ERROR_NONE)
+    PluginFactory factory;
+    auto pFeature    = factory.createFeature(deviceType.c_str());
+    void *pInterface = nullptr;
+    if (pFeature && pFeature->queryInterface(deviceType.c_str(), &pInterface))
     {
-        PMLOG_ERROR(CONST_MODULE_DC, "Failed to get the info\n!!");
-        return DEVICE_ERROR_UNKNOWN;
+        static_cast<IHal *>(pInterface)->getInfo(pinfo, strdevicenode);
+        return DEVICE_OK;
     }
-
-    return DEVICE_OK;
+    return DEVICE_ERROR_UNKNOWN;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPERTIES_T *oparams)
@@ -877,10 +875,9 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
         out_params.stGetData.data[i][QUERY_VALUE] = CONST_PARAM_DEFAULT_VALUE;
     }
 
-    if (CAMERA_ERROR_NONE != camera_hal_if_get_properties(handle, &out_params))
-    {
+    auto retval = static_cast<IHal *>(handle)->getProperties(&out_params);
+    if (retval != CAMERA_ERROR_NONE)
         return DEVICE_ERROR_UNKNOWN;
-    }
 
     // update stGetData
     for (int i = 0; i < PROPERTY_END; i++)
@@ -906,7 +903,7 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
         in_params.stGetData.data[i][QUERY_VALUE] = inparams->stGetData.data[i][QUERY_VALUE];
     }
 
-    camera_hal_if_set_properties(handle, &in_params);
+    static_cast<IHal *>(handle)->setProperties(&in_params);
 
     return DEVICE_OK;
 }
@@ -925,7 +922,7 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, CAMERA_FORMAT sforma
     if (in_format.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
-    auto ret = camera_hal_if_set_format(handle, in_format);
+    auto ret = static_cast<IHal *>(handle)->setFormat(&in_format);
     if (ret != CAMERA_ERROR_NONE)
         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
@@ -936,7 +933,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getFormat(void *handle, CAMERA_FORMAT *pform
 {
     // get current saved format for device
     stream_format_t streamformat;
-    camera_hal_if_get_format(handle, &streamformat);
+    static_cast<IHal *>(handle)->getFormat(&streamformat);
     pformat->nHeight = streamformat.stream_height;
     pformat->nWidth  = streamformat.stream_width;
     pformat->eFormat = getCameraFormat(streamformat.pixel_format);
@@ -1082,9 +1079,9 @@ void DeviceControl::notifyDeviceFault_()
     if (subskey_ != "")
     {
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
-        int fd          = -1;
-        camera_hal_if_get_fd(cam_handle_, &fd);
-        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying preview fault ... num_subscribers = %d\n",
+        int fd          = halFd_;
+
+        PMLOG_INFO(CONST_MODULE_DC, "[fd : %d] notifying device fault ... num_subscribers = %d\n",
                    fd, num_subscribers);
 
         if (num_subscribers > 0)

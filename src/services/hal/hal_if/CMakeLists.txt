@@ -1,4 +1,4 @@
-# Copyright (c) 202333G Electronics, Inc.
+# Copyright (c) 2023 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -29,4 +29,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       pthread)
 
-webos_build_library(NAME ${PROJECT_NAME})
+set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
+
+install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR})

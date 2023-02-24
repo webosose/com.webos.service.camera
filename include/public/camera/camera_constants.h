@@ -25,7 +25,6 @@
 #define CONST_PARAM_VALUE_TRUE 1
 #define CONST_MAX_DEVICE_COUNT 10
 
-#define CONST_MODULE_AC "AppCastClient"
 #define CONST_MODULE_CM "CommandHandler"
 #define CONST_MODULE_DC "DeviceController"
 #define CONST_MODULE_CHP "CameraHalProxy"
@@ -35,7 +34,6 @@
 #define CONST_MODULE_EN "EventNotification"
 #define CONST_MODULE_LUNA "Service"
 #define CONST_MODULE_NOTIFIER "Notifier"
-#define CONST_MODULE_PC "PDMClient"
 #define CONST_MODULE_SHM "SharedMemory"
 #define CONST_MODULE_SM "SolutionManager"
 #define CONST_MODULE_RCP "RemoteCameraPlugin"

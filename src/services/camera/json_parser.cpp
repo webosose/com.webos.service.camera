@@ -405,7 +405,7 @@ void GetInfoMethod::getInfoObject(const char *input, const char *schemapath)
     j_release(&j_obj);
 }
 
-std::string GetInfoMethod::createInfoObjectJsonString() const
+std::string GetInfoMethod::createInfoObjectJsonString(bool supported) const
 {
     jvalue_ref json_outobj   = jobject_create();
     jvalue_ref json_info_obj = jobject_create();
@@ -415,9 +415,6 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
 
     if (objreply.bGetReturnValue())
     {
-        bool supported =
-            AddOn::isSupportedCamera(rGetCameraInfo().str_productid, rGetCameraInfo().str_vendorid);
-
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(objreply.bGetReturnValue()));
 
@@ -563,7 +560,7 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
             for (auto const &it : str_params_)
             {
                 int param_enum = getParamNumFromString(it);
-                if (param_enum != -1)
+                if (param_enum >= 0)
                 {
                     if (obj.stGetData.data[param_enum][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE)
                     {

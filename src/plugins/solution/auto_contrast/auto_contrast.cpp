@@ -14,11 +14,11 @@
  */
 
 #include "auto_contrast.hpp"
-#include "camera_types.h"
+#include "camera_log.h"
 #include <math.h>
 #include <sys/time.h>
 
-#define LOG_TAG "AutoContrast"
+#define LOG_TAG "SOLUTION:AutoContrast"
 
 void brightnessEnhancement(unsigned char *inputY, unsigned char *inputUV, int width, int height,
                            int stride, int frameSize, int minY, int maxY, int enhanceLevel);
@@ -41,10 +41,10 @@ AutoContrast::~AutoContrast(void)
 
 std::string AutoContrast::getSolutionStr(void) { return SOLUTION_AUTOCONTRAST; }
 
-void AutoContrast::processForSnapshot(buffer_t inBuf)
+void AutoContrast::processForSnapshot(const void *inBuf)
 {
     PMLOG_INFO(LOG_TAG, "");
-    doAutoContrastProcessing(inBuf);
+    doAutoContrastProcessing(*static_cast<buffer_t *>(inBuf));
 }
 
 void AutoContrast::processForPreview(buffer_t inBuf) { doAutoContrastProcessing(inBuf); }

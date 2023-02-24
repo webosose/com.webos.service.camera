@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "camera_solution.h"
 #include <atomic>
 #include <condition_variable>
@@ -23,6 +23,8 @@
 #include <memory>
 #include <queue>
 #include <thread>
+
+const char *const SOL_SUBSCRIPTION_KEY = "cameraSolution";
 
 class CameraSolutionAsync : public CameraSolution
 {
@@ -50,8 +52,8 @@ public:
 public:
     // interface override
     virtual void setEnableValue(bool enableValue) override;
-    virtual void processForSnapshot(buffer_t inBuf) override;
-    virtual void processForPreview(buffer_t inBuf) override;
+    virtual void processForSnapshot(const void *inBuf) override;
+    virtual void processForPreview(const void *inBuf) override;
     virtual void release(void) override;
 
 protected:

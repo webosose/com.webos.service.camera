@@ -7,104 +7,36 @@
 
 #define CONST_MODULE_ADDON "ADDON"
 
-void *AddOn::handle_                = nullptr;
-ICameraServiceAddon *AddOn::plugin_ = nullptr;
-AddOn::Service *AddOn::service_     = nullptr;
-
-typedef void *(*pfn_create_plugin_instance)();
-typedef void *(*pfn_destroy_plugin_instance)(void *);
-
-pfn_create_plugin_instance create_plugin_instance;
-pfn_destroy_plugin_instance destroy_plugin_instance;
-
-int AddOn::getDeviceCounts(std::string type)
+AddOn::AddOn()
 {
-    return DeviceManager::getInstance().getDeviceCounts(type);
-}
+    pFeature_ = pluginFactory_.createFeature("addon");
+    if (pFeature_)
+    {
+        service_ = new Service();
 
-bool AddOn::updateDeviceList(std::string deviceType, const std::vector<DEVICE_LIST_T> &deviceList)
-{
-    return DeviceManager::getInstance().updateDeviceList(deviceType, deviceList);
-};
-
-void AddOn::open()
-{
-    handle_ = dlopen("libcamera_service_addon.so", RTLD_LAZY);
-    if (!handle_)
-    {
-        PMLOG_INFO(CONST_MODULE_ADDON, "%s", dlerror());
-        return;
-    }
-    create_plugin_instance =
-        (pfn_create_plugin_instance)dlsym(handle_, "create_camera_service_addon");
-    if (!create_plugin_instance)
-    {
-        PMLOG_INFO(CONST_MODULE_ADDON, "%s", dlerror());
-        dlclose(handle_);
-        handle_ = nullptr;
-        return;
-    }
-    destroy_plugin_instance =
-        (pfn_destroy_plugin_instance)dlsym(handle_, "destroy_camera_service_addon");
-    if (!destroy_plugin_instance)
-    {
-        PMLOG_INFO(CONST_MODULE_ADDON, "%s", dlerror());
-        dlclose(handle_);
-        handle_ = nullptr;
-        return;
-    }
-
-    plugin_ = (ICameraServiceAddon *)create_plugin_instance();
-    if (plugin_)
-    {
-        AddOn::service_ = new Service();
-        if (nullptr == AddOn::service_)
-        {
-            PMLOG_INFO(CONST_MODULE_ADDON, "DeviceEventCallback object malloc failed.");
-            close();
-            PMLOG_INFO(CONST_MODULE_ADDON, "module instance closed.\n");
-        }
-        PMLOG_INFO(CONST_MODULE_ADDON, "module instance created and ready : OK!");
-    }
-    else
-    {
-        PMLOG_INFO(CONST_MODULE_ADDON, "module instance creation failed : FAIL!");
+        void *pInterface = nullptr;
+        pFeature_->queryInterface("addon", &pInterface);
+        plugin_ = static_cast<IAddon *>(pInterface);
     }
 }
 
-void AddOn::close()
+AddOn::~AddOn()
 {
-    if (plugin_)
+    if (service_)
     {
-        destroy_plugin_instance(plugin_);
-        plugin_ = nullptr;
-    }
-    if (handle_)
-    {
-        dlclose(handle_);
-        handle_ = nullptr;
-    }
-    if (AddOn::service_)
-    {
-        delete AddOn::service_;
-        AddOn::service_ = nullptr;
+        delete service_;
+        service_ = nullptr;
     }
 }
 
 bool AddOn::hasImplementation()
 {
-    if (!handle_)
-    {
-        return false;
-    }
-    if (!plugin_)
-    {
-        return false;
-    }
-    return plugin_->hasImplementation();
+    if (plugin_)
+        return plugin_->hasImplementation();
+    return false;
 }
 
-void AddOn::initialize(LSHandle *lsHandle)
+void AddOn::initialize(void *lsHandle)
 {
     if (plugin_)
     {
@@ -158,7 +90,7 @@ void AddOn::notifySolutionDisabled(std::string deviceKey, const std::vector<std:
     plugin_->notifySolutionDisabled(deviceKey, solutions);
 }
 
-void AddOn::notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo)
+void AddOn::notifyDeviceAdded(const void *deviceInfo)
 {
     if (!plugin_)
     {
@@ -168,7 +100,7 @@ void AddOn::notifyDeviceAdded(const DEVICE_LIST_T &deviceInfo)
     plugin_->notifyDeviceAdded(deviceInfo);
 }
 
-void AddOn::notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo)
+void AddOn::notifyDeviceRemoved(const void *deviceInfo)
 {
     if (!plugin_)
     {
@@ -177,8 +109,7 @@ void AddOn::notifyDeviceRemoved(const DEVICE_LIST_T &deviceInfo)
     plugin_->notifyDeviceRemoved(deviceInfo);
 }
 
-void AddOn::notifyDeviceListUpdated(std::string deviceType,
-                                    const std::vector<DEVICE_LIST_T> &deviceList)
+void AddOn::notifyDeviceListUpdated(std::string deviceType, const void *deviceList)
 {
     if (!plugin_)
     {
@@ -191,19 +122,18 @@ std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
 {
     if (!plugin_)
     {
-        std::vector<std::string> empty{};
-        return empty;
+        return std::vector<std::string>{};
     }
     return plugin_->getEnabledSolutionList(deviceKey);
 }
 
 int AddOn::Service::getDeviceCounts(std::string deviceType)
 {
-    return AddOn::getDeviceCounts(deviceType);
+    return DeviceManager::getInstance().getDeviceCounts(deviceType);
 }
 
-bool AddOn::Service::updateDeviceList(std::string deviceType,
-                                      const std::vector<DEVICE_LIST_T> &deviceList)
+bool AddOn::Service::updateDeviceList(std::string deviceType, const void *deviceList)
 {
-    return AddOn::updateDeviceList(deviceType, deviceList);
+    return DeviceManager::getInstance().updateDeviceList(
+        deviceType, *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
 }

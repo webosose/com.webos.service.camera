@@ -20,7 +20,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
-#include "appcast_client.h"
+#include "addon.h"
 #include "camera_types.h"
 #include "luna-service2/lunaservice.h"
 #include <map>
@@ -41,9 +41,10 @@ class DeviceManager
 {
 private:
     std::map<int, DEVICE_STATUS> deviceMap_;
-    int findDevNum(int);
-    AppCastClient *appCastClient_{nullptr};
     LSHandle *lshandle_{nullptr};
+    std::shared_ptr<AddOn> pAddon_;
+
+    int findDevNum(int);
     bool isDeviceIdValid(int deviceid);
 
 public:
@@ -72,7 +73,7 @@ public:
     DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &, LSHandle *sh = nullptr);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
 
-    void printCameraStatus();
+    void setAddon(std::shared_ptr<AddOn> &addon) { pAddon_ = addon; }
 };
 
 #endif /*SERVICE_DEVICE_MANAGER_H_*/

@@ -39,59 +39,26 @@ pkg_check_modules(JPEG REQUIRED libjpeg)
 include_directories(${JPEG_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
 
-include_directories(${CMAKE_SOURCE_DIR}/src/plugins/solution/face_detection_aif)
 include_directories(${CMAKE_SOURCE_DIR}/src/services/solution)
-include_directories(${CMAKE_SOURCE_DIR}/src/common/shm)
 
 # Camera Solution Service
 set (SRC_LIST
-    ${CMAKE_SOURCE_DIR}/src/services/solution/CameraSolutionService.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution.cpp
-    ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution_async.cpp
-    ${CMAKE_SOURCE_DIR}/src/common/shm/camshm.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution_service.cpp
     )
-
-# plugins/solution
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/plugins/solution/face_detection_aif/face_detection_aif.cpp
-    )
-
-### SOLUTION MANAGER Add AI Framework Start ###
-# find needed packages
-find_package(PkgConfig)
-pkg_check_modules(TFLITE REQUIRED tensorflowlite)
-pkg_check_modules(OPENCV REQUIRED opencv4)
-pkg_check_modules(RAPIDJSON REQUIRED RapidJSON)
-
-# include directories
-include_directories(
-    ${TFLITE_INCLUDE_DIRS}
-    ${OPENCV_INCLUDE_DIRS}
-    ${RAPIDJSON_INCLUDE_DIRS}
-)
-
-# link directories
-link_directories(
-    ${TFLITE_LIBRARY_DIRS}
-    ${OPENCV_LIBRARY_DIRS}
-    ${RAPIDJSON_LIBRARY_DIRS}
-)
-### SOLUTION MANAGER Add AI Framework End ###
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
 target_link_libraries(${PROJECT_NAME}
-                      ${GLIB2_LDFLAGS}
-                      ${PBNJSON_CPP_LDFLAGS}
-                      ${LS2++_LDFLAGS}
-                      ${PMLOGLIB_LDFLAGS}
-                      ${JPEG_LDFLAGS}
-                      ${OPENCV_LIBRARIES}
-                      edgeai-vision
-                      pthread
-                      )
+                        ${GLIB2_LDFLAGS}
+                        ${PBNJSON_CPP_LDFLAGS}
+                        ${LS2++_LDFLAGS}
+                        ${PMLOGLIB_LDFLAGS}
+                        ${CMAKE_DL_LIBS}
+                        pthread
+                        camera_common
+                        )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
 
 add_subdirectory(files)
+add_subdirectory(lib)

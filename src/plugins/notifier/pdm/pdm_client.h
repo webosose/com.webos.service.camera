@@ -17,25 +17,46 @@
 #ifndef PDM_CLIENT
 #define PDM_CLIENT
 
-#include "camera_types.h"
-#include "device_notifier.h"
+#include "plugin_interface.hpp"
 #include <functional>
 #include <luna-service2/lunaservice.hpp>
 
-class PDMClient : public DeviceNotifier
+#ifdef __cplusplus
+extern "C"
 {
-private:
-    static bool subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
-                                      void *ctx);
-    LSHandle *lshandle_;
+#endif
 
-public:
-    PDMClient() { lshandle_ = nullptr; }
-    virtual ~PDMClient() {}
-    virtual void subscribeToClient(handlercb, GMainLoop *loop) override;
-    void setLSHandle(LSHandle *);
+    class PDMClient : public INotifier
+    {
+    private:
+        static bool subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
+                                          void *ctx);
+        LSHandle *lshandle_;
 
-    DeviceNotifier::handlercb subscribeToDeviceInfoCb_;
-};
+    public:
+        PDMClient()
+        {
+            lshandle_        = nullptr;
+            updateDeviceList = nullptr;
+        }
+        virtual ~PDMClient() {}
+
+    public:
+        virtual bool queryInterface(const char *szName, void **pInterface) override
+        {
+            *pInterface = static_cast<void *>(static_cast<INotifier *>(this));
+            return true;
+        }
+
+        virtual void subscribeToClient(handlercb cb, void *mainLoop) override;
+        virtual void setLSHandle(void *lshandle) override;
+
+    public:
+        handlercb updateDeviceList;
+    };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

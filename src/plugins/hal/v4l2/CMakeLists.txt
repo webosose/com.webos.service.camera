@@ -14,7 +14,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(v4l2-camera-plugin CXX)
+project(hal-v4l2 CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -22,6 +22,8 @@ set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/v4l2_camera_plugin.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${SRC})
 
-set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
+target_link_libraries(${PROJECT_NAME}
+                      ${PMLOGLIB_LDFLAGS}
+                      )
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR})
+install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR}/camera)

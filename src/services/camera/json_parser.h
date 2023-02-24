@@ -292,7 +292,7 @@ public:
     MethodReply getMethodReply() const { return objreply_; }
 
     void getInfoObject(const char *, const char *);
-    std::string createInfoObjectJsonString() const;
+    std::string createInfoObjectJsonString(bool supported) const;
 
 private:
     std::string str_deviceid_;

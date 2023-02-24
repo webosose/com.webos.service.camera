@@ -16,8 +16,9 @@
 #pragma once
 
 // System dependencies
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "luna-service2/lunaservice.hpp"
+#include "plugin_interface.hpp"
 #include <atomic>
 #include <string>
 
@@ -35,8 +36,7 @@ enum Property
     LG_SOLUTION_SNAPSHOT = 0x0002
 };
 
-struct CameraSolutionEvent;
-class CameraSolution
+class CameraSolution : public ISolution
 {
 public:
     CameraSolution(void) {}
@@ -46,15 +46,15 @@ public:
     // interface - pre-defined (could be overridden)
     virtual void setEventListener(CameraSolutionEvent *pEvent) { pEvent_ = pEvent; }
     virtual int32_t getMetaSizeHint(void) { return 0; }
-    virtual void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
+    virtual void initialize(const void *streamFormat, int shmKey, void *lsHandle);
     virtual void setEnableValue(bool enableValue) { enableStatus_ = enableValue; };
-    virtual Property getProperty() { return solutionProperty_; };
+    virtual int getProperty() { return solutionProperty_; };
     virtual bool isEnabled(void) { return enableStatus_; };
     // interfce - need to override
-    virtual std::string getSolutionStr(void)        = 0;
-    virtual void processForSnapshot(buffer_t inBuf) = 0;
-    virtual void processForPreview(buffer_t inBuf)  = 0;
-    virtual void release(void)                      = 0;
+    virtual std::string getSolutionStr(void)           = 0;
+    virtual void processForSnapshot(const void *inBuf) = 0;
+    virtual void processForPreview(const void *inBuf)  = 0;
+    virtual void release(void)                         = 0;
 
 protected:
     Property solutionProperty_{LG_SOLUTION_NONE};

@@ -18,8 +18,8 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "device_manager.h"
-#include "CameraHalProxy.h"
 #include "addon.h" /* calls platform specific functionality if addon interface has been implemented */
+#include "camera_hal_proxy.h"
 #include "command_manager.h"
 #include "event_notification.h"
 #include "whitelist_checker.h"
@@ -178,16 +178,17 @@ int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
                deviceMap_.size());
 
     // Push platform-specific device private data associated with this device */
-    AddOn::notifyDeviceAdded(deviceInfo);
+    if (pAddon_ && pAddon_->hasImplementation())
+        pAddon_->notifyDeviceAdded(&deviceInfo);
 
-    if (false == AddOn::hasImplementation())
+    if (!pAddon_ || false == pAddon_->hasImplementation())
     {
         WhitelistChecker::check(deviceInfo.strProductName, deviceInfo.strVendorName);
     }
 
     if (lshandle_)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "Subscription reply : EventType::EVENT_TYPE_CONNECT");
+        PMLOG_INFO(CONST_MODULE_DM, "Subscription reply : EventType::EVENT_TYPE_CONNECT");
         EventNotification obj;
         obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_CONNECT);
     }
@@ -215,12 +216,14 @@ bool DeviceManager::removeDevice(int deviceid)
     // Pop platform-specific private data associated with this device.
     DEVICE_LIST_T devInfo = deviceMap_[deviceid].stList;
     deviceMap_.erase(deviceid);
-    AddOn::notifyDeviceRemoved(devInfo);
+
+    if (pAddon_ && pAddon_->hasImplementation())
+        pAddon_->notifyDeviceRemoved(&devInfo);
     PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %zd", deviceMap_.size());
 
     if (lshandle_)
     {
-        PMLOG_INFO(CONST_MODULE_PC, "Subscription reply : EventType::EVENT_TYPE_DISCONNECT");
+        PMLOG_INFO(CONST_MODULE_DM, "Subscription reply : EventType::EVENT_TYPE_DISCONNECT");
         EventNotification obj;
         obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_DISCONNECT);
     }
@@ -238,7 +241,7 @@ bool DeviceManager::updateDeviceList(std::string deviceType,
         if (curDev.second.stList.strDeviceType == deviceType)
         {
             if (std::find_if(deviceList.begin(), deviceList.end(),
-                             [=](const DEVICE_LIST_T &dev) {
+                             [&](const DEVICE_LIST_T &dev) {
                                  return dev.strDeviceNode == curDev.second.stList.strDeviceNode;
                              }) == deviceList.end())
             {
@@ -255,7 +258,7 @@ bool DeviceManager::updateDeviceList(std::string deviceType,
     for (auto &newDev : deviceList)
     {
         if (std::find_if(deviceMap_.begin(), deviceMap_.end(),
-                         [=](const std::pair<int, DEVICE_STATUS> &s)
+                         [&](const std::pair<int, DEVICE_STATUS> &s)
                          {
                              return (s.second.stList.strDeviceType == deviceType) &&
                                     (s.second.stList.strDeviceNode == newDev.strDeviceNode);
@@ -265,7 +268,8 @@ bool DeviceManager::updateDeviceList(std::string deviceType,
         }
     }
 
-    AddOn::notifyDeviceListUpdated(deviceType, deviceList);
+    if (pAddon_ && pAddon_->hasImplementation())
+        pAddon_->notifyDeviceListUpdated(deviceType, static_cast<const void *>(&deviceList));
     return true;
 }
 

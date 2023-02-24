@@ -16,7 +16,7 @@
 
 project(hal_test_app CXX)
 
-include_directories(${CMAKE_SOURCE_DIR}/src/services/control/hal)
+include_directories(${CMAKE_SOURCE_DIR}/src/services/hal/hal_if)
 
 set(SRC camera_hal_tests.cpp)
 

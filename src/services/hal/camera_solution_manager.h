@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "camera_hal_if_types.h"
+#include "camera_hal_types.h"
 #include "camera_types.h"
 #include <list>
 #include <memory>
@@ -53,10 +53,6 @@ public:
     void getEnabledSolutionInfo(SolutionNames &names);
     DEVICE_RETURN_CODE_T enableCameraSolution(const SolutionNames &names);
     DEVICE_RETURN_CODE_T disableCameraSolution(const SolutionNames &names);
-
-public:
-    static void getSupportedSolutionList(std::vector<std::string> &supportedList,
-                                         std::vector<std::string> &enabledList);
 
 private:
     SolutionList lstSolution_;

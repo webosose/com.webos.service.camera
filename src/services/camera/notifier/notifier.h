@@ -17,33 +17,36 @@
 #ifndef NOTIFIER_H_
 #define NOTIFIER_H_
 
-#include "appcast_client.h"
-#include "camera_types.h"
-#include "device_notifier.h"
 #include "luna-service2/lunaservice.hpp"
-#include "pdm_client.h"
 #include <functional>
 #include <iostream>
+#include <map>
+#include <plugin_factory.hpp>
+#include <plugin_interface.hpp>
 
 class Notifier
 {
 private:
-    PDMClient pdm_;
-    AppCastClient appcast_;
     LSHandle *lshandle_;
-    DeviceNotifier *p_client_notifier_;
+    PluginFactory *pPluginFactory_{nullptr};
+    std::vector<IFeaturePtr> pFeatureList_;
 
 public:
     Notifier()
     {
-        lshandle_          = nullptr;
-        p_client_notifier_ = nullptr;
+        lshandle_       = nullptr;
+        pPluginFactory_ = new PluginFactory();
     }
-    virtual ~Notifier() {}
+    virtual ~Notifier();
 
-    void addNotifier(NotifierClient, GMainLoop *loop);
-    void registerCallback(DeviceNotifier::handlercb, GMainLoop *loop);
+    void addNotifiers(GMainLoop *loop);
     void setLSHandle(LSHandle *);
+
+private:
+    void registerCallback(INotifier *, INotifier::handlercb, GMainLoop *loop);
+
+private:
+    std::map<std::string, INotifier *> notifierMap_;
 };
 
 #endif /* NOTIFIER_H_ */

@@ -14,8 +14,8 @@
  */
 
 #include "face_detection_aif.hpp"
-#include "camera_solution_event.h"
-#include "camera_types.h"
+#include "camera_log.h"
+#include "plugin.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <jpeglib.h>
@@ -27,7 +27,7 @@ using namespace cv;
 
 namespace rj = rapidjson;
 
-#define LOG_TAG "FaceDetectionAIF"
+#define LOG_TAG "SOLUTION:FaceDetectionAIF"
 
 #define AIF_PARAM_FILE "/home/root/aif_param.json"
 
@@ -48,7 +48,7 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
 
 std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION; }
 
-void FaceDetectionAIF::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
+void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
     PMLOG_INFO(LOG_TAG, "");
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
@@ -82,7 +82,7 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat, int shmKey, LSHa
     PMLOG_INFO(LOG_TAG, "aif_param = %s", param.c_str());
     EdgeAIVision::getInstance().createDetector(type, param);
 
-    CameraSolution::initialize(streamFormat, shmKey, sh);
+    CameraSolution::initialize(streamFormat, shmKey, lsHandle);
     PMLOG_INFO(LOG_TAG, "");
 }
 
@@ -165,36 +165,9 @@ void FaceDetectionAIF::processing(void)
         jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
 
         if (pEvent_ && getMetaSizeHint() > 0)
-            (pEvent_.load())->onDone(jsonOutObj);
+            (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
 
-        // Subscription reply
-        if (sh_)
-        {
-            int num_subscribers = 0;
-            std::string reply;
-            LSError lserror;
-            LSErrorInit(&lserror);
-
-            {
-                std::string subskey_ = "cameraSolution";
-                num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
-                PMLOG_INFO(LOG_TAG, "cnt %d", num_subscribers);
-
-                if (num_subscribers > 0)
-                {
-                    reply = jvalue_stringify(jsonOutObj);
-                    if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
-                    {
-                        LSErrorPrint(&lserror, stderr);
-                        LSErrorFree(&lserror);
-                        PMLOG_INFO(LOG_TAG, "subscription reply failed");
-                        return;
-                    }
-                    PMLOG_INFO(LOG_TAG, "subscription reply ok");
-                }
-            }
-            LSErrorFree(&lserror);
-        }
+        sendReply(jsonOutObj);
 
         j_release(&jsonOutObj);
     } while (0);
@@ -207,36 +180,11 @@ void FaceDetectionAIF::postProcessing(void)
     jvalue_ref jsonFaceArray = jarray_create(nullptr);
     jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
     if (pEvent_ && getMetaSizeHint() > 0)
-        (pEvent_.load())->onDone(jsonOutObj);
+        (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
 
-    // Subscription reply
-    if (sh_)
-    {
-        int num_subscribers = 0;
-        std::string reply;
-        LSError lserror;
-        LSErrorInit(&lserror);
+    sendReply(jsonOutObj);
 
-        {
-            std::string subskey_ = "cameraSolution";
-            num_subscribers      = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
-            PMLOG_INFO(LOG_TAG, "cnt %d", num_subscribers);
-
-            if (num_subscribers > 0)
-            {
-                reply = jvalue_stringify(jsonOutObj);
-                if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
-                {
-                    LSErrorPrint(&lserror, stderr);
-                    LSErrorFree(&lserror);
-                    PMLOG_INFO(LOG_TAG, "subscription reply failed");
-                    return;
-                }
-                PMLOG_INFO(LOG_TAG, "subscription reply ok");
-            }
-        }
-        LSErrorFree(&lserror);
-    }
+    j_release(&jsonOutObj);
 }
 
 bool FaceDetectionAIF::detectFace(void)
@@ -300,4 +248,62 @@ bool FaceDetectionAIF::decodeJpeg(void)
     jpeg_destroy_decompress(&cinfo);
 
     return true;
+}
+
+void FaceDetectionAIF::sendReply(jvalue_ref jsonObj)
+{
+    if (sh_)
+    {
+        int num_subscribers = 0;
+        std::string reply;
+        LSError lserror;
+        LSErrorInit(&lserror);
+
+        num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, SOL_SUBSCRIPTION_KEY);
+        PMLOG_DEBUG("cnt %d", num_subscribers);
+
+        if (num_subscribers > 0)
+        {
+            const char *str = jvalue_stringify(jsonObj);
+            if (str)
+                reply = str;
+            if (!LSSubscriptionReply(sh_, SOL_SUBSCRIPTION_KEY, reply.c_str(), &lserror))
+            {
+                LSErrorPrint(&lserror, stderr);
+                LSErrorFree(&lserror);
+                PMLOG_ERROR(LOG_TAG, "subscription reply failed");
+                return;
+            }
+            PMLOG_DEBUG("subscription reply ok");
+        }
+
+        LSErrorFree(&lserror);
+    }
+}
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+extern "C"
+{
+    IPlugin *plugin_init(void)
+    {
+        Plugin *plg = new Plugin();
+        plg->setName("FaceDetectionAIF");
+        plg->setDescription("Face Detection");
+        plg->setCategory("SOLUTION");
+        plg->setVersion("1.0.0");
+        plg->setOrganization("LG Electronics.");
+        plg->registerFeature<FaceDetectionAIF>("FaceDetection");
+
+        return plg;
+    }
+
+    void __attribute__((constructor)) plugin_load(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
+
+    void __attribute__((destructor)) plugin_unload(void)
+    {
+        printf("%s:%s\n", __FILENAME__, __PRETTY_FUNCTION__);
+    }
 }

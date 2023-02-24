@@ -16,6 +16,7 @@
 
 #include "camera_hal_if.h"
 #include "camera_base_wrapper.h"
+#include "camera_hal_if_types.h"
 #include "camera_hal_types.h"
 #include <dlfcn.h>
 #include <new>
@@ -178,7 +179,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_set_format(void *h, stream_format_t stream_format)
+    int camera_hal_if_set_format(void *h, const void *stream_format)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -208,7 +209,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_get_format(void *h, stream_format_t *stream_format)
+    int camera_hal_if_get_format(void *h, void *stream_format)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -238,7 +239,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_set_buffer(void *h, int NoBuffer, int IOMode, buffer_t **usrpbufs)
+    int camera_hal_if_set_buffer(void *h, int NoBuffer, int IOMode, void **usrpbufs)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -268,7 +269,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_get_buffer(void *h, buffer_t *buf)
+    int camera_hal_if_get_buffer(void *h, void *buf)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -298,7 +299,7 @@ extern "C"
         return retVal;
     }
 
-    int camera_hal_if_release_buffer(void *h, buffer_t buf)
+    int camera_hal_if_release_buffer(void *h, const void *buf)
     {
         int retVal = CAMERA_ERROR_NONE;
 

@@ -54,10 +54,17 @@ public:
     virtual ~FaceDetectionAIF(void);
 
 public:
+    virtual bool queryInterface(const char *szName, void **ppInterface) override
+    {
+        *ppInterface = static_cast<void *>(static_cast<ISolution *>(this));
+        return true;
+    }
+
+public:
     // interface override
     virtual int32_t getMetaSizeHint(void) override;
     virtual std::string getSolutionStr(void) override;
-    virtual void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh) override;
+    virtual void initialize(const void *streamFormat, int shmKey, void *lshandle) override;
     virtual void release(void) override;
     // interface override from CameraSolutionAsync
     virtual void processing(void) override;
@@ -66,6 +73,7 @@ public:
 private:
     bool detectFace(void);
     bool decodeJpeg(void);
+    void sendReply(jvalue_ref jsonObj);
 
 private:
     RawImage oDecodedImage_;
