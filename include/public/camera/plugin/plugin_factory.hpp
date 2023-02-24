@@ -178,7 +178,17 @@ protected:
 class PluginFactory
 {
 public:
-    PluginFactory(void) { oRegirsry_.readPluginRegistry(); }
+    PluginFactory(void)
+    {
+        try
+        {
+            oRegirsry_.readPluginRegistry();
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Error: " << e.what() << std::endl;
+        }
+    }
     ~PluginFactory(void) {}
 
 public:

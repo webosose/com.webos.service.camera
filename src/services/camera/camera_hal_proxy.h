@@ -23,8 +23,6 @@
 #include <string>
 #include <thread>
 
-using namespace nlohmann;
-
 // Please update the following if avcaptureinf/src/VideoCaptureInf_impl.cpp is updated.
 #define COMMAND_TIMEOUT 2000 // ms
 
@@ -41,6 +39,7 @@ class CameraHalProxy
     unsigned long subscribeKey_{0};
     void *cookie{nullptr};
     std::string uid_;
+    using json = nlohmann::json;
     json jOut;
 
     enum class State

@@ -175,7 +175,7 @@ bool CameraService::open(LSMessage &message)
         err_id = DEVICE_ERROR_JSON_PARSING;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
-    else if (!pAddon_->isAppPermission(app_id))
+    else if (pAddon_ && !pAddon_->isAppPermission(app_id))
     {
         PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::App Permission Fail\n");
         err_id = DEVICE_ERROR_APP_PERMISSION;

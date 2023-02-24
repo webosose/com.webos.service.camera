@@ -612,7 +612,15 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, timeout);
     PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
 
-    jOut = json::parse(resp, nullptr, false);
+    try
+    {
+        jOut = json::parse(resp);
+    }
+    catch (const std::exception &e)
+    {
+        PMLOG_ERROR(CONST_MODULE_CHP, "Error parsing JSON: %s", e.what());
+    }
+
     if (jOut.is_discarded())
     {
         PMLOG_ERROR(CONST_MODULE_CHP, "payload parsing error!");

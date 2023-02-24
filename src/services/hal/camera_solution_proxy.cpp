@@ -24,7 +24,7 @@
 #include <nlohmann/json.hpp>
 #include <system_error>
 
-using namespace nlohmann;
+using json = nlohmann::json;
 
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";
 const std::string CameraSolutionConnectionBaseId = "com.webos.camerasolution.";
@@ -68,7 +68,14 @@ CameraSolutionProxy::~CameraSolutionProxy()
     // If release() has not been called before
     if (process_)
     {
-        release();
+        try
+        {
+            release();
+        }
+        catch (const std::exception &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_CSP, "Error: %s", e.what());
+        }
     }
 }
 
@@ -328,7 +335,7 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
     PMLOG_INFO(CONST_MODULE_CSP, "resp : %s", resp.c_str());
 
-    json j = json::parse(resp, nullptr, false);
+    json j = json::parse(resp);
     if (j.is_discarded())
     {
         PMLOG_ERROR(CONST_MODULE_CSP, "resp parsing error!");
