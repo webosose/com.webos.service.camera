@@ -26,7 +26,7 @@ struct IPlugin
     virtual const char *getCategory(void)                = 0;
     virtual const char *getVersion(void)                 = 0;
     virtual const char *getOrganization(void)            = 0;
-    virtual const size_t getFeatureCount(void)           = 0;
+    virtual size_t getFeatureCount(void)                 = 0;
     virtual const char *getFeatureName(const int nIndex) = 0;
     virtual IFeature *createFeature(const char *szName)  = 0;
 };

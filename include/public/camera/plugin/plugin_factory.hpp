@@ -23,17 +23,24 @@ struct PluginInfo
 
     PluginInfo(IPlugin *pPlugin, std::string strPath)
     {
-        strPath_         = strPath;
-        strName_         = pPlugin->getName();
-        strDescription_  = pPlugin->getDescription();
-        strCategory_     = pPlugin->getCategory();
-        strVersion_      = pPlugin->getVersion();
-        strOrganization_ = pPlugin->getOrganization();
+        strPath_ = strPath;
+        if (pPlugin->getName() != nullptr)
+            strName_ = pPlugin->getName();
+        if (pPlugin->getDescription() != nullptr)
+            strDescription_ = pPlugin->getDescription();
+        if (pPlugin->getCategory() != nullptr)
+            strCategory_ = pPlugin->getCategory();
+        if (pPlugin->getVersion() != nullptr)
+            strVersion_ = pPlugin->getVersion();
+        if (pPlugin->getOrganization() != nullptr)
+            strOrganization_ = pPlugin->getOrganization();
         for (size_t i = 0; i < pPlugin->getFeatureCount(); ++i)
         {
-            lstFeatures_.emplace_back(pPlugin->getFeatureName(i));
+            if (pPlugin->getFeatureName(i) != nullptr)
+                lstFeatures_.emplace_back(pPlugin->getFeatureName(i));
         }
     }
+
     ~PluginInfo(void) {}
     std::string strPath_;
     std::string strName_;
@@ -127,6 +134,9 @@ public:
     std::vector<std::string> getFeatureList(const char *szCategoryName)
     {
         std::vector<std::string> list;
+        if (szCategoryName == nullptr)
+            return list;
+
         for (auto &p : lstPluginInfo_)
         {
             if (p->strCategory_ == szCategoryName)
@@ -182,14 +192,20 @@ public:
         void *handle = dlopen(szPath, RTLD_LAZY);
         if (!handle)
         {
-            std::cout << "dlopen() failed: " << dlerror() << std::endl;
+            char *error{nullptr};
+            if ((error = dlerror()) != nullptr)
+                std::cout << "dlopen() failed: " << dlerror() << std::endl;
             return nullptr;
         }
 
         auto plugin_init = (plugin_entrypoint)dlsym(handle, "plugin_init");
         if (!plugin_init)
         {
-            std::cout << "dlsym() failed @1: " << dlerror() << std::endl;
+            char *error{nullptr};
+            if ((error = dlerror()) != nullptr)
+                std::cout << "dlsym() failed @1: " << dlerror() << std::endl;
+
+            dlclose(handle);
             return nullptr;
         }
 

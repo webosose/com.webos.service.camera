@@ -16,16 +16,37 @@ public:
     virtual ~Plugin(void) {}
 
 public:
-    void setName(const char *szName) { strName_ = szName; }
-    void setDescription(const char *szDescription) { strDescription_ = szDescription; }
-    void setCategory(const char *szCategory) { strCategory_ = szCategory; }
-    void setVersion(const char *szVersion) { strVersion_ = szVersion; }
-    void setOrganization(const char *szOrganization) { strOrganization_ = szOrganization; }
+    void setName(const char *szName)
+    {
+        if (szName != nullptr)
+            strName_ = szName;
+    }
+    void setDescription(const char *szDescription)
+    {
+        if (szDescription != nullptr)
+            strDescription_ = szDescription;
+    }
+    void setCategory(const char *szCategory)
+    {
+        if (szCategory != nullptr)
+            strCategory_ = szCategory;
+    }
+    void setVersion(const char *szVersion)
+    {
+        if (szVersion != nullptr)
+            strVersion_ = szVersion;
+    }
+    void setOrganization(const char *szOrganization)
+    {
+        if (szOrganization != nullptr)
+            strOrganization_ = szOrganization;
+    }
     template <typename T>
     void registerFeature(const char *szName)
     {
-        lstFeatures_.push_back(std::make_pair(
-            szName, +[](void) -> void * { return new (std::nothrow) T; }));
+        if (szName != nullptr)
+            lstFeatures_.push_back(std::make_pair(
+                szName, +[](void) -> void * { return new (std::nothrow) T; }));
     }
 
 public:
@@ -34,7 +55,7 @@ public:
     virtual const char *getCategory(void) override { return strCategory_.c_str(); }
     virtual const char *getVersion(void) override { return strVersion_.c_str(); }
     virtual const char *getOrganization(void) override { return strOrganization_.c_str(); }
-    virtual const size_t getFeatureCount(void) override { return lstFeatures_.size(); }
+    virtual size_t getFeatureCount(void) override { return lstFeatures_.size(); }
     virtual const char *getFeatureName(const int nIndex) override
     {
         return lstFeatures_[nIndex].first.c_str();
