@@ -407,7 +407,7 @@ void CameraSolutionProxy::stopThread()
                         e.code().value(), e.what());
         }
         threadJob_.reset();
-        PMLOG_INFO(CONST_MODULE_CSP, "Thread Closed. queue job size %d", queueJob_.size());
+        PMLOG_INFO(CONST_MODULE_CSP, "Thread Closed. queue job size %zd", queueJob_.size());
     }
 }
 
