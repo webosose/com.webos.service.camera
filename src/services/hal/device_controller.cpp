@@ -215,7 +215,11 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
             PMLOG_ERROR(CONST_MODULE_DC, "setFormat failed");
 
             // if set format fails then reset format to preview format
-            static_cast<IHal *>(cam_handle_)->setFormat(&streamformat);
+            retval = static_cast<IHal *>(cam_handle_)->setFormat(&streamformat);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "setFormat with preview format failed");
+            }
 
             // save pixel format for saving captured image
             epixelformat_ = streamformat.pixel_format;
@@ -241,14 +245,6 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
         {.fd = fd, .events = POLLIN},
     };
 
-    // get current saved format for device
-    stream_format_t streamformat;
-    static_cast<IHal *>(cam_handle_)->getFormat(&streamformat);
-    PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
-               streamformat.stream_height);
-    // int framesize =
-    //     streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
-
     int timeout           = 10000;
     buffer_t frame_buffer = {0};
 
@@ -256,7 +252,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
     {
         if ((retval = poll(poll_set, 1, timeout)) > 0)
         {
-            static_cast<IHal *>(cam_handle_)->getBuffer(&frame_buffer);
+            retval = static_cast<IHal *>(cam_handle_)->getBuffer(&frame_buffer);
             if (CAMERA_ERROR_NONE != retval)
             {
                 PMLOG_ERROR(CONST_MODULE_DC, "getBuffer failed");
@@ -282,7 +278,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
                 writeImageToFile(frame_buffer.start, frame_buffer.length))
                 return DEVICE_ERROR_CANNOT_WRITE;
 
-            static_cast<IHal *>(cam_handle_)->releaseBuffer(&frame_buffer);
+            retval = static_cast<IHal *>(cam_handle_)->releaseBuffer(&frame_buffer);
             if (retval != CAMERA_ERROR_NONE)
             {
                 PMLOG_ERROR(CONST_MODULE_DC, "releaseBuffer failed");
@@ -349,16 +345,6 @@ void DeviceControl::previewThread()
     // poll for data on buffers and save captured image
     // lock so that if stop preview is called, first this cycle should complete
     std::lock_guard<std::mutex> guard(tMutex);
-
-    // get current saved format for device
-    stream_format_t streamformat;
-    static_cast<IHal *>(cam_handle_)->getFormat(&streamformat);
-    PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
-               streamformat.stream_height);
-
-    // "frame_size" is currently not used actually.
-    // int framesize =
-    //        streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
 
     int debug_counter  = 0;
     int debug_interval = 100; // frames
@@ -504,7 +490,13 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
     // get current saved format for device
     stream_format_t streamformat;
-    static_cast<IHal *>(handle)->getFormat(&streamformat);
+    auto retval = static_cast<IHal *>(handle)->getFormat(&streamformat);
+    if (retval != CAMERA_ERROR_NONE)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "getFormat failed");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
     PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
                streamformat.stream_height);
 
@@ -882,7 +874,10 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
 
     auto retval = static_cast<IHal *>(handle)->getProperties(&out_params);
     if (retval != CAMERA_ERROR_NONE)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "getProperties failed");
         return DEVICE_ERROR_UNKNOWN;
+    }
 
     // update stGetData
     for (int i = 0; i < PROPERTY_END; i++)
@@ -908,7 +903,12 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
         in_params.stGetData.data[i][QUERY_VALUE] = inparams->stGetData.data[i][QUERY_VALUE];
     }
 
-    static_cast<IHal *>(handle)->setProperties(&in_params);
+    auto retval = static_cast<IHal *>(handle)->setProperties(&in_params);
+    if (retval != CAMERA_ERROR_NONE)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "setProperties failed");
+        return DEVICE_ERROR_UNKNOWN;
+    }
 
     return DEVICE_OK;
 }
@@ -929,7 +929,10 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, CAMERA_FORMAT sforma
 
     auto ret = static_cast<IHal *>(handle)->setFormat(&in_format);
     if (ret != CAMERA_ERROR_NONE)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "setFormat failed");
         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
+    }
 
     return DEVICE_OK;
 }
@@ -938,7 +941,12 @@ DEVICE_RETURN_CODE_T DeviceControl::getFormat(void *handle, CAMERA_FORMAT *pform
 {
     // get current saved format for device
     stream_format_t streamformat;
-    static_cast<IHal *>(handle)->getFormat(&streamformat);
+    auto ret = static_cast<IHal *>(handle)->getFormat(&streamformat);
+    if (ret != CAMERA_ERROR_NONE)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "getFormat failed");
+        return DEVICE_ERROR_UNKNOWN;
+    }
     pformat->nHeight = streamformat.stream_height;
     pformat->nWidth  = streamformat.stream_width;
     pformat->eFormat = getCameraFormat(streamformat.pixel_format);
