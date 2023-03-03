@@ -54,8 +54,6 @@ CameraHalService::CameraHalService(const char *service_name)
     LS_CATEGORY_METHOD(subscribe)
     LS_CATEGORY_END;
 
-    pDeviceControl = std::make_unique<DeviceControl>();
-
     // attach to mainloop and run it
     attachToLoop(main_loop_ptr_.get());
 
@@ -78,6 +76,7 @@ bool CameraHalService::createHandle(LSMessage &message)
         device_type = parsed[CONST_PARAM_NAME_SUBSYSTEM].asString();
     }
 
+    pDeviceControl           = std::make_unique<DeviceControl>();
     DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(&pCamHandle, device_type);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
@@ -539,7 +538,7 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_CHS, "device_type(%s)", device_type.c_str());
 
     DEVICE_RETURN_CODE_T ret =
-        pDeviceControl->getDeviceInfo(strdevicenode, device_type, &cameraInfo);
+        DeviceControl::getDeviceInfo(strdevicenode, device_type, &cameraInfo);
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEVICE_TYPE),
