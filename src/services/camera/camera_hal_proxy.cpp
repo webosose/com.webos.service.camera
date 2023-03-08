@@ -107,13 +107,20 @@ CameraHalProxy::~CameraHalProxy()
     PMLOG_INFO(CONST_MODULE_CHP, "state_ %d", static_cast<int>(state_));
 
     unsubscribe();
-    if (state_ == State::CREATE)
+    try
     {
-        destroyHandle();
+        if (state_ == State::CREATE)
+        {
+            destroyHandle();
+        }
+        else if (state_ == State::INIT)
+        {
+            finishProcess();
+        }
     }
-    else if (state_ == State::INIT)
+    catch (const std::logic_error &e)
     {
-        finishProcess();
+        PMLOG_ERROR(CONST_MODULE_CHP, "Caught a std::logic_error meaning %s", e.what());
     }
 
     g_main_loop_quit(loop_);

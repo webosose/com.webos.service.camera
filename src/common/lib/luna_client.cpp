@@ -202,7 +202,6 @@ bool LunaClient::registerToService(const char *serviceName, RegisterHandler hand
         {
             RegisterHandlerWrapper *wrapper = (RegisterHandlerWrapper *)d;
             wrapper->callback(s, b, wrapper->data);
-            delete wrapper;
             return true;
         },
         (void *)wrapper, NULL, &error);
@@ -211,6 +210,10 @@ bool LunaClient::registerToService(const char *serviceName, RegisterHandler hand
     {
         PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
         delete wrapper;
+    }
+    else
+    {
+        registerHandlers_[serviceName] = std::unique_ptr<RegisterHandlerWrapper>(wrapper);
     }
 
     PMLOG_DEBUG("ret=%d", ret);
