@@ -559,7 +559,8 @@ bool CameraHalProxy::subscribe()
         else
         {
             PMLOG_INFO(CONST_MODULE_CHP, "[ServerStatus cb] cancel server status");
-            if (!LSCancelServerStatus(input_handle, self->cookie, nullptr))
+            if (self != nullptr && self->cookie != nullptr &&
+                !LSCancelServerStatus(input_handle, self->cookie, nullptr))
             {
                 PMLOG_ERROR(CONST_MODULE_CHP, "[ServerStatus cb]  error LSCancelServerStatus\n");
             }

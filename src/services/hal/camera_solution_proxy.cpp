@@ -283,7 +283,8 @@ bool CameraSolutionProxy::subscribe()
                 else
                 {
                     PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] cancel server status");
-                    if (!LSCancelServerStatus(handle, self->cookie, nullptr))
+                    if (self != nullptr && self->cookie != nullptr &&
+                        !LSCancelServerStatus(handle, self->cookie, nullptr))
                     {
                         PMLOG_ERROR(CONST_MODULE_CSP,
                                     "[ServerStatus cb] error LSCancelServerStatus\n");
