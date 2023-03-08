@@ -561,7 +561,8 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
             if (!usrpbufs_)
             {
                 PMLOG_ERROR(CONST_MODULE_DC, "USERPTR buffer allocation failed \n");
-                IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                PMLOG_INFO(CONST_MODULE_DC, "CloseShmemory %d", status);
                 return DEVICE_ERROR_UNKNOWN;
             }
             IPCSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmsystem_, frame_count,
@@ -574,8 +575,9 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
             {
                 PMLOG_ERROR(CONST_MODULE_DC, "setBuffer failed");
                 free(usrpbufs_);
-                usrpbufs_ = nullptr;
-                IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                usrpbufs_             = nullptr;
+                SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                PMLOG_INFO(CONST_MODULE_DC, "CloseShmemory %d", status);
                 return DEVICE_ERROR_UNKNOWN;
             }
 
@@ -584,8 +586,9 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
             {
                 PMLOG_ERROR(CONST_MODULE_DC, "startCapture failed");
                 free(usrpbufs_);
-                usrpbufs_ = nullptr;
-                IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                usrpbufs_             = nullptr;
+                SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                PMLOG_INFO(CONST_MODULE_DC, "CloseShmemory %d", status);
                 return DEVICE_ERROR_UNKNOWN;
             }
 

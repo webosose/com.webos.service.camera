@@ -267,6 +267,11 @@ int main(int argc, char *argv[])
         LSErrorPrint(err, stdout);
         return 1;
     }
+    catch (const std::ios::failure &e)
+    {
+        PMLOG_ERROR(CONST_MODULE_CSS, "Caught a std::ios::failure meaning %s", e.what());
+        return 1;
+    }
 
     PMLOG_INFO(CONST_MODULE_CSS, "end");
     return 0;

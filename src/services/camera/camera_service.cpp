@@ -285,8 +285,9 @@ bool CameraService::close(LSMessage &message)
 
             // First try remove the client pid from the client pid pool if the pid is valid.
             std::string pid_msg;
-            CommandManager::getInstance().unregisterClientPid(ndevhandle, n_client_pid, pid_msg);
-            PMLOG_INFO(CONST_MODULE_LUNA, "%s", pid_msg.c_str());
+            DEVICE_RETURN_CODE_T ret = CommandManager::getInstance().unregisterClientPid(
+                ndevhandle, n_client_pid, pid_msg);
+            PMLOG_INFO(CONST_MODULE_LUNA, "%s, ret = %d", pid_msg.c_str(), ret);
 
             // Even if pid unregistration failed, however, there is no problem in order to proceed
             // to close()!
@@ -1343,21 +1344,24 @@ int main(int argc, char *argv[])
 
     try
     {
-        try
-        {
-            CameraService camerasrv;
-        }
-        catch (LS::Error &err)
-        {
-            LSErrorPrint(err, stdout);
-            return 1;
-        }
+        CameraService camerasrv;
+    }
+    catch (LS::Error &err)
+    {
+        LSErrorPrint(err, stdout);
+        return 1;
     }
     catch (std::bad_cast &err)
     {
         std::cerr << err.what() << std::endl;
         return 1;
     }
+    catch (const std::logic_error &err)
+    {
+        std::cerr << err.what() << std::endl;
+        return 1;
+    }
+
     return 0;
 }
 

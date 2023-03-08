@@ -29,6 +29,11 @@ public:
         Handler callback;
         void *data;
     };
+    struct RegisterHandlerWrapper
+    {
+        RegisterHandler callback;
+        void *data;
+    };
 
     LunaClient(void);
     LunaClient(const char *serviceName, GMainContext *ctx = nullptr);

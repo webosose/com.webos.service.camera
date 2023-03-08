@@ -188,12 +188,6 @@ bool LunaClient::callAsync(const char *uri, const char *param, Handler handler, 
 
 bool LunaClient::registerToService(const char *serviceName, RegisterHandler handler, void *data)
 {
-    struct RegisterHandlerWrapper
-    {
-        RegisterHandler callback;
-        void *data;
-    };
-
     AutoLSError error               = {};
     error.message                   = nullptr;
     bool ret                        = false;

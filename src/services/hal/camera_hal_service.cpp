@@ -909,6 +909,16 @@ int main(int argc, char *argv[])
         LSErrorPrint(err, stdout);
         return 1;
     }
+    catch (const std::ios::failure &e)
+    {
+        PMLOG_ERROR(CONST_MODULE_CHS, "Caught a std::ios::failure meaning %s", e.what());
+        return 1;
+    }
+    catch (const std::logic_error &e)
+    {
+        PMLOG_ERROR(CONST_MODULE_CHS, "Caught a std::logic_error meaning %s", e.what());
+        return 1;
+    }
 
     PMLOG_INFO(CONST_MODULE_CHS, "end");
     return 0;
