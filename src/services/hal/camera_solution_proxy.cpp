@@ -352,6 +352,7 @@ void CameraSolutionProxy::run()
     PMLOG_INFO(CONST_MODULE_CSP, "thread start");
 
     pthread_setname_np(pthread_self(), "solution_proxy_thread");
+    run_cv_.notify_all();
 
     while (checkAlive())
     {
@@ -381,6 +382,8 @@ void CameraSolutionProxy::startThread()
         {
             setAlive(true);
             threadJob_ = std::make_unique<std::thread>([&](void) { run(); });
+            std::unique_lock<std::mutex> lock(run_mtx_);
+            run_cv_.wait(lock);
         }
         catch (const std::system_error &e)
         {

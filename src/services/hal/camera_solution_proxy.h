@@ -55,6 +55,8 @@ class CameraSolutionProxy
     std::mutex mtxJob_;
     std::queue<int> queueJob_;
     std::unique_ptr<std::thread> threadJob_;
+    std::mutex run_mtx_;
+    std::condition_variable run_cv_;
     std::atomic<bool> bAlive_{false};
 
     bool startProcess();
