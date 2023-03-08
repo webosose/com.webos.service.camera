@@ -164,9 +164,11 @@ void CameraSolutionAsync::run(void)
     {
         int len                    = 0;
         unsigned char *sh_mem_addr = NULL;
-        while (len == 0)
+        IPCSharedMemory::getInstance().ReadShmem(hShm, &sh_mem_addr, &len);
+        if (len == 0)
         {
-            IPCSharedMemory::getInstance().ReadShmem(hShm, &sh_mem_addr, &len);
+            g_usleep(1000);
+            continue;
         }
 
         buffer_t inBuf;
