@@ -78,6 +78,7 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_APP_PERMISSION, "app permission fail"},
     {DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL, "Failed to register pid with specified signal"},
     {DEVICE_ERROR_CLIENT_PID_IS_MISSING, "Must specify client pid"},
+    {DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED, "Subscribed camera has been disconnected"},
 };
 
 std::map<EventType, std::string> g_event_string = {

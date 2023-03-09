@@ -70,6 +70,9 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     CommandManager::getInstance().setAddon(pAddon_);
     DeviceManager::getInstance().setAddon(pAddon_);
 
+    // set LS handle for device manager
+    DeviceManager::getInstance().setLSHandle(this->get());
+
     // subscribe to pdm client
     Notifier notifier;
     notifier.setLSHandle(this->get());
@@ -647,7 +650,7 @@ bool CameraService::getCameraList(LSMessage &message)
     {
         // get camera list here
         std::vector<int> idList;
-        err_id = CommandManager::getInstance().getDeviceList(idList, this->get());
+        err_id = CommandManager::getInstance().getDeviceList(idList);
 
         bool bsubscribed =
             event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAMERA_LIST, message);

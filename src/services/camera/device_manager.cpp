@@ -121,11 +121,8 @@ bool DeviceManager::getDeviceUserData(int deviceid, std::string &userData)
     return false;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList, LSHandle *sh)
+DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
-    if (sh != nullptr)
-        lshandle_ = sh;
-
     for (auto list : deviceMap_)
         idList.push_back(list.first);
     return DEVICE_OK;
@@ -177,7 +174,6 @@ int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
 
     if (lshandle_)
     {
-        PMLOG_INFO(CONST_MODULE_DM, "Subscription reply : EventType::EVENT_TYPE_CONNECT");
         EventNotification obj;
         obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_CONNECT);
     }
@@ -212,9 +208,11 @@ bool DeviceManager::removeDevice(int deviceid)
 
     if (lshandle_)
     {
-        PMLOG_INFO(CONST_MODULE_DM, "Subscription reply : EventType::EVENT_TYPE_DISCONNECT");
         EventNotification obj;
         obj.eventReply(lshandle_, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_DISCONNECT);
+
+        // unsubscribe getFomat, getProperties for disconnected camera
+        obj.removeSubscription(lshandle_, deviceid);
     }
 
     return true;

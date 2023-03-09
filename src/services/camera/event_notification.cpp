@@ -16,6 +16,7 @@
 
 #include "event_notification.h"
 #include "camera_constants.h"
+#include "camera_types.h"
 #include "command_manager.h"
 #include "json_parser.h"
 
@@ -74,6 +75,8 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
                                       void *p_cur_data, void *p_old_data)
 {
     bool result_val = true;
+
+    json_outobj[CONST_PARAM_NAME_SUBSCRIBED] = true;
 
     switch (etype)
     {
@@ -165,10 +168,10 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
 
         for (const auto &it : idList)
         {
-            deviceListObj["id"] = CONST_DEVICE_NAME_CAMERA + std::to_string(it);
+            deviceListObj[CONST_PARAM_NAME_ID] = CONST_DEVICE_NAME_CAMERA + std::to_string(it);
             deviceListArr.push_back(deviceListObj);
         }
-        json_outobj["deviceList"] = deviceListArr;
+        json_outobj[CONST_PARAM_NAME_DEVICE_LIST] = deviceListArr;
 
         break;
     }
@@ -216,4 +219,72 @@ std::string EventNotification::getCameraIdFromKey(std::string key)
     int split_pos = key.find("_");
     str_reply     = key.substr(split_pos + 1);
     return str_reply;
+}
+
+void EventNotification::removeSubscription(LSHandle *lsHandle, int camera_id)
+{
+    LSError error;
+    LSErrorInit(&error);
+
+    std::string output_reply;
+    json json_outobj;
+    LSSubscriptionIter *LSiter = NULL;
+
+    std::string key_camera     = "_camera";
+    std::string key_format     = CONST_EVENT_KEY_PROPERTIES;
+    std::string key_properties = CONST_EVENT_KEY_FORMAT;
+
+    key_camera += std::to_string(camera_id);
+    key_format += key_camera;
+    key_properties += key_camera;
+
+    std::vector<std::string> key_list{key_format, key_properties};
+
+    json_outobj[CONST_PARAM_NAME_RETURNVALUE] = false;
+    json_outobj[CONST_PARAM_NAME_SUBSCRIBED]  = false;
+    json_outobj[CONST_PARAM_NAME_ID]          = getCameraIdFromKey(key_camera);
+    json_outobj[CONST_PARAM_NAME_ERROR_CODE]  = DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED;
+    json_outobj[CONST_PARAM_NAME_ERROR_TEXT] =
+        getErrorString(DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED);
+
+    output_reply = json_outobj.dump();
+
+    for (const auto &it : key_list)
+    {
+        if (getSubscribeCount(lsHandle, it) > 0)
+        {
+            if (!LSSubscriptionReply(lsHandle, it.c_str(), output_reply.c_str(), &error))
+            {
+                PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionReply failed");
+                LSErrorPrint(&error, stderr);
+            }
+
+            if (LSSubscriptionAcquire(lsHandle, it.c_str(), &LSiter, &error))
+            {
+                // remove all subscription
+                LSMessage *subscriber_message;
+                while (LSSubscriptionHasNext(LSiter))
+                {
+                    subscriber_message = LSSubscriptionNext(LSiter);
+                    if (LSMessageIsSubscription(subscriber_message))
+                    {
+                        LSSubscriptionRemove(LSiter);
+                    }
+                }
+                LSSubscriptionRelease(LSiter);
+            }
+            else
+            {
+                PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionAcquire failed");
+                LSErrorPrint(&error, stderr);
+            }
+            // check the subscription count 0
+            if (getSubscribeCount(lsHandle, it) > 0)
+            {
+                PMLOG_INFO(CONST_MODULE_EN, "Remove failed!! need check");
+            }
+        }
+    }
+
+    LSErrorFree(&error);
 }

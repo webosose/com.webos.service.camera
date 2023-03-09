@@ -66,10 +66,11 @@ public:
     bool removeDevice(int devid);
     bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &);
 
-    DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &, LSHandle *sh = nullptr);
+    DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
 
     void setAddon(std::shared_ptr<AddOn> &addon) { pAddon_ = addon; }
+    void setLSHandle(LSHandle *sh) { lshandle_ = sh; }
 };
 
 #endif /*SERVICE_DEVICE_MANAGER_H_*/

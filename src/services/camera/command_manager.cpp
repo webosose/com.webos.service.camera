@@ -148,12 +148,12 @@ DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceid, camera_device_i
     return ret;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::getDeviceList(std::vector<int> &idList, LSHandle *sh)
+DEVICE_RETURN_CODE_T CommandManager::getDeviceList(std::vector<int> &idList)
 {
     PMLOG_INFO(CONST_MODULE_CM, "started!");
 
     // get list of devices connected
-    return DeviceManager::getInstance().getDeviceIdList(idList, sh);
+    return DeviceManager::getInstance().getDeviceIdList(idList);
 }
 
 DEVICE_RETURN_CODE_T CommandManager::getProperty(int devhandle, CAMERA_PROPERTIES_T *devproperty)
