@@ -314,17 +314,15 @@ bool CameraSolutionProxy::unsubscribe()
 
 bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload)
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
-
     if (process_ == nullptr)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "solution process is not ready");
+        PMLOG_ERROR(CONST_MODULE_CSP, "solution process is not ready");
         return false;
     }
 
     if (func == nullptr)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "no method name");
+        PMLOG_ERROR(CONST_MODULE_CSP, "no method name");
         return false;
     }
 
@@ -333,8 +331,11 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
     PMLOG_INFO(CONST_MODULE_CSP, "%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
+    int64_t startClk = g_get_monotonic_time();
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
-    PMLOG_INFO(CONST_MODULE_CSP, "resp : %s", resp.c_str());
+    int64_t endClk = g_get_monotonic_time();
+    PMLOG_INFO(CONST_MODULE_CSP, "response %s, runtime %lld", resp.c_str(),
+               (endClk - startClk) / 1000);
 
     json j = json::parse(resp);
     if (j.is_discarded())
@@ -343,8 +344,6 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
         return false;
     }
     bool ret = get_optional<bool>(j, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
-
-    PMLOG_INFO(CONST_MODULE_CSP, "returnValue : %d", ret);
     return ret;
 }
 

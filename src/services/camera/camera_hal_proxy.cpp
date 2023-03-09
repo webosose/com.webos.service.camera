@@ -594,17 +594,15 @@ DEVICE_RETURN_CODE_T CameraHalProxy::finishProcess()
 DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std::string &payload,
                                                     int timeout)
 {
-    PMLOG_INFO(CONST_MODULE_CHP, "");
-
     if (process_ == nullptr)
     {
-        PMLOG_INFO(CONST_MODULE_CHP, "hal process is not ready");
+        PMLOG_ERROR(CONST_MODULE_CHP, "hal process is not ready");
         return DEVICE_ERROR_UNKNOWN;
     }
 
     if (func == nullptr)
     {
-        PMLOG_INFO(CONST_MODULE_CHP, "no method name");
+        PMLOG_ERROR(CONST_MODULE_CHP, "no method name");
         return DEVICE_ERROR_UNKNOWN;
     }
 
@@ -613,8 +611,11 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     PMLOG_INFO(CONST_MODULE_CHP, "%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
+    int64_t startClk = g_get_monotonic_time();
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, timeout);
-    PMLOG_INFO(CONST_MODULE_CHP, "resp : %s", resp.c_str());
+    int64_t endClk = g_get_monotonic_time();
+    PMLOG_INFO(CONST_MODULE_CHP, "response %s, runtime %lld", resp.c_str(),
+               (endClk - startClk) / 1000);
 
     try
     {
@@ -632,7 +633,5 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     }
     DEVICE_RETURN_CODE_T ret = get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_RETURNCODE)
                                    .value_or(DEVICE_RETURN_UNDEFINED);
-
-    PMLOG_INFO(CONST_MODULE_CHP, "%s : %d", CONST_PARAM_NAME_RETURNCODE, ret);
     return ret;
 }

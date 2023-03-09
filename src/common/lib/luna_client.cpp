@@ -99,8 +99,7 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
         bool bDone_{false};
     } ctx(result);
 
-    PMLOG_INFO(CONST_MODULE_LC, "[%p] uri=%s, param=%s, timeout=%d", g_thread_self(), uri, param,
-               timeout);
+    PMLOG_DEBUG("[%p] uri=%s, param=%s, timeout=%d", g_thread_self(), uri, param, timeout);
     ret = LSCallOneReply(
         pHandle_, uri, param,
         +[](LSHandle *h, LSMessage *m, void *d)
@@ -115,7 +114,7 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
                 pCtx->pstrResult_->assign(payload);
             // 3. Notify
             pCtx->bDone_ = true;
-            PMLOG_INFO(CONST_MODULE_LC, "[%p] reply\n", g_thread_self());
+            PMLOG_DEBUG("[%p] reply\n", g_thread_self());
             return pCtx->bRet_;
         },
         &ctx, &tok, &error);
@@ -151,7 +150,7 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LC, "[%p] ret=%d, bRet_=%d", g_thread_self(), ret, ctx.bRet_);
+    PMLOG_DEBUG("[%p] ret=%d, bRet_=%d", g_thread_self(), ret, ctx.bRet_);
     return ret && ctx.bRet_;
 }
 
