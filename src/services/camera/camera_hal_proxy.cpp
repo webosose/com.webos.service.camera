@@ -102,9 +102,9 @@ CameraHalProxy::~CameraHalProxy()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "state_ %d", static_cast<int>(state_));
 
-    unsubscribe();
     try
     {
+        unsubscribe();
         if (state_ == State::CREATE)
         {
             destroyHandle();
@@ -554,10 +554,9 @@ bool CameraHalProxy::subscribe()
         else
         {
             PMLOG_INFO(CONST_MODULE_CHP, "[ServerStatus cb] cancel server status");
-            if (self != nullptr && self->cookie != nullptr &&
-                !LSCancelServerStatus(input_handle, self->cookie, nullptr))
+            if (self != nullptr && self->cookie != nullptr)
             {
-                PMLOG_ERROR(CONST_MODULE_CHP, "[ServerStatus cb]  error LSCancelServerStatus\n");
+                self->unsubscribe();
             }
         }
         return true;
@@ -582,6 +581,17 @@ bool CameraHalProxy::unsubscribe()
         ret           = luna_client->unsubscribe(subscribeKey_);
         subscribeKey_ = 0;
     }
+
+    if (sh_ != nullptr && cookie != nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CHP, "LSCancelServerStatus");
+        if (!LSCancelServerStatus(sh_, cookie, nullptr))
+        {
+            PMLOG_ERROR(CONST_MODULE_CHP, "error LSCancelServerStatus");
+        }
+        cookie = nullptr;
+    }
+
     return ret;
 }
 

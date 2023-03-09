@@ -169,6 +169,7 @@ void CameraSolutionProxy::release()
 
     stopThread();
     processing(false);
+    unsubscribe();
 }
 
 bool CameraSolutionProxy::startProcess()
@@ -283,11 +284,9 @@ bool CameraSolutionProxy::subscribe()
                 else
                 {
                     PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] cancel server status");
-                    if (self != nullptr && self->cookie != nullptr &&
-                        !LSCancelServerStatus(handle, self->cookie, nullptr))
+                    if (self != nullptr && self->cookie != nullptr)
                     {
-                        PMLOG_ERROR(CONST_MODULE_CSP,
-                                    "[ServerStatus cb] error LSCancelServerStatus\n");
+                        self->unsubscribe();
                     }
                 }
                 return true;
@@ -302,6 +301,8 @@ bool CameraSolutionProxy::subscribe()
 
 bool CameraSolutionProxy::unsubscribe()
 {
+    PMLOG_INFO(CONST_MODULE_CSP, "");
+
     bool ret = true;
     if (subscribeKey_)
     {
@@ -309,6 +310,17 @@ bool CameraSolutionProxy::unsubscribe()
         ret           = luna_client->unsubscribe(subscribeKey_);
         subscribeKey_ = 0;
     }
+
+    if (sh_ != nullptr && cookie != nullptr)
+    {
+        PMLOG_INFO(CONST_MODULE_CSP, "LSCancelServerStatus");
+        if (!LSCancelServerStatus(sh_, cookie, nullptr))
+        {
+            PMLOG_ERROR(CONST_MODULE_CSP, "error LSCancelServerStatus");
+        }
+        cookie = nullptr;
+    }
+
     return ret;
 }
 
@@ -403,6 +415,7 @@ void CameraSolutionProxy::stopThread()
             setAlive(false);
             notify();
             threadJob_->join();
+            unsubscribe();
         }
         catch (const std::system_error &e)
         {
