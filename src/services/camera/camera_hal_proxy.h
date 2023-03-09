@@ -23,8 +23,8 @@
 #include <string>
 #include <thread>
 
-// Please update the following if avcaptureinf/src/VideoCaptureInf_impl.cpp is updated.
-#define COMMAND_TIMEOUT 2000 // ms
+#define COMMAND_TIMEOUT 2700      // ms
+#define COMMAND_TIMEOUT_LONG 9700 // ms
 
 class LunaClient;
 class Process;

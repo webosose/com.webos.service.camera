@@ -23,10 +23,6 @@
 
 const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
 
-// Please update the following if avcaptureinf/src/VideoCaptureInf_impl.cpp is updated.
-#define COMMAND_TIMEOUT_LONG 3000          // ms
-#define COMMAND_TIMEOUT_STARTPREVIEW 10000 // ms
-
 static bool cameraHalServiceCb(const char *msg, void *data)
 {
     PMLOG_INFO(CONST_MODULE_CHP, "%s", msg);
@@ -169,8 +165,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(std::string memtype, int *pkey
     json jin;
     jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
 
-    DEVICE_RETURN_CODE_T ret =
-        luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_STARTPREVIEW);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
 
     if (ret == DEVICE_OK)
     {
@@ -187,7 +182,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
     json jin;
     jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
@@ -201,7 +196,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
     jin[CONST_PARAM_NAME_HEIGHT]     = sformat.nHeight;
     jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
 
-    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
+    return luna_call_sync(__func__, to_string(jin));
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()

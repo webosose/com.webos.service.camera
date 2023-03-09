@@ -88,13 +88,16 @@ void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *ls
 
 void FaceDetectionAIF::release(void)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PMLOG_INFO(LOG_TAG, "start");
     mtxAi_.lock();
+    PMLOG_INFO(LOG_TAG, "1");
     EdgeAIVision::getInstance().deleteDetector(type);
+    PMLOG_INFO(LOG_TAG, "2");
     EdgeAIVision::getInstance().shutdown();
+    PMLOG_INFO(LOG_TAG, "3");
     mtxAi_.unlock();
     CameraSolutionAsync::release();
-    PMLOG_INFO(LOG_TAG, "");
+    PMLOG_INFO(LOG_TAG, "end");
 }
 
 void FaceDetectionAIF::processing(void)

@@ -30,7 +30,7 @@ const std::string CameraSolutionProcessName      = "com.webos.service.camera2.so
 const std::string CameraSolutionConnectionBaseId = "com.webos.camerasolution.";
 const char *const CONST_MODULE_CSP               = "CameraSolutionProxy";
 
-#define COMMAND_TIMEOUT 2000 // ms
+#define COMMAND_TIMEOUT 8000 // ms
 
 static bool cameraSolutionServiceCb(const char *msg, void *data)
 {
