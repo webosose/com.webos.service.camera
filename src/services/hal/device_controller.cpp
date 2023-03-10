@@ -660,9 +660,11 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
         }
 
         // create thread that will continuously capture images until stopcapture received
+        PMLOG_INFO(CONST_MODULE_DC, "make previewThread");
         tidPreview = std::thread{[this]() { this->previewThread(); }};
     }
 
+    PMLOG_INFO(CONST_MODULE_DC, "end !");
     return DEVICE_OK;
 }
 
