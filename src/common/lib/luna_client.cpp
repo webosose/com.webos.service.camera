@@ -66,6 +66,12 @@ LunaClient::LunaClient(void)
     }
 }
 
+LunaClient::LunaClient(LSHandle *handle)
+{
+    pHandle_       = handle;
+    needUnregister = false;
+}
+
 LunaClient::LunaClient(const char *serviceName, GMainContext *ctx)
 {
     AutoLSError error = {};
@@ -88,6 +94,9 @@ LunaClient::LunaClient(const char *serviceName, GMainContext *ctx)
 
 LunaClient::~LunaClient(void)
 {
+    if (!needUnregister)
+        return;
+
     try
     {
         AutoLSError error = {};
