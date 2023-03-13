@@ -13,11 +13,22 @@
 #include "camera_constants.h"
 #include <camera_log.h>
 #include <glib.h>
+#include <ios>
 #include <system_error>
 
 struct AutoLSError : LSError
 {
-    AutoLSError(void) { LSErrorInit(this); }
+    AutoLSError(void)
+    {
+        try
+        {
+            LSErrorInit(this);
+        }
+        catch (const std::ios::failure &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_LC, "Caught a std::ios::failure %s", e.what());
+        }
+    }
     ~AutoLSError(void)
     {
         try
