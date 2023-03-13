@@ -14,49 +14,33 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef PDM_CLIENT
-#define PDM_CLIENT
+#pragma once
 
 #include "plugin_interface.hpp"
-#include <functional>
-#include <luna-service2/lunaservice.hpp>
+#include <luna_client.h>
 
-#ifdef __cplusplus
-extern "C"
+class PDMClient : public INotifier
 {
-#endif
+public:
+    PDMClient();
+    virtual ~PDMClient();
 
-    class PDMClient : public INotifier
+public:
+    virtual bool queryInterface(const char *szName, void **pInterface) override
     {
-    private:
-        static bool subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
-                                          void *ctx);
-        LSHandle *lshandle_;
+        *pInterface = static_cast<void *>(static_cast<INotifier *>(this));
+        return true;
+    }
 
-    public:
-        PDMClient()
-        {
-            lshandle_        = nullptr;
-            updateDeviceList = nullptr;
-        }
-        virtual ~PDMClient() {}
+    virtual void subscribeToClient(handlercb cb, void *mainLoop) override;
+    virtual void setLSHandle(void *lshandle) override;
 
-    public:
-        virtual bool queryInterface(const char *szName, void **pInterface) override
-        {
-            *pInterface = static_cast<void *>(static_cast<INotifier *>(this));
-            return true;
-        }
+private:
+    bool registerToServiceCallback(const char *serviceName, bool connected);
+    bool getDeviceListCallback(const char *message);
 
-        virtual void subscribeToClient(handlercb cb, void *mainLoop) override;
-        virtual void setLSHandle(void *lshandle) override;
+    handlercb updateDeviceList{nullptr};
 
-    public:
-        handlercb updateDeviceList;
-    };
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+    std::unique_ptr<LunaClient> lunaClient_;
+    unsigned long subscribeKey_{0};
+};
