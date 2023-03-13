@@ -65,6 +65,8 @@ CameraSolutionProxy::~CameraSolutionProxy()
 {
     PMLOG_INFO(CONST_MODULE_CSP, "");
 
+    stopThread();
+
     // If release() has not been called before
     if (process_)
     {
