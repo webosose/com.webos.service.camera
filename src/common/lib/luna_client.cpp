@@ -28,6 +28,10 @@ struct AutoLSError : LSError
         {
             PMLOG_ERROR(CONST_MODULE_LC, "Caught a std::ios::failure %s", e.what());
         }
+        catch (std::bad_cast &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_LC, "Caught a bad_cast %s", e.what());
+        }
     }
     ~AutoLSError(void)
     {

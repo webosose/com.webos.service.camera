@@ -19,6 +19,7 @@
 #include "json_utils.h"
 #include "luna_client.h"
 #include "process.h"
+#include <ios>
 #include <system_error>
 
 const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
@@ -585,9 +586,16 @@ bool CameraHalProxy::unsubscribe()
     if (sh_ != nullptr && cookie != nullptr)
     {
         PMLOG_INFO(CONST_MODULE_CHP, "LSCancelServerStatus");
-        if (!LSCancelServerStatus(sh_, cookie, nullptr))
+        try
         {
-            PMLOG_ERROR(CONST_MODULE_CHP, "error LSCancelServerStatus");
+            if (!LSCancelServerStatus(sh_, cookie, nullptr))
+            {
+                PMLOG_ERROR(CONST_MODULE_CHP, "error LSCancelServerStatus");
+            }
+        }
+        catch (const std::ios::failure &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_CHP, "Caught a std::ios::failure %s", e.what());
         }
         cookie = nullptr;
     }
