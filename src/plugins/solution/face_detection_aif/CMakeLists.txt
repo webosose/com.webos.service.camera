@@ -18,27 +18,22 @@ project(solution-facedetection-aif CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-### SOLUTION MANAGER Add AI Framework Start ###
 # find needed packages
 find_package(PkgConfig)
 pkg_check_modules(TFLITE REQUIRED tensorflowlite)
 pkg_check_modules(OPENCV REQUIRED opencv4)
-pkg_check_modules(RAPIDJSON REQUIRED RapidJSON)
 
 # include directories
 include_directories(
     ${TFLITE_INCLUDE_DIRS}
     ${OPENCV_INCLUDE_DIRS}
-    ${RAPIDJSON_INCLUDE_DIRS}
 )
 
 # link directories
 link_directories(
     ${TFLITE_LIBRARY_DIRS}
     ${OPENCV_LIBRARY_DIRS}
-    ${RAPIDJSON_LIBRARY_DIRS}
 )
-### SOLUTION MANAGER Add AI Framework End ###
 
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/face_detection_aif.cpp)
 
@@ -51,7 +46,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${JPEG_LDFLAGS}
                       ${OPENCV_LIBRARIES}
                       edgeai-vision
-                      ${PBNJSON_CPP_LDFLAGS}
                       ${LS2++_LDFLAGS}
                       )
 
