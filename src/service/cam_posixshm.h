@@ -1,4 +1,4 @@
-// Copyright (c) 2021 LG Electronics, Inc.
+// Copyright (c) 2021-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -39,9 +39,10 @@ public:
     static IPCPosixSharedMemory sharedMemoryInstance;
     return sharedMemoryInstance;
   }
-  POSHMEM_STATUS_T CreatePosixShmemory(SHMEM_HANDLE *, int, int, int, int *, std::string *);
-  POSHMEM_STATUS_T WritePosixShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int);
-  POSHMEM_STATUS_T ClosePosixShmemory(SHMEM_HANDLE *, int, int, int, std::string, int);
+  POSHMEM_STATUS_T CreatePosixShmemory(SHMEM_HANDLE *, int, int, int, int, int *, std::string *);
+  POSHMEM_STATUS_T WritePosixShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int,
+                                      unsigned char *, int);
+  POSHMEM_STATUS_T ClosePosixShmemory(SHMEM_HANDLE *, int, int, int, int, std::string, int);
 
   IPCPosixSharedMemory (IPCPosixSharedMemory const &)  = delete;
   void operator = (IPCPosixSharedMemory const &)  = delete;

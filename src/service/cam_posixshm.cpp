@@ -34,6 +34,7 @@
 #include <pthread.h>
 #include <sys/mman.h>
 #include "camera_types.h"
+#include "cstring"
 
 #ifdef SHMEM_COMM_DEBUG
 #define DEBUG_PRINT(fmt, args...)                                                                  \
@@ -44,7 +45,7 @@
 
 // constants
 
-#define SHMEM_HEADER_SIZE (5 * sizeof(int))
+#define SHMEM_HEADER_SIZE (6 * sizeof(int))
 #define SHMEM_LENGTH_SIZE sizeof(int)
 
 typedef enum
@@ -58,10 +59,13 @@ typedef enum
  4 bytes             : write_index
  4 bytes             : read_index
  4 bytes             : unit_size
+ 4 bytes             : meta_size
  4 bytes             : unit_num
  4 bytes             : mark
  4 bytes  *unit_num  : length data
  unit_size*unit_num  : data
+ 4 bytes  *unit_num  : length meta
+ meta_size*unit_num  : meta
  4 bytes             : extra_size
  extra_size*unit_num : extra data
  */
@@ -75,18 +79,75 @@ typedef struct
   int *write_index;
   int *read_index;
   int *unit_size;
+  int *meta_size;
   int *unit_num;
   POSHMEM_MARK_T *mark;
 
   unsigned int *length_buf;
   unsigned char *data_buf;
 
+  unsigned int *length_meta;
+  unsigned char *data_meta;
+
   int *extra_size;
   unsigned char *extra_buf;
 } POSHMEM_COMM_T;
 
+//  << Shmem shape : frame_count : 8, extra_size : sizeof(int)) >>
+//      +---------+---------+----------------
+//      |         | 4 bytes | write_index
+//      |         +---------+----------------
+//      |         | 4 bytes | read_index
+//      |HEADER   +---------+----------------
+//      |24 bytes | 4 bytes | unit_size
+//      |         +---------+----------------
+//      |         | 4 bytes | meta_size
+//      |         +---------+----------------
+//      |         | 4 bytes | unit_num
+//      |         +---------+----------------
+//      |         | 4 bytes | mark
+//      +---------+---------+---------------- (length_buf)
+//      |         | 4 bytes | frame_size[0]
+//      |         +---------+----------------
+//      |LENGTH   | 4 bytes | ...
+//      |32 bytes +---------+----------------
+//      |         | 4 bytes | frame_size[7]
+//      +---------+---------+---------------- (data_buf)
+//      |         | x bytes | frame_buf[0]
+//      |         +---------+----------------
+//      |DATA     | x bytes | ...
+//      |x*8 bytes+---------+----------------
+//      |         | x bytes | frame_buf[7]
+//      +---------+---------+---------------- (length_meta)
+//      |         | 4 bytes | meta_size[0]
+//      |         +---------+----------------
+//      |LENGTH   | 4 bytes | ...
+//      |32 bytes +---------+----------------
+//      |         | 4 bytes | meta_size[7]
+//      +---------+---------+---------------- (data_meta)
+//      |         | y bytes | meta_buf[0]
+//      |         +---------+----------------
+//      |META     | y bytes | ...
+//      |y*8 bytes+---------+----------------
+//      |         | y bytes | meta_buf[7]
+//      +---------+---------+----------------
+//      |EXTRA SZ | 4 bytes | extra_size
+//      +---------+---------+---------------- (extra_buf)
+//      |         | 4 bytes | extra_buf[0]
+//      |         +---------+----------------
+//      |EXTRA BUF| 4 bytes | ...
+//      |4*8 bytes+---------+----------------
+//      |         | 4 bytes | extra_buf[7]
+//      +---------+---------+----------------
+//
+// TOTAL = HEADER(24) +
+//         LENGTH(sizeof(int) * unit_num) + DATA(unit_size * unit_num) +
+//         LENGTH(sizeof(int) * unit_num) + DATA(meta_size * unit_num) +
+//         EXTRA_SZ(sizeof(int)) + EXTRA_BUF(extra_size * unit_num))
+
 POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem,
-                 int unitSize, int unitNum, int extraSize, int *fd, std::string *shmemname)
+                 int unitSize, int metaSize, int unitNum, int extraSize, int *fd,
+                 std::string *shmemname)
 {
   *phShmem = (SHMEM_HANDLE)malloc(sizeof(POSHMEM_COMM_T));
   POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
@@ -95,11 +156,11 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
     return POSHMEM_COMM_FAIL;
   }
 
-  DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%d\n", *phShmem,
-              unitSize, unitNum);
+  DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%di, metaSize=%d\n", *phShmem,
+              unitSize, unitNum, metaSize);
 
-  int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum
-                                           + sizeof(int) + extraSize * unitNum;
+  int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+                  (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + extraSize * unitNum;
   //Create shared memory name
   pid_t pid = getpid();
   int shm_fd = -1;
@@ -147,15 +208,47 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
   pShmemBuffer->write_index = (int *)(pSharedmem);
   pShmemBuffer->read_index  = (int *)(pSharedmem + sizeof(int));
   pShmemBuffer->unit_size   = (int *)(pSharedmem + sizeof(int) * 2);
-  pShmemBuffer->unit_num    = (int *)(pSharedmem + sizeof(int) * 3);
-  pShmemBuffer->mark        = (POSHMEM_MARK_T *)(pSharedmem + sizeof(int) * 4);
-  pShmemBuffer->length_buf  = (unsigned int *)(pSharedmem + sizeof(int) * 5);
+  pShmemBuffer->meta_size   = (int *)(pSharedmem + sizeof(int) * 3);
+  pShmemBuffer->unit_num    = (int *)(pSharedmem + sizeof(int) * 4);
+  pShmemBuffer->mark        = (POSHMEM_MARK_T *)(pSharedmem + sizeof(int) * 5);
 
   *pShmemBuffer->unit_size = unitSize;
+  *pShmemBuffer->meta_size = metaSize;
   *pShmemBuffer->unit_num  = unitNum;
 
-  pShmemBuffer->data_buf = pSharedmem + SHMEM_HEADER_SIZE +
-                                 SHMEM_LENGTH_SIZE * (*pShmemBuffer->unit_num);
+  size_t length_buf_offset = sizeof(int) * 6;
+
+  size_t data_buf_offset = SHMEM_HEADER_SIZE + (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+  size_t length_meta_offset =
+      SHMEM_HEADER_SIZE +
+      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+  size_t data_meta_offset =
+      SHMEM_HEADER_SIZE +
+      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+      (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+  size_t extra_size_offset =
+      SHMEM_HEADER_SIZE +
+      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+      ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+  size_t extra_buf_offset =
+      SHMEM_HEADER_SIZE +
+      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+      ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) + sizeof(int);
+
+  pShmemBuffer->length_buf = (unsigned int *)(pSharedmem + length_buf_offset);
+
+  pShmemBuffer->data_buf = pSharedmem + data_buf_offset;
+
+  pShmemBuffer->length_meta = (unsigned int *)(pSharedmem + length_meta_offset);
+
+  pShmemBuffer->data_meta = pSharedmem + data_meta_offset;
+
+  pShmemBuffer->extra_size = nullptr;
+  pShmemBuffer->extra_buf  = nullptr;
 
   struct stat sb ;
 
@@ -165,16 +258,10 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
     return POSHMEM_COMM_FAIL;
   }
     // shared momory size larger than total, we use extra data
-  if (sb.st_size > (SHMEM_HEADER_SIZE + (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) *
-                                                     (*pShmemBuffer->unit_num)))
+  if (sb.st_size > extra_size_offset)
   {
-    pShmemBuffer->extra_size =
-        (int *)(pSharedmem + SHMEM_HEADER_SIZE +
-                (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num));
-    pShmemBuffer->extra_buf =
-        (pSharedmem + SHMEM_HEADER_SIZE +
-         (*pShmemBuffer->unit_size + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
-         sizeof(int));
+    pShmemBuffer->extra_size = (int *)(pSharedmem + extra_size_offset);
+    pShmemBuffer->extra_buf  = pSharedmem + extra_buf_offset;
   }
   else
   {
@@ -201,8 +288,8 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem
 }
 
 POSHMEM_STATUS_T IPCPosixSharedMemory::WritePosixShmemory(SHMEM_HANDLE hShmem,
-                 unsigned char *pData, int dataSize, unsigned char *pExtraData,
-                 int extraDataSize)
+                 unsigned char *pData, int dataSize, unsigned char *pMeta,
+                 int metaSize, unsigned char *pExtraData, int extraDataSize)
 {
   POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
   if (!shmem_buffer)
@@ -214,12 +301,11 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::WritePosixShmemory(SHMEM_HANDLE hShmem,
   {
     *shmem_buffer->write_index = 0;
   }
-
   int mark = *shmem_buffer->mark;
   int unit_size = *shmem_buffer->unit_size;
+  int meta_size = *shmem_buffer->meta_size;
   int unit_num = *shmem_buffer->unit_num;
   int lwrite_index = *shmem_buffer->write_index;
-
   if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
   {
     DEBUG_PRINT("extraDataSize should be same with extrasize used when open\n");
@@ -240,21 +326,28 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::WritePosixShmemory(SHMEM_HANDLE hShmem,
   // buffer again
   if (lwrite_index == unit_num)
   {
-    DEBUG_PRINT("Overflow write data(write_index = %d, unit_num = %d)!\n",
+    PMLOG_INFO(CONST_MODULE_DC, "Overflow write data(write_index = %d, unit_num = %d)!\n",
                 lwrite_index, *shmem_buffer->unit_num);
     *shmem_buffer->write_index = 0;
     return POSHMEM_COMM_OVERFLOW;
   }
-  *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
 
-  memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size),
-         pData, dataSize);
+  *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
+  memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
+
+  if (metaSize < meta_size)
+  {
+      *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
+      memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
+             metaSize);
+  }
 
   if (pExtraData && extraDataSize > 0)
   {
-    memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size),
-            pExtraData, extraDataSize);
+      memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size), pExtraData,
+             extraDataSize);
   }
+
   *shmem_buffer->write_index += 1;
 
   if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
@@ -263,8 +356,8 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::WritePosixShmemory(SHMEM_HANDLE hShmem,
 }
 
 POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
-                                     int unitNum, int unitSize, int extraSize,
-                                     std::string shmemname, int shmemfd)
+                                     int unitNum, int unitSize, int metaSize,
+                                     int extraSize, std::string shmemname, int shmemfd)
 {
   DEBUG_PRINT("CloseShmemory start");
 
@@ -275,8 +368,8 @@ POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
     return POSHMEM_COMM_FAIL;
   }
 
-  int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum
-                                           + sizeof(int) + extraSize * unitNum;
+  int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+                  (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + (extraSize)*unitNum;
 
   void *shmem_addr = shmem_buffer->write_index;
 

@@ -378,7 +378,7 @@ void DeviceControl::previewThread()
        if (retval != CAMERA_ERROR_NONE)
        {
          PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
-		     notifyDeviceFault_();
+         notifyDeviceFault_();
          break;
        }
        broadcast_();
@@ -416,10 +416,12 @@ void DeviceControl::previewThread()
        {
           pCameraSolution->processPreview(frame_buffer);
        }
+
+       auto meta = pMemoryListener->getResult();
+
        if (b_issystemvruning)
        {
           b_issyshmwritedone_ = false;
-          auto meta           = pMemoryListener->getResult();
           auto retshmem       = IPCSharedMemory::getInstance().WriteShmemory(
                     h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
                     (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
@@ -435,9 +437,9 @@ void DeviceControl::previewThread()
        {
          b_isposhmwritedone_ = false;
          auto retshmem = IPCPosixSharedMemory::getInstance().WritePosixShmemory(h_shmposix_,
-                      (unsigned char *)frame_buffer.start, frame_buffer.length,
-                      (unsigned char *)&timestamp, sizeof(timestamp));
-
+                     (unsigned char *)frame_buffer.start, frame_buffer.length,
+                     (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
+                     sizeof(timestamp));
          if (retshmem != POSHMEM_COMM_OK)
          {
            PMLOG_ERROR(CONST_MODULE_DC, "Write Posix Shared memory error %d \n", retshmem);
@@ -551,7 +553,8 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
   {
     std::string shmname = "";
     auto retshmem = IPCPosixSharedMemory::getInstance().CreatePosixShmemory(&h_shmposix_,
-                             buf_size_, frame_count, sizeof(unsigned int), pkey, &shmname);
+                                 buf_size_, meta_size, frame_count, sizeof(unsigned int),
+                                 pkey, &shmname);
     if (retshmem != POSHMEM_COMM_OK)
        PMLOG_ERROR(CONST_MODULE_DC, "CreatePosixShmemory error %d \n", retshmem);
 
@@ -669,11 +672,18 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
 
     if(memtype == SHMEM_POSIX)
     {
+        int32_t meta_size = 0;
+        if (pCameraSolution != nullptr)
+        {
+            meta_size = pCameraSolution->getMetaSizeHint();
+        }
+
         b_isposixruning = false;
         if (h_shmposix_)
         {
             auto retshmem = IPCPosixSharedMemory::getInstance().ClosePosixShmemory(&h_shmposix_,
-                      frame_count, buf_size_, sizeof(unsigned int), str_shmemname_, shmemfd_);
+                              frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                              str_shmemname_, shmemfd_);
             if (retshmem != POSHMEM_COMM_OK)
             {
                 PMLOG_ERROR(CONST_MODULE_DC, "ClosePosixShmemory error %d \n", retshmem);
