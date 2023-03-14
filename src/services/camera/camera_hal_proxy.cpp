@@ -86,6 +86,8 @@ CameraHalProxy::CameraHalProxy() : state_(State::INIT)
     {
     }
 
+    pthread_setname_np(loopThread_->native_handle(), "halproxy_luna");
+
     std::string guid         = GenerateUniqueID()();
     std::string service_name = CameraHalProcessName + "." + guid;
     luna_client              = std::make_unique<LunaClient>(service_name.c_str(), c);
@@ -272,6 +274,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
     while (!g_main_loop_is_running(lp))
     {
     }
+
+    pthread_setname_np(lpthd->native_handle(), "getinfo_luna");
 
     std::string ls_service_name    = CameraHalProcessName + "." + __func__;
     std::unique_ptr<LunaClient> lc = std::make_unique<LunaClient>(ls_service_name.c_str(), c);

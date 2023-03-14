@@ -148,7 +148,7 @@ void CameraSolutionAsync::run(void)
     PerformanceControl oPC;
     oPC.targetFPS(1.0f);
 
-    pthread_setname_np(pthread_self(), "solution_thread");
+    pthread_setname_np(pthread_self(), "solution_async");
 
     SHMEM_HANDLE hShm  = nullptr;
     SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().OpenShmem(&hShm, shm_key);

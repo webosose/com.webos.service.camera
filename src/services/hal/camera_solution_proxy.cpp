@@ -202,6 +202,8 @@ bool CameraSolutionProxy::startProcess()
     {
     }
 
+    pthread_setname_np(loopThread_->native_handle(), "solproxy_luna");
+
     std::string service_name = cstr_uricamearhal + guid;
     luna_client              = std::make_unique<LunaClient>(service_name.c_str(), c);
     g_main_context_unref(c);
@@ -363,7 +365,7 @@ void CameraSolutionProxy::run()
 {
     PMLOG_INFO(CONST_MODULE_CSP, "thread start");
 
-    pthread_setname_np(pthread_self(), "solution_proxy_thread");
+    pthread_setname_np(pthread_self(), "solproxy");
     bThreadStarted_ = true;
 
     while (checkAlive())
