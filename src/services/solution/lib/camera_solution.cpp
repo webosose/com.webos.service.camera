@@ -13,10 +13,9 @@
  *
  */
 
+#define LOG_TAG "CameraSolution"
 #include "camera_solution.h"
 #include "camera_types.h"
-
-#define LOG_TAG "CameraSolution"
 
 void CameraSolution::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {

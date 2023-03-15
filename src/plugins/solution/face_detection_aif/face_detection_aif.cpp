@@ -13,6 +13,7 @@
  *
  */
 
+#define LOG_TAG "SOLUTION:FaceDetectionAIF"
 #include "face_detection_aif.hpp"
 #include "camera_log.h"
 #include "plugin.hpp"
@@ -23,8 +24,6 @@
 #include <string>
 
 using namespace cv;
-
-#define LOG_TAG "SOLUTION:FaceDetectionAIF"
 
 #define AIF_PARAM_FILE "/home/root/aif_param.json"
 

@@ -14,6 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_TAG "HAL:V4l2CameraPlugin"
 #include "v4l2_camera_plugin.h"
 #include "camera_log.h"
 #include <fcntl.h>
@@ -24,8 +25,6 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
-
-#define LOG_TAG "HAL:V4l2CameraPlugin"
 
 #define CLEAR(x) memset(&(x), 0, sizeof(x))
 #define CONST_PARAM_DEFAULT_VALUE -999

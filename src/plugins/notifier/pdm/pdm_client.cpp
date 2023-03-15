@@ -14,6 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_TAG "NOTIFIER:PDMClient"
 #include "pdm_client.h"
 #include "camera_device_types.h"
 #include "camera_log.h"
@@ -23,8 +24,6 @@
 #include <list>
 #include <nlohmann/json.hpp>
 #include <optional>
-
-#define LOG_TAG "NOTIFIER:PDMClient"
 
 #define LUNA_CALLBACK(NAME)                                                                        \
     +[](const char *m, void *c) -> bool { return ((PDMClient *)c)->NAME(m); }
