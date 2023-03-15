@@ -3,12 +3,17 @@
 
 #include "PmLogLib.h"
 
+#ifndef LOG_CONTEXT
+#define LOG_CONTEXT "service"
+#endif
+
 static inline PmLogContext getCameraLunaPmLogContext()
 {
     static PmLogContext usLogContext = 0;
     if (0 == usLogContext)
     {
-        PmLogGetContext("camera", &usLogContext);
+        std::string str = std::string("camera.") + LOG_CONTEXT;
+        PmLogGetContext(str.c_str(), &usLogContext);
     }
     return usLogContext;
 }
