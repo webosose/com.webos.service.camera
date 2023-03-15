@@ -92,9 +92,6 @@ void VirtualDeviceManager::removeHandlePriorityObj(int devhandle)
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
-    // create v4l2 handle
-    void *p_cam_handle = nullptr; // [FIX_ME] No need to save
-
     std::string deviceType   = DeviceManager::getInstance().getDeviceType(devid);
     DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHandle(deviceType);
     if (DEVICE_OK != ret)
@@ -103,15 +100,10 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
         return DEVICE_ERROR_CAN_NOT_OPEN;
     }
 
-    DeviceManager::getInstance().setDeviceHandle(devid, p_cam_handle);
     std::string devnode;
     // get the device node of requested camera to be opened
     DeviceManager::getInstance().getDeviceNode(devid, devnode);
     PMLOG_INFO(CONST_MODULE_VDM, "devnode : %s \n", devnode.c_str());
-
-    void *handle;
-    DeviceManager::getInstance().getDeviceHandle(devid, &handle);
-    PMLOG_INFO(CONST_MODULE_VDM, "handle : %p \n", handle);
 
     std::string payload = "";
     DeviceManager::getInstance().getDeviceUserData(devid, payload);
@@ -221,10 +213,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
         {
             DEVICE_RETURN_CODE_T ret = DEVICE_OK;
 
-            void *handle;
-            DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
-            PMLOG_INFO(CONST_MODULE_VDM, "handle : %p \n", handle);
-
             // close the device only if its the last app to request for close
             if (1 == nelements)
             {
@@ -234,7 +222,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
                 {
                     DeviceManager::getInstance().setDeviceStatus(deviceid, FALSE);
                     ret = objcamerahalproxy_.destroyHandle();
-                    DeviceManager::getInstance().setDeviceHandle(deviceid, nullptr);
                     // remove the virtual device
                     removeVirtualDeviceHandle(devhandle);
                     // since the device is closed, remove the element from map
@@ -291,8 +278,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
              shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
             (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0))
         {
-            void *handle;
-            DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
             // start preview
             DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.startPreview(memtype, pkey, sh, subskey);
             if (DEVICE_OK == ret)
@@ -413,9 +398,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
                 std::find(npreviewhandle_.begin(), npreviewhandle_.end(), devhandle);
             if (position != npreviewhandle_.end())
             {
-                // last handle to call stopPreview
-                void *handle;
-                DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
                 // stop preview
                 DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopPreview(memtype);
                 // reset preview parameters for camera device
@@ -476,8 +458,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncoun
 
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
-        void *handle;
-        DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // capture number of images specified by ncount
         DEVICE_RETURN_CODE_T ret =
             objcamerahalproxy_.captureImage(ncount, sformat, imagepath, mode);
@@ -538,8 +518,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
     {
         if (!bcaptureinprogress_)
         {
-            void *handle;
-            DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
             // start capture
             DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.startCapture(sformat, imagepath);
             if (DEVICE_OK == ret)
@@ -601,9 +579,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
                 std::find(ncapturehandle_.begin(), ncapturehandle_.end(), devhandle);
             if (position != ncapturehandle_.end())
             {
-                // last handle to call stopCapture
-                void *handle;
-                DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
                 // stop capture
                 DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopCapture();
                 // reset capture parameters for camera device
@@ -646,8 +621,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getProperty(int devhandle,
 
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
-        void *handle;
-        DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // get property of device opened
         DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getDeviceProperty(devproperty);
         return ret;
@@ -684,8 +657,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setProperty(int devhandle, CAMERA_PRO
 
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
-        void *handle;
-        DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // set device properties
         DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.setDeviceProperty(oInfo);
         return ret;
@@ -721,8 +692,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::setFormat(int devhandle, CAMERA_FORMA
 
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
-        void *handle;
-        DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // set format
         DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.setFormat(oformat);
         if (DEVICE_OK == ret)
@@ -751,8 +720,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMA
 
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
-        void *handle;
-        DeviceManager::getInstance().getDeviceHandle(deviceid, &handle);
         // get format of device
         DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getFormat(oformat);
         return ret;

@@ -47,20 +47,21 @@ bool DeviceManager::setDeviceStatus(int deviceid, bool status)
 
 bool DeviceManager::isDeviceOpen(int deviceid)
 {
-    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
-
     if (!isDeviceIdValid(deviceid))
+    {
+        PMLOG_ERROR(CONST_MODULE_DM, "deviceid %d is an invalid ID", deviceid);
         return CONST_PARAM_VALUE_FALSE;
+    }
 
     PMLOG_DEBUG("deviceMap_[%d].isDeviceOpen : %d", deviceid, deviceMap_[deviceid].isDeviceOpen);
     if (deviceMap_[deviceid].isDeviceOpen)
     {
-        PMLOG_INFO(CONST_MODULE_DM, "Device is open!!");
+        PMLOG_INFO(CONST_MODULE_DM, "deviceid %d is open!!", deviceid);
         return CONST_PARAM_VALUE_TRUE;
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_DM, "Device is not open!!");
+        PMLOG_INFO(CONST_MODULE_DM, "deviceid %d is not open!!", deviceid);
         return CONST_PARAM_VALUE_FALSE;
     }
 }
@@ -75,17 +76,6 @@ void DeviceManager::getDeviceNode(int deviceid, std::string &devicenode)
     if (isDeviceIdValid(deviceid))
     {
         devicenode = deviceMap_[deviceid].stList.strDeviceNode;
-    }
-}
-
-void DeviceManager::getDeviceHandle(int deviceid, void **devicehandle)
-{
-    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
-
-    *devicehandle = nullptr;
-    if (isDeviceIdValid(deviceid))
-    {
-        *devicehandle = deviceMap_[deviceid].pcamhandle;
     }
 }
 
@@ -145,7 +135,6 @@ int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
 {
     DEVICE_STATUS devStatus;
     devStatus.isDeviceOpen      = false;
-    devStatus.pcamhandle        = nullptr;
     devStatus.isDeviceInfoSaved = false;
     devStatus.stList            = deviceInfo;
     PMLOG_INFO(CONST_MODULE_DM, "strVendorName    : %s", deviceInfo.strVendorName.c_str());
@@ -340,16 +329,4 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
     }
 
     return ret;
-}
-
-bool DeviceManager::setDeviceHandle(int deviceid, void *handle)
-{
-    PMLOG_INFO(CONST_MODULE_DM, "deviceid : %d", deviceid);
-
-    if (!isDeviceIdValid(deviceid))
-        return false;
-
-    deviceMap_[deviceid].pcamhandle = handle;
-
-    return true;
 }
