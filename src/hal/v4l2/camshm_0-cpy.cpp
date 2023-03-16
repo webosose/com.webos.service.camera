@@ -79,7 +79,7 @@ typedef struct
   unsigned char *extra_buf;
 } SHMEM_COMM_T;
 
-SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pShmemKey,
+SHMEM_STATUS_T IPCSharedMemory0Copy::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pShmemKey,
                                                int unitSize, int unitNum, int extraSize)
 {
   *phShmem = (SHMEM_HANDLE)calloc(1, sizeof(SHMEM_COMM_T));
@@ -190,7 +190,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
   return SHMEM_IS_OK;
 }
 
-SHMEM_STATUS_T IPCSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
+SHMEM_STATUS_T IPCSharedMemory0Copy::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
                  int numBuffers, struct buffer pBufs[], struct buffer pBufsExt[])
 {
   SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
@@ -223,7 +223,7 @@ SHMEM_STATUS_T IPCSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
   return SHMEM_IS_OK;
 }
 
-SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size_t bytesWritten)
+SHMEM_STATUS_T IPCSharedMemory0Copy::WriteHeader(SHMEM_HANDLE hShmem, int index, size_t bytesWritten)
 {
   SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
   if (!shmem_buffer)
@@ -243,7 +243,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size
   return SHMEM_IS_OK;
 }
 
-SHMEM_STATUS_T IPCSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem)
+SHMEM_STATUS_T IPCSharedMemory0Copy::CloseShmemory(SHMEM_HANDLE *phShmem)
 {
   DEBUG_PRINT("CloseShmemory start");
 

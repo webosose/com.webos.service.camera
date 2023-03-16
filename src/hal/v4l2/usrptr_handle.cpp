@@ -20,7 +20,7 @@ usrptr_handle_t * create_usrptr_handle(stream_format_t stream_format, int num_bu
         return nullptr;
     }
 
-    ret = IPCSharedMemory::getInstance().CreateShmemory(
+    ret = IPCSharedMemory0Copy::getInstance().CreateShmemory(
                           &husrptr->hshm, (key_t*)&shmkey, buf_size, num_bufs, 0);
     if (SHMEM_IS_OK != ret)
     {
@@ -33,17 +33,17 @@ usrptr_handle_t * create_usrptr_handle(stream_format_t stream_format, int num_bu
     if (!usrptr_bufs)
     {
         HAL_LOG_INFO(CONST_MODULE_HAL, "usrptr_bufs allocation failed!!\n");
-        IPCSharedMemory::getInstance().CloseShmemory(&husrptr->hshm);
+        IPCSharedMemory0Copy::getInstance().CloseShmemory(&husrptr->hshm);
         free(husrptr);
         return nullptr;
     }
 
-    ret = IPCSharedMemory::getInstance().GetShmemoryBufferInfo(
+    ret = IPCSharedMemory0Copy::getInstance().GetShmemoryBufferInfo(
                                 husrptr->hshm, num_bufs, usrptr_bufs, nullptr);
     if (SHMEM_IS_OK != ret)
     {
         HAL_LOG_INFO(CONST_MODULE_HAL, "fail to get shmem buffer info!!\n");
-        IPCSharedMemory::getInstance().CloseShmemory(&husrptr->hshm);
+        IPCSharedMemory0Copy::getInstance().CloseShmemory(&husrptr->hshm);
         free(usrptr_bufs);
         free(husrptr);
         return nullptr;
@@ -67,14 +67,14 @@ usrptr_handle_t * create_usrptr_handle(stream_format_t stream_format, int num_bu
 
 int write_usrptr_header(usrptr_handle_t *husrptr, int index, size_t bytes_written)
 {
-    return IPCSharedMemory::getInstance().WriteHeader(husrptr->hshm, index, (unsigned int)bytes_written);
+    return IPCSharedMemory0Copy::getInstance().WriteHeader(husrptr->hshm, index, (unsigned int)bytes_written);
 }
 
 void destroy_usrptr_handle(usrptr_handle_t **husrptr)
 {
     if (*husrptr != nullptr)
     {
-        IPCSharedMemory::getInstance().CloseShmemory(&((*husrptr)->hshm));
+        IPCSharedMemory0Copy::getInstance().CloseShmemory(&((*husrptr)->hshm));
         free((*husrptr)->buffers);
         free(*husrptr);
         *husrptr = nullptr;

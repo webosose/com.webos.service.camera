@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,8 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#ifndef CAMSHM_H_
-#define CAMSHM_H_
+#ifndef CAMSHM_ZEROCOPY_H_
+#define CAMSHM_ZEROCOPY_H_
 
 #include <sys/shm.h>
 #include <stddef.h> // size_t
@@ -32,12 +32,12 @@ typedef enum
 
 typedef void *SHMEM_HANDLE;
 
-class IPCSharedMemory
+class IPCSharedMemory0Copy
 {
 public:
-  static IPCSharedMemory& getInstance ()
+  static IPCSharedMemory0Copy& getInstance ()
   {
-    static IPCSharedMemory sharedMemoryInstance;
+    static IPCSharedMemory0Copy sharedMemoryInstance;
     return sharedMemoryInstance;
   }
   SHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, key_t *, int, int, int);
@@ -45,11 +45,11 @@ public:
   SHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
   SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);
 
-  IPCSharedMemory (IPCSharedMemory const &)  = delete;
-  void operator = (IPCSharedMemory const &)  = delete;
+  IPCSharedMemory0Copy (IPCSharedMemory0Copy const &)  = delete;
+  void operator = (IPCSharedMemory0Copy const &)  = delete;
 
 private:
-  IPCSharedMemory (){}
+  IPCSharedMemory0Copy (){}
 };
 
-#endif // CAMSHM_H_
+#endif // CAMSHM_ZEROCOPY_H_
