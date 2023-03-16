@@ -500,9 +500,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
     PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
                streamformat.stream_height);
 
-    // buffer_count = 2 (see "constants.h")
-    buf_size_ =
-        streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+    buf_size_ = streamformat.buffer_size + extra_buffer;
 
     int32_t meta_size = 0;
     if (pCameraSolution != nullptr)
