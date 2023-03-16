@@ -211,7 +211,7 @@ int V4l2CameraPlugin::getBuffer(void *outbuf)
 
     fds.fd     = fd_;
     fds.events = POLLIN;
-    retVal     = poll(&fds, 1, 2000);
+    retVal     = poll(&fds, 1, 10000);
     if (0 == retVal)
     {
         PLOGE("POLL timeout!");
