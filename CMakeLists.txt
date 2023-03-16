@@ -128,7 +128,12 @@ set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/service/solutions/camera_solution_async.cpp
     )
 message(STATUS "Using json to define supported solutions for variable platform")
+## Added separate conf file for raspberrypi4-64 to enable FaceDetectionAIF solution
+if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
 webos_build_configured_file(src/service/solutions/supported_solution_info/${WEBOS_TARGET_MACHINE}/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+else()
+webos_build_configured_file(src/service/solutions/supported_solution_info/supported_solution_info.conf SYSCONFDIR com.webos.service.camera)
+endif()
 
 ### SOLUTION MANAGER Main setting End ###
 add_executable(${PROJECT_NAME}
