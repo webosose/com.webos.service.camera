@@ -159,7 +159,7 @@ protected:
     const char *getRegistryFilePath(void)
     {
         return getenv("CAMERA_REGISTRY_PATH")
-            .value_or("/usr/lib/camera/camera_plugin_registry.json");
+            .value_or("/mnt/lg/cmn_data/camera/camera_plugin_registry.json");
     }
 
 private:
