@@ -1,4 +1,4 @@
-# Copyright (c) 2019 LG Electronics, Inc.
+# Copyright (c) 2023 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,5 +22,6 @@ After=camera-registry.service ls-hubd.service physical-device-manager.service
 [Service]
 Type=simple
 OOMScoreAdjust=-1000
+EnvironmentFile=-/var/systemd/system/env/com.webos.service.camera.env
 ExecStart=/usr/sbin/com.webos.service.camera2
 Restart=on-failure
