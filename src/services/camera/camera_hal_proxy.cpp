@@ -106,6 +106,7 @@ CameraHalProxy::~CameraHalProxy()
 {
     PMLOG_INFO(CONST_MODULE_CHP, "state_ %d", static_cast<int>(state_));
 
+    unsubscribe();
     if (state_ == State::CREATE)
     {
         destroyHandle();
