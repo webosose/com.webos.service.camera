@@ -92,27 +92,27 @@ void from_json(const json &j, VideoDevice &v)
     }
 }
 
-PDMClient::PDMClient() { PMLOG_INFO(LOG_TAG, ""); }
+PDMClient::PDMClient() { PLOGI(""); }
 
-PDMClient::~PDMClient() { PMLOG_INFO(LOG_TAG, ""); }
+PDMClient::~PDMClient() { PLOGI(""); }
 
 void PDMClient::subscribeToClient(handlercb cb, void *mainLoop)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     this->updateDeviceList = cb;
 
     if (!lunaClient_)
         return;
 
     // register to PDM luna service with cb to be called
-    PMLOG_INFO(LOG_TAG, "registerToService : com.webos.service.pdm");
+    PLOGI("registerToService : com.webos.service.pdm");
     lunaClient_->registerToService("com.webos.service.pdm",
                                    REGISTER_CALLBACK(registerToServiceCallback), this);
 }
 
 void PDMClient::setLSHandle(void *handle)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     lunaClient_ = std::make_unique<LunaClient>(static_cast<LSHandle *>(handle));
 }
 
@@ -120,10 +120,10 @@ bool PDMClient::registerToServiceCallback(const char *serviceName, bool connecte
 {
     bool retVal = true;
 
-    PMLOG_INFO(LOG_TAG, "connected status:%d \n", connected);
+    PLOGI("connected status:%d \n", connected);
     if (!lunaClient_)
     {
-        PMLOG_ERROR(LOG_TAG, "lunaClient_ is nullptr!");
+        PLOGE("lunaClient_ is nullptr!");
         return false;
     }
 
@@ -142,14 +142,14 @@ bool PDMClient::registerToServiceCallback(const char *serviceName, bool connecte
             &subscribeKey_, LUNA_CALLBACK(getDeviceListCallback), this);
         if (!retVal)
         {
-            PMLOG_ERROR(LOG_TAG, "%s appcast client uUnable to unregister service", __func__);
+            PLOGE("%s appcast client uUnable to unregister service", __func__);
         }
     }
     else
     {
         if (subscribeKey_ != 0UL)
         {
-            PMLOG_INFO(LOG_TAG, "Unsubscribe to the %s service", serviceName);
+            PLOGI("Unsubscribe to the %s service", serviceName);
             lunaClient_->unsubscribe(subscribeKey_);
             subscribeKey_ = 0UL;
         }
@@ -160,24 +160,24 @@ bool PDMClient::registerToServiceCallback(const char *serviceName, bool connecte
 
 bool PDMClient::getDeviceListCallback(const char *message)
 {
-    PMLOG_INFO(LOG_TAG, "payload : %s", message);
+    PLOGI("payload : %s", message);
 
     json jPayload = json::parse(message, nullptr, false);
     if (jPayload.is_discarded())
     {
-        PMLOG_INFO(LOG_TAG, "payload parsing fail!");
+        PLOGI("payload parsing fail!");
         return false;
     }
 
     PdmResponse pdm = jPayload;
     if (!pdm.returnValue)
     {
-        PMLOG_INFO(LOG_TAG, "retvalue fail!");
+        PLOGI("retvalue fail!");
         return false;
     }
     if (!pdm.videoDeviceList)
     {
-        PMLOG_INFO(LOG_TAG, "deviceListInfo empty!");
+        PLOGI("deviceListInfo empty!");
         return false;
     }
 
@@ -202,12 +202,12 @@ bool PDMClient::getDeviceListCallback(const char *message)
                 // plugged or unplugged while the TV is off.
             }
 
-            PMLOG_INFO(LOG_TAG, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
-                       devInfo.strVendorName.c_str());
-            PMLOG_INFO(LOG_TAG, "Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
-                       devInfo.strProductName.c_str());
-            PMLOG_INFO(LOG_TAG, "strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
-            PMLOG_INFO(LOG_TAG, "strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
+            PLOGI("Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
+                  devInfo.strVendorName.c_str());
+            PLOGI("Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
+                  devInfo.strProductName.c_str());
+            PLOGI("strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
+            PLOGI("strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
 
             devList.push_back(devInfo);
         }

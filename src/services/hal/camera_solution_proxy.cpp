@@ -14,6 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_TAG "CameraSolutionProxy"
 #include "camera_solution_proxy.h"
 #include "camera_constants.h"
 #include "camera_log.h"
@@ -28,18 +29,17 @@ using json = nlohmann::json;
 
 const std::string CameraSolutionProcessName      = "com.webos.service.camera2.solution";
 const std::string CameraSolutionConnectionBaseId = "com.webos.camerasolution.";
-const char *const CONST_MODULE_CSP               = "CameraSolutionProxy";
 
 #define COMMAND_TIMEOUT 8000 // ms
 
 static bool cameraSolutionServiceCb(const char *msg, void *data)
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "%s", msg);
+    PLOGI("%s", msg);
 
     json j = json::parse(msg, nullptr, false);
     if (j.is_discarded())
     {
-        PMLOG_ERROR(CONST_MODULE_CSP, "msg parsing error!");
+        PLOGE("msg parsing error!");
         return false;
     }
 
@@ -58,12 +58,12 @@ static bool cameraSolutionServiceCb(const char *msg, void *data)
 CameraSolutionProxy::CameraSolutionProxy(const std::string solution_name)
     : solution_name_(solution_name)
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "%s", solution_name_.c_str());
+    PLOGI("%s", solution_name_.c_str());
 }
 
 CameraSolutionProxy::~CameraSolutionProxy()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     stopThread();
 
@@ -76,7 +76,7 @@ CameraSolutionProxy::~CameraSolutionProxy()
         }
         catch (const std::exception &e)
         {
-            PMLOG_ERROR(CONST_MODULE_CSP, "Error: %s", e.what());
+            PLOGE("Error: %s", e.what());
         }
     }
 }
@@ -97,13 +97,13 @@ int32_t CameraSolutionProxy::getMetaSizeHint(void)
     // OSE does not write meta data to shm
 #endif
 
-    PMLOG_INFO(CONST_MODULE_CSP, "metaSizeHint = %d", metaSizeHint);
+    PLOGI("metaSizeHint = %d", metaSizeHint);
     return metaSizeHint;
 }
 
 void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "shmKey : %d", shmKey);
+    PLOGI("shmKey : %d", shmKey);
 
     // keep informations
     streamFormat_ = streamFormat;
@@ -115,7 +115,7 @@ void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, L
 
 void CameraSolutionProxy::setEnableValue(bool enableValue)
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "enableValue %d", enableValue);
+    PLOGI("enableValue %d", enableValue);
     pushJob(enableValue);
 }
 
@@ -123,17 +123,17 @@ void CameraSolutionProxy::processing(bool enableValue)
 {
     if (enableStatus_ == enableValue)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "same as current value %d", enableValue);
+        PLOGI("same as current value %d", enableValue);
         return;
     }
 
     if (shmKey_ == 0)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "shared memory key is not ready");
+        PLOGI("shared memory key is not ready");
         return;
     }
 
-    PMLOG_INFO(CONST_MODULE_CSP, "start : enableValue = %d", enableValue);
+    PLOGI("start : enableValue = %d", enableValue);
 
     enableStatus_ = enableValue;
     json jin;
@@ -162,12 +162,12 @@ void CameraSolutionProxy::processing(bool enableValue)
         stopProcess();
     }
 
-    PMLOG_INFO(CONST_MODULE_CSP, "end :  enableStatus_ = %d", enableStatus_);
+    PLOGI("end :  enableStatus_ = %d", enableStatus_);
 }
 
 void CameraSolutionProxy::release()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     stopThread();
     processing(false);
@@ -176,7 +176,7 @@ void CameraSolutionProxy::release()
 
 bool CameraSolutionProxy::startProcess()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     // start process
     std::string guid = GenerateUniqueID()();
@@ -196,8 +196,7 @@ bool CameraSolutionProxy::startProcess()
     }
     catch (const std::system_error &e)
     {
-        PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
-                    e.code().value(), e.what());
+        PLOGE("Caught a system_error with code %d meaning %s", e.code().value(), e.what());
     }
 
     while (!g_main_loop_is_running(loop_))
@@ -215,7 +214,7 @@ bool CameraSolutionProxy::startProcess()
 
 bool CameraSolutionProxy::stopProcess()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     g_main_loop_quit(loop_);
     if (loopThread_->joinable())
@@ -226,8 +225,7 @@ bool CameraSolutionProxy::stopProcess()
         }
         catch (const std::system_error &e)
         {
-            PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
-                        e.code().value(), e.what());
+            PLOGE("Caught a system_error with code %d meaning %s", e.code().value(), e.what());
         }
     }
     g_main_loop_unref(loop_);
@@ -239,7 +237,7 @@ bool CameraSolutionProxy::stopProcess()
 
 bool CameraSolutionProxy::createSolution()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     // Send message
     json jin;
@@ -250,7 +248,7 @@ bool CameraSolutionProxy::createSolution()
 
 bool CameraSolutionProxy::initSolution()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     // Send message
     json jin;
@@ -266,14 +264,13 @@ bool CameraSolutionProxy::initSolution()
 
 bool CameraSolutionProxy::subscribe()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     if (!LSRegisterServerStatusEx(
             sh_, uid_.c_str(),
             [](LSHandle *handle, const char *svc_name, bool connected, void *ctx) -> bool
             {
-                PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] connected=%d, name=%s\n", connected,
-                           svc_name);
+                PLOGI("[ServerStatus cb] connected=%d, name=%s\n", connected, svc_name);
 
                 CameraSolutionProxy *self = static_cast<CameraSolutionProxy *>(ctx);
                 if (connected)
@@ -282,12 +279,11 @@ bool CameraSolutionProxy::subscribe()
                     bool ret = self->luna_client->subscribe(uri.c_str(), "{\"subscribe\":true}",
                                                             &(self->subscribeKey_),
                                                             cameraSolutionServiceCb, self);
-                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] subscribeKey_ %ld, %d ",
-                               self->subscribeKey_, ret);
+                    PLOGI("[ServerStatus cb] subscribeKey_ %ld, %d ", self->subscribeKey_, ret);
                 }
                 else
                 {
-                    PMLOG_INFO(CONST_MODULE_CSP, "[ServerStatus cb] cancel server status");
+                    PLOGI("[ServerStatus cb] cancel server status");
                     if (self != nullptr && self->cookie != nullptr)
                     {
                         self->unsubscribe();
@@ -297,7 +293,7 @@ bool CameraSolutionProxy::subscribe()
             },
             this, &cookie, nullptr))
     {
-        PMLOG_ERROR(CONST_MODULE_CSP, "[ServerStatus cb] LSRegisterServerStatusEx FAILED");
+        PLOGE("[ServerStatus cb] LSRegisterServerStatusEx FAILED");
     }
 
     return true;
@@ -305,22 +301,22 @@ bool CameraSolutionProxy::subscribe()
 
 bool CameraSolutionProxy::unsubscribe()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "");
+    PLOGI("");
 
     bool ret = true;
     if (subscribeKey_)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "remove subscribeKey_ %ld", subscribeKey_);
+        PLOGI("remove subscribeKey_ %ld", subscribeKey_);
         ret           = luna_client->unsubscribe(subscribeKey_);
         subscribeKey_ = 0;
     }
 
     if (sh_ != nullptr && cookie != nullptr)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "LSCancelServerStatus");
+        PLOGI("LSCancelServerStatus");
         if (!LSCancelServerStatus(sh_, cookie, nullptr))
         {
-            PMLOG_ERROR(CONST_MODULE_CSP, "error LSCancelServerStatus");
+            PLOGE("error LSCancelServerStatus");
         }
         cookie = nullptr;
     }
@@ -332,31 +328,30 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
 {
     if (process_ == nullptr)
     {
-        PMLOG_ERROR(CONST_MODULE_CSP, "solution process is not ready");
+        PLOGE("solution process is not ready");
         return false;
     }
 
     if (func == nullptr)
     {
-        PMLOG_ERROR(CONST_MODULE_CSP, "no method name");
+        PLOGE("no method name");
         return false;
     }
 
     // send message
     std::string uri = service_uri_ + func;
-    PMLOG_INFO(CONST_MODULE_CSP, "%s '%s'", uri.c_str(), payload.c_str());
+    PLOGI("%s '%s'", uri.c_str(), payload.c_str());
 
     std::string resp;
     int64_t startClk = g_get_monotonic_time();
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
     int64_t endClk = g_get_monotonic_time();
-    PMLOG_INFO(CONST_MODULE_CSP, "response %s, runtime %lld", resp.c_str(),
-               (endClk - startClk) / 1000);
+    PLOGI("response %s, runtime %lld", resp.c_str(), (endClk - startClk) / 1000);
 
     json j = json::parse(resp);
     if (j.is_discarded())
     {
-        PMLOG_ERROR(CONST_MODULE_CSP, "resp parsing error!");
+        PLOGE("resp parsing error!");
         return false;
     }
     bool ret = get_optional<bool>(j, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
@@ -365,14 +360,14 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
 
 void CameraSolutionProxy::run()
 {
-    PMLOG_INFO(CONST_MODULE_CSP, "thread start");
+    PLOGI("thread start");
 
     pthread_setname_np(pthread_self(), "solproxy");
     bThreadStarted_ = true;
 
     while (checkAlive())
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "wait for job");
+        PLOGI("wait for job");
         bool resWait = wait();
         if (resWait == false)
         {
@@ -386,14 +381,14 @@ void CameraSolutionProxy::run()
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_CSP, "thread end");
+    PLOGI("thread end");
 }
 
 void CameraSolutionProxy::startThread()
 {
     if (threadJob_ == nullptr)
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "Thread Start");
+        PLOGI("Thread Start");
         try
         {
             bThreadStarted_ = false;
@@ -405,12 +400,11 @@ void CameraSolutionProxy::startThread()
             {
                 g_usleep(1000);
             }
-            PMLOG_INFO(CONST_MODULE_CSP, "Thread Started - %d", timeout);
+            PLOGI("Thread Started - %d", timeout);
         }
         catch (const std::system_error &e)
         {
-            PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system error with code %d meaning %s",
-                        e.code().value(), e.what());
+            PLOGE("Caught a system error with code %d meaning %s", e.code().value(), e.what());
         }
     }
 }
@@ -419,7 +413,7 @@ void CameraSolutionProxy::stopThread()
 {
     if (threadJob_ != nullptr && threadJob_->joinable())
     {
-        PMLOG_INFO(CONST_MODULE_CSP, "Thread Closing");
+        PLOGI("Thread Closing");
         try
         {
             setAlive(false);
@@ -429,11 +423,10 @@ void CameraSolutionProxy::stopThread()
         }
         catch (const std::system_error &e)
         {
-            PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system error with code %d meaning %s",
-                        e.code().value(), e.what());
+            PLOGE("Caught a system error with code %d meaning %s", e.code().value(), e.what());
         }
         threadJob_.reset();
-        PMLOG_INFO(CONST_MODULE_CSP, "Thread Closed. queue job size %zd", queueJob_.size());
+        PLOGI("Thread Closed. queue job size %zd", queueJob_.size());
     }
 }
 
@@ -449,8 +442,7 @@ bool CameraSolutionProxy::wait()
     }
     catch (std::system_error &e)
     {
-        PMLOG_ERROR(CONST_MODULE_CSP, "Caught a system_error with code %d meaning %s",
-                    e.code().value(), e.what());
+        PLOGE("Caught a system_error with code %d meaning %s", e.code().value(), e.what());
         res = false;
     }
 

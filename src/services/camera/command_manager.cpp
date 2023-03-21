@@ -17,6 +17,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#define LOG_TAG "CommandManager"
 #include "command_manager.h"
 #include "addon.h"
 #include "camera_constants.h"
@@ -42,9 +43,9 @@ void CommandManager::removeVirtualDevMgrObj(int devhandle)
         Device obj = it->second;
         if (devhandle == obj.devicehandle)
         {
-            PMLOG_INFO(CONST_MODULE_CM, "ptr : %p \n", obj.ptr);
+            PLOGI("ptr : %p \n", obj.ptr);
             int count = virtualdevmgrobj_map_.count(it->first);
-            PMLOG_INFO(CONST_MODULE_CM, "count : %d \n", count);
+            PLOGI("count : %d \n", count);
             if (count == 1)
                 delete obj.ptr;
             virtualdevmgrobj_map_.erase(it);
@@ -56,11 +57,11 @@ void CommandManager::removeVirtualDevMgrObj(int devhandle)
 DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::string appId,
                                           std::string apppriority)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "deviceid : %d \n", deviceid);
+    PLOGI("deviceid : %d \n", deviceid);
 
     std::string devicenode;
     DeviceManager::getInstance().getDeviceNode(deviceid, devicenode);
-    PMLOG_INFO(CONST_MODULE_CM, "devicenode : %s \n", devicenode.c_str());
+    PLOGI("devicenode : %s \n", devicenode.c_str());
 
     std::multimap<std::string, Device>::iterator it;
     it = virtualdevmgrobj_map_.find(devicenode);
@@ -70,12 +71,12 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     {
         obj.ptr = new VirtualDeviceManager;
         obj.ptr->setAddon(pAddon_);
-        PMLOG_INFO(CONST_MODULE_CM, "ptr : %p \n", obj.ptr);
+        PLOGI("ptr : %p \n", obj.ptr);
     }
     else
         obj = it->second;
 
-    PMLOG_INFO(CONST_MODULE_CM, "ptr : %p \n", obj.ptr);
+    PLOGI("ptr : %p \n", obj.ptr);
 
     if (nullptr != obj.ptr)
     {
@@ -83,7 +84,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
         DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, appId, apppriority);
         if (DEVICE_OK == ret)
         {
-            PMLOG_INFO(CONST_MODULE_CM, "devicehandle : %d \n", *devicehandle);
+            PLOGI("devicehandle : %d \n", *devicehandle);
             obj.devicehandle = *devicehandle;
             obj.deviceid     = deviceid;
             obj.clientName   = "";
@@ -93,12 +94,12 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
             {
                 std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
                 bool res              = pAddon_->notifyDeviceOpened(deviceKey, appId, apppriority);
-                PMLOG_INFO(CONST_MODULE_CM, "AddOn::notifyDeviceOpened = %d ", res);
+                PLOGI("AddOn::notifyDeviceOpened = %d ", res);
             }
         }
         else
         {
-            PMLOG_ERROR(CONST_MODULE_CM, "open fail");
+            PLOGE("open fail");
             if (it == virtualdevmgrobj_map_.end())
                 delete obj.ptr;
         }
@@ -110,13 +111,13 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
 
 DEVICE_RETURN_CODE_T CommandManager::close(int devhandle)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d \n", devhandle);
+    PLOGI("devhandle : %d \n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
-    PMLOG_INFO(CONST_MODULE_CM, "ptr : %p \n", ptr);
+    PLOGI("ptr : %p \n", ptr);
     if (nullptr != ptr)
     {
         // send request to close the device
@@ -133,7 +134,7 @@ DEVICE_RETURN_CODE_T CommandManager::close(int devhandle)
 
 DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceid, camera_device_info_t *pinfo)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "deviceid : %d\n", deviceid);
+    PLOGI("deviceid : %d\n", deviceid);
 
     if (n_invalid_id == deviceid)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -142,7 +143,7 @@ DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceid, camera_device_i
     DEVICE_RETURN_CODE_T ret = DeviceManager::getInstance().getInfo(deviceid, pinfo);
     if (DEVICE_OK != ret)
     {
-        PMLOG_ERROR(CONST_MODULE_CM, "Failed to get device info\n");
+        PLOGE("Failed to get device info\n");
     }
 
     return ret;
@@ -150,7 +151,7 @@ DEVICE_RETURN_CODE_T CommandManager::getDeviceInfo(int deviceid, camera_device_i
 
 DEVICE_RETURN_CODE_T CommandManager::getDeviceList(std::vector<int> &idList)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "started!");
+    PLOGI("started!");
 
     // get list of devices connected
     return DeviceManager::getInstance().getDeviceIdList(idList);
@@ -158,7 +159,7 @@ DEVICE_RETURN_CODE_T CommandManager::getDeviceList(std::vector<int> &idList)
 
 DEVICE_RETURN_CODE_T CommandManager::getProperty(int devhandle, CAMERA_PROPERTIES_T *devproperty)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if ((n_invalid_id == devhandle) || (NULL == devproperty))
         return DEVICE_ERROR_WRONG_PARAM;
@@ -173,7 +174,7 @@ DEVICE_RETURN_CODE_T CommandManager::getProperty(int devhandle, CAMERA_PROPERTIE
 
 DEVICE_RETURN_CODE_T CommandManager::setProperty(int devhandle, CAMERA_PROPERTIES_T *oInfo)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -188,7 +189,7 @@ DEVICE_RETURN_CODE_T CommandManager::setProperty(int devhandle, CAMERA_PROPERTIE
 
 DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT oformat)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d \n", devhandle);
+    PLOGI("devhandle : %d \n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -204,7 +205,7 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
 DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey,
                                                   LSHandle *sh, const char *subskey)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -219,7 +220,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string mem
 
 DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -235,7 +236,7 @@ DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle)
 DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
                                                   const std::string &imagepath)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -250,7 +251,7 @@ DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT s
 
 DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -266,7 +267,7 @@ DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle)
 DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAMERA_FORMAT sformat,
                                                   const std::string &imagepath)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -284,7 +285,7 @@ DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAM
 
 DEVICE_RETURN_CODE_T CommandManager::getFormat(int devhandle, CAMERA_FORMAT *oformat)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
@@ -299,7 +300,7 @@ DEVICE_RETURN_CODE_T CommandManager::getFormat(int devhandle, CAMERA_FORMAT *ofo
 
 int CommandManager::getCameraId(int devhandle)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
     if (n_invalid_id == devhandle)
         return n_invalid_id;
 
@@ -315,7 +316,7 @@ int CommandManager::getCameraId(int devhandle)
 
 int CommandManager::getCameraHandle(int devid)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devid : %d\n", devid);
+    PLOGI("devid : %d\n", devid);
 
     std::multimap<std::string, Device>::iterator it;
     for (it = virtualdevmgrobj_map_.begin(); it != virtualdevmgrobj_map_.end(); ++it)
@@ -329,7 +330,7 @@ int CommandManager::getCameraHandle(int devid)
 
 DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, int *shmfd)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
@@ -342,7 +343,7 @@ DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, int *shmfd)
 DEVICE_RETURN_CODE_T CommandManager::registerClientPid(int devhandle, int n_client_pid,
                                                        int n_client_sig, std::string &outmsg)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "n_client_pid : %d\n", n_client_pid);
+    PLOGI("n_client_pid : %d\n", n_client_pid);
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
@@ -357,7 +358,7 @@ DEVICE_RETURN_CODE_T CommandManager::registerClientPid(int devhandle, int n_clie
 DEVICE_RETURN_CODE_T CommandManager::unregisterClientPid(int devhandle, int n_client_pid,
                                                          std::string &outmsg)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "n_client_pid : %d\n", n_client_pid);
+    PLOGI("n_client_pid : %d\n", n_client_pid);
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
@@ -381,7 +382,7 @@ bool CommandManager::isRegisteredClientPid(int devhandle)
 
 bool CommandManager::setClientDevice(int devhandle, std::string clientName)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+    PLOGI("devhandle : %d\n", devhandle);
     if (n_invalid_id == devhandle)
         return false;
 
@@ -391,8 +392,8 @@ bool CommandManager::setClientDevice(int devhandle, std::string clientName)
         if (devhandle == it->second.devicehandle)
         {
             it->second.clientName = clientName;
-            PMLOG_INFO(CONST_MODULE_CM, "devicehandle : %d, deviceid : %d, clientName : %s",
-                       it->second.devicehandle, it->second.deviceid, it->second.clientName.c_str());
+            PLOGI("devicehandle : %d, deviceid : %d, clientName : %s", it->second.devicehandle,
+                  it->second.deviceid, it->second.clientName.c_str());
             return true;
         }
     }
@@ -401,15 +402,15 @@ bool CommandManager::setClientDevice(int devhandle, std::string clientName)
 
 void CommandManager::closeClientDevice(std::string clientName)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "clientName : %s", clientName.c_str());
+    PLOGI("clientName : %s", clientName.c_str());
     std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
     while (it != virtualdevmgrobj_map_.end())
     {
         Device obj = it->second;
-        PMLOG_INFO(CONST_MODULE_CM, "id = %d", obj.deviceid);
+        PLOGI("id = %d", obj.deviceid);
         if (clientName == obj.clientName && nullptr != obj.ptr)
         {
-            PMLOG_INFO(CONST_MODULE_CM, "stop & close devicehandle : %d", obj.devicehandle);
+            PLOGI("stop & close devicehandle : %d", obj.devicehandle);
 
             // send request to stop all and close the device
             obj.ptr->stopCapture(obj.devicehandle);
@@ -433,7 +434,7 @@ void CommandManager::closeClientDevice(std::string clientName)
 
 void CommandManager::handleCrash()
 {
-    PMLOG_INFO(CONST_MODULE_CM, "start freeing resources for abnormal service termination \n");
+    PLOGI("start freeing resources for abnormal service termination \n");
 
     std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
     while (it != virtualdevmgrobj_map_.end())
@@ -454,12 +455,12 @@ void CommandManager::handleCrash()
         it = virtualdevmgrobj_map_.erase(it);
     }
 
-    PMLOG_INFO(CONST_MODULE_CM, "end freeing resources for abnormal service termination \n");
+    PLOGI("end freeing resources for abnormal service termination \n");
 }
 
 void CommandManager::release(int deviceid)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "deviceid : %d", deviceid);
+    PLOGI("deviceid : %d", deviceid);
 
     std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
     while (it != virtualdevmgrobj_map_.end())
@@ -493,7 +494,7 @@ DEVICE_RETURN_CODE_T
 CommandManager::getSupportedCameraSolutionInfo(int devhandle,
                                                std::vector<std::string> &solutionsInfo)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "getSupportedCameraSolutionInfo : devhandle : %d\n", devhandle);
+    PLOGI("getSupportedCameraSolutionInfo : devhandle : %d\n", devhandle);
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
@@ -509,7 +510,7 @@ CommandManager::getSupportedCameraSolutionInfo(int devhandle,
 DEVICE_RETURN_CODE_T
 CommandManager::getEnabledCameraSolutionInfo(int devhandle, std::vector<std::string> &solutionsInfo)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "getSupportedCameraSolutionInfo : devhandle : %d\n", devhandle);
+    PLOGI("getSupportedCameraSolutionInfo : devhandle : %d\n", devhandle);
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
@@ -525,7 +526,7 @@ CommandManager::getEnabledCameraSolutionInfo(int devhandle, std::vector<std::str
 DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle,
                                                           const std::vector<std::string> solutions)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "enableCameraSolutionInfo : devhandle : %d\n", devhandle);
+    PLOGI("enableCameraSolutionInfo : devhandle : %d\n", devhandle);
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
@@ -541,7 +542,7 @@ DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle,
 DEVICE_RETURN_CODE_T CommandManager::disableCameraSolution(int devhandle,
                                                            const std::vector<std::string> solutions)
 {
-    PMLOG_INFO(CONST_MODULE_CM, "enableCameraSolutionInfo : devhandle : %d\n", devhandle);
+    PLOGI("enableCameraSolutionInfo : devhandle : %d\n", devhandle);
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)

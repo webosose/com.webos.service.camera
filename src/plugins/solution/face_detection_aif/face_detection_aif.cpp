@@ -27,9 +27,9 @@ using namespace cv;
 
 #define AIF_PARAM_FILE "/home/root/aif_param.json"
 
-FaceDetectionAIF::FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
+FaceDetectionAIF::FaceDetectionAIF(void) { PLOGI(""); }
 
-FaceDetectionAIF::~FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
+FaceDetectionAIF::~FaceDetectionAIF(void) { PLOGI(""); }
 
 int32_t FaceDetectionAIF::getMetaSizeHint(void)
 {
@@ -46,7 +46,7 @@ std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTI
 
 void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 
     std::lock_guard<std::mutex> lock(mtxAi_);
@@ -55,7 +55,7 @@ void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *ls
     // clang-format off
     std::string param = json{
         {
-            "param", 
+            "param",
             {
                 {
                     "autoDelegate",
@@ -85,22 +85,22 @@ void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *ls
         }
     }
 
-    PMLOG_INFO(LOG_TAG, "aif_param = %s", param.c_str());
+    PLOGI("aif_param = %s", param.c_str());
     EdgeAIVision::getInstance().createDetector(type, param);
 
     CameraSolution::initialize(streamFormat, shmKey, lsHandle);
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
 }
 
 void FaceDetectionAIF::release(void)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     mtxAi_.lock();
     EdgeAIVision::getInstance().deleteDetector(type);
     EdgeAIVision::getInstance().shutdown();
     mtxAi_.unlock();
     CameraSolutionAsync::release();
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
 }
 
 void FaceDetectionAIF::processing(void)
@@ -140,7 +140,7 @@ void FaceDetectionAIF::processing(void)
             json jfaces = get_optional<json>(jresult, "faces").value_or(nullptr);
             if (jfaces != nullptr && jfaces.is_array())
             {
-                PMLOG_INFO(LOG_TAG, "Detected face count : %d", jfaces.size());
+                PLOGI("Detected face count : %d", jfaces.size());
                 for (auto jface : jfaces)
                 {
                     if (!jface.contains("region") || !jface.contains("score"))
@@ -176,7 +176,7 @@ void FaceDetectionAIF::processing(void)
 
 void FaceDetectionAIF::postProcessing(void)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
 
     std::string strOutput = json{{"faces", json::array()}}.dump();
 
@@ -214,7 +214,7 @@ bool FaceDetectionAIF::decodeJpeg(void)
     jpeg_mem_src(&cinfo, buf->data_, buf->size_);
     if (jpeg_read_header(&cinfo, TRUE) != 1)
     {
-        PMLOG_INFO(LOG_TAG, "Image decoding is failed");
+        PLOGI("Image decoding is failed");
         return false;
     }
 
@@ -258,7 +258,7 @@ void FaceDetectionAIF::sendReply(std::string message)
         LSErrorInit(&lserror);
 
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, SOL_SUBSCRIPTION_KEY);
-        PMLOG_DEBUG("cnt %d", num_subscribers);
+        PLOGD("cnt %d", num_subscribers);
 
         if (num_subscribers > 0)
         {
@@ -266,10 +266,10 @@ void FaceDetectionAIF::sendReply(std::string message)
             {
                 LSErrorPrint(&lserror, stderr);
                 LSErrorFree(&lserror);
-                PMLOG_ERROR(LOG_TAG, "subscription reply failed");
+                PLOGE("subscription reply failed");
                 return;
             }
-            PMLOG_DEBUG("subscription reply ok");
+            PLOGD("subscription reply ok");
         }
 
         LSErrorFree(&lserror);

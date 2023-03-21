@@ -14,6 +14,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_TAG "Notifier"
 #include "notifier.h"
 #include "device_manager.h"
 
@@ -37,7 +38,7 @@ void Notifier::addNotifiers(GMainLoop *loop)
     auto lstFeatNames = pPluginFactory_->getFeatureList("NOTIFIER");
     for (auto &f : lstFeatNames)
     {
-        PMLOG_INFO(CONST_MODULE_NOTIFIER, "client : %s", f.c_str());
+        PLOGI("client : %s", f.c_str());
         IFeaturePtr pFeature = pPluginFactory_->createFeature(f.c_str());
         if (pFeature)
         {
@@ -49,8 +50,7 @@ void Notifier::addNotifiers(GMainLoop *loop)
                 INotifier *noti         = notifierMap_[f.c_str()];
                 noti->setLSHandle(lshandle_);
                 registerCallback(noti, updateDeviceListCb, loop);
-                PMLOG_INFO(CONST_MODULE_NOTIFIER,
-                           "Notifier \'%s\' instance created and ready : OK!", f.c_str());
+                PLOGI("Notifier \'%s\' instance created and ready : OK!", f.c_str());
             }
         }
     }

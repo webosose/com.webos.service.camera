@@ -9,8 +9,8 @@
 //
 // LICENSE@@@
 
+#define LOG_TAG "LunaClient"
 #include "luna_client.h"
-#include "camera_constants.h"
 #include <camera_log.h>
 #include <glib.h>
 #include <ios>
@@ -26,11 +26,11 @@ struct AutoLSError : LSError
         }
         catch (const std::ios::failure &e)
         {
-            PMLOG_ERROR(CONST_MODULE_LC, "Caught a std::ios::failure %s", e.what());
+            PLOGE("Caught a std::ios::failure %s", e.what());
         }
         catch (std::bad_cast &e)
         {
-            PMLOG_ERROR(CONST_MODULE_LC, "Caught a bad_cast %s", e.what());
+            PLOGE("Caught a bad_cast %s", e.what());
         }
     }
     ~AutoLSError(void)
@@ -41,12 +41,11 @@ struct AutoLSError : LSError
         }
         catch (const std::system_error &e)
         {
-            PMLOG_ERROR(CONST_MODULE_LC, "Caught a system_error with code %d meaning %s",
-                        e.code().value(), e.what());
+            PLOGE("Caught a system_error with code %d meaning %s", e.code().value(), e.what());
         }
         catch (std::bad_cast &err)
         {
-            PMLOG_ERROR(CONST_MODULE_LC, "Caught a bad_cast %s", err.what());
+            PLOGE("Caught a bad_cast %s", err.what());
         }
     }
 };
@@ -57,12 +56,12 @@ LunaClient::LunaClient(void)
     error.message     = nullptr;
     if (!LSRegister(nullptr, &pHandle_, &error))
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        PLOGE("LunaClient ERROR: %s\n", error.message);
     }
 
     if (!LSGmainContextAttach(pHandle_, g_main_context_default(), &error))
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        PLOGE("LunaClient ERROR: %s\n", error.message);
     }
 }
 
@@ -78,7 +77,7 @@ LunaClient::LunaClient(const char *serviceName, GMainContext *ctx)
     error.message     = nullptr;
     if (!LSRegister(serviceName, &pHandle_, &error))
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        PLOGE("LunaClient ERROR: %s\n", error.message);
     }
 
     if (ctx == nullptr)
@@ -88,7 +87,7 @@ LunaClient::LunaClient(const char *serviceName, GMainContext *ctx)
 
     if (!LSGmainContextAttach(pHandle_, pContext_, &error))
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        PLOGE("LunaClient ERROR: %s\n", error.message);
     }
 }
 
@@ -123,7 +122,7 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
         bool bDone_{false};
     } ctx(result);
 
-    PMLOG_DEBUG("[%p] uri=%s, param=%s, timeout=%d", g_thread_self(), uri, param, timeout);
+    PLOGD("[%p] uri=%s, param=%s, timeout=%d", g_thread_self(), uri, param, timeout);
     ret = LSCallOneReply(
         pHandle_, uri, param,
         +[](LSHandle *h, LSMessage *m, void *d)
@@ -138,14 +137,14 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
                 pCtx->pstrResult_->assign(payload);
             // 3. Notify
             pCtx->bDone_ = true;
-            PMLOG_DEBUG("[%p] reply\n", g_thread_self());
+            PLOGD("[%p] reply\n", g_thread_self());
             return pCtx->bRet_;
         },
         &ctx, &tok, &error);
 
     if (ret != true)
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "[%p] LunaClient ERROR: %s\n", g_thread_self(), error.message);
+        PLOGE("[%p] LunaClient ERROR: %s\n", g_thread_self(), error.message);
     }
 
     if (ret == true)
@@ -174,7 +173,7 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
         }
     }
 
-    PMLOG_DEBUG("[%p] ret=%d, bRet_=%d", g_thread_self(), ret, ctx.bRet_);
+    PLOGD("[%p] ret=%d, bRet_=%d", g_thread_self(), ret, ctx.bRet_);
     return ret && ctx.bRet_;
 }
 
@@ -187,7 +186,7 @@ bool LunaClient::callAsync(const char *uri, const char *param, Handler handler, 
     wrapper->callback       = handler;
     wrapper->data           = data;
 
-    PMLOG_DEBUG("uri=%s, param=%s", uri, param);
+    PLOGD("uri=%s, param=%s", uri, param);
     ret = LSCallOneReply(
         pHandle_, uri, param,
         +[](LSHandle *h, LSMessage *m, void *d)
@@ -201,11 +200,11 @@ bool LunaClient::callAsync(const char *uri, const char *param, Handler handler, 
 
     if (!ret)
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        PLOGE("LunaClient ERROR: %s\n", error.message);
         delete wrapper;
     }
 
-    PMLOG_DEBUG("ret=%d", ret);
+    PLOGD("ret=%d", ret);
     return ret;
 }
 
@@ -218,7 +217,7 @@ bool LunaClient::registerToService(const char *serviceName, RegisterHandler hand
     wrapper->callback               = handler;
     wrapper->data                   = data;
 
-    PMLOG_DEBUG("serviceName=%s", serviceName);
+    PLOGD("serviceName=%s", serviceName);
     ret = LSRegisterServerStatusEx(
         pHandle_, serviceName,
         +[](LSHandle *h, const char *s, bool b, void *d)
@@ -231,7 +230,7 @@ bool LunaClient::registerToService(const char *serviceName, RegisterHandler hand
 
     if (!ret)
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        PLOGE("LunaClient ERROR: %s\n", error.message);
         delete wrapper;
     }
     else
@@ -239,7 +238,7 @@ bool LunaClient::registerToService(const char *serviceName, RegisterHandler hand
         registerHandlers_[serviceName] = std::unique_ptr<RegisterHandlerWrapper>(wrapper);
     }
 
-    PMLOG_DEBUG("ret=%d", ret);
+    PLOGD("ret=%d", ret);
     return ret;
 }
 
@@ -253,7 +252,7 @@ bool LunaClient::subscribe(const char *uri, const char *param, unsigned long *su
     wrapper->callback       = handler;
     wrapper->data           = data;
 
-    PMLOG_DEBUG("uri=%s, param=%s", uri, param);
+    PLOGD("uri=%s, param=%s", uri, param);
     ret = LSCall(
         pHandle_, uri, param,
         +[](LSHandle *h, LSMessage *m, void *d)
@@ -266,14 +265,14 @@ bool LunaClient::subscribe(const char *uri, const char *param, unsigned long *su
 
     if (!ret)
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: %s\n", error.message);
+        PLOGE("LunaClient ERROR: %s\n", error.message);
         delete wrapper;
         return false;
     }
 
     handlers_[*subscribeKey] = std::unique_ptr<HandlerWrapper>(wrapper);
 
-    PMLOG_DEBUG("ret=%d, subscribeKey=%ld", ret, *subscribeKey);
+    PLOGD("ret=%d, subscribeKey=%ld", ret, *subscribeKey);
     return ret;
 }
 
@@ -281,15 +280,15 @@ bool LunaClient::unsubscribe(unsigned long subscribeKey)
 {
     AutoLSError error = {};
 
-    PMLOG_DEBUG("subscribeKey=%ld", subscribeKey);
+    PLOGD("subscribeKey=%ld", subscribeKey);
     if (!LSCallCancel(pHandle_, subscribeKey, &error))
     {
-        PMLOG_ERROR(CONST_MODULE_LC, "LunaClient ERROR: subscribeKey = %ld", subscribeKey);
+        PLOGE("LunaClient ERROR: subscribeKey = %ld", subscribeKey);
         handlers_.erase(subscribeKey);
         return false;
     }
 
     handlers_.erase(subscribeKey);
-    PMLOG_DEBUG("ret=%d", true);
+    PLOGD("ret=%d", true);
     return true;
 }

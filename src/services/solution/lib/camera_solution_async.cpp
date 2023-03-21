@@ -82,7 +82,7 @@ struct PerformanceControl
                 timeMultiple_ -= 1;
         }
 
-        PMLOG_INFO(LOG_TAG, ">>>>>> fps : %f, target_fps : %f <<<<<<", avrFPS_, targetFPS_);
+        PLOGI(">>>>>> fps : %f, target_fps : %f <<<<<<", avrFPS_, targetFPS_);
 
         resetFPS();
     }
@@ -110,13 +110,13 @@ CameraSolutionAsync::Buffer::~Buffer(void)
 
 CameraSolutionAsync::CameraSolutionAsync(void) {}
 
-CameraSolutionAsync::~CameraSolutionAsync(void) { PMLOG_INFO(LOG_TAG, ""); }
+CameraSolutionAsync::~CameraSolutionAsync(void) { PLOGI(""); }
 
 void CameraSolutionAsync::release()
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     setEnableValue(false);
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
 }
 
 void CameraSolutionAsync::setEnableValue(bool enableValue)
@@ -151,11 +151,11 @@ void CameraSolutionAsync::run(void)
 
     SHMEM_HANDLE hShm  = nullptr;
     SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().OpenShmem(&hShm, shm_key);
-    PMLOG_INFO(LOG_TAG, "OpenShem %d", ret);
+    PLOGI("OpenShem %d", ret);
 
     if (ret != SHMEM_IS_OK)
     {
-        PMLOG_ERROR(LOG_TAG, "Fail : OpenShmem RET => %d\n", ret);
+        PLOGE("Fail : OpenShmem RET => %d\n", ret);
         return;
     }
 
@@ -188,9 +188,9 @@ void CameraSolutionAsync::run(void)
     if (hShm)
     {
         SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().CloseShmemory(&hShm);
-        PMLOG_INFO(LOG_TAG, "CloseShmemory %d", ret);
+        PLOGI("CloseShmemory %d", ret);
         if (ret != SHMEM_IS_OK)
-            PMLOG_ERROR(LOG_TAG, "CloseShmemory error %d \n", ret);
+            PLOGE("CloseShmemory error %d \n", ret);
     }
 }
 
@@ -198,7 +198,7 @@ void CameraSolutionAsync::startThread(void)
 {
     if (threadJob_ == nullptr)
     {
-        PMLOG_INFO(LOG_TAG, "Thread Start");
+        PLOGI("Thread Start");
         try
         {
             setAlive(true);
@@ -206,10 +206,9 @@ void CameraSolutionAsync::startThread(void)
         }
         catch (const std::system_error &e)
         {
-            PMLOG_INFO(LOG_TAG, "Caught a system error with code %d meaning %s", e.code().value(),
-                       e.what());
+            PLOGI("Caught a system error with code %d meaning %s", e.code().value(), e.what());
         }
-        PMLOG_INFO(LOG_TAG, "Thread Started");
+        PLOGI("Thread Started");
     }
 }
 
@@ -217,7 +216,7 @@ void CameraSolutionAsync::stopThread(void)
 {
     if (threadJob_ != nullptr && threadJob_->joinable())
     {
-        PMLOG_INFO(LOG_TAG, "Thread Closing");
+        PLOGI("Thread Closing");
         try
         {
             setAlive(false);
@@ -226,11 +225,10 @@ void CameraSolutionAsync::stopThread(void)
         }
         catch (const std::system_error &e)
         {
-            PMLOG_INFO(LOG_TAG, "Caught a system error with code %d meaning %s", e.code().value(),
-                       e.what());
+            PLOGI("Caught a system error with code %d meaning %s", e.code().value(), e.what());
         }
         threadJob_.reset();
-        PMLOG_INFO(LOG_TAG, "Thread Closed");
+        PLOGI("Thread Closed");
     }
 }
 
@@ -245,14 +243,13 @@ CameraSolutionAsync::WaitResult CameraSolutionAsync::wait(void)
         auto status = cv_.wait_for(lock, 1s);
         if (status == std::cv_status::timeout)
         {
-            PMLOG_INFO(LOG_TAG, "Timeout to wait for Feed");
+            PLOGI("Timeout to wait for Feed");
             res = TIMEOUT;
         }
     }
     catch (std::system_error &e)
     {
-        PMLOG_INFO(LOG_TAG, "Caught a system_error with code %d meaning %s", e.code().value(),
-                   e.what());
+        PLOGI("Caught a system_error with code %d meaning %s", e.code().value(), e.what());
         res = ERROR;
     }
 

@@ -14,8 +14,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_TAG "Process"
 #include "process.h"
-#include "camera_types.h"
+#include "camera_log.h"
 #include <iterator>
 #include <sstream>
 #include <sys/wait.h>
@@ -23,21 +24,21 @@
 
 Process::Process(const std::string &cmd)
 {
-    PMLOG_INFO(CONST_MODULE_PR, "");
+    PLOGI("");
 
     start(cmd);
 }
 
 Process::~Process()
 {
-    PMLOG_INFO(CONST_MODULE_PR, "");
+    PLOGI("");
 
     stop();
 }
 
 void Process::start(const std::string &cmd)
 {
-    PMLOG_INFO(CONST_MODULE_PR, "%s", cmd.c_str());
+    PLOGI("%s", cmd.c_str());
 
     _pid = fork();
     if (_pid == 0)
@@ -59,25 +60,25 @@ void Process::start(const std::string &cmd)
 }
 void Process::stop()
 {
-    PMLOG_INFO(CONST_MODULE_PR, "pid %d", _pid);
+    PLOGI("pid %d", _pid);
 
     int status    = 0;
     pid_t waitPid = wait(&status);
     if (waitPid == -1)
     {
-        PMLOG_ERROR(CONST_MODULE_PR, "error : %d", errno);
+        PLOGE("error : %d", errno);
     }
     else
     {
         if (WIFEXITED(status))
         {
-            PMLOG_INFO(CONST_MODULE_PR, "normal exit status %d", WEXITSTATUS(status));
+            PLOGI("normal exit status %d", WEXITSTATUS(status));
         }
         else if (WIFSIGNALED(status))
         {
-            PMLOG_INFO(CONST_MODULE_PR, "abnormal exit status %d", WTERMSIG(status));
+            PLOGI("abnormal exit status %d", WTERMSIG(status));
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_PR, "end pid %d", waitPid);
+    PLOGI("end pid %d", waitPid);
 }

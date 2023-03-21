@@ -5,8 +5,6 @@
 #include "whitelist_checker.h"
 #include <dlfcn.h>
 
-#define CONST_MODULE_ADDON "ADDON"
-
 AddOn::AddOn()
 {
     pFeature_ = pluginFactory_.createFeature("addon");

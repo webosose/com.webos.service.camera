@@ -14,23 +14,22 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_TAG "WhitelistChecker"
 #include "whitelist_checker.h"
 #include "camera_types.h"
 
 bool WhitelistChecker::check(const std::string &productId, const std::string &vendorId)
 {
-    PMLOG_INFO(CONST_MODULE_WLIST, "productId=[%s], vendorId=[%s]", productId.c_str(),
-               vendorId.c_str());
+    PLOGI("productId=[%s], vendorId=[%s]", productId.c_str(), vendorId.c_str());
     bool retValue = true;
-    PMLOG_INFO(CONST_MODULE_WLIST, "supported = %d", retValue);
+    PLOGI("supported = %d", retValue);
     return retValue;
 }
 
 bool WhitelistChecker::isSupportedCamera(const std::string &productId, const std::string &vendorId)
 {
-    PMLOG_INFO(CONST_MODULE_WLIST, "productId=[%s], vendorId=[%s]", productId.c_str(),
-               vendorId.c_str());
+    PLOGI("productId=[%s], vendorId=[%s]", productId.c_str(), vendorId.c_str());
     bool retValue = true;
-    PMLOG_INFO(CONST_MODULE_WLIST, "supported = %d", retValue);
+    PLOGI("supported = %d", retValue);
     return retValue;
 }
