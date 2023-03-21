@@ -14,7 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#define LOG_TAG "NOTIFIER:PDMClient"
+#define LOG_CONTEXT "notifier"
+#define LOG_TAG "PDMClient"
 #include "pdm_client.h"
 #include "camera_device_types.h"
 #include "camera_log.h"

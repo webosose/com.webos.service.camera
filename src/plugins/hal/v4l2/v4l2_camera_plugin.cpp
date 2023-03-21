@@ -14,7 +14,8 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#define LOG_TAG "HAL:V4l2CameraPlugin"
+#define LOG_CONTEXT "hal"
+#define LOG_TAG "V4l2CameraPlugin"
 #include "v4l2_camera_plugin.h"
 #include "camera_log.h"
 #include <fcntl.h>
