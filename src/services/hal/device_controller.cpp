@@ -473,7 +473,7 @@ DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
     if (ret != CAMERA_ERROR_NONE)
     {
         PLOGI("fail");
-        return DEVICE_ERROR_CAN_NOT_OPEN;
+        return DEVICE_ERROR_CAN_NOT_CLOSE;
     }
     PLOGI("success");
     return DEVICE_OK;
