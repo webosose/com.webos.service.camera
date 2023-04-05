@@ -8,6 +8,7 @@
     "permissions": [
         {
             "service":"com.webos.camerasolution.*",
+            "inbound":["com.webos.camerahal.*"],
             "outbound":["*"]
         }
     ]

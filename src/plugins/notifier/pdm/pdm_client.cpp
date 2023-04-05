@@ -14,8 +14,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_CONTEXT "notifier"
+#define LOG_TAG "PDMClient"
 #include "pdm_client.h"
-#include "camera_constants.h"
 #include "camera_device_types.h"
 #include "camera_log.h"
 #include "json_utils.h"
@@ -25,7 +26,10 @@
 #include <nlohmann/json.hpp>
 #include <optional>
 
-#define LOG_TAG "NOTIFIER:PDMClient"
+#define LUNA_CALLBACK(NAME)                                                                        \
+    +[](const char *m, void *c) -> bool { return ((PDMClient *)c)->NAME(m); }
+#define REGISTER_CALLBACK(NAME)                                                                    \
+    +[](const char *m, bool b, void *c) -> bool { return ((PDMClient *)c)->NAME(m, b); }
 
 using namespace nlohmann;
 
@@ -74,7 +78,7 @@ void from_json(const json &j, VideoDevice &v)
     {
         for (auto jsub : j["subDeviceList"])
         {
-            if (jsub.contains("capabilities") && jsub["capabilities"] == cstr_capture)
+            if (jsub.contains("capabilities") && jsub["capabilities"] == ":capture:")
             {
                 auto subDevice = std::make_shared<SubDevice>();
                 subDevice->productName =
@@ -89,28 +93,92 @@ void from_json(const json &j, VideoDevice &v)
     }
 }
 
-static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_data)
-{
-    const char *payload = LSMessageGetPayload(message);
-    PDMClient *client   = (PDMClient *)user_data;
-    PMLOG_INFO(LOG_TAG, "payload : %s \n", payload);
+PDMClient::PDMClient() { PLOGI(""); }
 
-    json jPayload = json::parse(payload, nullptr, false);
+PDMClient::~PDMClient() { PLOGI(""); }
+
+void PDMClient::subscribeToClient(handlercb cb, void *mainLoop)
+{
+    PLOGI("");
+    this->updateDeviceList = cb;
+
+    if (!lunaClient_)
+        return;
+
+    // register to PDM luna service with cb to be called
+    PLOGI("registerToService : com.webos.service.pdm");
+    lunaClient_->registerToService("com.webos.service.pdm",
+                                   REGISTER_CALLBACK(registerToServiceCallback), this);
+}
+
+void PDMClient::setLSHandle(void *handle)
+{
+    PLOGI("");
+    lunaClient_ = std::make_unique<LunaClient>(static_cast<LSHandle *>(handle));
+}
+
+bool PDMClient::registerToServiceCallback(const char *serviceName, bool connected)
+{
+    bool retVal = true;
+
+    PLOGI("connected status:%d \n", connected);
+    if (!lunaClient_)
+    {
+        PLOGE("lunaClient_ is nullptr!");
+        return false;
+    }
+
+    if (connected)
+    {
+        json jpayload;
+        jpayload["subscribe"] = true;
+        jpayload["category"]  = "Video";
+#ifdef PLATFORM_OSE
+        jpayload["groupSubDevices"] = true;
+#endif
+
+        // get camera service handle and register cb function with pdm
+        retVal = lunaClient_->subscribe(
+            "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList", jpayload.dump().c_str(),
+            &subscribeKey_, LUNA_CALLBACK(getDeviceListCallback), this);
+        if (!retVal)
+        {
+            PLOGE("%s appcast client uUnable to unregister service", __func__);
+        }
+    }
+    else
+    {
+        if (subscribeKey_ != 0UL)
+        {
+            PLOGI("Unsubscribe to the %s service", serviceName);
+            lunaClient_->unsubscribe(subscribeKey_);
+            subscribeKey_ = 0UL;
+        }
+    }
+
+    return retVal;
+}
+
+bool PDMClient::getDeviceListCallback(const char *message)
+{
+    PLOGI("payload : %s", message);
+
+    json jPayload = json::parse(message, nullptr, false);
     if (jPayload.is_discarded())
     {
-        PMLOG_INFO(LOG_TAG, "payload parsing fail!");
+        PLOGI("payload parsing fail!");
         return false;
     }
 
     PdmResponse pdm = jPayload;
     if (!pdm.returnValue)
     {
-        PMLOG_INFO(LOG_TAG, "retvalue fail!");
+        PLOGI("retvalue fail!");
         return false;
     }
     if (!pdm.videoDeviceList)
     {
-        PMLOG_INFO(LOG_TAG, "deviceListInfo empty!");
+        PLOGI("deviceListInfo empty!");
         return false;
     }
 
@@ -135,80 +203,21 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                 // plugged or unplugged while the TV is off.
             }
 
-            PMLOG_INFO(LOG_TAG, "Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
-                       devInfo.strVendorName.c_str());
-            PMLOG_INFO(LOG_TAG, "Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
-                       devInfo.strProductName.c_str());
-            PMLOG_INFO(LOG_TAG, "strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
-            PMLOG_INFO(LOG_TAG, "strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
+            PLOGI("Vendor ID,Name  : %s, %s", devInfo.strVendorID.c_str(),
+                  devInfo.strVendorName.c_str());
+            PLOGI("Product ID,Name : %s, %s", devInfo.strProductID.c_str(),
+                  devInfo.strProductName.c_str());
+            PLOGI("strDeviceKey    : %s", devInfo.strDeviceKey.c_str());
+            PLOGI("strDeviceNode   : %s", devInfo.strDeviceNode.c_str());
 
             devList.push_back(devInfo);
         }
     }
 
-    if (NULL != client->updateDeviceList)
-        client->updateDeviceList("v4l2", &devList);
+    if (NULL != updateDeviceList)
+        updateDeviceList("v4l2", &devList);
 
     return true;
-}
-
-void PDMClient::subscribeToClient(handlercb cb, void *mainLoop)
-{
-    LSError lsregistererror;
-    LSErrorInit(&lsregistererror);
-
-    // register to PDM luna service with cb to be called
-    this->updateDeviceList = cb;
-
-    bool result = LSRegisterServerStatusEx(lshandle_, "com.webos.service.pdm",
-                                           subscribeToPdmService, this, NULL, &lsregistererror);
-    if (!result)
-    {
-        PMLOG_INFO(LOG_TAG, "LSRegister Server Status failed");
-    }
-}
-
-void PDMClient::setLSHandle(void *handle) { lshandle_ = (LSHandle *)handle; }
-
-bool PDMClient::subscribeToPdmService(LSHandle *sh, const char *serviceName, bool connected,
-                                      void *ctx)
-{
-    int ret = 0;
-
-    PMLOG_INFO(LOG_TAG, "connected status:%d \n", connected);
-    if (connected)
-    {
-        LSError lserror;
-        LSErrorInit(&lserror);
-
-        std::string payload = "{\"subscribe\":true,\"category\":\"Video\"";
-#ifdef PLATFORM_OSE
-        payload += ",\"groupSubDevices\":true";
-#endif
-        payload += "}";
-
-        // get camera service handle and register cb function with pdm
-        int retval =
-            LSCall(sh, cstr_uri.c_str(), payload.c_str(), deviceStateCb, ctx, NULL, &lserror);
-
-        if (!retval)
-        {
-            PMLOG_INFO(LOG_TAG, "PDM client Unable to unregister service\n");
-            ret = -1;
-        }
-
-        if (LSErrorIsSet(&lserror))
-        {
-            LSErrorPrint(&lserror, stderr);
-        }
-        LSErrorFree(&lserror);
-    }
-    else
-    {
-        PMLOG_INFO(LOG_TAG, "connected value is false");
-    }
-
-    return ret;
 }
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)

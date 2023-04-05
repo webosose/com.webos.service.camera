@@ -13,27 +13,24 @@
  *
  */
 
+#define LOG_CONTEXT "solution"
+#define LOG_TAG "FaceDetectionAIF"
 #include "face_detection_aif.hpp"
 #include "camera_log.h"
 #include "plugin.hpp"
 #include <cstdio>
 #include <cstdlib>
 #include <jpeglib.h>
-#include <pbnjson.hpp>
-#include <rapidjson/document.h>
+#include <json_utils.h>
 #include <string>
 
 using namespace cv;
 
-namespace rj = rapidjson;
-
-#define LOG_TAG "SOLUTION:FaceDetectionAIF"
-
 #define AIF_PARAM_FILE "/home/root/aif_param.json"
 
-FaceDetectionAIF::FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
+FaceDetectionAIF::FaceDetectionAIF(void) { PLOGI(""); }
 
-FaceDetectionAIF::~FaceDetectionAIF(void) { PMLOG_INFO(LOG_TAG, ""); }
+FaceDetectionAIF::~FaceDetectionAIF(void) { PLOGI(""); }
 
 int32_t FaceDetectionAIF::getMetaSizeHint(void)
 {
@@ -50,25 +47,35 @@ std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTI
 
 void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 
     std::lock_guard<std::mutex> lock(mtxAi_);
     EdgeAIVision::getInstance().startup();
 
-    std::string param = R"({
-                                "param": {
-                                    "autoDelegate": {
-                                        "policy": "PYTORCH_MODEL_GPU",
-                                        "cpu_fallback_percentage": 15
-                                    },
-                                    "modelParam": {
-                                    "scoreThreshold": 0.7,
-                                    "nmsThreshold": 0.3,
-                                    "topK": 5000
-                                    }
-                                }
-                            })";
+    // clang-format off
+    std::string param = json{
+        {
+            "param",
+            {
+                {
+                    "autoDelegate",
+                    {
+                        {"policy", "PYTORCH_MODEL_GPU"},
+                        {"cpu_fallback_percentage", 15}
+                    }
+                },
+                {
+                    "modelParam",
+                    {
+                        {"scoreThreshold", 0.7},
+                        {"nmsThreshold", 0.3},
+                        {"topK", 5000}
+                    }
+                }
+            }
+        }}.dump();
+    // clang-format on
 
     if (access(AIF_PARAM_FILE, F_OK) == 0)
     {
@@ -79,22 +86,22 @@ void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *ls
         }
     }
 
-    PMLOG_INFO(LOG_TAG, "aif_param = %s", param.c_str());
+    PLOGI("aif_param = %s", param.c_str());
     EdgeAIVision::getInstance().createDetector(type, param);
 
     CameraSolution::initialize(streamFormat, shmKey, lsHandle);
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
 }
 
 void FaceDetectionAIF::release(void)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     mtxAi_.lock();
     EdgeAIVision::getInstance().deleteDetector(type);
     EdgeAIVision::getInstance().shutdown();
     mtxAi_.unlock();
     CameraSolutionAsync::release();
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
 }
 
 void FaceDetectionAIF::processing(void)
@@ -108,12 +115,6 @@ void FaceDetectionAIF::processing(void)
             break;
         if (!detectFace())
             break;
-
-        jvalue_ref jsonOutObj    = jobject_create();
-        jvalue_ref jsonFaceArray = jarray_create(nullptr);
-
-        rj::Document json;
-        json.Parse(output.c_str());
 
         /*
         {
@@ -133,58 +134,57 @@ void FaceDetectionAIF::processing(void)
         }
         */
 
-        const rj::Value &faces = json["faces"];
-        PMLOG_INFO(LOG_TAG, "Detected face count : %d", faces.Size());
-
-        for (rj::SizeType i = 0; i < faces.Size(); i++)
+        json joutfaces = json::array();
+        json jresult   = json::parse(output, nullptr, false);
+        if (!jresult.is_discarded())
         {
-            double dx    = faces[i]["region"][0].GetDouble();
-            double dy    = faces[i]["region"][1].GetDouble();
-            double dw    = faces[i]["region"][2].GetDouble();
-            double dh    = faces[i]["region"][3].GetDouble();
-            double score = faces[i]["score"].GetDouble();
+            json jfaces = get_optional<json>(jresult, "faces").value_or(nullptr);
+            if (jfaces != nullptr && jfaces.is_array())
+            {
+                PLOGI("Detected face count : %d", jfaces.size());
+                for (auto jface : jfaces)
+                {
+                    if (!jface.contains("region") || !jface.contains("score"))
+                        continue;
 
-            // Since the face detection result is normalized between 0 and 1,
-            // the box size must be calculated using the original frame size
-            int x          = dx * oDecodedImage_.srcWidth_;
-            int y          = dy * oDecodedImage_.srcHeight_;
-            int w          = dw * oDecodedImage_.srcWidth_;
-            int h          = dh * oDecodedImage_.srcHeight_;
-            int confidence = static_cast<int>(round(score * 100));
-
-            jvalue_ref jsonFaceElementObj = jobject_create();
-            jobject_put(jsonFaceElementObj, J_CSTR_TO_JVAL("confidence"),
-                        jnumber_create_i32(confidence));
-            jobject_put(jsonFaceElementObj, J_CSTR_TO_JVAL("x"), jnumber_create_i32(x));
-            jobject_put(jsonFaceElementObj, J_CSTR_TO_JVAL("y"), jnumber_create_i32(y));
-            jobject_put(jsonFaceElementObj, J_CSTR_TO_JVAL("w"), jnumber_create_i32(w));
-            jobject_put(jsonFaceElementObj, J_CSTR_TO_JVAL("h"), jnumber_create_i32(h));
-            jarray_append(jsonFaceArray, jsonFaceElementObj);
+                    auto score  = get_optional<double>(jface, "score").value_or(0);
+                    auto region = get_optional<std::vector<double>>(jface, "region")
+                                      .value_or(std::vector<double>{});
+                    if (region.size() == 4)
+                    {
+                        // Since the face detection result is normalized between 0 and 1,
+                        // the box size must be calculated using the original frame size
+                        json joutface = json::object();
+                        joutface["x"] = static_cast<int>(region[0] * oDecodedImage_.srcWidth_);
+                        joutface["y"] = static_cast<int>(region[1] * oDecodedImage_.srcHeight_);
+                        joutface["w"] = static_cast<int>(region[2] * oDecodedImage_.srcWidth_);
+                        joutface["h"] = static_cast<int>(region[3] * oDecodedImage_.srcHeight_);
+                        joutface["confidence"] = static_cast<int>(round(score * 100));
+                        joutfaces.push_back(joutface);
+                    }
+                }
+            }
         }
 
-        jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
+        std::string strOutput = json{{"faces", joutfaces}}.dump();
 
         if (pEvent_ && getMetaSizeHint() > 0)
-            (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
+            (pEvent_.load())->onDone(strOutput.c_str());
 
-        sendReply(jsonOutObj);
-
-        j_release(&jsonOutObj);
+        sendReply(strOutput);
     } while (0);
 }
 
 void FaceDetectionAIF::postProcessing(void)
 {
-    PMLOG_INFO(LOG_TAG, "");
-    jvalue_ref jsonOutObj    = jobject_create();
-    jvalue_ref jsonFaceArray = jarray_create(nullptr);
-    jobject_put(jsonOutObj, J_CSTR_TO_JVAL("faces"), jsonFaceArray);
+    PLOGI("");
+
+    std::string strOutput = json{{"faces", json::array()}}.dump();
+
     if (pEvent_ && getMetaSizeHint() > 0)
-        (pEvent_.load())->onDone(jvalue_stringify(jsonOutObj));
+        (pEvent_.load())->onDone(strOutput.c_str());
 
-    sendReply(jsonOutObj);
-
-    j_release(&jsonOutObj);
+    sendReply(strOutput);
 }
 
 bool FaceDetectionAIF::detectFace(void)
@@ -215,7 +215,7 @@ bool FaceDetectionAIF::decodeJpeg(void)
     jpeg_mem_src(&cinfo, buf->data_, buf->size_);
     if (jpeg_read_header(&cinfo, TRUE) != 1)
     {
-        PMLOG_INFO(LOG_TAG, "Image decoding is failed");
+        PLOGI("Image decoding is failed");
         return false;
     }
 
@@ -250,31 +250,27 @@ bool FaceDetectionAIF::decodeJpeg(void)
     return true;
 }
 
-void FaceDetectionAIF::sendReply(jvalue_ref jsonObj)
+void FaceDetectionAIF::sendReply(std::string message)
 {
     if (sh_)
     {
         int num_subscribers = 0;
-        std::string reply;
         LSError lserror;
         LSErrorInit(&lserror);
 
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, SOL_SUBSCRIPTION_KEY);
-        PMLOG_DEBUG("cnt %d", num_subscribers);
+        PLOGD("cnt %d", num_subscribers);
 
         if (num_subscribers > 0)
         {
-            const char *str = jvalue_stringify(jsonObj);
-            if (str)
-                reply = str;
-            if (!LSSubscriptionReply(sh_, SOL_SUBSCRIPTION_KEY, reply.c_str(), &lserror))
+            if (!LSSubscriptionReply(sh_, SOL_SUBSCRIPTION_KEY, message.c_str(), &lserror))
             {
                 LSErrorPrint(&lserror, stderr);
                 LSErrorFree(&lserror);
-                PMLOG_ERROR(LOG_TAG, "subscription reply failed");
+                PLOGE("subscription reply failed");
                 return;
             }
-            PMLOG_DEBUG("subscription reply ok");
+            PLOGD("subscription reply ok");
         }
 
         LSErrorFree(&lserror);

@@ -29,8 +29,14 @@ public:
         Handler callback;
         void *data;
     };
+    struct RegisterHandlerWrapper
+    {
+        RegisterHandler callback;
+        void *data;
+    };
 
     LunaClient(void);
+    LunaClient(LSHandle *handle);
     LunaClient(const char *serviceName, GMainContext *ctx = nullptr);
     virtual ~LunaClient(void);
 
@@ -49,4 +55,6 @@ private:
     LSHandle *pHandle_{nullptr};
     GMainContext *pContext_{nullptr};
     std::map<unsigned long, std::unique_ptr<HandlerWrapper>> handlers_;
+    std::map<std::string, std::unique_ptr<RegisterHandlerWrapper>> registerHandlers_;
+    bool needUnregister{true};
 };

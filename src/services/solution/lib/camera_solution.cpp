@@ -13,14 +13,13 @@
  *
  */
 
+#define LOG_TAG "CameraSolution"
 #include "camera_solution.h"
 #include "camera_types.h"
 
-#define LOG_TAG "CameraSolution"
-
 void CameraSolution::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
-    PMLOG_INFO(LOG_TAG, "%s", getSolutionStr().c_str());
+    PLOGI("%s", getSolutionStr().c_str());
     streamFormat_ = *static_cast<const stream_format_t *>(streamFormat);
     shm_key       = shmKey;
     sh_           = static_cast<LSHandle *>(lsHandle);

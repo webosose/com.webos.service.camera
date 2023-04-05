@@ -56,6 +56,7 @@ class CameraSolutionProxy
     std::queue<int> queueJob_;
     std::unique_ptr<std::thread> threadJob_;
     std::atomic<bool> bAlive_{false};
+    std::atomic<bool> bThreadStarted_{false};
 
     bool startProcess();
     bool stopProcess();

@@ -46,6 +46,5 @@ public:
     bool subscribe(LSMessage &);
 
 private:
-    buffer_t frameBuffer;
-    SHMEM_HANDLE hShm;
+    SHMEM_HANDLE hShm{nullptr};
 };

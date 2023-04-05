@@ -17,6 +17,7 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#define LOG_TAG "CameraService"
 #include "camera_service.h"
 #include "addon.h"
 #include "camera_constants.h"
@@ -70,6 +71,9 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     CommandManager::getInstance().setAddon(pAddon_);
     DeviceManager::getInstance().setAddon(pAddon_);
 
+    // set LS handle for device manager
+    DeviceManager::getInstance().setLSHandle(this->get());
+
     // subscribe to pdm client
     Notifier notifier;
     notifier.setLSHandle(this->get());
@@ -122,7 +126,7 @@ void CameraService::createEventMessage(EventType etype, void *p_old_data, int de
     {
         if (EventType::EVENT_TYPE_FORMAT == etype)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "EVENT_TYPE_FORMAT Event received\n");
+            PLOGI("EVENT_TYPE_FORMAT Event received\n");
             CAMERA_FORMAT newformat;
             CommandManager::getInstance().getFormat(devhandle, &newformat);
 
@@ -136,7 +140,7 @@ void CameraService::createEventMessage(EventType etype, void *p_old_data, int de
         }
         else if (EventType::EVENT_TYPE_PROPERTIES == etype)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "EVENT_TYPE_PROPERTIES Event received\n");
+            PLOGI("EVENT_TYPE_PROPERTIES Event received\n");
             CAMERA_PROPERTIES_T new_property;
             CommandManager::getInstance().getProperty(devhandle, &new_property);
 
@@ -150,7 +154,7 @@ void CameraService::createEventMessage(EventType etype, void *p_old_data, int de
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "Unknown Event received\n");
+            PLOGI("Unknown Event received\n");
         }
     }
 }
@@ -159,7 +163,7 @@ bool CameraService::open(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     // create Open class object and read data from json object after schema validation
     OpenMethod open;
     open.getOpenObject(payload, openSchema);
@@ -171,25 +175,25 @@ bool CameraService::open(LSMessage &message)
     if (cstr_invaliddeviceid == open.getCameraId() ||
         (pAddon_ && pAddon_->hasImplementation() && app_id.empty()))
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
     else if (pAddon_ && !pAddon_->isAppPermission(app_id))
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "CameraService::App Permission Fail\n");
+        PLOGI("CameraService::App Permission Fail\n");
         err_id = DEVICE_ERROR_APP_PERMISSION;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
     else
     {
         int ndev_id = getId(open.getCameraId());
-        PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
+        PLOGI("device Id %d\n", ndev_id);
         std::string app_priority = open.getAppPriority();
-        PMLOG_INFO(CONST_MODULE_LUNA, "priority : %s \n", app_priority.c_str());
+        PLOGI("priority : %s \n", app_priority.c_str());
         if (pAddon_ && pAddon_->hasImplementation())
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "appId : %s", app_id.c_str());
+            PLOGI("appId : %s", app_id.c_str());
         }
         int ndevice_handle = n_invalid_id;
 
@@ -197,12 +201,12 @@ bool CameraService::open(LSMessage &message)
         err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_id, app_priority);
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK\n");
+            PLOGD("err_id != DEVICE_OK\n");
             open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK\n");
+            PLOGD("err_id == DEVICE_OK\n");
             open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
             open.setDeviceHandle(ndevice_handle);
 
@@ -215,21 +219,20 @@ bool CameraService::open(LSMessage &message)
                 int n_client_sig = open.getClientSignal();
                 if (n_client_sig != -1)
                 {
-                    PMLOG_INFO(CONST_MODULE_LUNA,
-                               "Try register client process Id %d with signal number %d ...",
-                               n_client_pid, n_client_sig);
+                    PLOGI("Try register client process Id %d with signal number %d ...",
+                          n_client_pid, n_client_sig);
                     std::string outmsg;
                     DEVICE_RETURN_CODE_T retVal = CommandManager::getInstance().registerClientPid(
                         ndevice_handle, n_client_pid, n_client_sig, outmsg);
                     if (retVal == DEVICE_OK)
                     {
-                        PMLOG_INFO(CONST_MODULE_LUNA, "%s", outmsg.c_str());
+                        PLOGI("%s", outmsg.c_str());
                         open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                             getErrorString(err_id) + "\n<pid, sig> ::" + outmsg);
                     }
                     else // opened camera itself is valid, but close policy is applied.
                     {
-                        PMLOG_INFO(CONST_MODULE_LUNA, "%s", outmsg.c_str());
+                        PLOGI("%s", outmsg.c_str());
                         err_id = DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL;
                         CommandManager::getInstance().close(ndevice_handle);
                         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
@@ -249,7 +252,7 @@ bool CameraService::open(LSMessage &message)
 
     // create json string now for LS reply
     std::string output_reply = open.createOpenObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -260,7 +263,7 @@ bool CameraService::open(LSMessage &message)
 bool CameraService::close(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     // create close class object and read data from json object after schema validation
     StopPreviewCaptureCloseMethod obj_close;
@@ -272,7 +275,7 @@ bool CameraService::close(LSMessage &message)
     // camera id validation check
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
@@ -281,26 +284,27 @@ bool CameraService::close(LSMessage &message)
         int n_client_pid = obj_close.getClientProcessId();
         if (n_client_pid > 0)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "Try to unregister the client of pid %d\n", n_client_pid);
+            PLOGI("Try to unregister the client of pid %d\n", n_client_pid);
 
             // First try remove the client pid from the client pid pool if the pid is valid.
             std::string pid_msg;
-            CommandManager::getInstance().unregisterClientPid(ndevhandle, n_client_pid, pid_msg);
-            PMLOG_INFO(CONST_MODULE_LUNA, "%s", pid_msg.c_str());
+            DEVICE_RETURN_CODE_T ret = CommandManager::getInstance().unregisterClientPid(
+                ndevhandle, n_client_pid, pid_msg);
+            PLOGI("%s, ret = %d", pid_msg.c_str(), ret);
 
             // Even if pid unregistration failed, however, there is no problem in order to proceed
             // to close()!
-            PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+            PLOGI("ndevhandle %d\n", ndevhandle);
             err_id = CommandManager::getInstance().close(ndevhandle);
             if (DEVICE_OK != err_id)
             {
-                PMLOG_DEBUG("err_id != DEVICE_OK\n");
+                PLOGD("err_id != DEVICE_OK\n");
                 obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                          getErrorString(err_id) + "\npid :: " + pid_msg);
             }
             else
             {
-                PMLOG_DEBUG("err_id == DEVICE_OK\n");
+                PLOGD("err_id == DEVICE_OK\n");
                 obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                          getErrorString(err_id) + "\npid :: " + pid_msg);
             }
@@ -308,7 +312,7 @@ bool CameraService::close(LSMessage &message)
         else // handles the exception in which the pid is not input but the pid has been registered
              // when open.
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+            PLOGI("ndevhandle %d\n", ndevhandle);
 
             if (CommandManager::getInstance().isRegisteredClientPid(ndevhandle))
             {
@@ -323,13 +327,13 @@ bool CameraService::close(LSMessage &message)
 
                 if (DEVICE_OK != err_id)
                 {
-                    PMLOG_DEBUG("err_id != DEVICE_OK\n");
+                    PLOGD("err_id != DEVICE_OK\n");
                     obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                              getErrorString(err_id));
                 }
                 else
                 {
-                    PMLOG_DEBUG("err_id == DEVICE_OK\n");
+                    PLOGD("err_id == DEVICE_OK\n");
                     obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                              getErrorString(err_id));
                 }
@@ -339,7 +343,7 @@ bool CameraService::close(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_close.createObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -350,7 +354,7 @@ bool CameraService::close(LSMessage &message)
 bool CameraService::startPreview(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
     camera_memory_source_t memType;
 
@@ -360,14 +364,14 @@ bool CameraService::startPreview(LSMessage &message)
     int ndevhandle = obj_startpreview.getDeviceHandle();
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                         getErrorString(err_id));
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() ndevhandle : %d", ndevhandle);
+        PLOGI("startPreview() ndevhandle : %d", ndevhandle);
         // start preview here
         int key = 0;
 
@@ -382,13 +386,13 @@ bool CameraService::startPreview(LSMessage &message)
 
             if (DEVICE_OK != err_id)
             {
-                PMLOG_DEBUG("err_id != DEVICE_OK\n");
+                PLOGD("err_id != DEVICE_OK\n");
                 obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                                 getErrorString(err_id));
             }
             else
             {
-                PMLOG_DEBUG("err_id == DEVICE_OK\n");
+                PLOGD("err_id == DEVICE_OK\n");
                 obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                                 getErrorString(err_id));
                 obj_startpreview.setKeyValue(key);
@@ -396,7 +400,7 @@ bool CameraService::startPreview(LSMessage &message)
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() memory type is not supported\n");
+            PLOGI("startPreview() memory type is not supported\n");
             err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
             obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                             getErrorString(err_id));
@@ -405,7 +409,7 @@ bool CameraService::startPreview(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_startpreview.createStartPreviewObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
     LS::Message request(&message);
     request.respond(output_reply.c_str());
 
@@ -415,7 +419,7 @@ bool CameraService::startPreview(LSMessage &message)
 bool CameraService::stopPreview(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     StopPreviewCaptureCloseMethod obj_stoppreview;
@@ -425,26 +429,26 @@ bool CameraService::stopPreview(LSMessage &message)
 
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                        getErrorString(err_id));
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+        PLOGI("ndevhandle %d\n", ndevhandle);
         // stop preview here
         err_id = CommandManager::getInstance().stopPreview(ndevhandle);
 
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK\n");
+            PLOGD("err_id != DEVICE_OK\n");
             obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                            getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK\n");
+            PLOGD("err_id == DEVICE_OK\n");
             obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                            getErrorString(err_id));
         }
@@ -452,7 +456,7 @@ bool CameraService::stopPreview(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_stoppreview.createObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -463,7 +467,7 @@ bool CameraService::stopPreview(LSMessage &message)
 bool CameraService::startCapture(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     StartCaptureMethod obj_startcapture;
@@ -473,7 +477,7 @@ bool CameraService::startCapture(LSMessage &message)
 
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_startcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                         getErrorString(err_id));
@@ -487,9 +491,9 @@ bool CameraService::startCapture(LSMessage &message)
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
-            PMLOG_INFO(CONST_MODULE_LUNA, "nImage : %d\n", obj_startcapture.getnImage());
-            PMLOG_INFO(CONST_MODULE_LUNA, "path: %s\n", obj_startcapture.getImagePath().c_str());
+            PLOGI("ndevhandle %d\n", ndevhandle);
+            PLOGI("nImage : %d\n", obj_startcapture.getnImage());
+            PLOGI("path: %s\n", obj_startcapture.getImagePath().c_str());
 
             // capture image here
             if (0 != obj_startcapture.getnImage())
@@ -502,13 +506,13 @@ bool CameraService::startCapture(LSMessage &message)
         }
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK\n");
+            PLOGD("err_id != DEVICE_OK\n");
             obj_startcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                             getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK\n");
+            PLOGD("err_id == DEVICE_OK\n");
             obj_startcapture.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                             getErrorString(err_id));
         }
@@ -516,7 +520,7 @@ bool CameraService::startCapture(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_startcapture.createStartCaptureObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -527,7 +531,7 @@ bool CameraService::startCapture(LSMessage &message)
 bool CameraService::stopCapture(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     StopPreviewCaptureCloseMethod obj_stopcapture;
@@ -537,26 +541,26 @@ bool CameraService::stopCapture(LSMessage &message)
 
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_stopcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                        getErrorString(err_id));
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+        PLOGI("ndevhandle %d\n", ndevhandle);
         // stop capture here
         err_id = CommandManager::getInstance().stopCapture(ndevhandle);
 
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK\n");
+            PLOGD("err_id != DEVICE_OK\n");
             obj_stopcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                            getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK\n");
+            PLOGD("err_id == DEVICE_OK\n");
             obj_stopcapture.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                            getErrorString(err_id));
         }
@@ -564,7 +568,7 @@ bool CameraService::stopCapture(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_stopcapture.createObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -575,7 +579,7 @@ bool CameraService::stopCapture(LSMessage &message)
 bool CameraService::getInfo(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
     bool supported              = false;
 
@@ -584,7 +588,7 @@ bool CameraService::getInfo(LSMessage &message)
 
     if (cstr_invaliddeviceid == obj_getinfo.strGetDeviceId())
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_getinfo.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
@@ -594,19 +598,19 @@ bool CameraService::getInfo(LSMessage &message)
         camera_device_info_t o_camerainfo;
 
         int ndev_id = getId(obj_getinfo.strGetDeviceId());
-        PMLOG_INFO(CONST_MODULE_LUNA, "device Id %d\n", ndev_id);
+        PLOGI("device Id %d\n", ndev_id);
 
         err_id = CommandManager::getInstance().getDeviceInfo(ndev_id, &o_camerainfo);
 
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK\n");
+            PLOGD("err_id != DEVICE_OK\n");
             obj_getinfo.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                        getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK\n");
+            PLOGD("err_id == DEVICE_OK\n");
             obj_getinfo.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
             obj_getinfo.setCameraInfo(o_camerainfo);
 
@@ -617,7 +621,7 @@ bool CameraService::getInfo(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_getinfo.createInfoObjectJsonString(supported);
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -628,7 +632,7 @@ bool CameraService::getInfo(LSMessage &message)
 bool CameraService::getCameraList(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     // create CameraList class object and read data from json object after schema validation
@@ -637,7 +641,7 @@ bool CameraService::getCameraList(LSMessage &message)
 
     if (false == ret)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                          getErrorString(err_id));
@@ -646,22 +650,22 @@ bool CameraService::getCameraList(LSMessage &message)
     {
         // get camera list here
         std::vector<int> idList;
-        err_id = CommandManager::getInstance().getDeviceList(idList, this->get());
+        err_id = CommandManager::getInstance().getDeviceList(idList);
 
         bool bsubscribed =
             event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAMERA_LIST, message);
-        PMLOG_INFO(CONST_MODULE_LUNA, "bsubscribed (%d) \n", bsubscribed);
+        PLOGI("bsubscribed (%d) \n", bsubscribed);
         obj_getcameralist.setSubcribed(bsubscribed);
 
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK");
+            PLOGD("err_id != DEVICE_OK");
             obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                              getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK");
+            PLOGD("err_id == DEVICE_OK");
             obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                              getErrorString(err_id));
 
@@ -676,7 +680,7 @@ bool CameraService::getCameraList(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_getcameralist.createCameraListObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -687,7 +691,7 @@ bool CameraService::getCameraList(LSMessage &message)
 bool CameraService::getProperties(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     GetSetPropertiesMethod obj_getproperties;
@@ -696,12 +700,12 @@ bool CameraService::getProperties(LSMessage &message)
     int ndevhandle = n_invalid_id;
     int ncamId     = getId(obj_getproperties.getCameraId());
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
+    PLOGI("ncamId (%d) \n", ncamId);
 
     if (n_invalid_id == ncamId)
     {
         err_id = DEVICE_ERROR_WRONG_PARAM;
-        PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
+        PLOGI("err_id(%d)\n", err_id);
         obj_getproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                          getErrorString(err_id));
     }
@@ -712,15 +716,15 @@ bool CameraService::getProperties(LSMessage &message)
         event_key += "_";
         event_key += obj_getproperties.getCameraId();
         bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
-        PMLOG_INFO(CONST_MODULE_LUNA, "bsubscribed (%d) \n", bsubscribed);
+        PLOGI("bsubscribed (%d) \n", bsubscribed);
         obj_getproperties.setSubcribed(bsubscribed);
 
         ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
-        PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
+        PLOGI("devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
 
         if (n_invalid_id != ndevhandle)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+            PLOGI("ndevhandle %d\n", ndevhandle);
 
             // get properties here
             CAMERA_PROPERTIES_T dev_property;
@@ -728,13 +732,13 @@ bool CameraService::getProperties(LSMessage &message)
 
             if (DEVICE_OK != err_id)
             {
-                PMLOG_DEBUG("err_id != DEVICE_OK\n");
+                PLOGD("err_id != DEVICE_OK\n");
                 obj_getproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                                  getErrorString(err_id));
             }
             else
             {
-                PMLOG_DEBUG("err_id == DEVICE_OK\n");
+                PLOGD("err_id == DEVICE_OK\n");
                 obj_getproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                                  getErrorString(err_id));
                 obj_getproperties.setCameraProperties(dev_property);
@@ -742,7 +746,7 @@ bool CameraService::getProperties(LSMessage &message)
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_DEVICE_IS_NOT_OPENED");
+            PLOGI("DEVICE_ERROR_DEVICE_IS_NOT_OPENED");
             err_id = DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
             obj_getproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                              getErrorString(err_id));
@@ -751,7 +755,7 @@ bool CameraService::getProperties(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = obj_getproperties.createGetPropertiesObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -762,7 +766,7 @@ bool CameraService::getProperties(LSMessage &message)
 bool CameraService::setProperties(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     GetSetPropertiesMethod objsetproperties;
@@ -772,7 +776,7 @@ bool CameraService::setProperties(LSMessage &message)
 
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                         getErrorString(err_id));
@@ -782,7 +786,7 @@ bool CameraService::setProperties(LSMessage &message)
         // check params object is empty or not
         if (objsetproperties.isParamsEmpty(payload, setPropertiesSchema))
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "Params object is empty\n");
+            PLOGI("Params object is empty\n");
             err_id = DEVICE_ERROR_WRONG_PARAM;
             objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                             getErrorString(err_id));
@@ -799,17 +803,17 @@ bool CameraService::setProperties(LSMessage &message)
             }
             // set properties here
             CAMERA_PROPERTIES_T oParams = objsetproperties.rGetCameraProperties();
-            PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+            PLOGI("ndevhandle %d\n", ndevhandle);
             err_id = CommandManager::getInstance().setProperty(ndevhandle, &oParams);
             if (DEVICE_OK != err_id)
             {
-                PMLOG_DEBUG("err_id != DEVICE_OK\n");
+                PLOGD("err_id != DEVICE_OK\n");
                 objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                                 getErrorString(err_id));
             }
             else
             {
-                PMLOG_DEBUG("err_id == DEVICE_OK\n");
+                PLOGD("err_id == DEVICE_OK\n");
                 objsetproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                                 getErrorString(err_id));
                 // check if new properties are different from saved properties
@@ -822,7 +826,7 @@ bool CameraService::setProperties(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = objsetproperties.createSetPropertiesObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -833,7 +837,7 @@ bool CameraService::setProperties(LSMessage &message)
 bool CameraService::setFormat(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     SetFormatMethod objsetformat;
@@ -843,7 +847,7 @@ bool CameraService::setFormat(LSMessage &message)
     // camera id validation check
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         objsetformat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
@@ -858,18 +862,18 @@ bool CameraService::setFormat(LSMessage &message)
             CommandManager::getInstance().getFormat(ndevhandle, &savedformat);
         }
         // setformat here
-        PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+        PLOGI("ndevhandle %d\n", ndevhandle);
         CAMERA_FORMAT sformat = objsetformat.rGetCameraFormat();
         err_id                = CommandManager::getInstance().setFormat(ndevhandle, sformat);
         if (DEVICE_OK != err_id)
         {
-            PMLOG_DEBUG("err_id != DEVICE_OK\n");
+            PLOGD("err_id != DEVICE_OK\n");
             objsetformat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                         getErrorString(err_id));
         }
         else
         {
-            PMLOG_DEBUG("err_id == DEVICE_OK\n");
+            PLOGD("err_id == DEVICE_OK\n");
             objsetformat.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                         getErrorString(err_id));
             // check if new format settings are different from saved format settings
@@ -881,7 +885,7 @@ bool CameraService::setFormat(LSMessage &message)
 
     // create json string now for reply
     std::string output_reply = objsetformat.createSetFormatObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -892,7 +896,7 @@ bool CameraService::setFormat(LSMessage &message)
 bool CameraService::getEventNotification(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     EventNotificationMethod obj_jsonparser;
@@ -900,7 +904,7 @@ bool CameraService::getEventNotification(LSMessage &message)
 
     if (obj_jsonparser.getIsErrorFromParam())
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_WRONG_PARAM");
+        PLOGI("DEVICE_ERROR_WRONG_PARAM");
         err_id = DEVICE_ERROR_WRONG_PARAM;
         obj_jsonparser.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
@@ -912,7 +916,7 @@ bool CameraService::getEventNotification(LSMessage &message)
         obj_jsonparser.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
     }
     std::string output_reply = obj_jsonparser.createObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
@@ -923,7 +927,7 @@ bool CameraService::getEventNotification(LSMessage &message)
 bool CameraService::getFd(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    PLOGI("payload %s", payload);
     LS::Message request(&message);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
@@ -935,13 +939,13 @@ bool CameraService::getFd(LSMessage &message)
 
     if (n_invalid_id == ndevhandle)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+        PLOGI("ndevhandle %d\n", ndevhandle);
 
         err_id = CommandManager::getInstance().getFd(ndevhandle, &shmfd);
 
@@ -951,7 +955,7 @@ bool CameraService::getFd(LSMessage &message)
 
             // create json string now for reply
             std::string output_reply = obj_getfd.createObjectJsonString();
-            PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+            PLOGI("output_reply %s\n", output_reply.c_str());
 
             LS::Payload response_payload(output_reply.c_str());
             response_payload.attachFd(shmfd); // attach a fd here
@@ -960,13 +964,13 @@ bool CameraService::getFd(LSMessage &message)
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "CameraService:: %s", getErrorString(err_id).c_str());
+            PLOGI("CameraService:: %s", getErrorString(err_id).c_str());
             obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
         }
     }
     // create json string now for reply
     std::string output_reply = obj_getfd.createObjectJsonString();
-    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    PLOGI("output_reply %s\n", output_reply.c_str());
 
     request.respond(output_reply.c_str());
     return true;
@@ -979,26 +983,26 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
 
     if (clientName != NULL)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "clientName: %s\n", clientName);
+        PLOGI("clientName: %s\n", clientName);
         if (strstr(clientName, "com.webos.lunasend-") != NULL)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "can not add: %s\n", clientName);
+            PLOGI("can not add: %s\n", clientName);
             return false;
         }
     }
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "ndevice_handle: %d", ndevice_handle);
-    PMLOG_INFO(CONST_MODULE_LUNA, "unique_client_id: %s\n", unique_client_id);
+    PLOGI("ndevice_handle: %d", ndevice_handle);
+    PLOGI("unique_client_id: %s\n", unique_client_id);
 
     if (!CommandManager::getInstance().setClientDevice(ndevice_handle, unique_client_id))
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "setClientDevice fail! : %d", ndevice_handle);
+        PLOGI("setClientDevice fail! : %d", ndevice_handle);
         return false;
     }
 
     if (clientCookieMap_.find(unique_client_id) != clientCookieMap_.end())
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "already watched: %s \n", unique_client_id);
+        PLOGI("already watched: %s \n", unique_client_id);
         return false;
     }
 
@@ -1013,26 +1017,26 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
 
         if (cookie == self->clientCookieMap_.end())
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "can not find service_name: %s \n", service_name);
+            PLOGI("can not find service_name: %s \n", service_name);
             return true;
         }
 
         if (!connected)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "disconnect:%s\n", service_name);
+            PLOGI("disconnect:%s\n", service_name);
 
             CommandManager::getInstance().closeClientDevice(service_name);
 
             if (!LSCancelServerStatus(input_handle, cookie->second, nullptr))
             {
-                PMLOG_ERROR(CONST_MODULE_LUNA, "LSCancelServerStatus fail");
+                PLOGE("LSCancelServerStatus fail");
             }
 
             self->clientCookieMap_.erase(service_name);
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "connect:%s\n", service_name);
+            PLOGI("connect:%s\n", service_name);
         }
         return true;
     };
@@ -1040,7 +1044,7 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
     if (!LSRegisterServerStatusEx(handle, unique_client_id, func, this, &clientCookie->second,
                                   nullptr))
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "error LSRegisterServerStatusEx\n");
+        PLOGI("error LSRegisterServerStatusEx\n");
     }
 
     return true;
@@ -1049,7 +1053,7 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
 //[Camera Solution Manager] NEW APIs for Solution Manager - start
 bool CameraService::getSolutions(LSMessage &message)
 {
-    PMLOG_INFO(CONST_MODULE_LUNA, " E \n");
+    PLOGI(" E \n");
     auto *payload               = LSMessageGetPayload(&message);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
     std::vector<std::string> supportedSolutionList;
@@ -1060,8 +1064,8 @@ bool CameraService::getSolutions(LSMessage &message)
     int ndevhandle = obj_getsolutions.getDeviceHandle();
     int ncamId     = getId(obj_getsolutions.getCameraId());
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle (%d) \n", ndevhandle);
-    PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
+    PLOGI("ndevhandle (%d) \n", ndevhandle);
+    PLOGI("ncamId (%d) \n", ncamId);
     // check if device handle value and camera id are set property.
     //       device handle         cameraId        result
     //  1.        set                 set           error
@@ -1080,7 +1084,7 @@ bool CameraService::getSolutions(LSMessage &message)
 
     if (err_id != DEVICE_OK)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
+        PLOGI("err_id(%d)\n", err_id);
         obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                         getErrorString(err_id));
     }
@@ -1089,9 +1093,9 @@ bool CameraService::getSolutions(LSMessage &message)
         if (n_invalid_id == ndevhandle)
         {
             ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
-            PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
+            PLOGI("devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
         }
-        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
+        PLOGI("DEVICE_OK\n");
         obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                         getErrorString(err_id));
 
@@ -1099,8 +1103,7 @@ bool CameraService::getSolutions(LSMessage &message)
             ndevhandle, supportedSolutionList);
         if (DEVICE_OK != err_id)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA,
-                       "error happens on getting supported solution list by err_id(%d)\n", err_id);
+            PLOGI("error happens on getting supported solution list by err_id(%d)\n", err_id);
             obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                             getErrorString(err_id));
         }
@@ -1109,8 +1112,7 @@ bool CameraService::getSolutions(LSMessage &message)
                                                                             enabledSolutionList);
         if (DEVICE_OK != err_id)
         {
-            PMLOG_INFO(CONST_MODULE_LUNA,
-                       "error happens on getting enabled solution list by err_id(%d)\n", err_id);
+            PLOGI("error happens on getting enabled solution list by err_id(%d)\n", err_id);
             obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                             getErrorString(err_id));
         }
@@ -1121,9 +1123,9 @@ bool CameraService::getSolutions(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(output_reply.c_str());
-    PMLOG_INFO(CONST_MODULE_LUNA, " output_reply(%s) \n", output_reply.c_str());
+    PLOGI(" output_reply(%s) \n", output_reply.c_str());
 
-    PMLOG_INFO(CONST_MODULE_LUNA, " X \n");
+    PLOGI(" X \n");
     return true;
 }
 
@@ -1137,8 +1139,8 @@ bool CameraService::setSolutions(LSMessage &message)
     obj_setSolutions.getObject(payload, setSolutionsSchema);
     int ndevhandle = obj_setSolutions.getDeviceHandle();
     int ncamId     = getId(obj_setSolutions.getCameraId());
-    PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle (%d) \n", ndevhandle);
-    PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
+    PLOGI("ndevhandle (%d) \n", ndevhandle);
+    PLOGI("ncamId (%d) \n", ncamId);
 
     // check if device handle value and camera id are set property.
     //       device handle         cameraId        result
@@ -1158,7 +1160,7 @@ bool CameraService::setSolutions(LSMessage &message)
 
     if (err_id != DEVICE_OK)
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
+        PLOGI("err_id(%d)\n", err_id);
 
         obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                         getErrorString(err_id));
@@ -1168,7 +1170,7 @@ bool CameraService::setSolutions(LSMessage &message)
         // check solutions is empty or not
         if (obj_setSolutions.isEmpty())
         {
-            PMLOG_INFO(CONST_MODULE_LUNA, "solutions is empty\n");
+            PLOGI("solutions is empty\n");
             err_id = DEVICE_ERROR_WRONG_PARAM;
             obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                             getErrorString(err_id));
@@ -1178,8 +1180,7 @@ bool CameraService::setSolutions(LSMessage &message)
             if (n_invalid_id == ndevhandle)
             {
                 ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
-                PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId,
-                           ndevhandle);
+                PLOGI("devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
             }
 
             // check if the requested solution parameter is valid or not. If not valid at least one
@@ -1198,7 +1199,7 @@ bool CameraService::setSolutions(LSMessage &message)
                     if (s == i)
                     {
                         candidateSolutionCnt++;
-                        PMLOG_INFO(CONST_MODULE_SM, "candidate enabled solutionName %s", s.c_str());
+                        PLOGI("candidate enabled solutionName %s", s.c_str());
                     }
                 }
             }
@@ -1207,8 +1208,8 @@ bool CameraService::setSolutions(LSMessage &message)
             // number and parameters number.
             if (str_solutions.size() != candidateSolutionCnt)
             {
-                PMLOG_ERROR(CONST_MODULE_LUNA, "%zd invalid parameter existed\n",
-                            str_solutions.size() - candidateSolutionCnt);
+                PLOGE("%zd invalid parameter existed\n",
+                      str_solutions.size() - candidateSolutionCnt);
                 err_id = DEVICE_ERROR_WRONG_PARAM;
                 obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                                 getErrorString(err_id));
@@ -1223,7 +1224,7 @@ bool CameraService::setSolutions(LSMessage &message)
                     if (s == i)
                     {
                         candidateSolutionCnt++;
-                        PMLOG_INFO(CONST_MODULE_SM, "candidate enabled solutionName %s", s.c_str());
+                        PLOGI("candidate enabled solutionName %s", s.c_str());
                     }
                 }
             }
@@ -1232,8 +1233,8 @@ bool CameraService::setSolutions(LSMessage &message)
             // number and parameters number.
             if (str_solutions.size() != candidateSolutionCnt)
             {
-                PMLOG_ERROR(CONST_MODULE_LUNA, "%zd invalid parameter existed\n",
-                            str_solutions.size() - candidateSolutionCnt);
+                PLOGE("%zd invalid parameter existed\n",
+                      str_solutions.size() - candidateSolutionCnt);
                 err_id = DEVICE_ERROR_WRONG_PARAM;
                 obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                                 getErrorString(err_id));
@@ -1249,13 +1250,13 @@ bool CameraService::setSolutions(LSMessage &message)
 
             if (DEVICE_OK != err_id)
             {
-                PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOT_OK err_id(%d)\n", err_id);
+                PLOGI("DEVICE_NOT_OK err_id(%d)\n", err_id);
                 obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                                 getErrorString(err_id));
             }
             else
             {
-                PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
+                PLOGI("DEVICE_OK\n");
                 obj_setSolutions.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                                 getErrorString(err_id));
             }
@@ -1283,12 +1284,12 @@ bool CameraService::getFormat(LSMessage &message)
     int ndevhandle = n_invalid_id;
     int ncamId     = getId(obj_getFormat.getCameraId());
 
-    PMLOG_INFO(CONST_MODULE_LUNA, "ncamId (%d) \n", ncamId);
+    PLOGI("ncamId (%d) \n", ncamId);
 
     if (n_invalid_id == ncamId)
     {
         err_id = DEVICE_ERROR_WRONG_PARAM;
-        PMLOG_INFO(CONST_MODULE_LUNA, "err_id(%d)\n", err_id);
+        PLOGI("err_id(%d)\n", err_id);
         obj_getFormat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
     else
@@ -1298,11 +1299,11 @@ bool CameraService::getFormat(LSMessage &message)
         event_key += "_";
         event_key += obj_getFormat.getCameraId();
         bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
-        PMLOG_INFO(CONST_MODULE_LUNA, "bsubscribed (%d) \n", bsubscribed);
+        PLOGI("bsubscribed (%d) \n", bsubscribed);
         obj_getFormat.setSubcribed(bsubscribed);
 
         ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
-        PMLOG_INFO(CONST_MODULE_LUNA, "devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
+        PLOGI("devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
         if (n_invalid_id != ndevhandle)
         {
             CAMERA_FORMAT output_format;
@@ -1310,13 +1311,13 @@ bool CameraService::getFormat(LSMessage &message)
 
             if (DEVICE_OK != err_id)
             {
-                PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_NOT_OK err_id(%d)\n", err_id);
+                PLOGI("DEVICE_NOT_OK err_id(%d)\n", err_id);
                 obj_getFormat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                              getErrorString(err_id));
             }
             else
             {
-                PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
+                PLOGI("DEVICE_OK\n");
                 obj_getFormat.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                              getErrorString(err_id));
                 obj_getFormat.setCameraFormat(output_format);
@@ -1343,27 +1344,30 @@ int main(int argc, char *argv[])
 
     try
     {
-        try
-        {
-            CameraService camerasrv;
-        }
-        catch (LS::Error &err)
-        {
-            LSErrorPrint(err, stdout);
-            return 1;
-        }
+        CameraService camerasrv;
+    }
+    catch (LS::Error &err)
+    {
+        LSErrorPrint(err, stdout);
+        return 1;
     }
     catch (std::bad_cast &err)
     {
         std::cerr << err.what() << std::endl;
         return 1;
     }
+    catch (const std::logic_error &err)
+    {
+        std::cerr << err.what() << std::endl;
+        return 1;
+    }
+
     return 0;
 }
 
 void signal_handler_service_crash(int sig)
 {
-    PMLOG_INFO(CONST_MODULE_LUNA, "signal(%d) received !!\n", sig);
+    PLOGI("signal(%d) received !!\n", sig);
 
     CommandManager::getInstance().handleCrash();
     exit(1);
@@ -1382,7 +1386,7 @@ void install_handler_service_crash()
         }
         if (sigaction(i, &sigact_service_crash, NULL) == -1)
         {
-            PMLOG_ERROR(CONST_MODULE_LUNA, "install signal handler for signal %d :: FAIL\n", i);
+            PLOGE("install signal handler for signal %d :: FAIL\n", i);
         }
     }
 }

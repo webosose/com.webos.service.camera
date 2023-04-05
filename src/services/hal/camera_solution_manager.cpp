@@ -13,6 +13,7 @@
  *
  */
 
+#define LOG_TAG "CameraSolutionManager"
 #include "camera_solution_manager.h"
 #include "camera_solution_proxy.h"
 #include "camera_types.h"
@@ -23,7 +24,7 @@ CameraSolutionManager::CameraSolutionManager(void)
 #ifdef FIX_ME // not support sync solution
     std::vector<std::string> list, enabledList;
     getSupportedSolutionList(list, enabledList);
-    PMLOG_INFO(CONST_MODULE_SM, "solution list count %zd", list.size());
+    PLOGI("solution list count %zd", list.size());
 
     if (std::find(list.begin(), list.end(), SOLUTION_AUTOCONTRAST) != list.end())
         lstSolution_.push_back(std::make_unique<AutoContrast>());
@@ -102,20 +103,20 @@ void CameraSolutionManager::processPreview(buffer_t frame_buffer)
 
 void CameraSolutionManager::getSupportedSolutionInfo(SolutionNames &names)
 {
-    PMLOG_INFO(CONST_MODULE_SM, "");
+    PLOGI("");
 
     // check supported solution list
     for (auto &i : lstSolution_)
     {
         names.push_back(i->getSolutionStr());
-        PMLOG_INFO(CONST_MODULE_SM, "solution name %s", i->getSolutionStr().c_str());
+        PLOGI("solution name %s", i->getSolutionStr().c_str());
     }
 }
 
 void CameraSolutionManager::getEnabledSolutionInfo(SolutionNames &names)
 {
     std::lock_guard<std::mutex> lg(mtxApi_);
-    PMLOG_INFO(CONST_MODULE_SM, "");
+    PLOGI("");
     // check supported solution list
     for (auto &i : lstSolution_)
     {
@@ -123,14 +124,14 @@ void CameraSolutionManager::getEnabledSolutionInfo(SolutionNames &names)
         {
             names.push_back(i->getSolutionStr());
         }
-        PMLOG_INFO(CONST_MODULE_SM, "solution name %s", i->getSolutionStr().c_str());
+        PLOGI("solution name %s", i->getSolutionStr().c_str());
     }
 }
 
 DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const SolutionNames &names)
 {
     std::lock_guard<std::mutex> lg(mtxApi_);
-    PMLOG_INFO(CONST_MODULE_SM, "");
+    PLOGI("");
     uint32_t candidateSolutionCnt = 0;
     for (auto &s : names)
     {
@@ -139,7 +140,7 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const SolutionN
             if (s == i->getSolutionStr())
             {
                 candidateSolutionCnt++;
-                PMLOG_INFO(CONST_MODULE_SM, "candidate enabled solutionName %s", s.c_str());
+                PLOGI("candidate enabled solutionName %s", s.c_str());
             }
         }
     }
@@ -174,7 +175,7 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const SolutionN
 DEVICE_RETURN_CODE_T CameraSolutionManager::disableCameraSolution(const SolutionNames &names)
 {
     std::lock_guard<std::mutex> lg(mtxApi_);
-    PMLOG_INFO(CONST_MODULE_SM, "");
+    PLOGI("");
     uint32_t candidateSolutionCnt = 0;
 
     for (auto &s : names)
@@ -184,7 +185,7 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::disableCameraSolution(const Solution
             if (s == i->getSolutionStr())
             {
                 candidateSolutionCnt++;
-                PMLOG_INFO(CONST_MODULE_SM, "candidate disabled solutionName %s", s.c_str());
+                PLOGI("candidate disabled solutionName %s", s.c_str());
             }
         }
     }

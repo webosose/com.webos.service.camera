@@ -28,8 +28,6 @@
 
 typedef struct _DEVICE_STATUS
 {
-    // Device
-    void *pcamhandle;     // HAL handle
     bool isDeviceOpen;    // open or close
     DEVICE_LIST_T stList; // name, id, node ...
     std::vector<int> handleList;
@@ -59,8 +57,6 @@ public:
     bool isDeviceValid(int);
     bool setDeviceStatus(int, bool);
     void getDeviceNode(int, std::string &);
-    void getDeviceHandle(int, void **);
-    bool setDeviceHandle(int, void *);
     std::string getDeviceType(int);
     std::string getDeviceKey(int);
     int getDeviceCounts(std::string);
@@ -70,10 +66,11 @@ public:
     bool removeDevice(int devid);
     bool updateDeviceList(std::string, const std::vector<DEVICE_LIST_T> &);
 
-    DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &, LSHandle *sh = nullptr);
+    DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
     DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);
 
     void setAddon(std::shared_ptr<AddOn> &addon) { pAddon_ = addon; }
+    void setLSHandle(LSHandle *sh) { lshandle_ = sh; }
 };
 
 #endif /*SERVICE_DEVICE_MANAGER_H_*/

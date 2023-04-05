@@ -14,12 +14,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+configure_file(sysbus/camerahal.manifest.json.in sysbus/camerahal.manifest.json @ONLY)
 configure_file(sysbus/com.webos.camerahal.role.json.in sysbus/com.webos.camerahal.role.json @ONLY)
 configure_file(sysbus/com.webos.camerahal.service.in sysbus/com.webos.camerahal.service @ONLY)
 configure_file(sysbus/com.webos.camerahal.api.json sysbus/com.webos.camerahal.api.json @ONLY)
 configure_file(sysbus/com.webos.camerahal.perm.json sysbus/com.webos.camerahal.perm.json @ONLY)
 configure_file(sysbus/com.webos.camerahal.groups.json sysbus/com.webos.camerahal.groups.json @ONLY)
 
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sysbus/camerahal.manifest.json
+    DESTINATION /usr/share/luna-service2/manifests.d/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sysbus/com.webos.camerahal.role.json
     DESTINATION /usr/share/luna-service2/roles.d/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sysbus/com.webos.camerahal.service

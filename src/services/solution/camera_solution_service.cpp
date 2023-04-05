@@ -13,18 +13,17 @@
  *
  */
 
+#define LOG_TAG "CameraSolutionService"
 #include "camera_solution_service.h"
 #include "camera_solution_async.h"
 #include "camera_types.h"
 #include <pbnjson.hpp>
 #include <string>
 
-const char *const CONST_MODULE_CSS = "CameraSolutionService";
-
 CameraSolutionService::CameraSolutionService(const char *service_name)
     : LS::Handle(LS::registerService(service_name))
 {
-    PMLOG_INFO(CONST_MODULE_CSS, "Start : %s", service_name);
+    PLOGI("Start : %s", service_name);
 
     LS_CATEGORY_BEGIN(CameraSolutionService, "/")
     LS_CATEGORY_METHOD(createSolution)
@@ -48,7 +47,7 @@ bool CameraSolutionService::createSolution(LSMessage &message)
     std::string solutionName;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
+    PLOGI("payload %s", payload);
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
     if (parsed.hasKey(CONST_PARAM_NAME_NAME))
@@ -85,7 +84,7 @@ bool CameraSolutionService::getMetaSizeHint(LSMessage &message)
     bool ret               = true;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
@@ -108,7 +107,7 @@ bool CameraSolutionService::initialize(LSMessage &message)
     key_t shmkey           = 0;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -141,7 +140,7 @@ bool CameraSolutionService::initialize(LSMessage &message)
     if (parsed.hasKey(CONST_PARAM_NAME_SHMKEY))
     {
         shmkey = parsed[CONST_PARAM_NAME_SHMKEY].asNumber<int>();
-        PMLOG_INFO(CONST_MODULE_CSS, "shmkey %d", shmkey);
+        PLOGI("shmkey %d", shmkey);
     }
 
     if (pSolution_)
@@ -165,7 +164,7 @@ bool CameraSolutionService::setEnableValue(LSMessage &message)
     bool enableValue       = false;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -192,7 +191,7 @@ bool CameraSolutionService::release(LSMessage &message)
     bool ret               = true;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CSS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     if (pSolution_)
         pSolution_->release();
@@ -214,9 +213,8 @@ bool CameraSolutionService::subscribe(LSMessage &message)
     LSErrorInit(&error);
 
     bool ret = LSSubscriptionAdd(this->get(), SOL_SUBSCRIPTION_KEY, &message, &error);
-    PMLOG_INFO(CONST_MODULE_CSS, "LSSubscriptionAdd %s", ret ? "ok" : "failed");
-    PMLOG_INFO(CONST_MODULE_CSS, "cnt %d",
-               LSSubscriptionGetHandleSubscribersCount(this->get(), SOL_SUBSCRIPTION_KEY));
+    PLOGI("LSSubscriptionAdd %s", ret ? "ok" : "failed");
+    PLOGI("cnt %d", LSSubscriptionGetHandleSubscribersCount(this->get(), SOL_SUBSCRIPTION_KEY));
     LSErrorFree(&error);
 
     jvalue_ref json_outobj = jobject_create();
@@ -231,7 +229,7 @@ bool CameraSolutionService::subscribe(LSMessage &message)
 
 int main(int argc, char *argv[])
 {
-    PMLOG_INFO(CONST_MODULE_CSS, "start");
+    PLOGI("start");
     int c;
     std::string serviceName;
 
@@ -244,7 +242,7 @@ int main(int argc, char *argv[])
             break;
 
         case '?':
-            PMLOG_INFO(CONST_MODULE_CSS, "unknown service name");
+            PLOGI("unknown service name");
             break;
 
         default:
@@ -254,7 +252,7 @@ int main(int argc, char *argv[])
 
     if (serviceName.empty())
     {
-        PMLOG_INFO(CONST_MODULE_CSS, "service name is not specified");
+        PLOGI("service name is not specified");
         return 1;
     }
 
@@ -267,7 +265,12 @@ int main(int argc, char *argv[])
         LSErrorPrint(err, stdout);
         return 1;
     }
+    catch (const std::ios::failure &e)
+    {
+        PLOGE("Caught a std::ios::failure meaning %s", e.what());
+        return 1;
+    }
 
-    PMLOG_INFO(CONST_MODULE_CSS, "end");
+    PLOGI("end");
     return 0;
 }

@@ -13,19 +13,19 @@
  *
  */
 
+#define LOG_TAG "CameraHalService"
 #include "camera_hal_service.h"
 #include "camera_types.h"
 #include "device_controller.h"
 #include <pbnjson.hpp>
 #include <string>
 
-const char *const CONST_MODULE_CHS = "CameraHalService";
 const char *const SUBSCRIPTION_KEY = "cameraHal";
 
 CameraHalService::CameraHalService(const char *service_name)
     : LS::Handle(LS::registerService(service_name)), pCamHandle(NULL)
 {
-    PMLOG_INFO(CONST_MODULE_CHS, "Start : %s", service_name);
+    PLOGI("Start : %s", service_name);
 
     LS_CATEGORY_BEGIN(CameraHalService, "/")
     LS_CATEGORY_METHOD(createHandle)
@@ -54,8 +54,6 @@ CameraHalService::CameraHalService(const char *service_name)
     LS_CATEGORY_METHOD(subscribe)
     LS_CATEGORY_END;
 
-    pDeviceControl = std::make_unique<DeviceControl>();
-
     // attach to mainloop and run it
     attachToLoop(main_loop_ptr_.get());
 
@@ -69,7 +67,7 @@ bool CameraHalService::createHandle(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -78,13 +76,14 @@ bool CameraHalService::createHandle(LSMessage &message)
         device_type = parsed[CONST_PARAM_NAME_SUBSYSTEM].asString();
     }
 
+    pDeviceControl           = std::make_unique<DeviceControl>();
     DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(&pCamHandle, device_type);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -96,7 +95,7 @@ bool CameraHalService::destroyHandle(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->destroyHandle(pCamHandle);
 
@@ -104,7 +103,7 @@ bool CameraHalService::destroyHandle(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -117,7 +116,7 @@ bool CameraHalService::finishProcess(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     g_main_loop_quit(main_loop_ptr_.get());
 
@@ -126,7 +125,7 @@ bool CameraHalService::finishProcess(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -141,7 +140,7 @@ bool CameraHalService::open(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -166,7 +165,7 @@ bool CameraHalService::open(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -177,7 +176,7 @@ bool CameraHalService::close(LSMessage &message)
 {
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->close(pCamHandle);
 
@@ -185,7 +184,7 @@ bool CameraHalService::close(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -197,7 +196,7 @@ bool CameraHalService::startPreview(LSMessage &message)
     int pkey               = 0;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -206,7 +205,7 @@ bool CameraHalService::startPreview(LSMessage &message)
     {
         memtype = parsed[CONST_PARAM_NAME_MEMTYPE].asString();
     }
-    PMLOG_INFO(CONST_MODULE_CHS, "memtype(%s)", memtype.c_str());
+    PLOGI("memtype(%s)", memtype.c_str());
 
     DEVICE_RETURN_CODE_T ret =
         pDeviceControl->startPreview(pCamHandle, memtype, &pkey, this->get(), SUBSCRIPTION_KEY);
@@ -219,7 +218,7 @@ bool CameraHalService::startPreview(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -232,7 +231,7 @@ bool CameraHalService::stopPreview(LSMessage &message)
     ;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
     if (parsed.hasKey(CONST_PARAM_NAME_MEMTYPE))
@@ -246,7 +245,7 @@ bool CameraHalService::stopPreview(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -262,7 +261,7 @@ bool CameraHalService::captureImage(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -303,7 +302,7 @@ bool CameraHalService::captureImage(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -317,7 +316,7 @@ bool CameraHalService::startCapture(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -347,7 +346,7 @@ bool CameraHalService::startCapture(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -358,7 +357,7 @@ bool CameraHalService::stopCapture(LSMessage &message)
 {
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->stopCapture(pCamHandle);
 
@@ -366,7 +365,7 @@ bool CameraHalService::stopCapture(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     return true;
 }
@@ -376,7 +375,7 @@ bool CameraHalService::getDeviceProperty(LSMessage &message)
     CAMERA_PROPERTIES_T oparams;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getDeviceProperty(pCamHandle, &oparams);
     if (ret == DEVICE_OK)
@@ -402,7 +401,7 @@ bool CameraHalService::getDeviceProperty(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -414,7 +413,7 @@ bool CameraHalService::setDeviceProperty(LSMessage &message)
     CAMERA_PROPERTIES_T inparams;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -434,7 +433,7 @@ bool CameraHalService::setDeviceProperty(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -446,7 +445,7 @@ bool CameraHalService::setFormat(LSMessage &message)
     CAMERA_FORMAT sformat;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -477,7 +476,7 @@ bool CameraHalService::setFormat(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -489,7 +488,7 @@ bool CameraHalService::getFormat(LSMessage &message)
     CAMERA_FORMAT sformat;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getFormat(pCamHandle, &sformat);
     if (ret == DEVICE_OK)
@@ -508,7 +507,7 @@ bool CameraHalService::getFormat(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -523,7 +522,7 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -536,10 +535,10 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
     {
         device_type = parsed[CONST_PARAM_NAME_SUBSYSTEM].asString();
     }
-    PMLOG_INFO(CONST_MODULE_CHS, "device_type(%s)", device_type.c_str());
+    PLOGI("device_type(%s)", device_type.c_str());
 
     DEVICE_RETURN_CODE_T ret =
-        pDeviceControl->getDeviceInfo(strdevicenode, device_type, &cameraInfo);
+        DeviceControl::getDeviceInfo(strdevicenode, device_type, &cameraInfo);
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEVICE_TYPE),
@@ -556,10 +555,9 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
             for (auto &s : resStr)
             {
                 jarray_append(json_resolution_array, jstring_create(s.c_str()));
-                PMLOG_INFO(CONST_MODULE_CHS, "resFmt(%s) resStr(%s)",
-                           getResolutionString(i.e_format).c_str(), s.c_str());
+                PLOGI("resFmt(%s) resStr(%s)", getResolutionString(i.e_format).c_str(), s.c_str());
             }
-            PMLOG_INFO(CONST_MODULE_CHS, "resFmt(%s)", getResolutionString(i.e_format).c_str());
+            PLOGI("resFmt(%s)", getResolutionString(i.e_format).c_str());
             jobject_put(json_resolutionobj, jstring_create(getResolutionString(i.e_format).c_str()),
                         json_resolution_array);
         }
@@ -570,7 +568,7 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -587,7 +585,7 @@ bool CameraHalService::registerClient(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -615,7 +613,7 @@ bool CameraHalService::registerClient(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -629,7 +627,7 @@ bool CameraHalService::unregisterClient(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -647,7 +645,7 @@ bool CameraHalService::unregisterClient(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -661,7 +659,7 @@ bool CameraHalService::isRegisteredClient(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -678,7 +676,7 @@ bool CameraHalService::isRegisteredClient(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -695,7 +693,7 @@ bool CameraHalService::requestPreviewCancel(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -710,7 +708,7 @@ bool CameraHalService::getSupportedCameraSolutionInfo(LSMessage &message)
     jvalue_ref json_solutions_array = jarray_create(0);
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getSupportedCameraSolutionInfo(solutionsInfo);
     if (ret == DEVICE_OK)
@@ -726,7 +724,7 @@ bool CameraHalService::getSupportedCameraSolutionInfo(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -741,7 +739,7 @@ bool CameraHalService::getEnabledCameraSolutionInfo(LSMessage &message)
     jvalue_ref json_solutions_array = jarray_create(0);
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getEnabledCameraSolutionInfo(solutionsInfo);
     if (ret == DEVICE_OK)
@@ -757,7 +755,7 @@ bool CameraHalService::getEnabledCameraSolutionInfo(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -771,7 +769,7 @@ bool CameraHalService::enableCameraSolution(LSMessage &message)
     std::vector<std::string> solutionList;
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -783,14 +781,14 @@ bool CameraHalService::enableCameraSolution(LSMessage &message)
         {
             std::string name = obj_solutions[i].asString();
             solutionList.push_back(name.c_str());
-            PMLOG_INFO(CONST_MODULE_CHS, "enable solution list(%s)", name.c_str());
+            PLOGI("enable solution list(%s)", name.c_str());
         }
 
         ret = pDeviceControl->enableCameraSolution(solutionList);
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_CHS, "doesn't have solutions key");
+        PLOGI("doesn't have solutions key");
         ret = DEVICE_ERROR_PARAM_IS_MISSING;
     }
 
@@ -798,7 +796,7 @@ bool CameraHalService::enableCameraSolution(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -812,7 +810,7 @@ bool CameraHalService::disableCameraSolution(LSMessage &message)
     std::vector<std::string> solutionList;
 
     auto *payload = LSMessageGetPayload(&message);
-    PMLOG_INFO(CONST_MODULE_CHS, "payload %s", payload);
+    PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
@@ -824,14 +822,14 @@ bool CameraHalService::disableCameraSolution(LSMessage &message)
         {
             std::string name = obj_solutions[i].asString();
             solutionList.push_back(name.c_str());
-            PMLOG_INFO(CONST_MODULE_CHS, "disable solution list(%s)", name.c_str());
+            PLOGI("disable solution list(%s)", name.c_str());
         }
 
         ret = pDeviceControl->disableCameraSolution(solutionList);
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_CHS, "doesn't have solutions key");
+        PLOGI("doesn't have solutions key");
         ret = DEVICE_ERROR_PARAM_IS_MISSING;
     }
 
@@ -839,7 +837,7 @@ bool CameraHalService::disableCameraSolution(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -852,16 +850,15 @@ bool CameraHalService::subscribe(LSMessage &message)
     LSErrorInit(&error);
 
     bool ret = LSSubscriptionAdd(this->get(), SUBSCRIPTION_KEY, &message, &error);
-    PMLOG_INFO(CONST_MODULE_CHS, "LSSubscriptionAdd %s", ret ? "ok" : "failed");
-    PMLOG_INFO(CONST_MODULE_CHS, "cnt %d",
-               LSSubscriptionGetHandleSubscribersCount(this->get(), SUBSCRIPTION_KEY));
+    PLOGI("LSSubscriptionAdd %s", ret ? "ok" : "failed");
+    PLOGI("cnt %d", LSSubscriptionGetHandleSubscribersCount(this->get(), SUBSCRIPTION_KEY));
     LSErrorFree(&error);
 
     jvalue_ref json_outobj = jobject_create();
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
-    PMLOG_INFO(CONST_MODULE_CHS, "response message : %s", jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);
 
@@ -871,7 +868,7 @@ bool CameraHalService::subscribe(LSMessage &message)
 #include <gst/gst.h>
 int main(int argc, char *argv[])
 {
-    PMLOG_INFO(CONST_MODULE_CHS, "start");
+    PLOGI("start");
     gst_init(NULL, NULL);
 
     int c;
@@ -886,7 +883,7 @@ int main(int argc, char *argv[])
             break;
 
         case '?':
-            PMLOG_INFO(CONST_MODULE_CHS, "unknown service name");
+            PLOGI("unknown service name");
             break;
 
         default:
@@ -896,7 +893,7 @@ int main(int argc, char *argv[])
 
     if (serviceName.empty())
     {
-        PMLOG_INFO(CONST_MODULE_CHS, "service name is not specified");
+        PLOGI("service name is not specified");
         return 1;
     }
 
@@ -909,7 +906,17 @@ int main(int argc, char *argv[])
         LSErrorPrint(err, stdout);
         return 1;
     }
+    catch (const std::ios::failure &e)
+    {
+        PLOGE("Caught a std::ios::failure meaning %s", e.what());
+        return 1;
+    }
+    catch (const std::logic_error &e)
+    {
+        PLOGE("Caught a std::logic_error meaning %s", e.what());
+        return 1;
+    }
 
-    PMLOG_INFO(CONST_MODULE_CHS, "end");
+    PLOGI("end");
     return 0;
 }

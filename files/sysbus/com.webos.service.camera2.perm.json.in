@@ -1,8 +1,16 @@
 {
     "com.webos.service.camera2": [
-        "all"
+        "physicaldevice.query",
+        "private",
+        "media"
     ],
     "com.webos.service.camera2.*": [
-        "all"
+        "applications.internal",
+        "settings",
+        "notifications",
+        "activity.query",
+        "physicaldevice.devutility",        
+        "camerahal.query",
+        "camerahal.operation"
     ]
 }

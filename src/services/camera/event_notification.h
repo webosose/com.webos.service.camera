@@ -33,6 +33,7 @@ public:
                     void *p_cur_data = nullptr, void *p_old_data = nullptr);
     std::string getEventKeyWithId(int dev_handle, std::string key);
     int getSubscribeCount(LSHandle *lsHandle, std::string key);
+    void removeSubscription(LSHandle *lsHandle, int camera_id);
 
 private:
     bool getJsonString(json &json_outobj, std::string key, EventType etype, void *p_cur_data,

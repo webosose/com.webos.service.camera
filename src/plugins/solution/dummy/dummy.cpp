@@ -13,20 +13,19 @@
  *
  */
 
+#define LOG_TAG "SOLUTION:Dummy"
 #include "dummy.hpp"
 #include "camera_log.h"
 
-#define LOG_TAG "SOLUTION:Dummy"
-
 Dummy::Dummy(void)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 }
 
 Dummy::~Dummy(void)
 {
-    PMLOG_INFO(LOG_TAG, "");
+    PLOGI("");
     setEnableValue(false);
 }
 
@@ -36,4 +35,4 @@ void Dummy::processForSnapshot(const void *inBuf) {}
 
 void Dummy::processForPreview(const void *inBuf) {}
 
-void Dummy::release(void) { PMLOG_INFO(LOG_TAG, ""); }
+void Dummy::release(void) { PLOGI(""); }

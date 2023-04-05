@@ -1,28 +1,28 @@
 {
     "camerahal.query": [
-            "com.webos.camerahal.*/getDeviceInfo"
+        "com.webos.camerahal.*/getDeviceInfo",
+        "com.webos.camerahal.*/getDeviceProperty",
+        "com.webos.camerahal.*/getFormat",
+        "com.webos.camerahal.*/isRegisteredClient",
+        "com.webos.camerahal.*/getSupportedCameraSolutionInfo",
+        "com.webos.camerahal.*/getEnabledCameraSolutionInfo"
     ],
     "camerahal.operation":[
         "com.webos.camerahal.*/createHandle",
         "com.webos.camerahal.*/destroyHandle",
         "com.webos.camerahal.*/finishProcess",
         "com.webos.camerahal.*/open",
+        "com.webos.camerahal.*/close",
         "com.webos.camerahal.*/startPreview",
         "com.webos.camerahal.*/stopPreview",
         "com.webos.camerahal.*/captureImage",
         "com.webos.camerahal.*/startCapture",
         "com.webos.camerahal.*/stopCapture",
-        "com.webos.camerahal.*/getDeviceProperty",
         "com.webos.camerahal.*/setDeviceProperty",
         "com.webos.camerahal.*/setFormat",
-        "com.webos.camerahal.*/getFormat",
-        "com.webos.camerahal.*/getDeviceInfo",
         "com.webos.camerahal.*/registerClient",
         "com.webos.camerahal.*/unregisterClient",
-        "com.webos.camerahal.*/isRegisteredClient",
         "com.webos.camerahal.*/requestPreviewCancel",
-        "com.webos.camerahal.*/getSupportedCameraSolutionInfo",
-        "com.webos.camerahal.*/getEnabledCameraSolutionInfo",
         "com.webos.camerahal.*/enableCameraSolution",
         "com.webos.camerahal.*/disableCameraSolution",
         "com.webos.camerahal.*/subscribe"

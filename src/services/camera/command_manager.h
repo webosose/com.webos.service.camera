@@ -54,7 +54,7 @@ public:
     DEVICE_RETURN_CODE_T open(int, int *, std::string = "", std::string = "");
     DEVICE_RETURN_CODE_T close(int);
     static DEVICE_RETURN_CODE_T getDeviceInfo(int, camera_device_info_t *);
-    static DEVICE_RETURN_CODE_T getDeviceList(std::vector<int> &, LSHandle * = nullptr);
+    static DEVICE_RETURN_CODE_T getDeviceList(std::vector<int> &);
     DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);

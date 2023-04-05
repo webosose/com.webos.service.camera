@@ -14,12 +14,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+configure_file(sysbus/camerasolution.manifest.json.in sysbus/camerasolution.manifest.json @ONLY)
 configure_file(sysbus/com.webos.camerasolution.role.json.in sysbus/com.webos.camerasolution.role.json @ONLY)
 configure_file(sysbus/com.webos.camerasolution.service.in sysbus/com.webos.camerasolution.service @ONLY)
 configure_file(sysbus/com.webos.camerasolution.api.json sysbus/com.webos.camerasolution.api.json @ONLY)
 configure_file(sysbus/com.webos.camerasolution.perm.json sysbus/com.webos.camerasolution.perm.json @ONLY)
 configure_file(sysbus/com.webos.camerasolution.groups.json sysbus/com.webos.camerasolution.groups.json @ONLY)
 
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sysbus/camerasolution.manifest.json
+    DESTINATION /usr/share/luna-service2/manifests.d/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sysbus/com.webos.camerasolution.role.json
     DESTINATION /usr/share/luna-service2/roles.d/)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/sysbus/com.webos.camerasolution.service

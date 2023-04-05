@@ -66,4 +66,8 @@ inline std::optional<T> get_optional(const json &j, const char *key)
     {
         return std::nullopt;
     }
+    catch (const std::logic_error &e)
+    {
+        return std::nullopt;
+    }
 }

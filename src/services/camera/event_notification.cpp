@@ -14,8 +14,10 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
+#define LOG_TAG "EventNotification"
 #include "event_notification.h"
 #include "camera_constants.h"
+#include "camera_types.h"
 #include "command_manager.h"
 #include "json_parser.h"
 
@@ -26,10 +28,10 @@ bool EventNotification::addSubscription(LSHandle *lsHandle, std::string key, LSM
 
     if (LSMessageIsSubscription(&message))
     {
-        PMLOG_INFO(CONST_MODULE_EN, "LSMessageIsSubscription success");
+        PLOGI("LSMessageIsSubscription success");
         if (!LSSubscriptionAdd(lsHandle, key.c_str(), &message, &error))
         {
-            PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionAdd failed");
+            PLOGI("LSSubscriptionAdd failed");
             LSErrorPrint(&error, stderr);
             LSErrorFree(&error);
             return false;
@@ -54,19 +56,19 @@ void EventNotification::subscriptionReply(LSHandle *lsHandle, std::string key,
     LSErrorInit(&error);
     if (!LSSubscriptionReply(lsHandle, key.c_str(), output_reply.c_str(), &error))
     {
-        PMLOG_INFO(CONST_MODULE_EN, "LSSubscriptionReply failed");
+        PLOGI("LSSubscriptionReply failed");
         LSErrorPrint(&error, stderr);
     }
 
     LSErrorFree(&error);
-    PMLOG_INFO(CONST_MODULE_EN, "end");
+    PLOGI("end");
 }
 
 int EventNotification::getSubscribeCount(LSHandle *lsHandle, std::string key)
 {
     int ret = -1;
     ret     = LSSubscriptionGetHandleSubscribersCount(lsHandle, key.c_str());
-    PMLOG_INFO(CONST_MODULE_EN, "cnt:%d, key:%s", ret, key.c_str());
+    PLOGI("cnt:%d, key:%s", ret, key.c_str());
     return ret;
 }
 
@@ -74,6 +76,8 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
                                       void *p_cur_data, void *p_old_data)
 {
     bool result_val = true;
+
+    json_outobj[CONST_PARAM_NAME_SUBSCRIBED] = true;
 
     switch (etype)
     {
@@ -100,7 +104,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_EN, "event: %d pdata is null", (int)etype);
+            PLOGI("event: %d pdata is null", (int)etype);
             result_val = false;
         }
         break;
@@ -142,7 +146,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
         }
         else
         {
-            PMLOG_INFO(CONST_MODULE_EN, "event: %d pdata is null", (int)etype);
+            PLOGI("event: %d pdata is null", (int)etype);
             result_val = false;
         }
 
@@ -155,7 +159,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
         std::vector<int> idList;
         if (DEVICE_OK != CommandManager::getInstance().getDeviceList(idList))
         {
-            PMLOG_INFO(CONST_MODULE_EN, "getDeviceList returns not OK");
+            PLOGI("getDeviceList returns not OK");
             result_val = false;
             break;
         }
@@ -165,10 +169,10 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
 
         for (const auto &it : idList)
         {
-            deviceListObj["id"] = CONST_DEVICE_NAME_CAMERA + std::to_string(it);
+            deviceListObj[CONST_PARAM_NAME_ID] = CONST_DEVICE_NAME_CAMERA + std::to_string(it);
             deviceListArr.push_back(deviceListObj);
         }
-        json_outobj["deviceList"] = deviceListArr;
+        json_outobj[CONST_PARAM_NAME_DEVICE_LIST] = deviceListArr;
 
         break;
     }
@@ -196,7 +200,7 @@ void EventNotification::eventReply(LSHandle *lsHandle, std::string key, EventTyp
         str_reply = json_outobj.dump();
 
         subscriptionReply(lsHandle, key, str_reply);
-        PMLOG_INFO(CONST_MODULE_EN, "str_reply %s", str_reply.c_str());
+        PLOGI("str_reply %s", str_reply.c_str());
     }
 }
 
@@ -216,4 +220,72 @@ std::string EventNotification::getCameraIdFromKey(std::string key)
     int split_pos = key.find("_");
     str_reply     = key.substr(split_pos + 1);
     return str_reply;
+}
+
+void EventNotification::removeSubscription(LSHandle *lsHandle, int camera_id)
+{
+    LSError error;
+    LSErrorInit(&error);
+
+    std::string output_reply;
+    json json_outobj;
+    LSSubscriptionIter *LSiter = NULL;
+
+    std::string key_camera     = "_camera";
+    std::string key_format     = CONST_EVENT_KEY_PROPERTIES;
+    std::string key_properties = CONST_EVENT_KEY_FORMAT;
+
+    key_camera += std::to_string(camera_id);
+    key_format += key_camera;
+    key_properties += key_camera;
+
+    std::vector<std::string> key_list{key_format, key_properties};
+
+    json_outobj[CONST_PARAM_NAME_RETURNVALUE] = false;
+    json_outobj[CONST_PARAM_NAME_SUBSCRIBED]  = false;
+    json_outobj[CONST_PARAM_NAME_ID]          = getCameraIdFromKey(key_camera);
+    json_outobj[CONST_PARAM_NAME_ERROR_CODE]  = DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED;
+    json_outobj[CONST_PARAM_NAME_ERROR_TEXT] =
+        getErrorString(DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED);
+
+    output_reply = json_outobj.dump();
+
+    for (const auto &it : key_list)
+    {
+        if (getSubscribeCount(lsHandle, it) > 0)
+        {
+            if (!LSSubscriptionReply(lsHandle, it.c_str(), output_reply.c_str(), &error))
+            {
+                PLOGI("LSSubscriptionReply failed");
+                LSErrorPrint(&error, stderr);
+            }
+
+            if (LSSubscriptionAcquire(lsHandle, it.c_str(), &LSiter, &error))
+            {
+                // remove all subscription
+                LSMessage *subscriber_message;
+                while (LSSubscriptionHasNext(LSiter))
+                {
+                    subscriber_message = LSSubscriptionNext(LSiter);
+                    if (LSMessageIsSubscription(subscriber_message))
+                    {
+                        LSSubscriptionRemove(LSiter);
+                    }
+                }
+                LSSubscriptionRelease(LSiter);
+            }
+            else
+            {
+                PLOGI("LSSubscriptionAcquire failed");
+                LSErrorPrint(&error, stderr);
+            }
+            // check the subscription count 0
+            if (getSubscribeCount(lsHandle, it) > 0)
+            {
+                PLOGI("Remove failed!! need check");
+            }
+        }
+    }
+
+    LSErrorFree(&error);
 }

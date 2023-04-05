@@ -25,21 +25,6 @@
 #define CONST_PARAM_VALUE_TRUE 1
 #define CONST_MAX_DEVICE_COUNT 10
 
-#define CONST_MODULE_CM "CommandHandler"
-#define CONST_MODULE_DC "DeviceController"
-#define CONST_MODULE_CHP "CameraHalProxy"
-#define CONST_MODULE_LC "LunaClient"
-#define CONST_MODULE_PR "Process"
-#define CONST_MODULE_DM "DeviceManager"
-#define CONST_MODULE_EN "EventNotification"
-#define CONST_MODULE_LUNA "Service"
-#define CONST_MODULE_NOTIFIER "Notifier"
-#define CONST_MODULE_SHM "SharedMemory"
-#define CONST_MODULE_SM "SolutionManager"
-#define CONST_MODULE_RCP "RemoteCameraPlugin"
-#define CONST_MODULE_VDM "VirtualDeviceManager"
-#define CONST_MODULE_WLIST "WhitelistChecker"
-
 #define CONST_DEVICE_NAME_CAMERA "camera"
 #define CONST_DEVICE_HANDLE "handle"
 #define CONST_DEVICE_KEY "key"
@@ -152,16 +137,10 @@
 const int n_invalid_id  = -1;
 const int frame_count   = 8;
 const int extra_buffer  = 1024;
-const int buffer_count  = 2; // YUY2 buffer count as maximum
 const int n_invalid_pid = -1;
 const int n_invalid_sig = -1;
 
-const std::string cstr_empty       = "";
-const std::string cstr_pdmclient   = "com.webos.service.pdmclient";
-const std::string cstr_uri         = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
-const std::string cstr_powerstatus = "powerStatus";
-const std::string cstr_cam         = "CAM";
-const std::string cstr_capture     = ":capture:";
+const std::string cstr_empty           = "";
 const std::string cstr_invaliddeviceid = "-1";
 const std::string cstr_yuvformat       = "YUV";
 const std::string cstr_h264esformat    = "H264ES";
@@ -176,10 +155,6 @@ const std::string cstr_continuous      = "MODE_CONTINUOUS";
 const std::string cstr_connect         = "device_connect";
 const std::string cstr_disconnect      = "device_disconnect";
 const std::string cstr_previewfault    = "preview_fault";
-const std::string cstr_libv4l2         = "libv4l2-camera-plugin.so";
-const std::string cstr_libremote       = "libremote-camera-plugin.so";
-const std::string cstr_libfake         = "libfake-camera-plugin.so";
-const std::string cstr_libdummy        = "libv4l2-camera-plugin-dummy.so";
 const std::string cstr_uricamearhal    = "com.webos.camerahal.";
 
 #endif /*CAMERA_CONST_H_*/
