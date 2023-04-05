@@ -13,7 +13,7 @@
  *
  */
 
-#define LOG_CONTEXT "solution"
+#define LOG_CONTEXT "solution.FaceDetection"
 #define LOG_TAG "FaceDetectionAIF"
 #include "face_detection_aif.hpp"
 #include "camera_log.h"

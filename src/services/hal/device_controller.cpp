@@ -502,6 +502,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
           streamformat.stream_height);
 
     buf_size_ = streamformat.buffer_size + extra_buffer;
+    PLOGI("buf_size : %d = %d + %d", buf_size_, streamformat.buffer_size, extra_buffer);
 
     int32_t meta_size = 0;
     if (pCameraSolution != nullptr)

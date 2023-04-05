@@ -2,6 +2,7 @@
 #define CAMERA_SERVICE_LOG_MESSAGES_H_
 
 #include "PmLogLib.h"
+#include <string>
 
 #ifndef LOG_CONTEXT
 #define LOG_CONTEXT "service"
