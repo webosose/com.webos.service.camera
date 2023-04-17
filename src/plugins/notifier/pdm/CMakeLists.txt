@@ -18,11 +18,6 @@ project(notifier-pdm CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# TODO : Remove this after code unification
-if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
-    add_definitions(-DPLATFORM_OSE)
-endif()
-
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/pdm_client.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${SRC})
