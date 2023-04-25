@@ -630,7 +630,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     int64_t startClk = g_get_monotonic_time();
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, timeout);
     int64_t endClk = g_get_monotonic_time();
-    PLOGI("response %s, runtime %lld", resp.c_str(), (endClk - startClk) / 1000);
+    PLOGI("response %s, runtime %lld", resp.c_str(), (long long int)((endClk - startClk) / 1000));
 
     try
     {

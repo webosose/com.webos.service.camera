@@ -141,7 +141,7 @@ void FaceDetectionAIF::processing(void)
             json jfaces = get_optional<json>(jresult, "faces").value_or(nullptr);
             if (jfaces != nullptr && jfaces.is_array())
             {
-                PLOGI("Detected face count : %d", jfaces.size());
+                PLOGI("Detected face count : %zd", jfaces.size());
                 for (auto jface : jfaces)
                 {
                     if (!jface.contains("region") || !jface.contains("score"))
