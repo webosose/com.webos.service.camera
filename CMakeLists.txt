@@ -41,20 +41,6 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
-if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64")
-pkg_check_modules(EDGEAIVISION edgeai-vision)
-include_directories(${EDGEAIVISION_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${EDGEAIVISION_CFLAGS})
-
-pkg_check_modules(JPEG REQUIRED libjpeg)
-include_directories(${JPEG_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
-
-pkg_check_modules(OPENCV opencv4)
-include_directories(${OPENCV_INCLUDE_DIR})
-webos_add_compiler_flags(ALL ${OPENCV_CFLAGS})
-endif()
-
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 
@@ -99,16 +85,28 @@ set (SRC_LIST
 
 ### SOLUTION_AUTOCONTRAST setting End ###
 
-if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64")
 ### SOLUTION_FACEDETECTION_AIF setting Start ###
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AIF_FACEDETECTION")
+if(WITH_AIFRAMEWORK)
+    pkg_check_modules(EDGEAIVISION edgeai-vision)
+    include_directories(${EDGEAIVISION_INCLUDE_DIRS})
+    webos_add_compiler_flags(ALL ${EDGEAIVISION_CFLAGS})
 
-set (SRC_LIST
-    ${SRC_LIST}
-    ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
-    )
-### SOLUTION_FACEDETECTION_AIF setting End ###
+    pkg_check_modules(JPEG REQUIRED libjpeg)
+    include_directories(${JPEG_INCLUDE_DIRS})
+    webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
+
+    pkg_check_modules(OPENCV opencv4)
+    include_directories(${OPENCV_INCLUDE_DIR})
+    webos_add_compiler_flags(ALL ${OPENCV_CFLAGS})
+
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_AIF_FACEDETECTION")
+
+    set (SRC_LIST
+        ${SRC_LIST}
+        ${CMAKE_SOURCE_DIR}/src/service/solutions/face_detection_aif/face_detection_aif.cpp
+        )
 endif()
+### SOLUTION_FACEDETECTION_AIF setting End ###
 
 ### SOLUTION_DUMMY setting Start ###
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DFEATURE_LG_DUMMY")
@@ -147,7 +145,7 @@ target_link_libraries(${PROJECT_NAME}
                       pthread
                       camera_hal)
 
-if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64")
+if(WITH_AIFRAMEWORK)
 target_link_libraries(${PROJECT_NAME}
                       ${EDGEAIVISION_LDFLAGS}
                       ${JPEG_LDFLAGS}
