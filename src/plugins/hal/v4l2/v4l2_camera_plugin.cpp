@@ -1024,7 +1024,7 @@ unsigned long V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camer
 
 camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(unsigned long fourcc_format)
 {
-    camera_pixel_format_t camera_format = CAMERA_PIXEL_FORMAT_YUYV;
+    camera_pixel_format_t camera_format = CAMERA_PIXEL_FORMAT_MAX;
 
     std::map<unsigned long, camera_pixel_format_t>::iterator it = camera_format_.begin();
     while (it != camera_format_.end())
