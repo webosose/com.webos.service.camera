@@ -18,7 +18,6 @@
 #include "camera_hal_types.h"
 #include "camera_solution.h"
 #include <atomic>
-#include <condition_variable>
 #include <cstring>
 #include <memory>
 #include <queue>
@@ -38,12 +37,6 @@ public:
     };
     using Queue  = std::queue<std::unique_ptr<Buffer>>;
     using Thread = std::unique_ptr<std::thread>;
-    enum WaitResult
-    {
-        OK,
-        TIMEOUT,
-        ERROR
-    };
 
 public:
     CameraSolutionAsync(void);
@@ -64,8 +57,6 @@ protected:
 protected:
     void startThread(void);
     void stopThread(void);
-    void notify(void);
-    WaitResult wait(void);
     bool checkAlive(void);
     void setAlive(bool bAlive);
 
@@ -74,9 +65,6 @@ protected:
     void popJob(void);
 
 protected:
-    std::condition_variable cv_;
-    std::mutex m_;
-    std::mutex mtxJob_;
     Queue queueJob_;
     Thread threadJob_;
     std::atomic<bool> bAlive_{false};

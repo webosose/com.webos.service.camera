@@ -132,15 +132,9 @@ void CameraSolutionAsync::setEnableValue(bool enableValue)
     }
 }
 
-void CameraSolutionAsync::processForSnapshot(const void *inBuf)
-{
-    pushJob(*static_cast<const buffer_t *>(inBuf));
-}
+void CameraSolutionAsync::processForSnapshot(const void *inBuf) {}
 
-void CameraSolutionAsync::processForPreview(const void *inBuf)
-{
-    pushJob(*static_cast<const buffer_t *>(inBuf));
-}
+void CameraSolutionAsync::processForPreview(const void *inBuf) {}
 
 void CameraSolutionAsync::run(void)
 {
@@ -220,7 +214,6 @@ void CameraSolutionAsync::stopThread(void)
         try
         {
             setAlive(false);
-            notify();
             threadJob_->join();
         }
         catch (const std::system_error &e)
@@ -232,30 +225,6 @@ void CameraSolutionAsync::stopThread(void)
     }
 }
 
-void CameraSolutionAsync::notify(void) { cv_.notify_all(); }
-
-CameraSolutionAsync::WaitResult CameraSolutionAsync::wait(void)
-{
-    WaitResult res = OK;
-    try
-    {
-        std::unique_lock<std::mutex> lock(m_);
-        auto status = cv_.wait_for(lock, 1s);
-        if (status == std::cv_status::timeout)
-        {
-            PLOGI("Timeout to wait for Feed");
-            res = TIMEOUT;
-        }
-    }
-    catch (std::system_error &e)
-    {
-        PLOGI("Caught a system_error with code %d meaning %s", e.code().value(), e.what());
-        res = ERROR;
-    }
-
-    return res;
-}
-
 bool CameraSolutionAsync::checkAlive(void) { return bAlive_; }
 
 void CameraSolutionAsync::setAlive(bool bAlive) { bAlive_ = bAlive; }
@@ -264,15 +233,12 @@ void CameraSolutionAsync::pushJob(buffer_t inBuf)
 {
     if (queueJob_.empty())
     {
-        std::lock_guard<std::mutex> lg(mtxJob_);
         queueJob_.push(std::make_unique<Buffer>((uint8_t *)inBuf.start, inBuf.length));
-        // notify();
     }
 }
 
 void CameraSolutionAsync::popJob(void)
 {
-    std::lock_guard<std::mutex> lg(mtxJob_);
     if (!queueJob_.empty())
     {
         queueJob_.pop();
