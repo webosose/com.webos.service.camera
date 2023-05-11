@@ -614,8 +614,9 @@ bool CameraService::getInfo(LSMessage &message)
             obj_getinfo.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
             obj_getinfo.setCameraInfo(o_camerainfo);
 
-            supported =
-                pAddon_->isSupportedCamera(o_camerainfo.str_productid, o_camerainfo.str_vendorid);
+            if (pAddon_ && pAddon_->hasImplementation())
+                supported = pAddon_->isSupportedCamera(o_camerainfo.str_productid,
+                                                       o_camerainfo.str_vendorid);
         }
     }
 
