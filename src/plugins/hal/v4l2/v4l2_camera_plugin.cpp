@@ -573,13 +573,13 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
             {
                 PLOGI("VIDIOC_QUERYCTRL[%d] failed %d, %s", (int)(queryctrl.id), errno,
                       strerror(errno));
-                if (errno == EINVAL)
+                if (errno == ENODEV)
                 {
-                    continue;
+                    return CAMERA_ERROR_UNKNOWN;
                 }
                 else
                 {
-                    return CAMERA_ERROR_UNKNOWN;
+                    continue;
                 }
             }
             else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
@@ -597,13 +597,13 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
             {
                 PLOGE("VIDIOC_S_CTRL[%s] set value:%d, failed %d, %s", queryctrl.name,
                       control.value, errno, strerror(errno));
-                if (errno == EINVAL)
+                if (errno == ENODEV)
                 {
-                    continue;
+                    return CAMERA_ERROR_UNKNOWN;
                 }
                 else
                 {
-                    return CAMERA_ERROR_UNKNOWN;
+                    continue;
                 }
             }
         }
