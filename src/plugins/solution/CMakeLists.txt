@@ -16,4 +16,7 @@
 
 #add_subdirectory(dummy)
 #add_subdirectory(auto_contrast)
-add_subdirectory(face_detection_aif)
+
+if(WITH_AIFRAMEWORK)
+  add_subdirectory(face_detection_aif)
+endif()

@@ -20,18 +20,15 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # find needed packages
 find_package(PkgConfig)
-pkg_check_modules(TFLITE REQUIRED tensorflowlite)
 pkg_check_modules(OPENCV REQUIRED opencv4)
 
 # include directories
 include_directories(
-    ${TFLITE_INCLUDE_DIRS}
     ${OPENCV_INCLUDE_DIRS}
 )
 
 # link directories
 link_directories(
-    ${TFLITE_LIBRARY_DIRS}
     ${OPENCV_LIBRARY_DIRS}
 )
 
@@ -45,7 +42,7 @@ target_link_libraries(${PROJECT_NAME}
                       camera_common
                       ${JPEG_LDFLAGS}
                       ${OPENCV_LIBRARIES}
-                      edgeai-vision
+                      ${EDGEAIVISION_LDFLAGS}
                       ${LS2++_LDFLAGS}
                       )
 

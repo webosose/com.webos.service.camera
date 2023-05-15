@@ -2,6 +2,7 @@
 #define CAMERA_SERVICE_LOG_MESSAGES_H_
 
 #include "PmLogLib.h"
+#include <stdexcept>
 #include <string>
 
 #ifndef LOG_CONTEXT
@@ -13,7 +14,15 @@ static inline PmLogContext getCameraLunaPmLogContext()
     static PmLogContext usLogContext = 0;
     if (0 == usLogContext)
     {
-        std::string str = std::string("camera.") + LOG_CONTEXT;
+        std::string str = "camera.";
+        try
+        {
+            str.append(LOG_CONTEXT);
+        }
+        catch (const std::logic_error &e)
+        {
+            str = "camera";
+        }
         PmLogGetContext(str.c_str(), &usLogContext);
     }
     return usLogContext;

@@ -52,12 +52,6 @@ include_directories(${CMAKE_SOURCE_DIR}/include/private)
 
 webos_use_gtest()
 
-# TODO : [FIX_ME] Remove this by code unification
-# Must be placed before adding src/services/camera and src/services/hal subdirectories
-if(${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4" OR ${WEBOS_TARGET_MACHINE} STREQUAL "raspberrypi4-64" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86" OR ${WEBOS_TARGET_MACHINE} STREQUAL "qemux86-64")
-    add_definitions(-DPLATFORM_OSE)
-endif()
-
 add_subdirectory(src/common)
 add_subdirectory(src/plugins)
 add_subdirectory(src/services)

@@ -90,12 +90,10 @@ int32_t CameraSolutionProxy::getMetaSizeHint(void)
     // size = 10 + 56*100 + 2 = 572
     // size + padding -> 1024
     int metaSizeHint = 1024;
-    // TODO : Check CameraSolutionProxy managing getMetaSizeHint of CameraSolutions
+    // TODO : The size of the metaSizeHint should be returned by the solution.
 
-#ifdef PLATFORM_OSE
-    metaSizeHint = 0;
-    // OSE does not write meta data to shm
-#endif
+    // In case of OSE, remove the comment below.
+    // metaSizeHint = 0;
 
     PLOGI("metaSizeHint = %d", metaSizeHint);
     return metaSizeHint;

@@ -35,10 +35,6 @@ pkg_check_modules(PBNJSON_CPP REQUIRED pbnjson_cpp)
 include_directories(${PBNJSON_CPP_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS_OTHER})
 
-pkg_check_modules(JPEG REQUIRED libjpeg)
-include_directories(${JPEG_INCLUDE_DIRS})
-webos_add_compiler_flags(ALL ${JPEG_CFLAGS})
-
 include_directories(${CMAKE_SOURCE_DIR}/src/services/solution)
 
 # Camera Solution Service

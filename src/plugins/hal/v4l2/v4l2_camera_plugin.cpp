@@ -573,13 +573,13 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
             {
                 PLOGI("VIDIOC_QUERYCTRL[%d] failed %d, %s", (int)(queryctrl.id), errno,
                       strerror(errno));
-                if (errno == EINVAL)
+                if (errno == ENODEV)
                 {
-                    continue;
+                    return CAMERA_ERROR_UNKNOWN;
                 }
                 else
                 {
-                    return CAMERA_ERROR_UNKNOWN;
+                    continue;
                 }
             }
             else if (queryctrl.flags & V4L2_CTRL_FLAG_DISABLED)
@@ -597,13 +597,13 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
             {
                 PLOGE("VIDIOC_S_CTRL[%s] set value:%d, failed %d, %s", queryctrl.name,
                       control.value, errno, strerror(errno));
-                if (errno == EINVAL)
+                if (errno == ENODEV)
                 {
-                    continue;
+                    return CAMERA_ERROR_UNKNOWN;
                 }
                 else
                 {
-                    return CAMERA_ERROR_UNKNOWN;
+                    continue;
                 }
             }
         }
@@ -1024,7 +1024,7 @@ unsigned long V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camer
 
 camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(unsigned long fourcc_format)
 {
-    camera_pixel_format_t camera_format = CAMERA_PIXEL_FORMAT_YUYV;
+    camera_pixel_format_t camera_format = CAMERA_PIXEL_FORMAT_MAX;
 
     std::map<unsigned long, camera_pixel_format_t>::iterator it = camera_format_.begin();
     while (it != camera_format_.end())
