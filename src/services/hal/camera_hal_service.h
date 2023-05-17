@@ -25,7 +25,6 @@ class CameraHalService : public LS::Handle
     mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
 
     std::unique_ptr<DeviceControl> pDeviceControl;
-    void *pCamHandle;
 
 public:
     CameraHalService(const char *service_name);

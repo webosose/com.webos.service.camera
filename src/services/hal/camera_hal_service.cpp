@@ -23,7 +23,7 @@
 const char *const SUBSCRIPTION_KEY = "cameraHal";
 
 CameraHalService::CameraHalService(const char *service_name)
-    : LS::Handle(LS::registerService(service_name)), pCamHandle(NULL)
+    : LS::Handle(LS::registerService(service_name))
 {
     PLOGI("Start : %s", service_name);
 
@@ -77,7 +77,7 @@ bool CameraHalService::createHandle(LSMessage &message)
     }
 
     pDeviceControl           = std::make_unique<DeviceControl>();
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(&pCamHandle, device_type);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(device_type);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -97,7 +97,7 @@ bool CameraHalService::destroyHandle(LSMessage &message)
     auto *payload = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->destroyHandle(pCamHandle);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->destroyHandle();
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -159,7 +159,7 @@ bool CameraHalService::open(LSMessage &message)
         payload_ = parsed[CONST_PARAM_NAME_PAYLOAD].asString();
     }
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->open(pCamHandle, devicenode, ndev_id, payload_);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->open(devicenode, ndev_id, payload_);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -178,7 +178,7 @@ bool CameraHalService::close(LSMessage &message)
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->close(pCamHandle);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->close();
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -208,7 +208,7 @@ bool CameraHalService::startPreview(LSMessage &message)
     PLOGI("memtype(%s)", memtype.c_str());
 
     DEVICE_RETURN_CODE_T ret =
-        pDeviceControl->startPreview(pCamHandle, memtype, &pkey, this->get(), SUBSCRIPTION_KEY);
+        pDeviceControl->startPreview(memtype, &pkey, this->get(), SUBSCRIPTION_KEY);
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHMKEY), jnumber_create_i32(pkey));
@@ -239,7 +239,7 @@ bool CameraHalService::stopPreview(LSMessage &message)
         memtype = parsed[CONST_PARAM_NAME_MEMTYPE].asNumber<int>();
     }
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->stopPreview(pCamHandle, memtype);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->stopPreview(memtype);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -295,8 +295,7 @@ bool CameraHalService::captureImage(LSMessage &message)
         ncount = parsed[CONST_PARAM_NAME_NCOUNT].asNumber<int>();
     }
 
-    DEVICE_RETURN_CODE_T ret =
-        pDeviceControl->captureImage(pCamHandle, ncount, sformat, imagepath, mode);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->captureImage(ncount, sformat, imagepath, mode);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -340,7 +339,7 @@ bool CameraHalService::startCapture(LSMessage &message)
         imagepath = parsed[CONST_PARAM_NAME_IMAGE_PATH].asString();
     }
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->startCapture(pCamHandle, sformat, imagepath);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->startCapture(sformat, imagepath);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -359,7 +358,7 @@ bool CameraHalService::stopCapture(LSMessage &message)
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->stopCapture(pCamHandle);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->stopCapture();
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -377,7 +376,7 @@ bool CameraHalService::getDeviceProperty(LSMessage &message)
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->getDeviceProperty(pCamHandle, &oparams);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->getDeviceProperty(&oparams);
     if (ret == DEVICE_OK)
     {
         for (int i = 0; i < PROPERTY_END; i++)
@@ -427,7 +426,7 @@ bool CameraHalService::setDeviceProperty(LSMessage &message)
         }
     }
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->setDeviceProperty(pCamHandle, &inparams);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->setDeviceProperty(&inparams);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -470,7 +469,7 @@ bool CameraHalService::setFormat(LSMessage &message)
         sformat.eFormat = (camera_format_t)eFormat;
     }
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->setFormat(pCamHandle, sformat);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->setFormat(sformat);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
 
@@ -490,7 +489,7 @@ bool CameraHalService::getFormat(LSMessage &message)
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->getFormat(pCamHandle, &sformat);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->getFormat(&sformat);
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
