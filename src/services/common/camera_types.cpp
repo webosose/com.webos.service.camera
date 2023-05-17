@@ -87,10 +87,11 @@ std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_DISCONNECT, cstr_disconnect},
     {EventType::EVENT_TYPE_PREVIEW_FAULT, cstr_previewfault}};
 
-std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Unsupported format"},
-                                                          {CAMERA_FORMAT_YUV, "YUV"},
-                                                          {CAMERA_FORMAT_H264ES, "H264ES"},
-                                                          {CAMERA_FORMAT_JPEG, "JPEG"}};
+std::map<camera_format_t, std::string> g_format_string = {
+    {CAMERA_FORMAT_UNDEFINED, "Unsupported format"},
+    {CAMERA_FORMAT_YUV, "YUV"},
+    {CAMERA_FORMAT_H264ES, "H264ES"},
+    {CAMERA_FORMAT_JPEG, "JPEG"}};
 
 std::map<int, std::string> g_param_string = {
     {properties_t::PROPERTY_BRIGHTNESS, CONST_PARAM_NAME_BIRGHTNESS},
