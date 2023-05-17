@@ -823,7 +823,8 @@ DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string devi
     void *pInterface = nullptr;
     if (pFeature_->queryInterface(deviceType.c_str(), &pInterface))
     {
-        *handle = pInterface;
+        *handle     = pInterface;
+        cam_handle_ = pInterface;
         return DEVICE_OK;
     }
     return DEVICE_ERROR_UNKNOWN;
