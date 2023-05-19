@@ -49,6 +49,7 @@ public:
     bool setFormat(LSMessage &message);
     bool getFormat(LSMessage &message);
     bool getDeviceInfo(LSMessage &message);
+    bool getFd(LSMessage &message);
     bool registerClient(LSMessage &message);
     bool unregisterClient(LSMessage &message);
     bool isRegisteredClient(LSMessage &message);

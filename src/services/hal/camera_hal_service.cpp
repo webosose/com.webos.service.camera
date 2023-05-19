@@ -43,6 +43,7 @@ CameraHalService::CameraHalService(const char *service_name)
     LS_CATEGORY_METHOD(setFormat)
     LS_CATEGORY_METHOD(getFormat)
     LS_CATEGORY_METHOD(getDeviceInfo)
+    LS_CATEGORY_METHOD(getFd)
     LS_CATEGORY_METHOD(registerClient)
     LS_CATEGORY_METHOD(unregisterClient)
     LS_CATEGORY_METHOD(isRegisteredClient)
@@ -506,6 +507,32 @@ bool CameraHalService::getFormat(LSMessage &message)
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
+
+    j_release(&json_outobj);
+
+    return true;
+}
+
+bool CameraHalService::getFd(LSMessage &message)
+{
+    int shmfd;
+    jvalue_ref json_outobj = jobject_create();
+
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->getFd(&shmfd);
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+
+    LS::Message request(&message);
+    if (ret == DEVICE_OK)
+    {
+        LS::Payload response_payload(jvalue_stringify(json_outobj));
+        response_payload.attachFd(shmfd); // attach a fd here
+        request.respond(std::move(response_payload));
+    }
+    else
+    {
+        request.respond(jvalue_stringify(json_outobj));
+    }
     PLOGI("response message : %s", jvalue_stringify(json_outobj));
 
     j_release(&json_outobj);

@@ -115,6 +115,7 @@ public:
     DEVICE_RETURN_CODE_T setDeviceProperty(CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(CAMERA_FORMAT);
     DEVICE_RETURN_CODE_T getFormat(CAMERA_FORMAT *);
+    DEVICE_RETURN_CODE_T getFd(int *);
 
     DEVICE_RETURN_CODE_T registerClient(pid_t, int, int, std::string &outmsg);
     DEVICE_RETURN_CODE_T unregisterClient(pid_t, std::string &outmsg);

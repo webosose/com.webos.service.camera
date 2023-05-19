@@ -18,6 +18,7 @@
 #include "camera_hal_proxy.h"
 #include "generate_unique_id.h"
 #include "json_utils.h"
+#include "luna-service2/lunaservice.hpp"
 #include "luna_client.h"
 #include "process.h"
 #include <ios>
@@ -412,6 +413,71 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
     }
 
     return ret;
+}
+
+DEVICE_RETURN_CODE_T CameraHalProxy::getFd(int *shmfd)
+{
+    PLOGI("");
+    LSMessageToken tok = 0;
+    LSError lserror;
+    LSErrorInit(&lserror);
+    GMainContext *context = g_main_loop_get_context(loop_);
+    std::string uri       = service_uri_ + __func__;
+    struct FdTaker
+    {
+        const char *response;
+        int fd;
+        bool done;
+    } worker{"", 0, false};
+    bool ret = false;
+
+    ret = LSCall(
+        luna_client->get(), uri.c_str(), "{}",
+        +[](LSHandle *sh, LSMessage *msg, void *data)
+        {
+            FdTaker *taker  = (FdTaker *)data;
+            taker->response = LSMessageGetPayload(msg);
+            LS::Message ls_message(msg);
+            LS::PayloadRef payload_ref = ls_message.accessPayload();
+            int fd                     = payload_ref.getFd();
+            if (fd)
+            {
+                taker->fd = dup(fd);
+            }
+            taker->done = true;
+            return true;
+        },
+        &worker, &tok, &lserror);
+
+    if (ret == true)
+    {
+        ret = LSCallSetTimeout(luna_client->get(), tok, 30, &lserror);
+        if (ret == true)
+        {
+            while (!worker.done)
+            {
+                g_main_context_iteration(context, false);
+                usleep(500);
+            }
+
+            if (0 == get_optional<int>(jOut, CONST_PARAM_NAME_RETURNCODE).value_or(-1))
+            {
+                *shmfd = worker.fd;
+                return DEVICE_OK;
+            }
+
+            *shmfd = -1;
+            return DEVICE_ERROR_UNKNOWN;
+        }
+
+        *shmfd = -1;
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    LSErrorPrint(&lserror, stderr);
+    LSErrorFree(&lserror);
+    *shmfd = -1;
+    return DEVICE_ERROR_UNKNOWN;
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle,

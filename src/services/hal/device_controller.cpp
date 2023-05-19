@@ -940,6 +940,18 @@ DEVICE_RETURN_CODE_T DeviceControl::getFormat(CAMERA_FORMAT *pformat)
     return DEVICE_OK;
 }
 
+DEVICE_RETURN_CODE_T DeviceControl::getFd(int *posix_shm_fd)
+{
+    if (h_shmposix_ == nullptr)
+    {
+        PLOGE("POSIX Shmemory is not used for this session");
+        *posix_shm_fd = -1;
+        return DEVICE_ERROR_UNKNOWN;
+    }
+    *posix_shm_fd = shmemfd_;
+    return DEVICE_OK;
+}
+
 camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
 {
     // convert camera_pixel_format_t to CAMERA_FORMAT_T
