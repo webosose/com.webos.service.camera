@@ -40,7 +40,6 @@ public:
     bool close(LSMessage &message);
     bool startPreview(LSMessage &message);
     bool stopPreview(LSMessage &message);
-    bool captureImage(LSMessage &message);
     bool startCapture(LSMessage &message);
     bool stopCapture(LSMessage &message);
     bool getDeviceProperty(LSMessage &message);
