@@ -65,8 +65,8 @@ public:
     DEVICE_RETURN_CODE_T stopCapture();
     DEVICE_RETURN_CODE_T captureImage(int ncount, CAMERA_FORMAT sformat,
                                       const std::string &imagepath, const std::string &mode);
-    DEVICE_RETURN_CODE_T createHandle(std::string subsystem);
-    DEVICE_RETURN_CODE_T destroyHandle();
+    DEVICE_RETURN_CODE_T createHal(std::string subsystem);
+    DEVICE_RETURN_CODE_T destroyHal();
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string strdevicenode, std::string strdevicetype,
                                               camera_device_info_t *pinfo);
     DEVICE_RETURN_CODE_T getDeviceProperty(CAMERA_PROPERTIES_T *oparams);

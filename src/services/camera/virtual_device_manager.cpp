@@ -93,7 +93,7 @@ void VirtualDeviceManager::removeHandlePriorityObj(int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
     std::string deviceType   = DeviceManager::getInstance().getDeviceType(devid);
-    DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHandle(deviceType);
+    DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHal(deviceType);
     if (DEVICE_OK != ret)
     {
         PLOGI("Failed to create handle\n");
@@ -221,7 +221,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
                 if (DEVICE_OK == ret)
                 {
                     DeviceManager::getInstance().setDeviceStatus(deviceid, FALSE);
-                    ret = objcamerahalproxy_.destroyHandle();
+                    ret = objcamerahalproxy_.destroyHal();
                     // remove the virtual device
                     removeVirtualDeviceHandle(devhandle);
                     // since the device is closed, remove the element from map
