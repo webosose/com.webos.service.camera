@@ -348,7 +348,9 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
 
     if (ret == DEVICE_OK)
     {
-        for (json::iterator it = jOut.begin(); it != jOut.end(); ++it)
+        auto jobj_params = jOut[CONST_PARAM_NAME_PARAMS];
+
+        for (json::iterator it = jobj_params.begin(); it != jobj_params.end(); ++it)
         {
             if (it.value().is_object() == false)
                 continue;
@@ -356,7 +358,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
             int i = getParamNumFromString(it.key());
             if (i >= 0)
             {
-                json queries = jOut[it.key()];
+                json queries = jobj_params[it.key()];
                 for (json::iterator q = queries.begin(); q != queries.end(); ++q)
                 {
                     int n = getQueryNumFromString(q.key());
@@ -379,7 +381,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::setDeviceProperty(CAMERA_PROPERTIES_T *inpa
     {
         if (inparams->stGetData.data[i][QUERY_VALUE] == CONST_PARAM_DEFAULT_VALUE)
             continue;
-        jin[getParamString(i)] = inparams->stGetData.data[i][QUERY_VALUE];
+        jin[CONST_PARAM_NAME_PARAMS][getParamString(i)] = inparams->stGetData.data[i][QUERY_VALUE];
     }
 
     return luna_call_sync(__func__, to_string(jin));
