@@ -299,10 +299,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    DEVICE_RETURN_CODE_T ret = get_optional<DEVICE_RETURN_CODE_T>(j, CONST_PARAM_NAME_RETURNCODE)
-                                   .value_or(DEVICE_RETURN_UNDEFINED);
-    PLOGI("%s : %d", CONST_PARAM_NAME_RETURNCODE, ret);
-    if (ret == DEVICE_OK)
+    DEVICE_RETURN_CODE_T ret_code = DEVICE_OK;
+    bool ret_value = get_optional<bool>(j, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
+    PLOGI("%s : %d", CONST_PARAM_NAME_RETURNVALUE, ret_value);
+    if (ret_value)
     {
         pinfo->n_devicetype =
             get_optional<device_t>(j, CONST_PARAM_NAME_DEVICE_TYPE).value_or(DEVICE_TYPE_UNDEFINED);
@@ -321,6 +321,11 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
             pinfo->stResolution.emplace_back(v_res, eformat);
         }
     }
+    else
+    {
+        ret_code = get_optional<DEVICE_RETURN_CODE_T>(j, CONST_PARAM_NAME_ERROR_CODE)
+                       .value_or(DEVICE_RETURN_UNDEFINED);
+    }
 
     g_main_loop_quit(lp);
     if (lpthd->joinable())
@@ -336,7 +341,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
     }
     g_main_loop_unref(lp);
 
-    return ret;
+    return ret_code;
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *oparams)
@@ -460,14 +465,17 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFd(int *shmfd)
                 usleep(500);
             }
 
-            if (0 == get_optional<int>(jOut, CONST_PARAM_NAME_RETURNCODE).value_or(-1))
+            if (get_optional<bool>(jOut, CONST_PARAM_NAME_RETURNVALUE).value_or(false))
             {
                 *shmfd = worker.fd;
                 return DEVICE_OK;
             }
-
-            *shmfd = -1;
-            return DEVICE_ERROR_UNKNOWN;
+            else
+            {
+                *shmfd = -1;
+                return get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_ERROR_CODE)
+                    .value_or(DEVICE_RETURN_UNDEFINED);
+            }
         }
 
         *shmfd = -1;
@@ -712,7 +720,15 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
         PLOGE("payload parsing error!");
         return DEVICE_ERROR_JSON_PARSING;
     }
-    DEVICE_RETURN_CODE_T ret = get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_RETURNCODE)
-                                   .value_or(DEVICE_RETURN_UNDEFINED);
-    return ret;
+
+    bool ret = get_optional<bool>(jOut, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
+    if (ret)
+    {
+        return DEVICE_OK;
+    }
+    else
+    {
+        return get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_ERROR_CODE)
+            .value_or(DEVICE_RETURN_UNDEFINED);
+    }
 }
