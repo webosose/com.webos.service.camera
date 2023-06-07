@@ -511,7 +511,6 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
     else
     {
         setCameraId(cstr_invaliddeviceid);
-        setDeviceHandle(n_invalid_id); // Temporarily keep using handle. Todo remove
     }
 
     j_release(&j_obj);
