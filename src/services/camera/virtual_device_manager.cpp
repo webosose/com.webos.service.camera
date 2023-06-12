@@ -741,8 +741,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
     {
         if (obj_devstate.shmemtype == SHMEM_POSIX)
         {
-            *shmfd = poshmkey_;
-            PLOGI("posix shared memory fd is : %d\n", *shmfd);
+            DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getFd(shmfd);
+            if (ret == DEVICE_OK)
+            {
+                PLOGI("posix shared memory fd is : %d\n", *shmfd);
+            }
+            return ret;
         }
         else
         {

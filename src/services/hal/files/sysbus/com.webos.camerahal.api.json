@@ -3,6 +3,7 @@
         "com.webos.camerahal.*/getDeviceInfo",
         "com.webos.camerahal.*/getDeviceProperty",
         "com.webos.camerahal.*/getFormat",
+        "com.webos.camerahal.*/getFd",
         "com.webos.camerahal.*/isRegisteredClient",
         "com.webos.camerahal.*/getSupportedCameraSolutionInfo",
         "com.webos.camerahal.*/getEnabledCameraSolutionInfo"

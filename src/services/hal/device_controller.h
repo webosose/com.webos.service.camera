@@ -44,8 +44,8 @@ class DeviceControl
 {
 private:
     DEVICE_RETURN_CODE_T writeImageToFile(const void *, int) const;
-    DEVICE_RETURN_CODE_T checkFormat(void *, CAMERA_FORMAT);
-    DEVICE_RETURN_CODE_T pollForCapturedImage(void *, int) const;
+    DEVICE_RETURN_CODE_T checkFormat(CAMERA_FORMAT);
+    DEVICE_RETURN_CODE_T pollForCapturedImage(int) const;
     static camera_pixel_format_t getPixelFormat(camera_format_t);
     static camera_format_t getCameraFormat(camera_pixel_format_t);
     void captureThread();
@@ -57,7 +57,7 @@ private:
     bool b_issystemvruning;
     bool b_issystemvruning_mmap;
 
-    void *cam_handle_;
+    IHal *p_cam_hal;
     int shmemfd_;
     buffer_t *usrpbufs_;
 
@@ -101,21 +101,21 @@ private:
 
 public:
     DeviceControl();
-    DEVICE_RETURN_CODE_T open(void *, std::string, int, std::string);
-    DEVICE_RETURN_CODE_T close(void *);
-    DEVICE_RETURN_CODE_T startPreview(void *, std::string, int *, LSHandle *, const char *);
-    DEVICE_RETURN_CODE_T stopPreview(void *, int);
-    DEVICE_RETURN_CODE_T startCapture(void *, CAMERA_FORMAT, const std::string &);
-    DEVICE_RETURN_CODE_T stopCapture(void *);
-    DEVICE_RETURN_CODE_T captureImage(void *, int, CAMERA_FORMAT, const std::string &,
-                                      const std::string &);
-    DEVICE_RETURN_CODE_T createHandle(void **, std::string);
-    DEVICE_RETURN_CODE_T destroyHandle(void *);
+    DEVICE_RETURN_CODE_T open(std::string, int, std::string);
+    DEVICE_RETURN_CODE_T close();
+    DEVICE_RETURN_CODE_T startPreview(std::string, int *, LSHandle *, const char *);
+    DEVICE_RETURN_CODE_T stopPreview(int);
+    DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT, const std::string &);
+    DEVICE_RETURN_CODE_T stopCapture();
+    DEVICE_RETURN_CODE_T captureImage(int, CAMERA_FORMAT, const std::string &, const std::string &);
+    DEVICE_RETURN_CODE_T createHandle(std::string);
+    DEVICE_RETURN_CODE_T destroyHandle();
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string, std::string, camera_device_info_t *);
-    DEVICE_RETURN_CODE_T getDeviceProperty(void *, CAMERA_PROPERTIES_T *);
-    DEVICE_RETURN_CODE_T setDeviceProperty(void *, CAMERA_PROPERTIES_T *);
-    DEVICE_RETURN_CODE_T setFormat(void *, CAMERA_FORMAT);
-    DEVICE_RETURN_CODE_T getFormat(void *, CAMERA_FORMAT *);
+    DEVICE_RETURN_CODE_T getDeviceProperty(CAMERA_PROPERTIES_T *);
+    DEVICE_RETURN_CODE_T setDeviceProperty(CAMERA_PROPERTIES_T *);
+    DEVICE_RETURN_CODE_T setFormat(CAMERA_FORMAT);
+    DEVICE_RETURN_CODE_T getFormat(CAMERA_FORMAT *);
+    DEVICE_RETURN_CODE_T getFd(int *);
 
     DEVICE_RETURN_CODE_T registerClient(pid_t, int, int, std::string &outmsg);
     DEVICE_RETURN_CODE_T unregisterClient(pid_t, std::string &outmsg);

@@ -51,6 +51,8 @@ public:
 
     bool registerToService(const char *serviceName, RegisterHandler handler, void *data);
 
+    LSHandle *get();
+
 private:
     LSHandle *pHandle_{nullptr};
     GMainContext *pContext_{nullptr};

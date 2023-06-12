@@ -292,3 +292,5 @@ bool LunaClient::unsubscribe(unsigned long subscribeKey)
     PLOGD("ret=%d", true);
     return true;
 }
+
+LSHandle *LunaClient::get() { return pHandle_; }
