@@ -255,21 +255,20 @@ public:
 
   void setCameraInfo(const camera_device_info_t& r_ininfo)
   {
-    strncpy(ro_info_.str_devicename, r_ininfo.str_devicename, (CONST_MAX_STRING_LENGTH - 1));
-    strncpy(ro_info_.str_vendorid, r_ininfo.str_vendorid, (CONST_MAX_STRING_LENGTH - 1));
-    strncpy(ro_info_.str_vendorname, r_ininfo.str_vendorname, (CONST_MAX_STRING_LENGTH - 1));
-    strncpy(ro_info_.str_productid, r_ininfo.str_productid, (CONST_MAX_STRING_LENGTH - 1));
-    strncpy(ro_info_.str_productname, r_ininfo.str_productname, (CONST_MAX_STRING_LENGTH - 1));
-    ro_info_.b_builtin = r_ininfo.b_builtin;
-    ro_info_.n_codec = r_ininfo.n_codec;
-    ro_info_.n_format = r_ininfo.n_format;
-    ro_info_.n_devicetype = r_ininfo.n_devicetype;
-    ro_info_.n_maxpictureheight = r_ininfo.n_maxpictureheight;
-    ro_info_.n_maxpicturewidth = r_ininfo.n_maxpicturewidth;
-    ro_info_.n_maxvideoheight = r_ininfo.n_maxvideoheight;
-    ro_info_.n_maxvideowidth = r_ininfo.n_maxvideowidth;
-    ro_info_.n_cur_fps = r_ininfo.n_cur_fps;
-    ro_info_.n_samplingrate = r_ininfo.n_samplingrate;
+      ro_info_.str_devicename = r_ininfo.str_devicename;
+      ro_info_.str_vendorid   = r_ininfo.str_vendorid;
+      ro_info_.str_productid  = r_ininfo.str_productid;
+      ro_info_.b_builtin      = r_ininfo.b_builtin;
+      ro_info_.n_devicetype   = r_ininfo.n_devicetype;
+
+      // update resolution structure
+      for (auto const &v : r_ininfo.stResolution)
+      {
+          std::vector<std::string> c_res;
+          c_res.clear();
+          c_res.assign(v.c_res.begin(), v.c_res.end());
+          ro_info_.stResolution.emplace_back(c_res, v.e_format);
+      }
   }
 
   camera_device_info_t rGetCameraInfo() const { return ro_info_; }
@@ -283,7 +282,7 @@ public:
   MethodReply getMethodReply() const { return objreply_; }
 
   void getInfoObject(const char *, const char *);
-  std::string createInfoObjectJsonString() const;
+  std::string createInfoObjectJsonString(bool supported) const;
 
 private:
   std::string str_deviceid_;
@@ -299,55 +298,17 @@ public:
 
   void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
   int getDeviceHandle() const { return n_devicehandle_; }
+  void setCameraId(const std::string &devid) { str_devid_ = devid; }
+  std::string getCameraId() const { return str_devid_; }
 
   void setCameraProperties(const CAMERA_PROPERTIES_T& rin_info)
   {
-    ro_camproperties_.nAutoWhiteBalance = rin_info.nAutoWhiteBalance;
-    ro_camproperties_.nBrightness = rin_info.nBrightness;
-    ro_camproperties_.nContrast = rin_info.nContrast;
-    ro_camproperties_.nSaturation = rin_info.nSaturation;
-    ro_camproperties_.nHue = rin_info.nHue;
-    ro_camproperties_.nGamma = rin_info.nGamma;
-    ro_camproperties_.nGain = rin_info.nGain;
-    ro_camproperties_.nFrequency = rin_info.nFrequency;
-    ro_camproperties_.nWhiteBalanceTemperature = rin_info.nWhiteBalanceTemperature;
-    ro_camproperties_.nSharpness = rin_info.nSharpness;
-    ro_camproperties_.nBacklightCompensation = rin_info.nBacklightCompensation;
-    ro_camproperties_.nAutoExposure = rin_info.nAutoExposure;
-    ro_camproperties_.nExposure = rin_info.nExposure;
-    ro_camproperties_.nPan = rin_info.nPan;
-    ro_camproperties_.nTilt = rin_info.nTilt;
-    ro_camproperties_.nFocusAbsolute = rin_info.nFocusAbsolute;
-    ro_camproperties_.nAutoFocus = rin_info.nAutoFocus;
-    ro_camproperties_.nZoomAbsolute = rin_info.nZoomAbsolute;
-
     //update query data
-
-   for (int i = 0; i < PROPERTY_END; i++)
-   {
-     for (int j = 0; j < QUERY_END; j++)
-     {
-       ro_camproperties_.stGetData.data[i][j] = rin_info.stGetData.data[i][j];
-     }
-   }
-
-   // update resolution structure
-    ro_camproperties_.stResolution.n_formatindex = rin_info.stResolution.n_formatindex;
-    for (int n = 0; n < rin_info.stResolution.n_formatindex; n++)
+    for (int i = 0; i < PROPERTY_END; i++)
     {
-      ro_camproperties_.stResolution.e_format[n] = rin_info.stResolution.e_format[n];
-      ro_camproperties_.stResolution.n_frameindex[n] = rin_info.stResolution.n_frameindex[n];
-      ro_camproperties_.stResolution.n_framecount[n] = rin_info.stResolution.n_framecount[n];
-      for (int count = 0; count < rin_info.stResolution.n_framecount[n]; count++)
+      for (int j = 0; j < QUERY_END; j++)
       {
-        ro_camproperties_.stResolution.n_height[n][count] =
-            rin_info.stResolution.n_height[n][count];
-        ro_camproperties_.stResolution.n_width[n][count] =
-            rin_info.stResolution.n_width[n][count];
-        memset(ro_camproperties_.stResolution.c_res[n][count], '\0',
-               sizeof(ro_camproperties_.stResolution.c_res[n][count]));
-        strncpy(ro_camproperties_.stResolution.c_res[n][count], rin_info.stResolution.c_res[n][count],
-                sizeof(ro_camproperties_.stResolution.c_res[n][count])-1);
+        ro_camproperties_.stGetData.data[i][j] = rin_info.stGetData.data[i][j];
       }
     }
   }
@@ -374,6 +335,7 @@ private:
   int n_devicehandle_;
   CAMERA_PROPERTIES_T ro_camproperties_;
   std::vector<std::string> str_params_;
+  std::string str_devid_;
   MethodReply objreply_;
 };
 
@@ -504,6 +466,43 @@ private:
   std::vector<std::string> str_enable_solutions_;
   std::vector<std::string> str_disable_solutions_;
   MethodReply objreply_;
+};
+
+class GetFormatMethod
+{
+public:
+    GetFormatMethod();
+    ~GetFormatMethod() {}
+
+    void setCameraId(const std::string &devid) { str_devid_ = devid; }
+    std::string getCameraId() const { return str_devid_; }
+    void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
+
+    void setCameraFormat(CAMERA_FORMAT rin_params)
+    {
+        ro_params_.nWidth  = rin_params.nWidth;
+        ro_params_.nHeight = rin_params.nHeight;
+        ro_params_.eFormat = rin_params.eFormat;
+        ro_params_.nFps    = rin_params.nFps;
+    }
+    CAMERA_FORMAT rGetCameraFormat() const { return ro_params_; }
+
+    void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+    {
+        objreply_.setReturnValue(returnvalue);
+        objreply_.setErrorCode(errorcode);
+        objreply_.setErrorText(errortext);
+    }
+    MethodReply getMethodReply() const { return objreply_; }
+
+    void getObject(const char *, const char *);
+    std::string createObjectJsonString() const;
+
+private:
+    std::string str_devid_;
+    CAMERA_FORMAT ro_params_;
+    bool b_issubscribed_;
+    MethodReply objreply_;
 };
 
 void createJsonStringFailure(MethodReply, jvalue_ref &);

@@ -208,12 +208,12 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
     //error handling
     if(newstreamformat.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
       return DEVICE_ERROR_UNSUPPORTED_FORMAT;
-    retval = camera_hal_if_set_format(handle, newstreamformat);
+    retval = camera_hal_if_set_format(handle, &newstreamformat);
     if (retval != CAMERA_ERROR_NONE)
     {
       PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_format failed \n");
       // if set format fails then reset format to preview format
-      camera_hal_if_set_format(handle, streamformat);
+      camera_hal_if_set_format(handle, &streamformat);
       // save pixel format for saving captured image
       epixelformat_ = streamformat.pixel_format;
     }
@@ -282,7 +282,7 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
         frame_buffer.start = nullptr;
       }
 
-      retval = camera_hal_if_release_buffer(handle, frame_buffer);
+      retval = camera_hal_if_release_buffer(handle, &frame_buffer);
       if (retval != CAMERA_ERROR_NONE)
       {
         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
@@ -390,7 +390,7 @@ void DeviceControl::previewThread()
          pCameraSolution->processPreview(frame_buffer);
        }
 
-       retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
+       retval = camera_hal_if_release_buffer(cam_handle_, &frame_buffer);
        if (retval != CAMERA_ERROR_NONE)
        {
          PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
@@ -449,7 +449,7 @@ void DeviceControl::previewThread()
        free(frame_buffer.start);
        frame_buffer.start = nullptr;
 
-       retval = camera_hal_if_release_buffer(cam_handle_, frame_buffer);
+       retval = camera_hal_if_release_buffer(cam_handle_, &frame_buffer);
        if (retval != CAMERA_ERROR_NONE)
        {
          PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
@@ -462,7 +462,7 @@ void DeviceControl::previewThread()
     {
       auto toc = std::chrono::steady_clock::now();
       auto us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-      PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%u)",
+      PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%zu)",
                  cam_handle_, debug_interval * 1000000.0f / us, client_pool_.size());
       tic = toc;
       debug_counter = 0;
@@ -620,7 +620,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
       *pkey = shmemfd_ = frame_buffer.fd;
       PMLOG_INFO(CONST_MODULE_DC, "pkey : %d\n", *pkey);
 
-      retval = camera_hal_if_release_buffer(handle, frame_buffer);
+      retval = camera_hal_if_release_buffer(handle, &frame_buffer);
       if (retval != CAMERA_ERROR_NONE)
       {
         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
@@ -862,51 +862,15 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
 
   camera_properties_t out_params;
 
-  out_params.nPan = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nTilt = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nContrast = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nBrightness = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nSaturation = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nSharpness = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nHue = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nGain = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nGamma = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nFrequency = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nAutoWhiteBalance = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nBacklightCompensation = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nExposure = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nWhiteBalanceTemperature = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nAutoExposure = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nZoomAbsolute = CONST_PARAM_DEFAULT_VALUE;
-  out_params.nFocusAbsolute =CONST_PARAM_DEFAULT_VALUE;
-  out_params.nAutoFocus = CONST_PARAM_DEFAULT_VALUE;
-
-  camera_hal_if_get_properties(handle, &out_params);
+  for (int i = 0; i < PROPERTY_END; i++)
+  {
+    out_params.stGetData.data[i][QUERY_VALUE] = CONST_PARAM_DEFAULT_VALUE;
+  }
 
   if (CAMERA_ERROR_NONE != camera_hal_if_get_properties(handle, &out_params))
   {
     return DEVICE_ERROR_UNKNOWN;
   }
-
-  oparams->nPan = out_params.nPan;
-  oparams->nTilt = out_params.nTilt;
-  oparams->nContrast = out_params.nContrast;
-  oparams->nBrightness = out_params.nBrightness;
-  oparams->nSaturation = out_params.nSaturation;
-  oparams->nSharpness = out_params.nSharpness;
-  oparams->nHue = out_params.nHue;
-  oparams->nGain = out_params.nGain;
-  oparams->nGamma = out_params.nGamma;
-  oparams->nFrequency = out_params.nFrequency;
-  oparams->nAutoWhiteBalance = out_params.nAutoWhiteBalance;
-  oparams->nBacklightCompensation = out_params.nBacklightCompensation;
-  oparams->nExposure = out_params.nExposure;
-  oparams->nWhiteBalanceTemperature = out_params.nWhiteBalanceTemperature;
-
-  oparams->nAutoExposure = out_params.nAutoExposure;
-  oparams->nZoomAbsolute = out_params.nZoomAbsolute;
-  oparams->nFocusAbsolute = out_params.nFocusAbsolute;
-  oparams->nAutoFocus = out_params.nAutoFocus;
 
   //update stGetData
   for (int i = 0; i < PROPERTY_END; i++)
@@ -918,27 +882,6 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
     }
   }
 
-  // update resolution structure
-  oparams->stResolution.n_formatindex = out_params.stResolution.n_formatindex;
-  for (int n = 0; n < out_params.stResolution.n_formatindex; n++)
-  {
-    oparams->stResolution.e_format[n] = out_params.stResolution.e_format[n];
-    oparams->stResolution.n_frameindex[n] = out_params.stResolution.n_frameindex[n];
-    out_params.stResolution.n_framecount[n] = out_params.stResolution.n_frameindex[n] + 1;
-    oparams->stResolution.n_framecount[n] = out_params.stResolution.n_framecount[n];
-    for (int count = 0; count < out_params.stResolution.n_framecount[n]; count++)
-    {
-      oparams->stResolution.n_height[n][count] = out_params.stResolution.n_height[n][count];
-      oparams->stResolution.n_width[n][count] = out_params.stResolution.n_width[n][count];
-      PMLOG_DEBUG("out_params.stResolution.c_res %s\n",
-                 out_params.stResolution.c_res[n][count]);
-      memset(oparams->stResolution.c_res[n][count], '\0',
-             sizeof(oparams->stResolution.c_res[n][count]));
-      strncpy(oparams->stResolution.c_res[n][count], out_params.stResolution.c_res[n][count],
-              sizeof(oparams->stResolution.c_res[n][count])-1);
-    }
-  }
-
   return DEVICE_OK;
 }
 
@@ -947,24 +890,11 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
   PMLOG_INFO(CONST_MODULE_DC, "started!\n");
 
   camera_properties_t in_params;
-  in_params.nFocusAbsolute = inparams->nFocusAbsolute;
-  in_params.nAutoFocus = inparams->nAutoFocus;
-  in_params.nZoomAbsolute = inparams->nZoomAbsolute;
-  in_params.nPan = inparams->nPan;
-  in_params.nTilt = inparams->nTilt;
-  in_params.nContrast = inparams->nContrast;
-  in_params.nBrightness = inparams->nBrightness;
-  in_params.nSaturation = inparams->nSaturation;
-  in_params.nSharpness = inparams->nSharpness;
-  in_params.nHue = inparams->nHue;
-  in_params.nAutoExposure = inparams->nAutoExposure;
-  in_params.nAutoWhiteBalance = inparams->nAutoWhiteBalance;
-  in_params.nExposure = inparams->nExposure;
-  in_params.nWhiteBalanceTemperature = inparams->nWhiteBalanceTemperature;
-  in_params.nGain = inparams->nGain;
-  in_params.nGamma = inparams->nGamma;
-  in_params.nFrequency = inparams->nFrequency;
-  in_params.nBacklightCompensation = inparams->nBacklightCompensation;
+
+  for (int i = 0; i < PROPERTY_END; i++)
+  {
+    in_params.stGetData.data[i][QUERY_VALUE] = inparams->stGetData.data[i][QUERY_VALUE];
+  }
 
   camera_hal_if_set_properties(handle, &in_params);
 
@@ -985,7 +915,7 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(void *handle, CAMERA_FORMAT sforma
   if(in_format.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
-  auto ret = camera_hal_if_set_format(handle, in_format);
+  auto ret = camera_hal_if_set_format(handle, &in_format);
   if (ret != CAMERA_ERROR_NONE)
     return DEVICE_ERROR_UNSUPPORTED_FORMAT;
 
@@ -1095,7 +1025,7 @@ void DeviceControl::broadcast_()
 {
   std::lock_guard<std::mutex> mlock(client_pool_mutex_);
   {
-    PMLOG_DEBUG("Broadcasting to %u clients\n", client_pool_.size());
+    PMLOG_DEBUG("Broadcasting to %zu clients\n", client_pool_.size());
 
     auto it = client_pool_.begin();
     while (it != client_pool_.end())

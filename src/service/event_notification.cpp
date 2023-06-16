@@ -22,7 +22,35 @@
 
 #define CONST_MODULE_EVENTMANGER "EventManager"
 
+bool EventNotification::addSubscription(LSHandle *lsHandle, std::string key, LSMessage &message)
+{
+    LSError error;
+    LSErrorInit(&error);
 
+    if (LSMessageIsSubscription(&message))
+    {
+        PMLOG_INFO(CONST_MODULE_EVENTMANGER,"LSMessageIsSubscription success");
+        if (!LSSubscriptionAdd(lsHandle, key.c_str(), &message, &error))
+        {
+            PMLOG_INFO(CONST_MODULE_EVENTMANGER,"LSSubscriptionAdd failed");
+            LSErrorPrint(&error, stderr);
+            LSErrorFree(&error);
+            return false;
+        }
+        (void)getSubscribeCount(lsHandle, key);
+        LSErrorFree(&error);
+        return true;
+    }
+    else
+    {
+        (void)getSubscribeCount(lsHandle, key);
+    }
+
+    LSErrorFree(&error);
+    return false;
+}
+
+//TODO, Will be fixed later in subscribe implementation S
 bool EventNotification::addSubscription(LSHandle * lsHandle, const char* key, LSMessage &message)
 {
   LSError error;
@@ -48,6 +76,7 @@ bool EventNotification::addSubscription(LSHandle * lsHandle, const char* key, LS
   LSErrorFree(&error);
   return false;
 }
+//TODO, Will be fixed later in subscribe implementation E
 
 void EventNotification::subscriptionReply(LSHandle *lsHandle, const char* key, jvalue_ref output_reply)
 {
@@ -63,12 +92,22 @@ void EventNotification::subscriptionReply(LSHandle *lsHandle, const char* key, j
   PMLOG_INFO(CONST_MODULE_EVENTMANGER, "subscriptionReply end\n");
 }
 
+int EventNotification::getSubscribeCount(LSHandle *lsHandle, std::string key)
+{
+    int ret = -1;
+    ret     = LSSubscriptionGetHandleSubscribersCount(lsHandle, key.c_str());
+    PMLOG_INFO(CONST_MODULE_EVENTMANGER, "cnt:%d, key:%s", ret, key.c_str());
+    return ret;
+}
+
+//TODO, Will be fixed later in subscribe implementation S
 int EventNotification::getSubscripeCount(LSHandle * lsHandle, const char* key)
 {
   int ret = -1;
   ret = LSSubscriptionGetHandleSubscribersCount(lsHandle, key);
   return ret;
 }
+//TODO, Will be fixed later in subscribe implementation E
 
 bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data, void *p_old_data, EventType etype)
 {
@@ -126,7 +165,7 @@ bool EventNotification::getJsonString(jvalue_ref &json_outobj, void *p_cur_data,
         CAMERA_PROPERTIES_T *cur_properties = static_cast<CAMERA_PROPERTIES_T *>(p_cur_data);
         CAMERA_PROPERTIES_T *old_properties = static_cast<CAMERA_PROPERTIES_T *>(p_old_data);
 
-        createGetPropertiesJsonString(cur_properties, old_properties, json_outobjparams);
+
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PROPERTIESINFO), json_outobjparams);
       }
       else

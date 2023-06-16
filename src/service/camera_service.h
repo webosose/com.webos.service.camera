@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -21,16 +21,16 @@
  (File Inclusions)
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
+#include "event_notification.h"
 #include "json_parser.h"
 #include "luna-service2/lunaservice.hpp"
-#include "event_notification.h"
 #include <glib.h>
 
-class CameraService : public LS::Handle
-{
+class CameraService : public LS::Handle {
 private:
   using mainloop = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
-  mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false), g_main_loop_unref};
+  mainloop main_loop_ptr_ = {g_main_loop_new(nullptr, false),
+                             g_main_loop_unref};
 
   EventNotification event_obj;
 
@@ -38,11 +38,12 @@ private:
   void createEventMessage(EventType, void *, int);
 
   std::map<int, std::string> cameraHandleMap;
-  std::map<std::string, void*> cameraHandleInfo;
+  std::map<std::string, void *> cameraHandleInfo;
 
   void printMap();
-  bool addClientWatcher(LSHandle* handle, LSMessage* message, int ndevice_handle);
-  bool eraseWatcher(LSMessage* message, int ndevhandle);
+  bool addClientWatcher(LSHandle *handle, LSMessage *message,
+                        int ndevice_handle);
+  bool eraseWatcher(LSMessage *message, int ndevhandle);
 
 public:
   CameraService();
@@ -65,9 +66,9 @@ public:
   bool stopCapture(LSMessage &);
   bool getEventNotification(LSMessage &);
   bool getFd(LSMessage &);
-
   bool getSolutions(LSMessage &message);
   bool setSolutions(LSMessage &message);
+  bool getFormat(LSMessage &message);
 };
 
 #endif /*CAMERA_SERVICE_H_*/

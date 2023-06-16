@@ -20,7 +20,7 @@
 /*-----------------------------------------------------------------------------
     (File Inclusions)
 ------------------------------------------------------------------------------*/
-#include "camera_hal_types.h"
+#include "camera_hal_if_types.h"
 #include "camera_types.h"
 #include "cam_posixshm.h"
 #include "camshm.h"

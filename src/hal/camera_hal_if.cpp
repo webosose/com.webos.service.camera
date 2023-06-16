@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-#include <unistd.h>
 #include "camera_hal_if.h"
-#include "camera_base_wrapper.h"
+#include "camera_hal_if_types.h"
 #include "camera_hal_types.h"
+#include "camera_base_wrapper.h"
 #include <dlfcn.h>
 #include <new>
+#include <unistd.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -88,6 +89,10 @@ extern "C"
     camera_handle->current_state = CAMERA_HAL_STATE_UNKNOWN;
 
     pf_destroy_handle(camera_handle->handle);
+
+    int ret = dlclose(camera_handle->h_plugin);
+    HAL_LOG_INFO(CONST_MODULE_HAL, "dlclose plugin(%p) ret(%d)", camera_handle->h_plugin, ret);
+
     delete camera_handle;
 
     return CAMERA_ERROR_NONE;
@@ -174,7 +179,7 @@ extern "C"
     return retVal;
   }
 
-  int camera_hal_if_set_format(void *h, stream_format_t stream_format)
+  int camera_hal_if_set_format(void *h, const void *stream_format)
   {
     int retVal = CAMERA_ERROR_NONE;
 
@@ -204,7 +209,7 @@ extern "C"
     return retVal;
   }
 
-  int camera_hal_if_get_format(void *h, stream_format_t *stream_format)
+  int camera_hal_if_get_format(void *h, void *stream_format)
   {
     int retVal = CAMERA_ERROR_NONE;
 
@@ -264,7 +269,7 @@ extern "C"
     return retVal;
   }
 
-  int camera_hal_if_get_buffer(void *h, buffer_t *buf)
+  int camera_hal_if_get_buffer(void *h, void *buf)
   {
     int retVal = CAMERA_ERROR_NONE;
 
@@ -294,7 +299,7 @@ extern "C"
     return retVal;
   }
 
-  int camera_hal_if_release_buffer(void *h, buffer_t buf)
+  int camera_hal_if_release_buffer(void *h, const void *buf)
   {
     int retVal = CAMERA_ERROR_NONE;
 
@@ -422,7 +427,7 @@ extern "C"
     return retVal;
   }
 
-  int camera_hal_if_set_properties(void *h, const camera_properties_t *cam_in_params)
+  int camera_hal_if_set_properties(void *h, const void *cam_in_params)
   {
     int retVal = CAMERA_ERROR_NONE;
 
@@ -452,7 +457,7 @@ extern "C"
     return retVal;
   }
 
-  int camera_hal_if_get_properties(void *h, camera_properties_t *cam_out_params)
+  int camera_hal_if_get_properties(void *h, void *cam_out_params)
   {
     int retVal = CAMERA_ERROR_NONE;
 
@@ -491,7 +496,7 @@ extern "C"
     return CAMERA_ERROR_NONE;
   }
 
-  int camera_hal_if_get_info(const char *devicenode, camera_device_info_t *caminfo)
+  int camera_hal_if_get_info(const char *devicenode, void *caminfo)
   {
     void *handle;
     int retVal = camera_hal_if_init(&handle, "libv4l2-camera-plugin.so.1");

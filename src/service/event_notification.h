@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -27,8 +27,12 @@ public:
 
    ~EventNotification() {}
 
+    bool addSubscription(LSHandle *lsHandle, std::string key, LSMessage &message);
+    //TODO, Will be fixed later in subscribe implementation S
     bool addSubscription(LSHandle * lsHandle, const char* key, LSMessage &message);
+    //TODO, Will be fixed later in subscribe implementation E
     void eventReply(LSHandle * lsHandle, const char* key, void *p_cur_data, void *p_old_data, EventType etype);
+    int getSubscribeCount(LSHandle *lsHandle, std::string key);
     std::string subscriptionJsonString(bool issubscribed);
     void setCameraId(const std::string& camid) { strcamid_ = camid; }
     std::string getCameraId() { return strcamid_; }
