@@ -20,11 +20,11 @@
 #include "camera_hal_if_types.h"
 #include "camera_hal_types.h"
 
-const char *subsystem     = "libv4l2-camera-plugin.so";
+const char *subsystem     = "libv4l2-camera-plugin.so.1";
 const char *devname       = "/dev/video0";
 const char *devname_1     = "/dev/video1";
-const char *plugininvalid = "libcamera_v4l2.so";
-const char *pluginvalid   = "libcamera_hal.so";
+const char *plugininvalid = "libcamera_v4l2.so.1";
+const char *pluginvalid   = "libcamera_hal.so.1";
 
 const int height_480 = 480;
 const int width_640  = 640;
@@ -1242,7 +1242,7 @@ TEST(CameraHAL, ReleaseBuffer_Invalidstate)
 TEST(CameraHAL, GetInfo_Validparameters)
 {
     camera_device_info_t caminfo;
-    char subsystem[] = "libv4l2-camera-plugin.so";
+    char subsystem[] = "libv4l2-camera-plugin.so.1";
     int retval       = camera_hal_if_get_info(devname, subsystem, &caminfo);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
 }
@@ -1250,7 +1250,7 @@ TEST(CameraHAL, GetInfo_Validparameters)
 TEST(CameraHAL, GetInfo_Invaliddevicenode)
 {
     camera_device_info_t caminfo;
-    char subsystem[] = "libv4l2-camera-plugin.so";
+    char subsystem[] = "libv4l2-camera-plugin.so.1";
     int retval       = camera_hal_if_get_info(devname_1, subsystem, &caminfo);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
 }
