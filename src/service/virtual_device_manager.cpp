@@ -103,7 +103,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
   // create v4l2 handle
   void *p_cam_handle;
   DEVICE_RETURN_CODE_T ret =
-      objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin.so");
+      objdevicecontrol_.createHandle(&p_cam_handle, "libv4l2-camera-plugin.so.1");
   if (DEVICE_OK != ret)
   {
     PMLOG_INFO(CONST_MODULE_VDM, "Failed to create handle\n");
