@@ -176,9 +176,7 @@ set_target_properties (camera_hal PROPERTIES VERSION 1.0 SOVERSION 1)
 
 #v4l2-camera-plugin library
 set (SRC_V4L2
-    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/v4l2_camera_plugin.cpp
-    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/usrptr_handle.cpp
-    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/camshm_0-cpy.cpp)
+    ${CMAKE_SOURCE_DIR}/src/hal/v4l2/v4l2_camera_plugin.cpp)
 add_library(v4l2-camera-plugin SHARED ${SRC_V4L2})
 set_target_properties (v4l2-camera-plugin  PROPERTIES VERSION 1.0 SOVERSION 1)
 target_link_libraries (v4l2-camera-plugin ${PMLOGLIB_LDFLAGS})

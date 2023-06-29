@@ -115,7 +115,7 @@ int main(int argc, char const *argv[])
   camera_hal_if_get_format(p_h_camera, &streamformat);
   PrintStreamFormat(streamformat);
 
-  camera_hal_if_set_buffer(p_h_camera, 4, IOMODE_USERPTR);
+  camera_hal_if_set_buffer(p_h_camera, 4, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
 
   // poll on fd and read data

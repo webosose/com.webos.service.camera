@@ -42,7 +42,7 @@ extern "C"
     virtual int closeDevice() override;
     virtual int setFormat(const void *stream_format) override;
     virtual int getFormat(void *stream_format) override;
-    virtual int setBuffer(int num_buffer, int io_mode) override;
+    virtual int setBuffer(int num_buffer, int io_mode, void **usrbufs) override;
     virtual int getBuffer(void *outbuf) override;
     virtual int releaseBuffer(const void *inbuf) override;
     virtual int destroyBuffer() override;
@@ -59,7 +59,7 @@ extern "C"
     camera_format_t getCameraFormatProperty(struct v4l2_fmtdesc);
 
     int requestMmapBuffers(int);
-    int requestUserptrBuffers(int);
+    int requestUserptrBuffers(int, buffer_t **);
     int releaseMmapBuffers();
     int releaseUserptrBuffers();
     int captureDataMmapMode();
@@ -87,9 +87,6 @@ extern "C"
     std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
     std::map<unsigned long, camera_pixel_format_t> camera_format_;
     std::map<int, unsigned int> camera_param_map_;
-
-    // handle to help zero-copy write to shmem
-    void * husrptr_;
   };
 
 #ifdef __cplusplus

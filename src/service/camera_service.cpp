@@ -321,61 +321,66 @@ bool CameraService::close(LSMessage &message)
 
 bool CameraService::startPreview(LSMessage &message)
 {
-  auto *payload = LSMessageGetPayload(&message);
-  PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
-  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
-  camera_memory_source_t memType;
+    auto *payload = LSMessageGetPayload(&message);
+    PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+    DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    camera_memory_source_t memType;
 
-  StartPreviewMethod obj_startpreview;
-  obj_startpreview.getStartPreviewObject(payload, startPreviewSchema);
+    StartPreviewMethod obj_startpreview;
+    obj_startpreview.getStartPreviewObject(payload, startPreviewSchema);
 
-  int ndevhandle = obj_startpreview.getDeviceHandle();
-  if (n_invalid_id == ndevhandle)
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
-    err_id = DEVICE_ERROR_JSON_PARSING;
-    obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
-  }
-  else
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() ndevhandle : %d" , ndevhandle);
-    // start preview here
-    int key = 0;
-
-    memType = obj_startpreview.rGetParams();
-    if ((memType.str_memorytype == kMemtypeShmem) || (memType.str_memorytype == kMemtypePosixshm)
-        || (memType.str_memorytype == kMemtypeShmemUsrPtr))
+    int ndevhandle = obj_startpreview.getDeviceHandle();
+    if (n_invalid_id == ndevhandle)
     {
-        err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype, &key,
-                                                            this->get(), CONST_EVENT_NOTIFICATION);
-
-        if (DEVICE_OK != err_id)
-        {
-          PMLOG_DEBUG("err_id != DEVICE_OK\n");
-          obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
-        }
-        else
-        {
-          PMLOG_DEBUG("err_id == DEVICE_OK\n");
-          obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
-          obj_startpreview.setKeyValue(key);
-        }
+        PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+        err_id = DEVICE_ERROR_JSON_PARSING;
+        obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
     else
     {
-        PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() memory type is not supported\n");
-        err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
-        obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+        PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() ndevhandle : %d" , ndevhandle);
+        // start preview here
+        int key = 0;
+
+        memType = obj_startpreview.rGetParams();
+        if (memType.str_memorytype == kMemtypeShmem ||
+            memType.str_memorytype == kMemtypeShmemMmap ||
+            memType.str_memorytype == kMemtypePosixshm)
+        {
+            err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype,
+                                                                &key, this->get(),
+                                                                CONST_EVENT_NOTIFICATION);
+
+            if (DEVICE_OK != err_id)
+            {
+                PMLOG_DEBUG("err_id != DEVICE_OK\n");
+                obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                                getErrorString(err_id));
+            }
+            else
+            {
+                PMLOG_DEBUG("err_id == DEVICE_OK\n");
+                obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
+                                                getErrorString(err_id));
+                obj_startpreview.setKeyValue(key);
+            }
+        }
+        else
+        {
+            PMLOG_INFO(CONST_MODULE_LUNA, "startPreview() memory type is not supported\n");
+            err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
+            obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                            getErrorString(err_id));
+        }
     }
-  }
 
-  // create json string now for reply
-  std::string output_reply = obj_startpreview.createStartPreviewObjectJsonString();
-  PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
-  LS::Message request(&message);
-  request.respond(output_reply.c_str());
+    // create json string now for reply
+    std::string output_reply = obj_startpreview.createStartPreviewObjectJsonString();
+    PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+    LS::Message request(&message);
+    request.respond(output_reply.c_str());
 
-  return true;
+    return true;
 }
 
 bool CameraService::stopPreview(LSMessage &message)

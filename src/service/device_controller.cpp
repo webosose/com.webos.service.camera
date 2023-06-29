@@ -76,19 +76,18 @@ int DeviceControl::n_imagecount_ = 0;
 
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
-      b_issystemvruning(false), b_isshmwritedone_(true), b_issyshmwritedone_(true),
-      b_isposhmwritedone_(true), cam_handle_(NULL), shmemfd_(-1), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG),
-      tMutex(), tCondVar(), h_shmposix_(NULL), h_shmsystem_(NULL),
-      str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), str_memtype_(""),
-      str_shmemname_(""), cancel_preview_(false), buf_size_(0),
-      sh_(nullptr), subskey_(""), camera_id_(-1)
+      b_issystemvruning(false), b_issystemvruning_mmap(false), cam_handle_(NULL), shmemfd_(-1),
+      usrpbufs_(nullptr), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG), tMutex(),
+      tCondVar(), h_shmsystem_(nullptr), h_shmposix_(nullptr), str_imagepath_(cstr_empty),
+      str_capturemode_(cstr_oneshot), str_memtype_(""), str_shmemname_(""), cancel_preview_(false),
+      buf_size_(0), sh_(nullptr), subskey_(""), camera_id_(-1)
 {
-  pCameraSolution = std::make_shared<CameraSolutionManager>();
-  pMemoryListener = std::make_shared<MemoryListener>();
-  if (pCameraSolution != nullptr && pMemoryListener != nullptr)
-  {
-    pCameraSolution->setEventListener(pMemoryListener.get());
-  }
+    pCameraSolution = std::make_shared<CameraSolutionManager>();
+    pMemoryListener = std::make_shared<MemoryListener>();
+    if (pCameraSolution != nullptr && pMemoryListener != nullptr)
+    {
+        pCameraSolution->setEventListener(pMemoryListener.get());
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
@@ -158,143 +157,137 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
 
 DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sformat)
 {
-  PMLOG_INFO(CONST_MODULE_DC, "checkFormat for device\n");
+    PMLOG_INFO(CONST_MODULE_DC, "checkFormat for device\n");
 
-  // get current saved format for device
-  stream_format_t streamformat;
-  auto retval = camera_hal_if_get_format(handle, &streamformat);
-  if (retval != CAMERA_ERROR_NONE)
-  {
-    PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_format failed \n");
-    return DEVICE_ERROR_UNKNOWN;
-  }
-
-  PMLOG_INFO(CONST_MODULE_DC, "stream_format_t pixel_format : %d \n",
-             streamformat.pixel_format);
-
-  // save pixel format for saving captured image
-  epixelformat_ = streamformat.pixel_format;
-
-  DEVICE_RETURN_CODE_T ret = DEVICE_OK;
-  auto enewformat = getPixelFormat(sformat.eFormat);
-  //error handling
-  if(enewformat == CAMERA_PIXEL_FORMAT_MAX)
-    return DEVICE_ERROR_UNSUPPORTED_FORMAT;
-
-  // check if saved format and format for capture is same or not
-  // if not then stop v4l2 device, set format again and start capture
-  if ((streamformat.stream_height != sformat.nHeight) ||
-      (streamformat.stream_width != sformat.nWidth) || (streamformat.pixel_format != enewformat))
-  {
-    PMLOG_INFO(CONST_MODULE_DC, "Stored format and new format are different\n");
-    // stream off, unmap and destroy previous allocated buffers
-    // close and again open device to set format again
-    int memtype = -1;
-    if(str_memtype_ == kMemtypeShmem)
-       memtype = SHMEM_SYSTEMV;
-    else if (str_memtype_ == kMemtypePosixshm )
-       memtype = SHMEM_POSIX;
-    else
-       memtype = SHMEM_SYSTEMV_USRPTR;
-    stopPreview(handle, memtype);
-    close(handle);
-    open(handle, strdevicenode_, camera_id_);
-
-    // set format again
-    stream_format_t newstreamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-    newstreamformat.stream_height = sformat.nHeight;
-    newstreamformat.stream_width = sformat.nWidth;
-    newstreamformat.pixel_format = getPixelFormat(sformat.eFormat);
-    //error handling
-    if(newstreamformat.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
-      return DEVICE_ERROR_UNSUPPORTED_FORMAT;
-    retval = camera_hal_if_set_format(handle, &newstreamformat);
+    // get current saved format for device
+    stream_format_t streamformat;
+    auto retval = camera_hal_if_get_format(handle, &streamformat);
     if (retval != CAMERA_ERROR_NONE)
     {
-      PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_format failed \n");
-      // if set format fails then reset format to preview format
-      camera_hal_if_set_format(handle, &streamformat);
-      // save pixel format for saving captured image
-      epixelformat_ = streamformat.pixel_format;
+        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_format failed \n");
+        return DEVICE_ERROR_UNKNOWN;
     }
-    else
-      // save pixel format for saving captured image
-      epixelformat_ = newstreamformat.pixel_format;
 
-    // allocate buffers and stream on again
-    int key = 0;
-    ret = startPreview(handle, str_memtype_, &key, sh_, subskey_.c_str());
-  }
+    PMLOG_INFO(CONST_MODULE_DC, "stream_format_t pixel_format : %d \n", streamformat.pixel_format);
 
-  return ret;
+    // save pixel format for saving captured image
+    epixelformat_ = streamformat.pixel_format;
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+    auto enewformat = getPixelFormat(sformat.eFormat);
+    //error handling
+    if (enewformat == CAMERA_PIXEL_FORMAT_MAX)
+        return DEVICE_ERROR_UNSUPPORTED_FORMAT;
+
+    // check if saved format and format for capture is same or not
+    // if not then stop v4l2 device, set format again and start capture
+    if ((streamformat.stream_height != sformat.nHeight) ||
+        (streamformat.stream_width != sformat.nWidth) || (streamformat.pixel_format != enewformat))
+    {
+        PMLOG_INFO(CONST_MODULE_DC, "Stored format and new format are different\n");
+        // stream off, unmap and destroy previous allocated buffers
+        // close and again open device to set format again
+        int memtype = -1;
+        if (str_memtype_ == kMemtypeShmem || str_memtype_ == kMemtypeShmemMmap)
+            memtype = SHMEM_SYSTEMV;
+        else
+            memtype = SHMEM_POSIX;
+        stopPreview(handle, memtype);
+        close(handle);
+        open(handle, strdevicenode_, camera_id_);
+
+        // set format again
+        stream_format_t newstreamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+        newstreamformat.stream_height = sformat.nHeight;
+        newstreamformat.stream_width = sformat.nWidth;
+        newstreamformat.pixel_format = getPixelFormat(sformat.eFormat);
+        //error handling
+        if (newstreamformat.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
+            return DEVICE_ERROR_UNSUPPORTED_FORMAT;
+
+        retval = camera_hal_if_set_format(handle, &newstreamformat);
+        if (retval != CAMERA_ERROR_NONE)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_format failed \n");
+
+            // if set format fails then reset format to preview format
+            retval = camera_hal_if_set_format(handle, &streamformat);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "setFormat with preview format failed");
+            }
+
+            // save pixel format for saving captured image
+            epixelformat_ = streamformat.pixel_format;
+        }
+        else
+            // save pixel format for saving captured image
+            epixelformat_ = newstreamformat.pixel_format;
+
+        // allocate buffers and stream on again
+        int key = 0;
+        ret = startPreview(handle, str_memtype_, &key, sh_, subskey_.c_str());
+    }
+
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncount) const
 {
-  int fd = -1;
-  auto retval = camera_hal_if_get_fd(handle, &fd);
-  PMLOG_INFO(CONST_MODULE_DC, "camera_hal_if_get_fd fd : %d \n", fd);
-  struct pollfd poll_set[]{
-      {.fd = fd, .events = POLLIN},
-  };
-
-  // get current saved format for device
-  stream_format_t streamformat;
-  camera_hal_if_get_format(handle, &streamformat);
-  PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
-             streamformat.stream_height);
-  int framesize =
-      streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
-
-  int timeout = 10000;
-  buffer_t frame_buffer = {0}; // now that zero-copy applied to system V shared memory.
-  for (int i = 1; i <= ncount; i++)
-  {
-    if ((retval = poll(poll_set, 1, timeout)) > 0)
+    int fd = -1;
+    auto retval = camera_hal_if_get_fd(handle, &fd);
+    PMLOG_INFO(CONST_MODULE_DC, "camera_hal_if_get_fd fd : %d \n", fd);
+    struct pollfd poll_set[]
     {
-      if (str_memtype_ != kMemtypeShmemUsrPtr) // Non-zero copy version kept as is.
-      {
-        frame_buffer.start = malloc(framesize);
-      }
-      retval = camera_hal_if_get_buffer(handle, &frame_buffer);
-      if (CAMERA_ERROR_NONE != retval)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
-      PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
-      PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n",
-                 frame_buffer.length);
+        {.fd = fd, .events = POLLIN},
+    };
 
-      //[Camera Solution Manager] processing for capture
-      if (pCameraSolution != nullptr)
-      {
-        pCameraSolution->processCapture(frame_buffer);
-      }
+    int timeout = 10000;
+    buffer_t frame_buffer = {0};
 
-      // write captured image to /tmp only if startCapture request is made
-      if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
-        return DEVICE_ERROR_CANNOT_WRITE;
+    for (int i = 1; i <= ncount; i++)
+    {
+        if ((retval = poll(poll_set, 1, timeout)) > 0)
+        {
+            retval = camera_hal_if_get_buffer(handle, &frame_buffer);
+            if (CAMERA_ERROR_NONE != retval)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
+                return DEVICE_ERROR_UNKNOWN;
+            }
+            PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
+            PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n", frame_buffer.length);
 
-      if (str_memtype_ != kMemtypeShmemUsrPtr) // Non-zero copy version kept as is.
-      {
-        free(frame_buffer.start);
-        frame_buffer.start = nullptr;
-      }
+            if (frame_buffer.start == nullptr)
+            {
+                PMLOG_INFO(CONST_MODULE_DC, "no valid memory on frame buffer ptr");
+                return DEVICE_ERROR_OUT_OF_MEMORY;
+            }
 
-      retval = camera_hal_if_release_buffer(handle, &frame_buffer);
-      if (retval != CAMERA_ERROR_NONE)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
+            //[Camera Solution Manager] processing for capture
+            if (pCameraSolution != nullptr)
+            {
+                pCameraSolution->processCapture(frame_buffer);
+            }
+
+            // write captured image to /tmp only if startCapture request is made
+            if (DEVICE_ERROR_CANNOT_WRITE ==
+                writeImageToFile(frame_buffer.start, frame_buffer.length))
+                return DEVICE_ERROR_CANNOT_WRITE;
+
+            retval = camera_hal_if_release_buffer(handle, &frame_buffer);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
+                return DEVICE_ERROR_UNKNOWN;
+            }
+        }
     }
-  }
 
-  if (cstr_burst == str_capturemode_)
-    n_imagecount_ = 0;
+    if (cstr_burst == str_capturemode_)
+        n_imagecount_ = 0;
 
-  return DEVICE_OK;
+    return DEVICE_OK;
 }
 
 camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)
@@ -345,136 +338,115 @@ void DeviceControl::captureThread()
 
 void DeviceControl::previewThread()
 {
-  PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) start!", cam_handle_);
-  // poll for data on buffers and save captured image
-  // lock so that if stop preview is called, first this cycle should complete
-  std::lock_guard<std::mutex> guard(tMutex);
-  b_isshmwritedone_ = false;
+    PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) start!", cam_handle_);
 
-  // get current saved format for device
-  stream_format_t streamformat;
-  camera_hal_if_get_format(cam_handle_, &streamformat);
-  PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
-             streamformat.stream_height);
-  int framesize =
-      streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+    pthread_setname_np(pthread_self(), "preview_thread");
 
-  int debug_counter = 0;
-  int debug_interval = 100; // frames
-  auto tic = std::chrono::steady_clock::now();
+    // poll for data on buffers and save captured image
+    // lock so that if stop preview is called, first this cycle should complete
+    std::lock_guard<std::mutex> guard(tMutex);
 
-  while (b_isstreamon_)
-  {
+    int debug_counter = 0;
+    int debug_interval = 100; // frames
+    auto tic = std::chrono::steady_clock::now();
 
-    // keep writing data to shared memory
-    unsigned int timestamp = 0;
-
-    if(b_issystemvruning && str_memtype_ == kMemtypeShmemUsrPtr)
+    while (b_isstreamon_)
     {
-       // now that zero-copy shmem writing is supported for system V shmem
-       buffer_t frame_buffer = {0};
-       b_issyshmwritedone_ = false;
-       auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
-       if (retval != CAMERA_ERROR_NONE)
-       {
-         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
-         notifyDeviceFault_();
-         break;
-       }
-       broadcast_();
-       b_issyshmwritedone_ = true;
+        // keep writing data to shared memory
+        unsigned int timestamp = 0;
 
-       //[Camera Solution Manager] process for preview
-       if (pCameraSolution != nullptr)
-       {
-         pCameraSolution->processPreview(frame_buffer);
-       }
+        buffer_t frame_buffer = {0};
 
-       retval = camera_hal_if_release_buffer(cam_handle_, &frame_buffer);
-       if (retval != CAMERA_ERROR_NONE)
-       {
-         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
-         notifyDeviceFault_();
-         break;
-       }
-    }
-    else
-    {
-       buffer_t frame_buffer;
-       frame_buffer.start = malloc(framesize);
-       auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
-       if (retval != CAMERA_ERROR_NONE)
-       {
-         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
-         free(frame_buffer.start);
-         frame_buffer.start = nullptr;
-         notifyDeviceFault_();
-         break;
-       }
-       //[Camera Solution Manager] process for preview
-       if (pCameraSolution != nullptr)
-       {
-          pCameraSolution->processPreview(frame_buffer);
-       }
+        auto retval = camera_hal_if_get_buffer(cam_handle_, &frame_buffer);
+        if (retval != CAMERA_ERROR_NONE)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed");
 
-       auto meta = pMemoryListener->getResult();
+            notifyDeviceFault_();
+            break;
+        }
 
-       if (b_issystemvruning)
-       {
-          b_issyshmwritedone_ = false;
-          auto retshmem       = IPCSharedMemory::getInstance().WriteShmemory(
-                    h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
-                    (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
-                     sizeof(timestamp));
-           if (retshmem != SHMEM_COMM_OK)
-           {
-               PMLOG_ERROR(CONST_MODULE_DC, "Write Shared memory error %d \n", retshmem);
-           }
-           broadcast_();
-           b_issyshmwritedone_ = true;
-       }
-       if(b_isposixruning)
-       {
-         b_isposhmwritedone_ = false;
-         auto retshmem = IPCPosixSharedMemory::getInstance().WritePosixShmemory(h_shmposix_,
-                     (unsigned char *)frame_buffer.start, frame_buffer.length,
-                     (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
-                     sizeof(timestamp));
-         if (retshmem != POSHMEM_COMM_OK)
-         {
-           PMLOG_ERROR(CONST_MODULE_DC, "Write Posix Shared memory error %d \n", retshmem);
-         }
-         b_isposhmwritedone_ = true;
-       }
-       free(frame_buffer.start);
-       frame_buffer.start = nullptr;
+        if (frame_buffer.start == nullptr)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "no valid frame buffer obtained");
+            notifyDeviceFault_();
+            break;
+        }
 
-       retval = camera_hal_if_release_buffer(cam_handle_, &frame_buffer);
-       if (retval != CAMERA_ERROR_NONE)
-       {
-         PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
-         notifyDeviceFault_();
-         break;
-       }
+        //[Camera Solution Manager] process for preview
+        if (pCameraSolution != nullptr)
+        {
+            pCameraSolution->processPreview(frame_buffer);
+        }
+
+        auto meta = pMemoryListener->getResult();
+        if (b_issystemvruning)
+        {
+            IPCSharedMemory::getInstance().WriteHeader(h_shmsystem_, frame_buffer.index,
+                                                       frame_buffer.length);
+
+            IPCSharedMemory::getInstance().WriteMeta(h_shmsystem_, (unsigned char *)meta.c_str(),
+                                                     meta.size() + 1);
+
+            // Time stamp is currently not used actually.
+            IPCSharedMemory::getInstance().WriteExtra(h_shmsystem_, (unsigned char *)&timestamp,
+                                                      sizeof(timestamp));
+
+            IPCSharedMemory::getInstance().IncrementWriteIndex(h_shmsystem_);
+
+            broadcast_();
+        }
+        else if (b_issystemvruning_mmap)
+        {
+            auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(
+                h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
+                (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
+                sizeof(timestamp));
+
+            if (retshmem != SHMEM_IS_OK)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "Write Shared memory error %d \n", retshmem);
+            }
+            broadcast_();
+        }
+        else if (b_isposixruning)
+        {
+            IPCPosixSharedMemory::getInstance().WriteHeader(h_shmposix_, frame_buffer.index,
+                                                            frame_buffer.length);
+
+            IPCPosixSharedMemory::getInstance().WriteMeta(h_shmposix_, (unsigned char *)meta.c_str(),
+                                                          meta.size() + 1);
+
+            // Time stamp is currently not used actually.
+            IPCPosixSharedMemory::getInstance().WriteExtra(h_shmposix_, (unsigned char *)&timestamp,
+                                                           sizeof(timestamp));
+
+            IPCPosixSharedMemory::getInstance().IncrementWriteIndex(h_shmposix_);
+
+            broadcast_();
+        }
+
+        retval = camera_hal_if_release_buffer(cam_handle_, &frame_buffer);
+        if (retval != CAMERA_ERROR_NONE)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
+            notifyDeviceFault_();
+            break;
+        }
+
+        if (++debug_counter >= debug_interval)
+        {
+            auto toc = std::chrono::steady_clock::now();
+            auto us  = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
+            PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle(%p) : fps(%3.2f), clients(%zu)",
+                       cam_handle_, debug_interval * 1000000.0f / us, client_pool_.size());
+            tic           = toc;
+            debug_counter = 0;
+        }
     }
 
-    if (++debug_counter >= debug_interval)
-    {
-      auto toc = std::chrono::steady_clock::now();
-      auto us = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-      PMLOG_INFO(CONST_MODULE_DC, "previewThread cam_handle_(%p) : fps(%3.2f), clients(%zu)",
-                 cam_handle_, debug_interval * 1000000.0f / us, client_pool_.size());
-      tic = toc;
-      debug_counter = 0;
-    }
-  }
-
-  b_isshmwritedone_ = true;
-  b_issyshmwritedone_ = true;
-  b_isposhmwritedone_ = true;
-
-  PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) end!", cam_handle_);
-  return;
+    PMLOG_INFO(CONST_MODULE_DC, "cam_handle(%p) end!", cam_handle_);
+    return;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::open(void *handle, std::string devicenode, int ndev_id)
@@ -518,135 +490,200 @@ DEVICE_RETURN_CODE_T DeviceControl::close(void *handle)
 DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memtype,
                                                  int *pkey, LSHandle *sh, const char *subskey)
 {
-  PMLOG_INFO(CONST_MODULE_DC, "started !\n");
+    PMLOG_INFO(CONST_MODULE_DC, "started !\n");
 
-  cam_handle_  = handle;
-  str_memtype_ = memtype;
-  sh_ = sh;
-  subskey_ = (subskey) ? subskey : "";
+    cam_handle_  = handle;
+    str_memtype_ = memtype;
+    sh_ = sh;
+    subskey_ = (subskey) ? subskey : "";
 
-  // get current saved format for device
-  stream_format_t streamformat;
-  camera_hal_if_get_format(handle, &streamformat);
-  PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
-             streamformat.stream_height);
+    // get current saved format for device
+    stream_format_t streamformat;
+    camera_hal_if_get_format(handle, &streamformat);
+    PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
+               streamformat.stream_height);
 
-  buf_size_ = streamformat.stream_width * streamformat.stream_height * buffer_count + extra_buffer;
+    buf_size_ = streamformat.buffer_size + extra_buffer;
+    PMLOG_INFO(CONST_MODULE_DC, "buf_size : %d = %d + %d", buf_size_, streamformat.buffer_size, extra_buffer);
 
-  //[Camera Solution Manager] initialization
-  int32_t meta_size = 0;
-  if (pCameraSolution != nullptr)
-  {
-    pCameraSolution->initialize(streamformat);
-    meta_size = pCameraSolution->getMetaSizeHint();
-  }
-
-  if (memtype == kMemtypeShmem)
-  {
-      auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
-          &h_shmsystem_, pkey, buf_size_, meta_size, frame_count, sizeof(unsigned int));
-      if (retshmem != SHMEM_COMM_OK)
-          PMLOG_ERROR(CONST_MODULE_DC, "CreateShmemory error %d \n", retshmem);
-  }
-
-  if (memtype == kMemtypePosixshm)
-  {
-    std::string shmname = "";
-    auto retshmem = IPCPosixSharedMemory::getInstance().CreatePosixShmemory(&h_shmposix_,
-                                 buf_size_, meta_size, frame_count, sizeof(unsigned int),
-                                 pkey, &shmname);
-    if (retshmem != POSHMEM_COMM_OK)
-       PMLOG_ERROR(CONST_MODULE_DC, "CreatePosixShmemory error %d \n", retshmem);
-
-    shmemfd_ = *pkey;
-    str_shmemname_ = shmname;
-  }
-
-  if(b_isstreamon_ == false)
-  {
-    if (memtype == kMemtypePosixshm || memtype == kMemtypeShmem)
+    int32_t meta_size = 0;
+    if (pCameraSolution != nullptr)
     {
-      // posix shmem routines kept as is.
-      auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP);
-      if (retval != CAMERA_ERROR_NONE)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
-
-      retval = camera_hal_if_start_capture(handle);
-      if (retval != CAMERA_ERROR_NONE)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
-
-      b_isstreamon_ = true;
-      if(memtype == kMemtypePosixshm)
-      {
-        b_isposixruning = true;
-      }
-      else
-      {
-        b_issystemvruning = true;
-      }
-    }
-    else if (memtype == kMemtypeShmemUsrPtr)
-    {
-      // system V shmem needs user pointer buffer set-up.
-      auto retval = camera_hal_if_set_buffer(handle, 8, IOMODE_USERPTR);
-      if (retval != CAMERA_ERROR_NONE)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
-
-      retval = camera_hal_if_start_capture(handle);
-      if (retval != CAMERA_ERROR_NONE)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
-
-      // we need to get shmem key from HAL Plugin layer by buffer interface.
-      buffer_t frame_buffer = {0};
-      retval = camera_hal_if_get_buffer(handle, &frame_buffer);
-      if (retval != CAMERA_ERROR_NONE)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
-
-      *pkey = shmemfd_ = frame_buffer.fd;
-      PMLOG_INFO(CONST_MODULE_DC, "pkey : %d\n", *pkey);
-
-      retval = camera_hal_if_release_buffer(handle, &frame_buffer);
-      if (retval != CAMERA_ERROR_NONE)
-      {
-        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-      }
-
-      b_isstreamon_ = true;
-      b_issystemvruning = true;
+        meta_size = pCameraSolution->getMetaSizeHint();
     }
 
-    // create thread that will continuously capture images until stopcapture received
-    tidPreview = std::thread{[this]() { this->previewThread(); }};
-  }
+    if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
+    {
+        // frame_count = 8 (see "constants.h")
+        auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
+            &h_shmsystem_, pkey, buf_size_, meta_size, frame_count, sizeof(unsigned int));
+        if (retshmem != SHMEM_IS_OK)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "CreateShmemory error %d \n", retshmem);
+            return DEVICE_ERROR_UNKNOWN;
+        }
+    }
+    else // memtype == kMemtypePosixshm
+    {
+        std::string shmname = "";
 
-  return DEVICE_OK;
+        // frame_count = 8 (see "constants.h")
+        auto retshmem = IPCPosixSharedMemory::getInstance().CreateShmemory(
+            &h_shmposix_, buf_size_, meta_size, frame_count, sizeof(unsigned int), pkey, &shmname);
+        if (retshmem != PSHMEM_IS_OK)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "CreatePosixShmemory error %d \n", retshmem);
+            return DEVICE_ERROR_UNKNOWN;
+        }
+
+        shmemfd_ = *pkey;
+        str_shmemname_ = shmname;
+    }
+
+    //[Camera Solution Manager] initialization
+    if (pCameraSolution != nullptr)
+    {
+        pCameraSolution->initialize(streamformat);
+    }
+
+    if(b_isstreamon_ == false)
+    {
+        if (memtype == kMemtypeShmem)
+        {
+            // user pointer buffer set-up.
+            usrpbufs_ = (buffer_t *)calloc(frame_count, sizeof(buffer_t));
+            if (!usrpbufs_)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "USERPTR buffer allocation failed \n");
+                SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                PMLOG_INFO(CONST_MODULE_DC, "CloseShmemory %d", status);
+                return DEVICE_ERROR_UNKNOWN;
+            }
+            IPCSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmsystem_, frame_count,
+                                                                 usrpbufs_, nullptr);
+
+            // frame_count = 8 (see "constants.h")
+            auto retval = camera_hal_if_set_buffer(handle, frame_count, IOMODE_USERPTR, (void **)&usrpbufs_);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed");
+                free(usrpbufs_);
+                usrpbufs_             = nullptr;
+                SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                PMLOG_INFO(CONST_MODULE_DC, "CloseShmemory %d", status);
+                return DEVICE_ERROR_UNKNOWN;
+            }
+
+            retval = camera_hal_if_start_capture(handle);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed");
+                free(usrpbufs_);
+                usrpbufs_             = nullptr;
+                SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+                PMLOG_INFO(CONST_MODULE_DC, "CloseShmemory %d", status);
+                return DEVICE_ERROR_UNKNOWN;
+            }
+
+            b_isstreamon_     = true;
+            b_issystemvruning = true;
+        }
+        else if (memtype == kMemtypeShmemMmap)
+        {
+            auto retval = camera_hal_if_set_buffer(handle, 4, IOMODE_MMAP, nullptr);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed");
+                return DEVICE_ERROR_UNKNOWN;
+            }
+
+            retval = camera_hal_if_start_capture(handle);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_start_capture failed");
+                return DEVICE_ERROR_UNKNOWN;
+            }
+
+            b_isstreamon_          = true;
+            b_issystemvruning_mmap = true;
+        }
+        else // memtype == kMemtypePosixshm
+        {
+            // user pointer buffer set-up.
+            usrpbufs_ = (buffer_t *)calloc(frame_count, sizeof(buffer_t));
+            if (!usrpbufs_)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "USERPTR buffer allocation failed \n");
+                IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
+                                                                  buf_size_, meta_size, sizeof(unsigned int),
+                                                                  str_shmemname_, shmemfd_);
+                return DEVICE_ERROR_UNKNOWN;
+            }
+            IPCPosixSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmposix_, frame_count,
+                                                                      usrpbufs_, nullptr);
+
+            // frame_count = 8 (see "constants.h")
+            auto retval = camera_hal_if_set_buffer(handle, frame_count, IOMODE_USERPTR, (void **)&usrpbufs_);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_buffer failed");
+                free(usrpbufs_);
+                usrpbufs_ = nullptr;
+                IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
+                                                                  buf_size_, meta_size, sizeof(unsigned int),
+                                                                  str_shmemname_, shmemfd_);
+                return DEVICE_ERROR_UNKNOWN;
+            }
+
+            retval = camera_hal_if_start_capture(handle);
+            if (retval != CAMERA_ERROR_NONE)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "startCapture failed");
+                free(usrpbufs_);
+                usrpbufs_ = nullptr;
+                IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
+                                                                  buf_size_, meta_size, sizeof(unsigned int),
+                                                                  str_shmemname_, shmemfd_);
+                return DEVICE_ERROR_UNKNOWN;
+            }
+
+            b_isstreamon_   = true;
+            b_isposixruning = true;
+        }
+
+        // create thread that will continuously capture images until stopcapture received
+        PMLOG_INFO(CONST_MODULE_DC, "make previewThread");
+        tidPreview = std::thread{[this]() { this->previewThread(); }};
+    }
+
+    PMLOG_INFO(CONST_MODULE_DC, "end !");
+    return DEVICE_OK;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
 {
     PMLOG_INFO(CONST_MODULE_DC, "started !\n");
 
+    //[]Camera Solution Manager] release
+    if (pCameraSolution != nullptr)
+    {
+        pCameraSolution->release();
+    }
+
     b_isstreamon_ = false;
 
     if (tidPreview.joinable())
     {
-        tidPreview.join();
+        PMLOG_INFO(CONST_MODULE_DC, "Thread Closing");
+        try
+        {
+            tidPreview.join();
+        }
+        catch (const std::system_error &e)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "Caught a system_error with code %d meaning %s", e.code().value(), e.what());
+        }
+        PMLOG_INFO(CONST_MODULE_DC, "Thread Closed");
     }
 
     if (cancel_preview_ == true)
@@ -670,48 +707,45 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(void *handle, int memtype)
         }
     }
 
-    if(memtype == SHMEM_POSIX)
+    if (memtype == SHMEM_SYSTEMV)
+    {
+        b_issystemvruning      = false;
+        b_issystemvruning_mmap = false;
+        if (h_shmsystem_ != nullptr)
+        {
+            auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+            if (retshmem != SHMEM_IS_OK)
+            {
+                PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);
+            }
+            h_shmsystem_ = nullptr;
+        }
+    }
+    else // memtype == SHMEM_POSIX
     {
         int32_t meta_size = 0;
         if (pCameraSolution != nullptr)
         {
             meta_size = pCameraSolution->getMetaSizeHint();
         }
-
         b_isposixruning = false;
-        if (h_shmposix_)
+        if (h_shmposix_ != nullptr)
         {
-            auto retshmem = IPCPosixSharedMemory::getInstance().ClosePosixShmemory(&h_shmposix_,
-                              frame_count, buf_size_, meta_size, sizeof(unsigned int),
-                              str_shmemname_, shmemfd_);
-            if (retshmem != POSHMEM_COMM_OK)
+            auto retshmem = IPCPosixSharedMemory::getInstance().CloseShmemory(
+                &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                str_shmemname_, shmemfd_);
+            if (retshmem != PSHMEM_IS_OK)
             {
                 PMLOG_ERROR(CONST_MODULE_DC, "ClosePosixShmemory error %d \n", retshmem);
             }
-            h_shmposix_ = NULL;
+            h_shmposix_ = nullptr;
         }
-    }
-    else if (memtype == SHMEM_SYSTEMV)
-    {
-        b_issystemvruning = false;
-        if (h_shmsystem_ != nullptr)
-        {
-            auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-            if (retshmem != SHMEM_COMM_OK)
-                PMLOG_ERROR(CONST_MODULE_DC, "CloseShmemory error %d \n", retshmem);
-            h_shmsystem_ = NULL;
-        }
-    }
-    else
-    {
-        // camera_hal_if_destroy_buffer() frees system V shared memory!
-        b_issystemvruning = false;
     }
 
-    //[]Camera Solution Manager] release
-    if (pCameraSolution != nullptr)
+    if (usrpbufs_ != nullptr)
     {
-      pCameraSolution->release();
+        free(usrpbufs_);
+        usrpbufs_ = nullptr;
     }
 
     return DEVICE_OK;

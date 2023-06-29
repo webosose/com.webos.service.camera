@@ -35,9 +35,9 @@
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
 
-const std::string kMemtypeShmem = "sharedmemory";
-const std::string kMemtypePosixshm = "posixshm";
-const std::string kMemtypeShmemUsrPtr = "sharedmemory_usrptr";
+const std::string kMemtypeShmemMmap = "sharedmemory_mmap";
+const std::string kMemtypeShmem     = "sharedmemory";
+const std::string kMemtypePosixshm  = "posixshm";
 
 /*-----------------------------------------------------------------------------
  (Type Definitions)
@@ -147,9 +147,8 @@ typedef enum
 {
   SHMEME_UNKNOWN = -1,
   SHMEM_SYSTEMV  =  0,
-  SHMEM_POSIX,
-  SHMEM_SYSTEMV_USRPTR
-}SHMEM_TYPE_T;
+  SHMEM_POSIX
+} SHMEM_TYPE_T;
 
 enum class NotifierClient
 {

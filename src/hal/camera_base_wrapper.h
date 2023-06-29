@@ -28,7 +28,7 @@ extern "C"
   int close_device(camera_handle_t *);
   int set_format(camera_handle_t *, const void *);
   int get_format(camera_handle_t *, void *);
-  int set_buffer(camera_handle_t *, int, int);
+  int set_buffer(camera_handle_t *, int, int, void **);
   int get_buffer(camera_handle_t *, void *);
   int release_buffer(camera_handle_t *, const void *);
   int destroy_buffer(camera_handle_t *);

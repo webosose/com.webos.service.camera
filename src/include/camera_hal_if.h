@@ -28,7 +28,7 @@ int camera_hal_if_open_device(void *, const char *);
 int camera_hal_if_close_device(void *);
 int camera_hal_if_set_format(void *, const void *);
 int camera_hal_if_get_format(void *, void *);
-int camera_hal_if_set_buffer(void *, int, int);
+int camera_hal_if_set_buffer(void *, int, int, void **);
 int camera_hal_if_get_buffer(void *, void *);
 int camera_hal_if_release_buffer(void *, const void *);
 int camera_hal_if_destroy_buffer(void *);

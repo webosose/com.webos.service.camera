@@ -28,7 +28,7 @@ public:
   virtual int closeDevice() = 0;
   virtual int setFormat(const void *) = 0;
   virtual int getFormat(void *) = 0;
-  virtual int setBuffer(int, int) = 0;
+  virtual int setBuffer(int, int, void **) = 0;
   virtual int getBuffer(void *) = 0;
   virtual int releaseBuffer(const void *) = 0;
   virtual int destroyBuffer() = 0;

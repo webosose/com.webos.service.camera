@@ -272,101 +272,88 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::string memtype,
-                                                        int *pkey, LSHandle *sh, const char *subskey)
+                                                        int *pkey, LSHandle *sh,
+                                                        const char *subskey)
 {
-  PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d \n", devhandle);
+    PMLOG_INFO(CONST_MODULE_VDM, "devhandle : %d \n", devhandle);
 
-  // get device id for virtual device handle
-  DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
-  int deviceid = obj_devstate.ndeviceid_;
-  PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
+    // get device id for virtual device handle
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid = obj_devstate.ndeviceid_;
+    PMLOG_INFO(CONST_MODULE_VDM, "deviceid : %d \n", deviceid);
 
-  // check if device is opened
-  if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
-  {
-    // check if device state is open then only allow to start preview
-    if (CameraDeviceState::CAM_DEVICE_STATE_OPEN != obj_devstate.ecamstate_)
+    // check if device is opened
+    if (DeviceManager::getInstance().isDeviceOpen(&deviceid))
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
-      return DEVICE_ERROR_CAN_NOT_START;
-    }
-
-    if ((memtype == kMemtypeShmem && shmempreview_count_[SHMEM_SYSTEMV] == 0)
-         || (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0)
-         || (memtype == kMemtypeShmemUsrPtr && shmempreview_count_[SHMEM_SYSTEMV_USRPTR] == 0) )
-    {
-      void *handle;
-      DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
-      // start preview
-      DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startPreview(handle, memtype, pkey, sh, subskey);
-      if (DEVICE_OK == ret)
-      {
-        //Increament preview count by 1
-        if(memtype == kMemtypeShmem)
+        // check if device state is open then only allow to start preview
+        if (CameraDeviceState::CAM_DEVICE_STATE_OPEN != obj_devstate.ecamstate_)
         {
-           obj_devstate.shmemtype = SHMEM_SYSTEMV;
-           shmempreview_count_[SHMEM_SYSTEMV]++;
-           shmkey_ = *pkey;
+            PMLOG_INFO(CONST_MODULE_VDM, "Camera State : %d \n", (int)obj_devstate.ecamstate_);
+            return DEVICE_ERROR_CAN_NOT_START;
         }
-        else if(memtype == kMemtypePosixshm)
+
+        if (((memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap) &&
+             shmempreview_count_[SHMEM_SYSTEMV] == 0) ||
+            (memtype == kMemtypePosixshm && shmempreview_count_[SHMEM_POSIX] == 0))
         {
-          obj_devstate.shmemtype = SHMEM_POSIX;
-          shmempreview_count_[SHMEM_POSIX]++;
-          poshmkey_ = *pkey;
+            void *handle;
+            DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
+            // start preview
+            DEVICE_RETURN_CODE_T ret = objdevicecontrol_.startPreview(handle, memtype, pkey, sh, subskey);
+            if (DEVICE_OK == ret)
+            {
+                //Increament preview count by 1
+                if(memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
+                {
+                    obj_devstate.shmemtype = SHMEM_SYSTEMV;
+                    shmempreview_count_[SHMEM_SYSTEMV]++;
+                    shmkey_ = *pkey;
+                }
+                else
+                {
+                    obj_devstate.shmemtype = SHMEM_POSIX;
+                    shmempreview_count_[SHMEM_POSIX]++;
+                    poshmkey_ = *pkey;
+                }
+                // add to vector the app calling startPreview
+                npreviewhandle_.push_back(devhandle);
+                // update state of device to preview
+                obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
+                virtualhandle_map_[devhandle] = obj_devstate;
+            }
+            return ret;
         }
         else
         {
-          obj_devstate.shmemtype = SHMEM_SYSTEMV_USRPTR;
-          shmempreview_count_[SHMEM_SYSTEMV_USRPTR]++;
-          shmusrptrkey_ = *pkey;
+            PMLOG_INFO(CONST_MODULE_VDM, "preview already started by other app \n");
+            if(memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
+                *pkey = shmkey_;
+            else
+                *pkey = poshmkey_;
+            // add to vector the app calling startPreview
+            npreviewhandle_.push_back(devhandle);
+            // update state of device to preview
+            obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
+            //Increament preview count by 1
+            if(memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
+            {
+                obj_devstate.shmemtype = SHMEM_SYSTEMV;
+                shmempreview_count_[SHMEM_SYSTEMV]++;
+            }
+            else
+            {
+                obj_devstate.shmemtype = SHMEM_POSIX;
+                shmempreview_count_[SHMEM_POSIX]++;
+            }
+            virtualhandle_map_[devhandle] = obj_devstate;
+            return DEVICE_OK;
         }
-      }
-      // add to vector the app calling startPreview
-      npreviewhandle_.push_back(devhandle);
-      // update state of device to preview
-      obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
-      virtualhandle_map_[devhandle] = obj_devstate;
-      return ret;
     }
     else
     {
-      PMLOG_INFO(CONST_MODULE_VDM, "preview already started by other app \n");
-      if(memtype == kMemtypeShmem)
-          *pkey = shmkey_;
-      else if(memtype == kMemtypePosixshm)
-          *pkey = poshmkey_;
-      else
-          *pkey = shmusrptrkey_;
-      // add to vector the app calling startPreview
-      npreviewhandle_.push_back(devhandle);
-      // update state of device to preview
-      obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
-      //Increament preview count by 1
-      if(memtype == kMemtypeShmem)
-      {
-        obj_devstate.shmemtype = SHMEM_SYSTEMV;
-        shmempreview_count_[SHMEM_SYSTEMV]++;
-      }
-      else if(memtype == kMemtypePosixshm)
-      {
-        obj_devstate.shmemtype = SHMEM_POSIX;
-        shmempreview_count_[SHMEM_POSIX]++;
-      }
-      else
-      {
-        obj_devstate.shmemtype = SHMEM_SYSTEMV_USRPTR;
-        shmempreview_count_[SHMEM_SYSTEMV_USRPTR]++;
-      }
-
-      virtualhandle_map_[devhandle] = obj_devstate;
-      return DEVICE_OK;
+        PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
+        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }
-  }
-  else
-  {
-    PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
-    return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
-  }
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
