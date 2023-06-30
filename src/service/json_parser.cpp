@@ -58,7 +58,11 @@ std::string GetCameraListMethod::createCameraListObjectJsonString() const
                   jstring_create(strGetCameraList(i).c_str()));
       jarray_append(json_outdevicelistarray, json_outdevicelistitem);
     }
-
+    if (b_issubscribed_ == true)
+    {
+         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                     jboolean_create(b_issubscribed_));
+    }
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEVICE_LIST), json_outdevicelistarray);
   }
   else
@@ -436,7 +440,8 @@ std::string GetInfoMethod::createInfoObjectJsonString(bool supported) const
 }
 
 GetSetPropertiesMethod::GetSetPropertiesMethod()
-    : n_devicehandle_(n_invalid_id), ro_camproperties_(), str_params_()
+    : n_devicehandle_(n_invalid_id), ro_camproperties_(), str_params_(), str_devid_(cstr_empty),
+      b_issubscribed_(false)
 {
 }
 
@@ -559,11 +564,24 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
         }
       }
     }
+    if (b_issubscribed_ == true)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                    jboolean_create(b_issubscribed_));
+    }
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
   }
   else
   {
     createJsonStringFailure(objreply, json_outobj);
+
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
+
+    if (b_issubscribed_ == true)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                    jboolean_create(b_issubscribed_));
+    }
   }
 
   const char* strvalue = jvalue_stringify(json_outobj);
@@ -1016,6 +1034,49 @@ std::string GetFormatMethod::createObjectJsonString() const
             jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
                         jboolean_create(b_issubscribed_));
         }
+    }
+
+    const char *str = jvalue_stringify(json_outobj);
+    if (str)
+        str_reply = str;
+    j_release(&json_outobj);
+
+    return str_reply;
+}
+
+void EventNotificationMethod::getEventObject(const char *input, const char *schemapath)
+{
+    jvalue_ref j_obj = jobject_create();
+    int retval       = deSerialize(input, schemapath, j_obj);
+
+    if (retval == 0)
+    {
+        setIsErrorParam(false);
+    }
+
+    j_release(&j_obj);
+}
+
+std::string EventNotificationMethod::createObjectJsonString() const
+{
+    jvalue_ref json_outobj = jobject_create();
+    std::string str_reply;
+    MethodReply obj_reply = getMethodReply();
+
+    if (obj_reply.bGetReturnValue())
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(obj_reply.bGetReturnValue()));
+
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
+    }
+    else
+    {
+        createJsonStringFailure(obj_reply, json_outobj);
     }
 
     const char *str = jvalue_stringify(json_outobj);

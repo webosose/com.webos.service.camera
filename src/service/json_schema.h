@@ -62,6 +62,11 @@ const char *getPropertiesSchema = "{ \
       \"title\": \"The Id Schema\", \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
+      }, \
+      \"subscribe\": { \
+      \"type\": \"boolean\", \
+      \"title\": \"The subscribe Schema\", \
+      \"default\": false \
       } \
     } \
 }";

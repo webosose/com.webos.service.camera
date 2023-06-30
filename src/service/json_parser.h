@@ -54,8 +54,12 @@ private:
 class GetCameraListMethod
 {
 public:
-  GetCameraListMethod() { n_camcount_ = 0; }
-  ~GetCameraListMethod() {}
+    GetCameraListMethod()
+    {
+        n_camcount_     = 0;
+        b_issubscribed_ = false;
+    }
+    ~GetCameraListMethod() {}
 
   void setCameraList(const std::string& str_id, unsigned int count) { str_list_[count] = str_id; }
   std::string strGetCameraList(int count) const { return str_list_[count]; }
@@ -73,11 +77,13 @@ public:
 
   static bool getCameraListObject(const char *, const char *);
   std::string createCameraListObjectJsonString() const;
+  void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
 
 private:
   std::string str_list_[CONST_MAX_DEVICE_COUNT];
   MethodReply objreply_;
   int n_camcount_;
+  bool b_issubscribed_;
 };
 
 class OpenMethod
@@ -330,12 +336,14 @@ public:
   void getSetPropertiesObject(const char *, const char *);
   std::string createGetPropertiesObjectJsonString() const;
   std::string createSetPropertiesObjectJsonString() const;
+  void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
 
 private:
   int n_devicehandle_;
   CAMERA_PROPERTIES_T ro_camproperties_;
   std::vector<std::string> str_params_;
   std::string str_devid_;
+  bool b_issubscribed_;
   MethodReply objreply_;
 };
 
@@ -505,11 +513,35 @@ private:
     MethodReply objreply_;
 };
 
+class EventNotificationMethod
+{
+public:
+    EventNotificationMethod()
+    {
+        b_iserror_      = true;
+        b_issubscribed_ = false;
+    }
+    ~EventNotificationMethod() {}
+
+    void getEventObject(const char *, const char *);
+    void setSubcribed(bool subscribed) { b_issubscribed_ = subscribed; }
+    bool getIsErrorFromParam() { return b_iserror_; }
+    void setIsErrorParam(bool error) { b_iserror_ = error; }
+    void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+    {
+        objreply_.setReturnValue(returnvalue);
+        objreply_.setErrorCode(errorcode);
+        objreply_.setErrorText(errortext);
+    }
+    MethodReply getMethodReply() const { return objreply_; }
+    std::string createObjectJsonString() const;
+
+private:
+    bool b_iserror_;
+    bool b_issubscribed_;
+    MethodReply objreply_;
+};
+
 void createJsonStringFailure(MethodReply, jvalue_ref &);
-void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *, CAMERA_PROPERTIES_T *, jvalue_ref &);
-void mappingPropertieswithConstValues(std::map<std::string,int> &, CAMERA_PROPERTIES_T *);
-void createGetPropertiesOutputParamJsonString(const std::string, CAMERA_PROPERTIES_T *,
-                                              jvalue_ref &);
-void createGetPropertiesOutputJsonString(const std::string, CAMERA_PROPERTIES_T *, jvalue_ref &);
 
 #endif /*SRC_SERVICE_JSON_PARSER_H_*/

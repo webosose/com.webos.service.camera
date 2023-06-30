@@ -63,7 +63,7 @@ public:
   bool addDevice(DEVICE_LIST_T *pList);
   bool removeDevice(int devid);
 
-  DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *) const;
+  DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
                                   DEVICE_EVENT_STATE_T *);
   DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);

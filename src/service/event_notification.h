@@ -15,31 +15,29 @@
 // SPDX-License-Identifier: Apache-2.0
 
 #pragma once
+
+#include "camera_types.h"
+#include <nlohmann/json.hpp>
 #include <pbnjson.hpp>
+
+using namespace nlohmann;
 
 class EventNotification
 {
 public:
-    EventNotification()
-    {
-        strcamid_ = "";
-    }
-
-   ~EventNotification() {}
+    EventNotification(){};
+    ~EventNotification() {}
 
     bool addSubscription(LSHandle *lsHandle, std::string key, LSMessage &message);
-    //TODO, Will be fixed later in subscribe implementation S
-    bool addSubscription(LSHandle * lsHandle, const char* key, LSMessage &message);
-    //TODO, Will be fixed later in subscribe implementation E
-    void eventReply(LSHandle * lsHandle, const char* key, void *p_cur_data, void *p_old_data, EventType etype);
+    void eventReply(LSHandle *lsHandle, std::string key, EventType etype,
+                    void *p_cur_data = nullptr, void *p_old_data = nullptr);
+    std::string getEventKeyWithId(int dev_handle, std::string key);
     int getSubscribeCount(LSHandle *lsHandle, std::string key);
-    std::string subscriptionJsonString(bool issubscribed);
-    void setCameraId(const std::string& camid) { strcamid_ = camid; }
-    std::string getCameraId() { return strcamid_; }
+    void removeSubscription(LSHandle *lsHandle, int camera_id);
 
- private:
-    std::string strcamid_;
-    bool getJsonString(jvalue_ref &json_outobj, void *p_cur_data, void *p_old_data, EventType etype);
-    int getSubscripeCount(LSHandle * lsHandle, const char* key);
-    void subscriptionReply(LSHandle * lsHandle, const char* key, jvalue_ref output_reply);
+private:
+    bool getJsonString(json &json_outobj, std::string key, EventType etype, void *p_cur_data,
+                       void *p_old_data);
+    void subscriptionReply(LSHandle *lsHandle, std::string key, std::string output_reply);
+    std::string getCameraIdFromKey(std::string key);
 };

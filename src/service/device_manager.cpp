@@ -215,29 +215,11 @@ bool DeviceManager::eraseVirtualHandle(int deviceId, int virtualHandle)
   return false;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
-                                            int *pMicSupport) const
+DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
-  PMLOG_INFO(CONST_MODULE_DM, "started!");
-
-  int devCount = deviceMap_.size();
-  if (devCount)
-  {
-    int i = 0;
-    for (auto iter : deviceMap_)
-    {
-      pCamDev[i] = iter.first;
-      pCamSupport[i] = 1;
-      i++;
-    }
-  }
-  else
-  {
-    PMLOG_INFO(CONST_MODULE_DM, "No device detected by PDM!!!\n");
+    for (auto list : deviceMap_)
+        idList.push_back(list.first);
     return DEVICE_OK;
-  }
-
-  return DEVICE_OK;
 }
 
 bool DeviceManager::addDevice(DEVICE_LIST_T *pList)

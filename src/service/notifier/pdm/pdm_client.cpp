@@ -238,13 +238,16 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
             {
                 PMLOG_INFO(CONST_MODULE_PDMCLIENT, "PLUGGED CamEvent type: %d \n", nCamEvent);
                 EventNotification obj;
-                obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_CONNECT);
+                obj.eventReply(lsHandle, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_CONNECT);
             }
             else if (nCamEvent == DEVICE_EVENT_STATE_UNPLUGGED)
             {
                 PMLOG_INFO(CONST_MODULE_PDMCLIENT, "UNPLUGGED CamEvent type: %d \n", nCamEvent);
                 EventNotification obj;
-                obj.eventReply(lsHandle, CONST_EVENT_NOTIFICATION, nullptr, nullptr, EventType::EVENT_TYPE_DISCONNECT);
+                obj.eventReply(lsHandle, CONST_EVENT_KEY_CAMERA_LIST, EventType::EVENT_TYPE_DISCONNECT);
+
+                // unsubscribe getFomat, getProperties for disconnected camera
+                obj.removeSubscription(lsHandle, camcount);
             }
 
             // no need of whitelist check if no device found

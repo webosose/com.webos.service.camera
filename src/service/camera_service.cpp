@@ -109,45 +109,44 @@ int CameraService::getId(std::string cameraid)
   return num;
 }
 
-void CameraService::createEventMessage(EventType etype, void *p_old_data, int devhandle)
+void CameraService::createEventMessage(EventType etype, void *p_old_data, int devhandle,
+                                       std::string event_key)
 {
-
-  int deviceid = CommandManager::getInstance().getCameraId(devhandle);
-  std::string cameraid = "camera" + std::to_string(deviceid);
-  event_obj.setCameraId(cameraid);
-
-  if(EventType::EVENT_TYPE_FORMAT == etype)
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA, "EVENT_TYPE_FORMAT Event received\n");
-    CAMERA_FORMAT newformat;
-    CommandManager::getInstance().getFormat(devhandle, &newformat);
-
-    auto *p_old_format = static_cast<CAMERA_FORMAT *>(p_old_data);
-
-    if(*p_old_format != newformat)
+    if (event_obj.getSubscribeCount(this->get(), event_key) > 0)
     {
-      auto *p_cur_data = static_cast<void *>(&newformat);
-      event_obj.eventReply(this->get(), CONST_EVENT_NOTIFICATION, p_cur_data, p_old_data, etype);
-    }
-  }
-  else if(EventType::EVENT_TYPE_PROPERTIES == etype)
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA, "EVENT_TYPE_PROPERTIES Event received\n");
-    CAMERA_PROPERTIES_T new_property;
-    CommandManager::getInstance().getProperty(devhandle, &new_property);
+        if (EventType::EVENT_TYPE_FORMAT == etype)
+        {
+            PMLOG_INFO(CONST_MODULE_LUNA,"EVENT_TYPE_FORMAT Event received\n");
+            CAMERA_FORMAT newformat;
+            CommandManager::getInstance().getFormat(devhandle, &newformat);
 
-    auto *p_old_property = static_cast<CAMERA_PROPERTIES_T *>(p_old_data);
+            auto *p_old_format = static_cast<CAMERA_FORMAT *>(p_old_data);
 
-    if(*p_old_property != new_property)
-    {
-      auto *p_cur_data = static_cast<void *>(&new_property);
-      event_obj.eventReply(this->get(), CONST_EVENT_NOTIFICATION, p_cur_data, p_old_data, etype);
+            if (*p_old_format != newformat)
+            {
+                auto *p_cur_data = static_cast<void *>(&newformat);
+                event_obj.eventReply(this->get(), event_key.c_str(), etype, p_cur_data, p_old_data);
+            }
+        }
+        else if (EventType::EVENT_TYPE_PROPERTIES == etype)
+        {
+            PMLOG_INFO(CONST_MODULE_LUNA,"EVENT_TYPE_PROPERTIES Event received\n");
+            CAMERA_PROPERTIES_T new_property;
+            CommandManager::getInstance().getProperty(devhandle, &new_property);
+
+            auto *p_old_property = static_cast<CAMERA_PROPERTIES_T *>(p_old_data);
+
+            if (*p_old_property != new_property)
+            {
+                auto *p_cur_data = static_cast<void *>(&new_property);
+                event_obj.eventReply(this->get(), event_key.c_str(), etype, p_cur_data, p_old_data);
+            }
+        }
+        else
+        {
+            PMLOG_INFO(CONST_MODULE_LUNA,"Unknown Event received\n");
+        }
     }
-  }
-  else
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA, "Unknown Event received\n");
-  }
 }
 
 bool CameraService::open(LSMessage &message)
@@ -349,7 +348,7 @@ bool CameraService::startPreview(LSMessage &message)
         {
             err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype,
                                                                 &key, this->get(),
-                                                                CONST_EVENT_NOTIFICATION);
+                                                                CONST_EVENT_KEY_PREVIEW_FAULT);
 
             if (DEVICE_OK != err_id)
             {
@@ -606,17 +605,8 @@ bool CameraService::getCameraList(LSMessage &message)
   else
   {
     // get camera list here
-    int arr_camsupport[CONST_MAX_DEVICE_COUNT], arr_micsupport[CONST_MAX_DEVICE_COUNT];
-    int arr_camdev[CONST_MAX_DEVICE_COUNT], arr_micdev[CONST_MAX_DEVICE_COUNT];
-
-    for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
-    {
-      arr_camdev[i] = arr_micdev[i] = CONST_PARAM_DEFAULT_VALUE;
-      arr_camsupport[i] = arr_micsupport[i] = 0;
-    }
-
-    err_id = CommandManager::getInstance().getDeviceList(arr_camdev, arr_micdev, arr_camsupport,
-                                                         arr_micsupport);
+    std::vector<int> idList;
+    err_id = CommandManager::getInstance().getDeviceList(idList);
 
     if (DEVICE_OK != err_id)
     {
@@ -626,25 +616,19 @@ bool CameraService::getCameraList(LSMessage &message)
     }
     else
     {
+      bool bsubscribed =
+            event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAMERA_LIST, message);
+      PMLOG_INFO(CONST_MODULE_LUNA,"bsubscribed (%d) \n", bsubscribed);
+      obj_getcameralist.setSubcribed(bsubscribed);
+
       PMLOG_DEBUG("err_id == DEVICE_OK\n");
       obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
 
-      char arrlist[20][CONST_MAX_STRING_LENGTH];
-      unsigned int n_camcount = 0;
-
-      for (int i = 0; i < CONST_MAX_DEVICE_COUNT; i++)
+      obj_getcameralist.setCameraCount(static_cast<int>(idList.size()));
+      for (unsigned int i = 0; i < idList.size(); i++)
       {
-        if (arr_camdev[i] == CONST_PARAM_DEFAULT_VALUE)
-          break;
-        snprintf(arrlist[n_camcount], CONST_MAX_STRING_LENGTH, "%s%d", CONST_DEVICE_NAME_CAMERA,
-                 arr_camdev[i]);
-        n_camcount++;
-      }
-
-      obj_getcameralist.setCameraCount(n_camcount);
-      for (unsigned int i = 0; i < n_camcount; i++)
-      {
-        obj_getcameralist.setCameraList(arrlist[i], i);
+          obj_getcameralist.setCameraList(
+              CONST_DEVICE_NAME_CAMERA + std::to_string(idList[i]), i);
       }
     }
   }
@@ -683,16 +667,12 @@ bool CameraService::getProperties(LSMessage &message)
     else
     {
         // add subscription
-        //TODO, Will be fixed later in subscribe implementation S
-        /*
         std::string event_key = CONST_EVENT_KEY_PROPERTIES;
         event_key += "_";
         event_key += obj_getproperties.getCameraId();
         bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
         PMLOG_INFO(CONST_MODULE_LUNA,"bsubscribed (%d) \n", bsubscribed);
         obj_getproperties.setSubcribed(bsubscribed);
-        */
-        //TODO, Will be fixed later in subscribe implementation E
 
         ndevhandle = CommandManager::getInstance().getCameraHandle(ncamId);
         PMLOG_INFO(CONST_MODULE_LUNA,"devhandel by camera(%d) is (%d)\n", ncamId, ndevhandle);
@@ -768,8 +748,12 @@ bool CameraService::setProperties(LSMessage &message)
     {
       // get old properties before setting new
       CAMERA_PROPERTIES_T old_property;
-      CommandManager::getInstance().getProperty(ndevhandle, &old_property);
-      auto *p_olddata = static_cast<void *>(&old_property);
+      std::string event_key =
+                event_obj.getEventKeyWithId(ndevhandle, CONST_EVENT_KEY_PROPERTIES);
+      if (event_obj.getSubscribeCount(this->get(), event_key) > 0)
+      {
+          CommandManager::getInstance().getProperty(ndevhandle, &old_property);
+      }
       // set properties here
       CAMERA_PROPERTIES_T oParams = objsetproperties.rGetCameraProperties();
       PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
@@ -784,7 +768,9 @@ bool CameraService::setProperties(LSMessage &message)
         PMLOG_DEBUG("err_id == DEVICE_OK\n");
         objsetproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
         // check if new properties are different from saved properties
-        createEventMessage(EventType::EVENT_TYPE_PROPERTIES, p_olddata, ndevhandle);
+        auto *p_olddata = static_cast<void *>(&old_property);
+        createEventMessage(EventType::EVENT_TYPE_PROPERTIES, p_olddata, ndevhandle,
+                           event_key);
       }
     }
   }
@@ -820,8 +806,12 @@ bool CameraService::setFormat(LSMessage &message)
   {
     // get saved format of the device
     CAMERA_FORMAT savedformat;
-    CommandManager::getInstance().getFormat(ndevhandle, &savedformat);
-    auto *p_olddata = static_cast<void *>(&savedformat);
+    std::string event_key = event_obj.getEventKeyWithId(ndevhandle, CONST_EVENT_KEY_FORMAT);
+
+    if (event_obj.getSubscribeCount(this->get(), event_key) > 0)
+    {
+        CommandManager::getInstance().getFormat(ndevhandle, &savedformat);
+    }
     // setformat here
     PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
     CAMERA_FORMAT sformat = objsetformat.rGetCameraFormat();
@@ -837,7 +827,8 @@ bool CameraService::setFormat(LSMessage &message)
       objsetformat.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
       // check if new format settings are different from saved format settings
       // get saved format of the device
-      createEventMessage(EventType::EVENT_TYPE_FORMAT, p_olddata, ndevhandle);
+      auto *p_olddata = static_cast<void *>(&savedformat);
+      createEventMessage(EventType::EVENT_TYPE_FORMAT, p_olddata, ndevhandle, event_key);
     }
   }
 
@@ -853,12 +844,28 @@ bool CameraService::setFormat(LSMessage &message)
 
 bool CameraService::getEventNotification(LSMessage &message)
 {
-  //auto *payload = LSMessageGetPayload(&message);
-  bool returnVal = event_obj.addSubscription(this->get(), CONST_EVENT_NOTIFICATION, message);
+  auto *payload = LSMessageGetPayload(&message);
+  PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
-  std::string output_reply = event_obj.subscriptionJsonString(returnVal);
+  EventNotificationMethod obj_jsonparser;
+  obj_jsonparser.getEventObject(payload, getEventNotificationSchema);
 
-  PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+  if (obj_jsonparser.getIsErrorFromParam())
+  {
+      PMLOG_INFO(CONST_MODULE_LUNA,"DEVICE_ERROR_WRONG_PARAM");
+      err_id = DEVICE_ERROR_WRONG_PARAM;
+      obj_jsonparser.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+  }
+  else
+  {
+      bool return_val =
+          event_obj.addSubscription(this->get(), CONST_EVENT_KEY_PREVIEW_FAULT, message);
+      obj_jsonparser.setSubcribed(return_val);
+      obj_jsonparser.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+  }
+  std::string output_reply = obj_jsonparser.createObjectJsonString();
+  PMLOG_INFO(CONST_MODULE_LUNA,"output_reply %s\n", output_reply.c_str());
 
   LS::Message request(&message);
   request.respond(output_reply.c_str());
@@ -1048,6 +1055,8 @@ bool CameraService::getSolutions(LSMessage &message)
   PMLOG_INFO(CONST_MODULE_LUNA, " E \n");
   auto *payload               = LSMessageGetPayload(&message);
   DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+  std::vector<std::string> supportedSolutionList;
+  std::vector<std::string> enabledSolutionList;
 
   GetSolutionsMethod obj_getsolutions;
   obj_getsolutions.getObject(payload, getSolutionsSchema);
@@ -1088,29 +1097,27 @@ bool CameraService::getSolutions(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_OK\n");
     obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                     getErrorString(err_id));
-  }
 
-  std::vector<std::string> supportedSolutionList;
-  std::vector<std::string> enabledSolutionList;
 
-  err_id = CommandManager::getInstance().getSupportedCameraSolutionInfo(ndevhandle,
+    err_id = CommandManager::getInstance().getSupportedCameraSolutionInfo(ndevhandle,
                                                                         supportedSolutionList);
-  if (DEVICE_OK != err_id)
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA,
-               "error happens on getting supported solution list by err_id(%d)\n", err_id);
-    obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+    if (DEVICE_OK != err_id)
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA,
+                 "error happens on getting supported solution list by err_id(%d)\n", err_id);
+      obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                     getErrorString(err_id));
-  }
+    }
 
-  err_id =
-      CommandManager::getInstance().getEnabledCameraSolutionInfo(ndevhandle, enabledSolutionList);
-  if (DEVICE_OK != err_id)
-  {
-    PMLOG_INFO(CONST_MODULE_LUNA,
-               "error happens on getting enabled solution list by err_id(%d)\n", err_id);
-    obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+    err_id =
+        CommandManager::getInstance().getEnabledCameraSolutionInfo(ndevhandle, enabledSolutionList);
+    if (DEVICE_OK != err_id)
+    {
+      PMLOG_INFO(CONST_MODULE_LUNA,
+                 "error happens on getting enabled solution list by err_id(%d)\n", err_id);
+      obj_getsolutions.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
                                     getErrorString(err_id));
+    }
   }
 
   std::string output_reply =

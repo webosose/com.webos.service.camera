@@ -23,7 +23,6 @@
 #include "command_manager.h"
 
 #include <ctime>
-#include <poll.h>
 #include <sys/time.h>
 
 #include <signal.h>
@@ -234,53 +233,43 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(void *handle, CAMERA_FORMAT sfor
 
 DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncount) const
 {
-    int fd = -1;
-    auto retval = camera_hal_if_get_fd(handle, &fd);
-    PMLOG_INFO(CONST_MODULE_DC, "camera_hal_if_get_fd fd : %d \n", fd);
-    struct pollfd poll_set[]
-    {
-        {.fd = fd, .events = POLLIN},
-    };
+    int retval;
 
-    int timeout = 10000;
     buffer_t frame_buffer = {0};
 
     for (int i = 1; i <= ncount; i++)
     {
-        if ((retval = poll(poll_set, 1, timeout)) > 0)
+        retval = camera_hal_if_get_buffer(handle, &frame_buffer);
+        if (CAMERA_ERROR_NONE != retval)
         {
-            retval = camera_hal_if_get_buffer(handle, &frame_buffer);
-            if (CAMERA_ERROR_NONE != retval)
-            {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
-                return DEVICE_ERROR_UNKNOWN;
-            }
-            PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
-            PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n", frame_buffer.length);
+            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
+            return DEVICE_ERROR_UNKNOWN;
+        }
+        PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
+        PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n", frame_buffer.length);
 
-            if (frame_buffer.start == nullptr)
-            {
-                PMLOG_INFO(CONST_MODULE_DC, "no valid memory on frame buffer ptr");
-                return DEVICE_ERROR_OUT_OF_MEMORY;
-            }
+        if (frame_buffer.start == nullptr)
+        {
+            PMLOG_INFO(CONST_MODULE_DC, "no valid memory on frame buffer ptr");
+            return DEVICE_ERROR_OUT_OF_MEMORY;
+        }
 
-            //[Camera Solution Manager] processing for capture
-            if (pCameraSolution != nullptr)
-            {
-                pCameraSolution->processCapture(frame_buffer);
-            }
+        //[Camera Solution Manager] processing for capture
+        if (pCameraSolution != nullptr)
+        {
+            pCameraSolution->processCapture(frame_buffer);
+        }
 
-            // write captured image to /tmp only if startCapture request is made
-            if (DEVICE_ERROR_CANNOT_WRITE ==
-                writeImageToFile(frame_buffer.start, frame_buffer.length))
-                return DEVICE_ERROR_CANNOT_WRITE;
+        // write captured image to /tmp only if startCapture request is made
+        if (DEVICE_ERROR_CANNOT_WRITE ==
+            writeImageToFile(frame_buffer.start, frame_buffer.length))
+            return DEVICE_ERROR_CANNOT_WRITE;
 
-            retval = camera_hal_if_release_buffer(handle, &frame_buffer);
-            if (retval != CAMERA_ERROR_NONE)
-            {
-                PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
-                return DEVICE_ERROR_UNKNOWN;
-            }
+        retval = camera_hal_if_release_buffer(handle, &frame_buffer);
+        if (retval != CAMERA_ERROR_NONE)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
+            return DEVICE_ERROR_UNKNOWN;
         }
     }
 

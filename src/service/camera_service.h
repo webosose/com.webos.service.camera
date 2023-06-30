@@ -35,7 +35,7 @@ private:
   EventNotification event_obj;
 
   int getId(std::string);
-  void createEventMessage(EventType, void *, int);
+  void createEventMessage(EventType, void *, int, std::string event_key);
 
   std::map<int, std::string> cameraHandleMap;
   std::map<std::string, void *> cameraHandleInfo;

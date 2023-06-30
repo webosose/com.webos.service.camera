@@ -34,7 +34,6 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_DEVICE_IS_ALREADY_OPENED, "Camera device is already opened"},
     {DEVICE_ERROR_DEVICE_IS_ALREADY_STARTED, "Camera device is already started"},
     {DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED, "Camera device is already stopped"},
-    {DEVICE_ERROR_DEVICE_IS_BUSY, "Camera device is busy"},
     {DEVICE_ERROR_DEVICE_IS_NOT_OPENED, "Camera device is not opened"},
     {DEVICE_ERROR_DEVICE_IS_NOT_STARTED, "Camera device is not started"},
     {DEVICE_ERROR_NODEVICE, "There is no device"},
@@ -47,16 +46,11 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_OUT_OF_MEMORY, "Out of memory"},
     {DEVICE_ERROR_OUT_OF_PARAM_RANGE, "Out of param range"},
     {DEVICE_ERROR_PARAM_IS_MISSING, "Param is missing"},
-    {DEVICE_ERROR_SERVICE_IS_NOT_READY, "Service is not ready"},
-    {DEVICE_ERROR_SOMETHING_IS_NOT_SET, "Some property is not set"},
-    {DEVICE_ERROR_TIMEOUT, "Request timeout"},
-    {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
     {DEVICE_ERROR_UNKNOWN_SERVICE, "Unknown service"},
     {DEVICE_ERROR_UNSUPPORTED_DEVICE, "Unsupported device"},
     {DEVICE_ERROR_UNSUPPORTED_FORMAT, "Unsupported format"},
     {DEVICE_ERROR_UNSUPPORTED_SAMPLINGRATE, "Unsupported samplingrate"},
     {DEVICE_ERROR_UNSUPPORTED_VIDEO_SIZE, "Unsupported video size"},
-    {DEVICE_ERROR_UNKNOWN_SERVICE, "Unknown service"},
     {DEVICE_ERROR_WRONG_DEVICE_NUMBER, "Wrong device number"},
     {DEVICE_ERROR_WRONG_ID, "Session id error"},
     {DEVICE_ERROR_WRONG_PARAM, "Wrong param"},
@@ -75,8 +69,16 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_HANDLE_NOT_EXIST, "Wrong handle"},
     {DEVICE_ERROR_PREVIEW_NOT_STARTED, "Preview not started"},
     {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"},
+    {DEVICE_ERROR_APP_PERMISSION, "app permission fail"},
     {DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL, "Failed to register pid with specified signal"},
-    {DEVICE_ERROR_CLIENT_PID_IS_MISSING, "Must specify client pid"}};
+    {DEVICE_ERROR_CLIENT_PID_IS_MISSING, "Must specify client pid"},
+    {DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED, "Subscribed camera has been disconnected"},
+    {DEVICE_ERROR_DEVICE_IS_BUSY, "Camera device is busy"},
+    {DEVICE_ERROR_SERVICE_IS_NOT_READY, "Service is not ready"},
+    {DEVICE_ERROR_SOMETHING_IS_NOT_SET, "Some property is not set"},
+    {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
+    {DEVICE_ERROR_TIMEOUT, "Request timeout"},
+};
 
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},
@@ -85,11 +87,12 @@ std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_DISCONNECT, cstr_disconnect},
     {EventType::EVENT_TYPE_DEVICE_FAULT, cstr_devicefault}};
 
-std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Unsupported format"},
-                                                          {CAMERA_FORMAT_YUV, "YUV"},
-                                                          {CAMERA_FORMAT_H264ES, "H264ES"},
-                                                          {CAMERA_FORMAT_JPEG, "JPEG"},
-                                                          {CAMERA_FORMAT_NV12, "NV12"},};
+std::map<camera_format_t, std::string> g_format_string = {
+    {CAMERA_FORMAT_UNDEFINED, "Unsupported format"},
+    {CAMERA_FORMAT_YUV, "YUV"},
+    {CAMERA_FORMAT_H264ES, "H264ES"},
+    {CAMERA_FORMAT_JPEG, "JPEG"},
+    {CAMERA_FORMAT_NV12, "NV12"},};
 
 std::map<int, std::string> g_param_string = {
     {properties_t::PROPERTY_BRIGHTNESS, CONST_PARAM_NAME_BIRGHTNESS},
@@ -143,19 +146,19 @@ void getFormatString(int nFormat, char *pFormats)
     switch (CHECK_BIT_POS(nFormat, i))
     {
     case CAMERA_FORMAT_YUV:
-      strncat(pFormats, "YUV|", 4);
-      break;
+        strncat(pFormats, "YUV|", strlen("YUV|") + 1);
+        break;
     case CAMERA_FORMAT_H264ES:
-      strncat(pFormats, "H264ES|", 7);
-      break;
+        strncat(pFormats, "H264ES|", strlen("H264ES|") + 1);
+        break;
     case CAMERA_FORMAT_JPEG:
-      strncat(pFormats, "JPEG|", 5);
-      break;
+        strncat(pFormats, "JPEG|", strlen("JPEG|") + 1);
+        break;
     case CAMERA_FORMAT_NV12:
-      strncat(pFormats, "NV12|", 5);
-      break;
+        strncat(pFormats, "NV12|", strlen("NV12|") + 1);
+        break;
     default:
-      break;
+        break;
     }
   }
 
