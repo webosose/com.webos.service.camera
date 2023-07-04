@@ -28,8 +28,8 @@ CameraHalService::CameraHalService(const char *service_name)
     PLOGI("Start : %s", service_name);
 
     LS_CATEGORY_BEGIN(CameraHalService, "/")
-    LS_CATEGORY_METHOD(createHandle)
-    LS_CATEGORY_METHOD(destroyHandle)
+    LS_CATEGORY_METHOD(createHal)
+    LS_CATEGORY_METHOD(destroyHal)
     LS_CATEGORY_METHOD(open)
     LS_CATEGORY_METHOD(close)
     LS_CATEGORY_METHOD(startPreview)
@@ -61,7 +61,7 @@ CameraHalService::CameraHalService(const char *service_name)
     g_main_loop_run(main_loop_ptr_.get());
 }
 
-bool CameraHalService::createHandle(LSMessage &message)
+bool CameraHalService::createHal(LSMessage &message)
 {
     std::string device_type;
     jvalue_ref json_outobj = jobject_create();
@@ -77,7 +77,7 @@ bool CameraHalService::createHandle(LSMessage &message)
     }
 
     pDeviceControl           = std::make_unique<DeviceControl>();
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(device_type);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHal(device_type);
 
     if (ret == DEVICE_OK)
     {
@@ -101,14 +101,14 @@ bool CameraHalService::createHandle(LSMessage &message)
     return true;
 }
 
-bool CameraHalService::destroyHandle(LSMessage &message)
+bool CameraHalService::destroyHal(LSMessage &message)
 {
     jvalue_ref json_outobj = jobject_create();
 
     auto *payload = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->destroyHandle();
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->destroyHal();
 
     if (ret == DEVICE_OK)
     {

@@ -111,7 +111,7 @@ CameraHalProxy::~CameraHalProxy()
         unsubscribe();
         if (state_ != State::DESTROY)
         {
-            destroyHandle();
+            destroyHal();
         }
     }
     catch (const std::logic_error &e)
@@ -221,7 +221,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sfor
     return luna_call_sync(__func__, to_string(jin));
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
+DEVICE_RETURN_CODE_T CameraHalProxy::createHal(std::string subsystem)
 {
     PLOGI("subsystem : %s", subsystem.c_str());
     state_ = State::CREATE;
@@ -231,7 +231,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
     return luna_call_sync(__func__, to_string(jin));
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::destroyHandle()
+DEVICE_RETURN_CODE_T CameraHalProxy::destroyHal()
 {
     PLOGI("");
     state_ = State::DESTROY;

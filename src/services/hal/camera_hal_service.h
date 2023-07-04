@@ -34,8 +34,8 @@ public:
     CameraHalService &operator=(CameraHalService const &) = delete;
     CameraHalService &operator=(CameraHalService &&)      = delete;
 
-    bool createHandle(LSMessage &message);
-    bool destroyHandle(LSMessage &message);
+    bool createHal(LSMessage &message);
+    bool destroyHal(LSMessage &message);
     bool open(LSMessage &message);
     bool close(LSMessage &message);
     bool startPreview(LSMessage &message);

@@ -807,7 +807,7 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(int ncount, CAMERA_FORMAT sform
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::createHandle(std::string deviceType)
+DEVICE_RETURN_CODE_T DeviceControl::createHal(std::string deviceType)
 {
     PLOGI("started \n");
 
@@ -824,7 +824,7 @@ DEVICE_RETURN_CODE_T DeviceControl::createHandle(std::string deviceType)
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::destroyHandle()
+DEVICE_RETURN_CODE_T DeviceControl::destroyHal()
 {
     PLOGI("started \n");
     // p_cam_hal is automatically dlclosed in the destructor of Ifeatureptr.

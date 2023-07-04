@@ -9,8 +9,8 @@
         "com.webos.camerahal.*/getEnabledCameraSolutionInfo"
     ],
     "camerahal.operation":[
-        "com.webos.camerahal.*/createHandle",
-        "com.webos.camerahal.*/destroyHandle",
+        "com.webos.camerahal.*/createHal",
+        "com.webos.camerahal.*/destroyHal",
         "com.webos.camerahal.*/open",
         "com.webos.camerahal.*/close",
         "com.webos.camerahal.*/startPreview",
