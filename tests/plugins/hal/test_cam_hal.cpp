@@ -20,9 +20,9 @@
 #include "camera_hal_if_types.h"
 #include "camera_hal_types.h"
 
-const char *subsystem     = "libv4l2-camera-plugin.so.1";
+const char *subsystem     = "/usr/lib/camera/libhal-v4l2.so.1";
 const char *devname       = "/dev/video0";
-const char *devname_1     = "/dev/video1";
+const char *devname_1     = "/dev/video9999";
 const char *plugininvalid = "libcamera_v4l2.so.1";
 const char *pluginvalid   = "libcamera_hal.so.1";
 
@@ -943,10 +943,8 @@ TEST(CameraHAL, GetBufferMMAP_Validparameters)
     camera_hal_if_start_capture(p_h_camera);
 
     buffer_t buf;
-    buf.start  = malloc(framesize);
     int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-    free(buf.start);
     camera_hal_if_release_buffer(p_h_camera, &buf);
     camera_hal_if_stop_capture(p_h_camera);
     camera_hal_if_destroy_buffer(p_h_camera);
@@ -1178,9 +1176,7 @@ TEST(CameraHAL, ReleaseBuffer_Validparameters)
     camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
     camera_hal_if_start_capture(p_h_camera);
     buffer_t buf;
-    buf.start = malloc(framesize);
     camera_hal_if_get_buffer(p_h_camera, &buf);
-    free(buf.start);
 
     int retval = camera_hal_if_release_buffer(p_h_camera, &buf);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
@@ -1203,9 +1199,7 @@ TEST(CameraHAL, ReleaseBuffer_Invalidhandle)
     camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
     camera_hal_if_start_capture(p_h_camera);
     buffer_t buf;
-    buf.start = malloc(framesize);
     camera_hal_if_get_buffer(p_h_camera, &buf);
-    free(buf.start);
 
     int retval = camera_hal_if_release_buffer(NULL, &buf);
     EXPECT_EQ(CAMERA_ERROR_RELEASE_BUFFER, retval);
@@ -1229,9 +1223,7 @@ TEST(CameraHAL, ReleaseBuffer_Invalidstate)
     camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
 
     buffer_t buf;
-    buf.start = malloc(framesize);
     camera_hal_if_get_buffer(p_h_camera, &buf);
-    free(buf.start);
 
     int retval = camera_hal_if_release_buffer(p_h_camera, &buf);
     EXPECT_EQ(CAMERA_ERROR_RELEASE_BUFFER, retval);
@@ -1242,17 +1234,15 @@ TEST(CameraHAL, ReleaseBuffer_Invalidstate)
 TEST(CameraHAL, GetInfo_Validparameters)
 {
     camera_device_info_t caminfo;
-    char subsystem[] = "libv4l2-camera-plugin.so.1";
-    int retval       = camera_hal_if_get_info(devname, subsystem, &caminfo);
+    int retval = camera_hal_if_get_info(devname, subsystem, &caminfo);
     EXPECT_EQ(CAMERA_ERROR_NONE, retval);
 }
 
 TEST(CameraHAL, GetInfo_Invaliddevicenode)
 {
     camera_device_info_t caminfo;
-    char subsystem[] = "libv4l2-camera-plugin.so.1";
-    int retval       = camera_hal_if_get_info(devname_1, subsystem, &caminfo);
-    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    int retval = camera_hal_if_get_info(devname_1, subsystem, &caminfo);
+    EXPECT_EQ(CAMERA_ERROR_GET_INFO, retval);
 }
 
 TEST(CameraHAL, StressTest)
@@ -1268,8 +1258,47 @@ TEST(CameraHAL, StressTest)
     }
 }
 
+void PrintHelp()
+{
+    std::cout << "Usage: test_cam_hal [options]\n"
+              << "Options:\n"
+              << "  -filter <filter>    Run tests matching the specified filter\n"
+              << "  -h, --help          Display this help message\n";
+}
+
 int main(int argc, char **argv)
 {
+    // Check if the "-h" or "--help" argument is provided
+    for (int i = 1; i < argc; ++i)
+    {
+        if (std::string(argv[i]) == "-h" || std::string(argv[i]) == "--help")
+        {
+            PrintHelp();
+            return 0;
+        }
+    }
+
     ::testing::InitGoogleTest(&argc, argv);
+
+    std::string testFilter;
+
+    // Check if the "-filter" argument is provided
+    for (int i = 1; i < argc; ++i)
+    {
+        if (std::string(argv[1]) == "-filter" && i + 1 < argc)
+        {
+            if (!testFilter.empty())
+                testFilter += ":";
+            testFilter += argv[i + 1];
+        }
+    }
+
+    if (testFilter.empty())
+    {
+        testFilter = "*";
+    }
+
+    ::testing::GTEST_FLAG(filter) = testFilter;
+
     return RUN_ALL_TESTS();
 }
