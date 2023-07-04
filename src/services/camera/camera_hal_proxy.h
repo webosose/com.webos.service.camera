@@ -51,7 +51,6 @@ class CameraHalProxy
 
     DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
                                         int timeout = COMMAND_TIMEOUT);
-    DEVICE_RETURN_CODE_T finishProcess();
 
 public:
     CameraHalProxy();
@@ -62,12 +61,11 @@ public:
     DEVICE_RETURN_CODE_T startPreview(std::string memtype, int *pkey, LSHandle *sh,
                                       const char *subskey);
     DEVICE_RETURN_CODE_T stopPreview(int memtype);
-    DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT sformat, const std::string &imagepath);
+    DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT sformat, const std::string &imagepath,
+                                      const std::string &mode, int ncount);
     DEVICE_RETURN_CODE_T stopCapture();
-    DEVICE_RETURN_CODE_T captureImage(int ncount, CAMERA_FORMAT sformat,
-                                      const std::string &imagepath, const std::string &mode);
-    DEVICE_RETURN_CODE_T createHandle(std::string subsystem);
-    DEVICE_RETURN_CODE_T destroyHandle();
+    DEVICE_RETURN_CODE_T createHal(std::string subsystem);
+    DEVICE_RETURN_CODE_T destroyHal();
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string strdevicenode, std::string strdevicetype,
                                               camera_device_info_t *pinfo);
     DEVICE_RETURN_CODE_T getDeviceProperty(CAMERA_PROPERTIES_T *oparams);

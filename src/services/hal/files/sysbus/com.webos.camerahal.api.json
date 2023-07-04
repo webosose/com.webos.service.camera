@@ -9,14 +9,12 @@
         "com.webos.camerahal.*/getEnabledCameraSolutionInfo"
     ],
     "camerahal.operation":[
-        "com.webos.camerahal.*/createHandle",
-        "com.webos.camerahal.*/destroyHandle",
-        "com.webos.camerahal.*/finishProcess",
+        "com.webos.camerahal.*/createHal",
+        "com.webos.camerahal.*/destroyHal",
         "com.webos.camerahal.*/open",
         "com.webos.camerahal.*/close",
         "com.webos.camerahal.*/startPreview",
         "com.webos.camerahal.*/stopPreview",
-        "com.webos.camerahal.*/captureImage",
         "com.webos.camerahal.*/startCapture",
         "com.webos.camerahal.*/stopCapture",
         "com.webos.camerahal.*/setDeviceProperty",

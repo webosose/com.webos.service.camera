@@ -109,13 +109,9 @@ CameraHalProxy::~CameraHalProxy()
     try
     {
         unsubscribe();
-        if (state_ == State::CREATE)
+        if (state_ != State::DESTROY)
         {
-            destroyHandle();
-        }
-        else if (state_ == State::INIT)
-        {
-            finishProcess();
+            destroyHal();
         }
     }
     catch (const std::logic_error &e)
@@ -189,28 +185,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
-                                                  const std::string &imagepath)
-{
-    PLOGI("");
-
-    json jin;
-    jin[CONST_PARAM_NAME_FORMAT]     = sformat.eFormat;
-    jin[CONST_PARAM_NAME_WIDTH]      = sformat.nWidth;
-    jin[CONST_PARAM_NAME_HEIGHT]     = sformat.nHeight;
-    jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
-
-    return luna_call_sync(__func__, to_string(jin));
-}
-
-DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()
-{
-    PLOGI("");
-    return luna_call_sync(__func__, "{}");
-}
-
-DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sformat,
                                                   const std::string &imagepath,
-                                                  const std::string &mode)
+                                                  const std::string &mode, int ncount)
 {
     PLOGI("");
 
@@ -225,7 +201,13 @@ DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sfor
     return luna_call_sync(__func__, to_string(jin));
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
+DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()
+{
+    PLOGI("");
+    return luna_call_sync(__func__, "{}");
+}
+
+DEVICE_RETURN_CODE_T CameraHalProxy::createHal(std::string subsystem)
 {
     PLOGI("subsystem : %s", subsystem.c_str());
     state_ = State::CREATE;
@@ -235,7 +217,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::createHandle(std::string subsystem)
     return luna_call_sync(__func__, to_string(jin));
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::destroyHandle()
+DEVICE_RETURN_CODE_T CameraHalProxy::destroyHal()
 {
     PLOGI("");
     state_ = State::DESTROY;
@@ -299,10 +281,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    DEVICE_RETURN_CODE_T ret = get_optional<DEVICE_RETURN_CODE_T>(j, CONST_PARAM_NAME_RETURNCODE)
-                                   .value_or(DEVICE_RETURN_UNDEFINED);
-    PLOGI("%s : %d", CONST_PARAM_NAME_RETURNCODE, ret);
-    if (ret == DEVICE_OK)
+    DEVICE_RETURN_CODE_T ret_code = DEVICE_OK;
+    bool ret_value = get_optional<bool>(j, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
+    PLOGI("%s : %d", CONST_PARAM_NAME_RETURNVALUE, ret_value);
+    if (ret_value)
     {
         pinfo->n_devicetype =
             get_optional<device_t>(j, CONST_PARAM_NAME_DEVICE_TYPE).value_or(DEVICE_TYPE_UNDEFINED);
@@ -321,6 +303,11 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
             pinfo->stResolution.emplace_back(v_res, eformat);
         }
     }
+    else
+    {
+        ret_code = get_optional<DEVICE_RETURN_CODE_T>(j, CONST_PARAM_NAME_ERROR_CODE)
+                       .value_or(DEVICE_RETURN_UNDEFINED);
+    }
 
     g_main_loop_quit(lp);
     if (lpthd->joinable())
@@ -336,7 +323,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceInfo(std::string strdevicenode,
     }
     g_main_loop_unref(lp);
 
-    return ret;
+    return ret_code;
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *oparams)
@@ -347,7 +334,9 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
 
     if (ret == DEVICE_OK)
     {
-        for (json::iterator it = jOut.begin(); it != jOut.end(); ++it)
+        auto jobj_params = jOut[CONST_PARAM_NAME_PARAMS];
+
+        for (json::iterator it = jobj_params.begin(); it != jobj_params.end(); ++it)
         {
             if (it.value().is_object() == false)
                 continue;
@@ -355,7 +344,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getDeviceProperty(CAMERA_PROPERTIES_T *opar
             int i = getParamNumFromString(it.key());
             if (i >= 0)
             {
-                json queries = jOut[it.key()];
+                json queries = jobj_params[it.key()];
                 for (json::iterator q = queries.begin(); q != queries.end(); ++q)
                 {
                     int n = getQueryNumFromString(q.key());
@@ -378,7 +367,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::setDeviceProperty(CAMERA_PROPERTIES_T *inpa
     {
         if (inparams->stGetData.data[i][QUERY_VALUE] == CONST_PARAM_DEFAULT_VALUE)
             continue;
-        jin[getParamString(i)] = inparams->stGetData.data[i][QUERY_VALUE];
+        jin[CONST_PARAM_NAME_PARAMS][getParamString(i)] = inparams->stGetData.data[i][QUERY_VALUE];
     }
 
     return luna_call_sync(__func__, to_string(jin));
@@ -460,14 +449,17 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFd(int *shmfd)
                 usleep(500);
             }
 
-            if (0 == get_optional<int>(jOut, CONST_PARAM_NAME_RETURNCODE).value_or(-1))
+            if (get_optional<bool>(jOut, CONST_PARAM_NAME_RETURNVALUE).value_or(false))
             {
                 *shmfd = worker.fd;
                 return DEVICE_OK;
             }
-
-            *shmfd = -1;
-            return DEVICE_ERROR_UNKNOWN;
+            else
+            {
+                *shmfd = -1;
+                return get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_ERROR_CODE)
+                    .value_or(DEVICE_RETURN_UNDEFINED);
+            }
         }
 
         *shmfd = -1;
@@ -667,12 +659,6 @@ bool CameraHalProxy::unsubscribe()
     return ret;
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::finishProcess()
-{
-    PLOGI("");
-    return luna_call_sync(__func__, "{}");
-}
-
 DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std::string &payload,
                                                     int timeout)
 {
@@ -712,7 +698,15 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
         PLOGE("payload parsing error!");
         return DEVICE_ERROR_JSON_PARSING;
     }
-    DEVICE_RETURN_CODE_T ret = get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_RETURNCODE)
-                                   .value_or(DEVICE_RETURN_UNDEFINED);
-    return ret;
+
+    bool ret = get_optional<bool>(jOut, CONST_PARAM_NAME_RETURNVALUE).value_or(false);
+    if (ret)
+    {
+        return DEVICE_OK;
+    }
+    else
+    {
+        return get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_ERROR_CODE)
+            .value_or(DEVICE_RETURN_UNDEFINED);
+    }
 }

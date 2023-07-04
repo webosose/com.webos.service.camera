@@ -744,20 +744,28 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
-                                                 const std::string &imagepath)
+                                                 const std::string &imagepath,
+                                                 const std::string &mode, int ncount)
 {
     PLOGI("started !\n");
 
-    informat_.nHeight       = sformat.nHeight;
-    informat_.nWidth        = sformat.nWidth;
-    informat_.eFormat       = sformat.eFormat;
-    b_iscontinuous_capture_ = true;
-    str_imagepath_          = imagepath;
+    if (mode == cstr_continuous)
+    {
+        informat_.nHeight       = sformat.nHeight;
+        informat_.nWidth        = sformat.nWidth;
+        informat_.eFormat       = sformat.eFormat;
+        b_iscontinuous_capture_ = true;
+        str_imagepath_          = imagepath;
 
-    // create thread that will continuously capture images until stopcapture received
-    tidCapture = std::thread{[this]() { this->captureThread(); }};
+        // create thread that will continuously capture images until stopcapture received
+        tidCapture = std::thread{[this]() { this->captureThread(); }};
 
-    return DEVICE_OK;
+        return DEVICE_OK;
+    }
+    else
+    {
+        return captureImage(ncount, sformat, imagepath, mode);
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::stopCapture()
@@ -807,7 +815,7 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(int ncount, CAMERA_FORMAT sform
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::createHandle(std::string deviceType)
+DEVICE_RETURN_CODE_T DeviceControl::createHal(std::string deviceType)
 {
     PLOGI("started \n");
 
@@ -824,7 +832,7 @@ DEVICE_RETURN_CODE_T DeviceControl::createHandle(std::string deviceType)
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::destroyHandle()
+DEVICE_RETURN_CODE_T DeviceControl::destroyHal()
 {
     PLOGI("started \n");
     // p_cam_hal is automatically dlclosed in the destructor of Ifeatureptr.

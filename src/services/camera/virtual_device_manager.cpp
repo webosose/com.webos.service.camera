@@ -93,7 +93,7 @@ void VirtualDeviceManager::removeHandlePriorityObj(int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
     std::string deviceType   = DeviceManager::getInstance().getDeviceType(devid);
-    DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHandle(deviceType);
+    DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHal(deviceType);
     if (DEVICE_OK != ret)
     {
         PLOGI("Failed to create handle\n");
@@ -221,7 +221,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
                 if (DEVICE_OK == ret)
                 {
                     DeviceManager::getInstance().setDeviceStatus(deviceid, FALSE);
-                    ret = objcamerahalproxy_.destroyHandle();
+                    ret = objcamerahalproxy_.destroyHal();
                     // remove the virtual device
                     removeVirtualDeviceHandle(devhandle);
                     // since the device is closed, remove the element from map
@@ -441,35 +441,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
     }
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::captureImage(int devhandle, int ncount,
-                                                        CAMERA_FORMAT sformat,
-                                                        const std::string &imagepath,
-                                                        const std::string &mode)
-{
-    PLOGI("devhandle : %d ncount : %d \n", devhandle, ncount);
-
-    // get device id for virtual device handle
-    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
-    int deviceid                = obj_devstate.ndeviceid_;
-    PLOGI("deviceid : %d \n", deviceid);
-
-    // check if there is any change in format
-    updateFormat(sformat, devhandle);
-
-    if (DeviceManager::getInstance().isDeviceOpen(deviceid))
-    {
-        // capture number of images specified by ncount
-        DEVICE_RETURN_CODE_T ret =
-            objcamerahalproxy_.captureImage(ncount, sformat, imagepath, mode);
-        return ret;
-    }
-    else
-    {
-        PLOGI("Device not open\n");
-        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
-    }
-}
-
 void VirtualDeviceManager::updateFormat(CAMERA_FORMAT &sformat, int devhandle)
 {
     PLOGI("start!");
@@ -501,8 +472,36 @@ void VirtualDeviceManager::updateFormat(CAMERA_FORMAT &sformat, int devhandle)
     }
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
-                                                        const std::string &imagepath)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::singleCapture(int devhandle, CAMERA_FORMAT sformat,
+                                                         const std::string &imagepath,
+                                                         const std::string &mode, int ncount)
+{
+    PLOGI("devhandle : %d ncount : %d \n", devhandle, ncount);
+
+    // get device id for virtual device handle
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid                = obj_devstate.ndeviceid_;
+    PLOGI("deviceid : %d \n", deviceid);
+
+    // check if there is any change in format
+    updateFormat(sformat, devhandle);
+
+    if (DeviceManager::getInstance().isDeviceOpen(deviceid))
+    {
+        // capture number of images specified by ncount
+        DEVICE_RETURN_CODE_T ret =
+            objcamerahalproxy_.startCapture(sformat, imagepath, mode, ncount);
+        return ret;
+    }
+    else
+    {
+        PLOGI("Device not open\n");
+        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+    }
+}
+
+DEVICE_RETURN_CODE_T VirtualDeviceManager::continuousCapture(int devhandle, CAMERA_FORMAT sformat,
+                                                             const std::string &imagepath)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -519,7 +518,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
         if (!bcaptureinprogress_)
         {
             // start capture
-            DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.startCapture(sformat, imagepath);
+            DEVICE_RETURN_CODE_T ret =
+                objcamerahalproxy_.startCapture(sformat, imagepath, cstr_continuous, 0);
             if (DEVICE_OK == ret)
             {
                 bcaptureinprogress_ = true;
@@ -541,6 +541,18 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
         PLOGI("Device not open\n");
         return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
     }
+}
+
+DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
+                                                        const std::string &imagepath,
+                                                        const std::string &mode, int ncount)
+{
+    PLOGI("mode : %s", mode.c_str());
+
+    if (mode == cstr_continuous)
+        return continuousCapture(devhandle, sformat, imagepath);
+    else
+        return singleCapture(devhandle, sformat, imagepath, mode, ncount);
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)

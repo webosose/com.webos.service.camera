@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const char *subsystem = "libv4l2-camera-plugin.so";
+const char *subsystem = "/usr/lib/camera/libhal-v4l2.so.1";
 const char *devname   = "/dev/video0";
 
 static unsigned int random_value = 0;

@@ -227,7 +227,7 @@ const char *startCaptureSchema = "{ \
         \"nimage\": { \
           \"type\": \"integer\", \
           \"title\": \"The Nimage Schema\", \
-          \"default\": 0 \
+          \"default\": 1 \
         } \
       } \
     } \
