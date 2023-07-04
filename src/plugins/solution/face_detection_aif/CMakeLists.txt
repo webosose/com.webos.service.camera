@@ -42,7 +42,7 @@ target_link_libraries(${PROJECT_NAME}
                       camera_common
                       ${JPEG_LDFLAGS}
                       ${OPENCV_LIBRARIES}
-                      ${EDGEAIVISION_LDFLAGS}
+                      edgeai-vision
                       ${LS2++_LDFLAGS}
                       )
 
