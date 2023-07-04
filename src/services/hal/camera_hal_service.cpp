@@ -30,7 +30,6 @@ CameraHalService::CameraHalService(const char *service_name)
     LS_CATEGORY_BEGIN(CameraHalService, "/")
     LS_CATEGORY_METHOD(createHandle)
     LS_CATEGORY_METHOD(destroyHandle)
-    LS_CATEGORY_METHOD(finishProcess)
     LS_CATEGORY_METHOD(open)
     LS_CATEGORY_METHOD(close)
     LS_CATEGORY_METHOD(startPreview)
@@ -131,26 +130,6 @@ bool CameraHalService::destroyHandle(LSMessage &message)
     j_release(&json_outobj);
 
     g_main_loop_quit(main_loop_ptr_.get());
-    return true;
-}
-
-bool CameraHalService::finishProcess(LSMessage &message)
-{
-    jvalue_ref json_outobj = jobject_create();
-
-    auto *payload = LSMessageGetPayload(&message);
-    PLOGI("payload %s", payload);
-
-    g_main_loop_quit(main_loop_ptr_.get());
-
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(true));
-
-    LS::Message request(&message);
-    request.respond(jvalue_stringify(json_outobj));
-    PLOGI("response message : %s", jvalue_stringify(json_outobj));
-
-    j_release(&json_outobj);
-
     return true;
 }
 

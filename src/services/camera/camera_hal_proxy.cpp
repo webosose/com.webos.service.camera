@@ -109,13 +109,9 @@ CameraHalProxy::~CameraHalProxy()
     try
     {
         unsubscribe();
-        if (state_ == State::CREATE)
+        if (state_ != State::DESTROY)
         {
             destroyHandle();
-        }
-        else if (state_ == State::INIT)
-        {
-            finishProcess();
         }
     }
     catch (const std::logic_error &e)
@@ -673,12 +669,6 @@ bool CameraHalProxy::unsubscribe()
     }
 
     return ret;
-}
-
-DEVICE_RETURN_CODE_T CameraHalProxy::finishProcess()
-{
-    PLOGI("");
-    return luna_call_sync(__func__, "{}");
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std::string &payload,

@@ -51,7 +51,6 @@ class CameraHalProxy
 
     DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
                                         int timeout = COMMAND_TIMEOUT);
-    DEVICE_RETURN_CODE_T finishProcess();
 
 public:
     CameraHalProxy();
