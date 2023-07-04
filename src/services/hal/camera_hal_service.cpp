@@ -453,6 +453,7 @@ bool CameraHalService::getDeviceProperty(LSMessage &message)
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getDeviceProperty(&oparams);
     if (ret == DEVICE_OK)
     {
+        jvalue_ref json_outobj_params = jobject_create();
         for (int i = 0; i < PROPERTY_END; i++)
         {
             jvalue_ref json_outqueryparams = jobject_create();
@@ -465,9 +466,10 @@ bool CameraHalService::getDeviceProperty(LSMessage &message)
                                 jnumber_create_i32(oparams.stGetData.data[i][j]));
                 }
             }
-            jobject_put(json_outobj, jstring_create(getParamString(i).c_str()),
+            jobject_put(json_outobj_params, jstring_create(getParamString(i).c_str()),
                         json_outqueryparams);
         }
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobj_params);
     }
 
     if (ret == DEVICE_OK)
@@ -499,15 +501,16 @@ bool CameraHalService::setDeviceProperty(LSMessage &message)
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
+    pbnjson::JValue parsed     = pbnjson::JDomParser::fromString(payload);
+    pbnjson::JValue obj_params = parsed[CONST_PARAM_NAME_PARAMS];
 
     // put the value into device property
     for (int i = 0; i < PROPERTY_END; i++)
     {
-        if (parsed.hasKey(getParamString(i).c_str()))
+        if (obj_params.hasKey(getParamString(i).c_str()))
         {
             inparams.stGetData.data[i][QUERY_VALUE] =
-                parsed[getParamString(i).c_str()].asNumber<int>();
+                obj_params[getParamString(i).c_str()].asNumber<int>();
         }
     }
 
