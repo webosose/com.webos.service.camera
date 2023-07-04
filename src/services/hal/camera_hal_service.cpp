@@ -80,7 +80,18 @@ bool CameraHalService::createHandle(LSMessage &message)
     pDeviceControl           = std::make_unique<DeviceControl>();
     DEVICE_RETURN_CODE_T ret = pDeviceControl->createHandle(device_type);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -100,7 +111,18 @@ bool CameraHalService::destroyHandle(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->destroyHandle();
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -121,8 +143,7 @@ bool CameraHalService::finishProcess(LSMessage &message)
 
     g_main_loop_quit(main_loop_ptr_.get());
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE),
-                jnumber_create_i32(DEVICE_OK));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(true));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -162,7 +183,18 @@ bool CameraHalService::open(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->open(devicenode, ndev_id, payload_);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -181,7 +213,18 @@ bool CameraHalService::close(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->close();
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -213,9 +256,16 @@ bool CameraHalService::startPreview(LSMessage &message)
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHMKEY), jnumber_create_i32(pkey));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
     }
-
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -242,7 +292,18 @@ bool CameraHalService::stopPreview(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->stopPreview(memtype);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -298,7 +359,18 @@ bool CameraHalService::captureImage(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->captureImage(ncount, sformat, imagepath, mode);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -342,7 +414,18 @@ bool CameraHalService::startCapture(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->startCapture(sformat, imagepath);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -361,7 +444,18 @@ bool CameraHalService::stopCapture(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->stopCapture();
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -397,7 +491,18 @@ bool CameraHalService::getDeviceProperty(LSMessage &message)
         }
     }
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -429,7 +534,18 @@ bool CameraHalService::setDeviceProperty(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->setDeviceProperty(&inparams);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -472,7 +588,18 @@ bool CameraHalService::setFormat(LSMessage &message)
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->setFormat(sformat);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -503,7 +630,18 @@ bool CameraHalService::getFormat(LSMessage &message)
                     jnumber_create_i32((int)sformat.eFormat));
     }
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -520,7 +658,18 @@ bool CameraHalService::getFd(LSMessage &message)
     jvalue_ref json_outobj = jobject_create();
 
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getFd(&shmfd);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     if (ret == DEVICE_OK)
@@ -588,9 +737,16 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
                         json_resolution_array);
         }
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION), json_resolutionobj);
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
     }
-
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -633,7 +789,18 @@ bool CameraHalService::registerClient(LSMessage &message)
     std::string outmsg;
     DEVICE_RETURN_CODE_T ret = pDeviceControl->registerClient(pid, sig, devhandle, outmsg);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_OUTMSG),
                 jstring_create(outmsg.c_str()));
 
@@ -665,7 +832,18 @@ bool CameraHalService::unregisterClient(LSMessage &message)
     std::string outmsg;
     DEVICE_RETURN_CODE_T ret = pDeviceControl->unregisterClient(pid, outmsg);
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_OUTMSG),
                 jstring_create(outmsg.c_str()));
 
@@ -694,11 +872,11 @@ bool CameraHalService::isRegisteredClient(LSMessage &message)
         devhandle = parsed[CONST_PARAM_NAME_DEVHANDLE].asNumber<int>();
     }
 
-    std::string outmsg;
     bool is_registered = pDeviceControl->isRegisteredClient(devhandle);
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_REGISTER),
                 jboolean_create(is_registered));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(true));
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -744,9 +922,16 @@ bool CameraHalService::getSupportedCameraSolutionInfo(LSMessage &message)
             jarray_append(json_solutions_array, jstring_create(solution.c_str()));
         }
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTIONS), json_solutions_array);
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
     }
-
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -776,8 +961,16 @@ bool CameraHalService::getEnabledCameraSolutionInfo(LSMessage &message)
         }
 
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SOLUTIONS), json_solutions_array);
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
     }
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -818,7 +1011,18 @@ bool CameraHalService::enableCameraSolution(LSMessage &message)
         ret = DEVICE_ERROR_PARAM_IS_MISSING;
     }
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -859,7 +1063,18 @@ bool CameraHalService::disableCameraSolution(LSMessage &message)
         ret = DEVICE_ERROR_PARAM_IS_MISSING;
     }
 
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNCODE), jnumber_create_i32(ret));
+    if (ret == DEVICE_OK)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(ret));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
