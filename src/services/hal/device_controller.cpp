@@ -415,11 +415,16 @@ void DeviceControl::previewThread()
             IPCPosixSharedMemory::getInstance().WriteHeader(h_shmposix_, frame_buffer.index,
                                                             frame_buffer.length);
 
+            IPCPosixSharedMemory::getInstance().WriteMeta(
+                h_shmposix_, (unsigned char *)meta.c_str(), meta.size() + 1);
+
             // Time stamp is currently not used actually.
             IPCPosixSharedMemory::getInstance().WriteExtra(h_shmposix_, (unsigned char *)&timestamp,
                                                            sizeof(timestamp));
 
             IPCPosixSharedMemory::getInstance().IncrementWriteIndex(h_shmposix_);
+
+            broadcast_();
         }
 
         retval = p_cam_hal->releaseBuffer(&frame_buffer);
@@ -525,7 +530,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
 
         // frame_count = 8 (see "constants.h")
         auto retshmem = IPCPosixSharedMemory::getInstance().CreateShmemory(
-            &h_shmposix_, buf_size_, frame_count, sizeof(unsigned int), pkey, &shmname);
+            &h_shmposix_, buf_size_, meta_size, frame_count, sizeof(unsigned int), pkey, &shmname);
         if (retshmem != PSHMEM_IS_OK)
         {
             PLOGE("CreatePosixShmemory error %d \n", retshmem);
@@ -610,9 +615,9 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
             if (!usrpbufs_)
             {
                 PLOGE("USERPTR buffer allocation failed \n");
-                IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
-                                                                  buf_size_, sizeof(unsigned int),
-                                                                  str_shmemname_, shmemfd_);
+                IPCPosixSharedMemory::getInstance().CloseShmemory(
+                    &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                    str_shmemname_, shmemfd_);
                 return DEVICE_ERROR_UNKNOWN;
             }
             IPCPosixSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmposix_, frame_count,
@@ -625,9 +630,9 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
                 PLOGE("setBuffer failed");
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
-                IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
-                                                                  buf_size_, sizeof(unsigned int),
-                                                                  str_shmemname_, shmemfd_);
+                IPCPosixSharedMemory::getInstance().CloseShmemory(
+                    &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                    str_shmemname_, shmemfd_);
                 return DEVICE_ERROR_UNKNOWN;
             }
 
@@ -637,9 +642,9 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
                 PLOGE("startCapture failed");
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
-                IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, frame_count,
-                                                                  buf_size_, sizeof(unsigned int),
-                                                                  str_shmemname_, shmemfd_);
+                IPCPosixSharedMemory::getInstance().CloseShmemory(
+                    &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                    str_shmemname_, shmemfd_);
                 return DEVICE_ERROR_UNKNOWN;
             }
 
@@ -720,12 +725,17 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
     }
     else // memtype == SHMEM_POSIX
     {
+        int32_t meta_size = 0;
+        if (pCameraSolution != nullptr)
+        {
+            meta_size = pCameraSolution->getMetaSizeHint();
+        }
         b_isposixruning = false;
         if (h_shmposix_ != nullptr)
         {
             auto retshmem = IPCPosixSharedMemory::getInstance().CloseShmemory(
-                &h_shmposix_, frame_count, buf_size_, sizeof(unsigned int), str_shmemname_,
-                shmemfd_);
+                &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                str_shmemname_, shmemfd_);
             if (retshmem != PSHMEM_IS_OK)
             {
                 PLOGE("ClosePosixShmemory error %d \n", retshmem);
