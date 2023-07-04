@@ -15,7 +15,6 @@
         "com.webos.camerahal.*/close",
         "com.webos.camerahal.*/startPreview",
         "com.webos.camerahal.*/stopPreview",
-        "com.webos.camerahal.*/captureImage",
         "com.webos.camerahal.*/startCapture",
         "com.webos.camerahal.*/stopCapture",
         "com.webos.camerahal.*/setDeviceProperty",

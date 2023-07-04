@@ -492,17 +492,13 @@ bool CameraService::startCapture(LSMessage &message)
         else
         {
             PLOGI("ndevhandle %d\n", ndevhandle);
-            PLOGI("nImage : %d\n", obj_startcapture.getnImage());
             PLOGI("path: %s\n", obj_startcapture.getImagePath().c_str());
+            PLOGI("mode: %s\n", obj_startcapture.strGetCaptureMode().c_str());
+            PLOGI("nImage : %d\n", obj_startcapture.getnImage());
 
-            // capture image here
-            if (0 != obj_startcapture.getnImage())
-                err_id = CommandManager::getInstance().captureImage(
-                    ndevhandle, obj_startcapture.getnImage(), obj_startcapture.rGetParams(),
-                    obj_startcapture.getImagePath());
-            else
-                err_id = CommandManager::getInstance().startCapture(
-                    ndevhandle, obj_startcapture.rGetParams(), obj_startcapture.getImagePath());
+            err_id = CommandManager::getInstance().startCapture(
+                ndevhandle, obj_startcapture.rGetParams(), obj_startcapture.getImagePath(),
+                obj_startcapture.strGetCaptureMode(), obj_startcapture.getnImage());
         }
         if (DEVICE_OK != err_id)
         {

@@ -185,28 +185,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
-                                                  const std::string &imagepath)
-{
-    PLOGI("");
-
-    json jin;
-    jin[CONST_PARAM_NAME_FORMAT]     = sformat.eFormat;
-    jin[CONST_PARAM_NAME_WIDTH]      = sformat.nWidth;
-    jin[CONST_PARAM_NAME_HEIGHT]     = sformat.nHeight;
-    jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
-
-    return luna_call_sync(__func__, to_string(jin));
-}
-
-DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()
-{
-    PLOGI("");
-    return luna_call_sync(__func__, "{}");
-}
-
-DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sformat,
                                                   const std::string &imagepath,
-                                                  const std::string &mode)
+                                                  const std::string &mode, int ncount)
 {
     PLOGI("");
 
@@ -219,6 +199,12 @@ DEVICE_RETURN_CODE_T CameraHalProxy::captureImage(int ncount, CAMERA_FORMAT sfor
     jin[CONST_PARAM_NAME_MODE]       = mode;
 
     return luna_call_sync(__func__, to_string(jin));
+}
+
+DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()
+{
+    PLOGI("");
+    return luna_call_sync(__func__, "{}");
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::createHal(std::string subsystem)

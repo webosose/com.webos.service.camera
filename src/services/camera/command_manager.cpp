@@ -234,7 +234,8 @@ DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle)
 }
 
 DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
-                                                  const std::string &imagepath)
+                                                  const std::string &imagepath,
+                                                  const std::string &mode, int ncount)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -243,8 +244,10 @@ DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT s
 
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
-        // start capture
-        return ptr->startCapture(devhandle, sformat, imagepath);
+    {
+        // capture image
+        return ptr->startCapture(devhandle, sformat, imagepath, mode, ncount);
+    }
     else
         return DEVICE_ERROR_UNKNOWN;
 }
@@ -260,25 +263,6 @@ DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle)
     if (nullptr != ptr)
         // stop capture
         return ptr->stopCapture(devhandle);
-    else
-        return DEVICE_ERROR_UNKNOWN;
-}
-
-DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAMERA_FORMAT sformat,
-                                                  const std::string &imagepath)
-{
-    PLOGI("devhandle : %d\n", devhandle);
-
-    if (n_invalid_id == devhandle)
-        return DEVICE_ERROR_WRONG_PARAM;
-
-    VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
-    if (nullptr != ptr)
-    {
-        std::string mode = (ncount == 1) ? cstr_oneshot : cstr_burst;
-        // capture image
-        return ptr->captureImage(devhandle, ncount, sformat, imagepath, mode);
-    }
     else
         return DEVICE_ERROR_UNKNOWN;
 }

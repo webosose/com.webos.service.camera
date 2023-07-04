@@ -744,20 +744,28 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
-                                                 const std::string &imagepath)
+                                                 const std::string &imagepath,
+                                                 const std::string &mode, int ncount)
 {
     PLOGI("started !\n");
 
-    informat_.nHeight       = sformat.nHeight;
-    informat_.nWidth        = sformat.nWidth;
-    informat_.eFormat       = sformat.eFormat;
-    b_iscontinuous_capture_ = true;
-    str_imagepath_          = imagepath;
+    if (mode == cstr_continuous)
+    {
+        informat_.nHeight       = sformat.nHeight;
+        informat_.nWidth        = sformat.nWidth;
+        informat_.eFormat       = sformat.eFormat;
+        b_iscontinuous_capture_ = true;
+        str_imagepath_          = imagepath;
 
-    // create thread that will continuously capture images until stopcapture received
-    tidCapture = std::thread{[this]() { this->captureThread(); }};
+        // create thread that will continuously capture images until stopcapture received
+        tidCapture = std::thread{[this]() { this->captureThread(); }};
 
-    return DEVICE_OK;
+        return DEVICE_OK;
+    }
+    else
+    {
+        return captureImage(ncount, sformat, imagepath, mode);
+    }
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::stopCapture()
