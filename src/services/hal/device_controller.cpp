@@ -239,52 +239,45 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(CAMERA_FORMAT sformat)
 
 DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(int ncount) const
 {
-    int fd = halFd_;
     int retval;
-    struct pollfd poll_set[]
-    {
-        {.fd = fd, .events = POLLIN},
-    };
-
-    int timeout           = 10000;
     buffer_t frame_buffer = {0};
 
     for (int i = 1; i <= ncount; i++)
     {
-        if ((retval = poll(poll_set, 1, timeout)) > 0)
+        /** TODO:
+         * We should use buffers in shared memory
+         * instead of direct access to the camera device.
+         */
+        retval = p_cam_hal->getBuffer(&frame_buffer);
+        if (CAMERA_ERROR_NONE != retval)
         {
-            retval = p_cam_hal->getBuffer(&frame_buffer);
-            if (CAMERA_ERROR_NONE != retval)
-            {
-                PLOGE("getBuffer failed");
-                return DEVICE_ERROR_UNKNOWN;
-            }
-            PLOGI("buffer start : %p \n", frame_buffer.start);
-            PLOGI("buffer length : %lu \n", frame_buffer.length);
+            PLOGE("getBuffer failed");
+            return DEVICE_ERROR_UNKNOWN;
+        }
+        PLOGI("buffer start : %p \n", frame_buffer.start);
+        PLOGI("buffer length : %lu \n", frame_buffer.length);
 
-            if (frame_buffer.start == nullptr)
-            {
-                PLOGE("no valid memory on frame buffer ptr");
-                return DEVICE_ERROR_OUT_OF_MEMORY;
-            }
+        if (frame_buffer.start == nullptr)
+        {
+            PLOGE("no valid memory on frame buffer ptr");
+            return DEVICE_ERROR_OUT_OF_MEMORY;
+        }
 
-            //[Camera Solution Manager] processing for capture
-            if (pCameraSolution != nullptr)
-            {
-                pCameraSolution->processCapture(frame_buffer);
-            }
+        //[Camera Solution Manager] processing for capture
+        if (pCameraSolution != nullptr)
+        {
+            pCameraSolution->processCapture(frame_buffer);
+        }
 
-            // write captured image to /tmp only if startCapture request is made
-            if (DEVICE_ERROR_CANNOT_WRITE ==
-                writeImageToFile(frame_buffer.start, frame_buffer.length))
-                return DEVICE_ERROR_CANNOT_WRITE;
+        // write captured image to /tmp only if startCapture request is made
+        if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
+            return DEVICE_ERROR_CANNOT_WRITE;
 
-            retval = p_cam_hal->releaseBuffer(&frame_buffer);
-            if (retval != CAMERA_ERROR_NONE)
-            {
-                PLOGE("releaseBuffer failed");
-                return DEVICE_ERROR_UNKNOWN;
-            }
+        retval = p_cam_hal->releaseBuffer(&frame_buffer);
+        if (retval != CAMERA_ERROR_NONE)
+        {
+            PLOGE("releaseBuffer failed");
+            return DEVICE_ERROR_UNKNOWN;
         }
     }
 
