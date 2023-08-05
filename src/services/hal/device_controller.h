@@ -45,7 +45,7 @@ class DeviceControl
 private:
     DEVICE_RETURN_CODE_T writeImageToFile(const void *, int) const;
     DEVICE_RETURN_CODE_T checkFormat(CAMERA_FORMAT);
-    DEVICE_RETURN_CODE_T pollForCapturedImage(int) const;
+    DEVICE_RETURN_CODE_T saveShmemory(int ncount = 0) const;
     DEVICE_RETURN_CODE_T captureImage(int, CAMERA_FORMAT, const std::string &, const std::string &);
     static camera_pixel_format_t getPixelFormat(camera_format_t);
     static camera_format_t getCameraFormat(camera_pixel_format_t);

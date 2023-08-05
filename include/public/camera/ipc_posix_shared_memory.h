@@ -52,6 +52,8 @@ public:
     PSHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char *, size_t);
     PSHMEM_STATUS_T IncrementWriteIndex(SHMEM_HANDLE);
     PSHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *, int, int, int, int, std::string, int);
+    PSHMEM_STATUS_T ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize);
+    int GetWriteIndex(SHMEM_HANDLE);
 
     IPCPosixSharedMemory(IPCPosixSharedMemory const &) = delete;
     void operator=(IPCPosixSharedMemory const &)       = delete;

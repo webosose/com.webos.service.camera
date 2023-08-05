@@ -26,7 +26,6 @@
 #include <json_utils.h>
 #include <nlohmann/json.hpp>
 #include <pbnjson.h>
-#include <poll.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <system_error>
@@ -277,23 +276,57 @@ DEVICE_RETURN_CODE_T DeviceControl::checkFormat(CAMERA_FORMAT sformat)
     return ret;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(int ncount) const
+DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 {
-    int retval;
+    SHMEM_HANDLE h_shm = b_isposixruning ? h_shmposix_ : h_shmsystem_;
+
+    if (h_shm == nullptr)
+    {
+        PLOGE("shared memory handle is null");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
     buffer_t frame_buffer = {0};
+    int read_index        = -1;
+    int write_index       = -1;
+
+    const unsigned int sleep_us       = 10000; // 10ms
+    const unsigned int max_iterations = 1000;
 
     for (int i = 1; i <= ncount; i++)
     {
-        /** TODO:
-         * We should use buffers in shared memory
-         * instead of direct access to the camera device.
-         */
-        retval = p_cam_hal->getBuffer(&frame_buffer);
-        if (CAMERA_ERROR_NONE != retval)
+        unsigned int cnt = 0;
+        while (cnt < max_iterations) // 10s
         {
-            PLOGE("getBuffer failed");
-            return DEVICE_ERROR_UNKNOWN;
+            write_index = b_isposixruning ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm)
+                                          : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
+            if (read_index != write_index)
+            {
+                break;
+            }
+            usleep(sleep_us);
+            cnt++;
         }
+        if (read_index == write_index)
+        {
+            PLOGE("same write_index=%d", write_index);
+        }
+        read_index = write_index;
+
+        int len                    = 0;
+        unsigned char *sh_mem_addr = NULL;
+        if (b_isposixruning)
+        {
+            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm, &sh_mem_addr, &len);
+        }
+        else
+        {
+            IPCSharedMemory::getInstance().ReadShmem(h_shm, &sh_mem_addr, &len);
+        }
+
+        frame_buffer.start  = sh_mem_addr;
+        frame_buffer.length = (len > 0) ? len : 0;
+
         PLOGI("buffer start : %p \n", frame_buffer.start);
         PLOGI("buffer length : %lu \n", frame_buffer.length);
 
@@ -312,13 +345,6 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(int ncount) const
         // write captured image to /tmp only if startCapture request is made
         if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
             return DEVICE_ERROR_CANNOT_WRITE;
-
-        retval = p_cam_hal->releaseBuffer(&frame_buffer);
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("releaseBuffer failed");
-            return DEVICE_ERROR_UNKNOWN;
-        }
     }
 
     if (cstr_burst == str_capturemode_)
@@ -843,11 +869,11 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(int ncount, CAMERA_FORMAT sform
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    // poll for data on buffers and save captured image
-    auto retval = pollForCapturedImage(ncount);
+    // Read shared memory and save to a file
+    auto retval = saveShmemory(ncount);
     if (retval != DEVICE_OK)
     {
-        PLOGE("pollForCapturedImage failed \n");
+        PLOGE("saveShmemory failed \n");
         return retval;
     }
 
