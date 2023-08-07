@@ -38,10 +38,9 @@ public:
     CameraSolutionService &operator=(CameraSolutionService const &) = delete;
     CameraSolutionService &operator=(CameraSolutionService &&)      = delete;
 
-    bool createSolution(LSMessage &message);
-    bool getMetaSizeHint(LSMessage &message);
-    bool initialize(LSMessage &message);
-    bool setEnableValue(LSMessage &message);
+    bool create(LSMessage &message);
+    bool init(LSMessage &message);
+    bool enable(LSMessage &message);
     bool release(LSMessage &message);
     bool subscribe(LSMessage &);
 

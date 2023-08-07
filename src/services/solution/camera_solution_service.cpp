@@ -17,6 +17,7 @@
 #include "camera_solution_service.h"
 #include "camera_solution_async.h"
 #include "camera_types.h"
+#include "error_manager.h"
 #include <pbnjson.hpp>
 #include <string>
 
@@ -26,10 +27,9 @@ CameraSolutionService::CameraSolutionService(const char *service_name)
     PLOGI("Start : %s", service_name);
 
     LS_CATEGORY_BEGIN(CameraSolutionService, "/")
-    LS_CATEGORY_METHOD(createSolution)
-    LS_CATEGORY_METHOD(getMetaSizeHint)
-    LS_CATEGORY_METHOD(initialize)
-    LS_CATEGORY_METHOD(setEnableValue)
+    LS_CATEGORY_METHOD(create)
+    LS_CATEGORY_METHOD(init)
+    LS_CATEGORY_METHOD(enable)
     LS_CATEGORY_METHOD(release)
     LS_CATEGORY_METHOD(subscribe)
     LS_CATEGORY_END;
@@ -41,9 +41,10 @@ CameraSolutionService::CameraSolutionService(const char *service_name)
     g_main_loop_run(main_loop_ptr_.get());
 }
 
-bool CameraSolutionService::createSolution(LSMessage &message)
+bool CameraSolutionService::create(LSMessage &message)
 {
-    bool ret = false;
+    bool ret           = false;
+    ErrorCode err_code = ERROR_CODE_END;
     std::string solutionName;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
@@ -53,7 +54,11 @@ bool CameraSolutionService::createSolution(LSMessage &message)
     if (parsed.hasKey(CONST_PARAM_NAME_NAME))
     {
         solutionName = parsed[CONST_PARAM_NAME_NAME].asString();
-        if (!solutionName.empty())
+        if (solutionName.empty())
+        {
+            err_code = SOLLUTION_NAME_IS_EMPTY;
+        }
+        else
         {
             pFeature_ = pluginFactory_.createFeature(solutionName.c_str());
             if (pFeature_)
@@ -61,15 +66,34 @@ bool CameraSolutionService::createSolution(LSMessage &message)
                 void *pInterface = nullptr;
                 pFeature_->queryInterface(solutionName.c_str(), &pInterface);
                 pSolution_ = static_cast<ISolution *>(pInterface);
+                if (pSolution_)
+                {
+                    ret = true;
+                }
+                else
+                {
+                    err_code = FAIL_TO_CREATE_SOLUTION;
+                }
             }
-            if (pSolution_)
+            else
             {
-                ret = true;
+                err_code = FAIL_TO_OPEN_PLUGIN;
             }
         }
     }
+    else
+    {
+        err_code = SOLLUTION_NAME_IS_REQUIRED;
+    }
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
+    if (ret == false)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(err_code));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_TEXT),
+                    jstring_create(ErrorManager::GetErrorText(err_code).c_str()));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -79,28 +103,7 @@ bool CameraSolutionService::createSolution(LSMessage &message)
     return ret;
 }
 
-bool CameraSolutionService::getMetaSizeHint(LSMessage &message)
-{
-    bool ret               = true;
-    jvalue_ref json_outobj = jobject_create();
-    auto *payload          = LSMessageGetPayload(&message);
-    PLOGI("payload %s", payload);
-
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
-    if (pSolution_)
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_METASIZE_HINT),
-                    jnumber_create_i32(pSolution_->getMetaSizeHint()));
-
-    LS::Message request(&message);
-    request.respond(jvalue_stringify(json_outobj));
-
-    j_release(&json_outobj);
-
-    return ret;
-}
-
-bool CameraSolutionService::initialize(LSMessage &message)
+bool CameraSolutionService::init(LSMessage &message)
 {
     bool ret = true;
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
@@ -145,8 +148,6 @@ bool CameraSolutionService::initialize(LSMessage &message)
 
     if (pSolution_)
         pSolution_->initialize(&streamFormat_, shmkey, this->get());
-    else
-        ret = false;
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 
@@ -158,9 +159,10 @@ bool CameraSolutionService::initialize(LSMessage &message)
     return ret;
 }
 
-bool CameraSolutionService::setEnableValue(LSMessage &message)
+bool CameraSolutionService::enable(LSMessage &message)
 {
-    bool ret               = true;
+    bool ret               = false;
+    ErrorCode err_code     = ERROR_CODE_END;
     bool enableValue       = false;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
@@ -171,12 +173,26 @@ bool CameraSolutionService::setEnableValue(LSMessage &message)
     if (parsed.hasKey(CONST_PARAM_NAME_ENABLE))
     {
         enableValue = parsed[CONST_PARAM_NAME_ENABLE].asBool();
+
+        if (pSolution_)
+        {
+            pSolution_->setEnableValue(enableValue);
+            ret = true;
+        }
+    }
+    else
+    {
+        err_code = ENABLE_VALUE_IS_REQUIRED;
     }
 
-    if (pSolution_)
-        pSolution_->setEnableValue(enableValue);
-
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
+    if (ret == false)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(err_code));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_TEXT),
+                    jstring_create(ErrorManager::GetErrorText(err_code).c_str()));
+    }
 
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
@@ -219,6 +235,15 @@ bool CameraSolutionService::subscribe(LSMessage &message)
 
     jvalue_ref json_outobj = jobject_create();
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED), jboolean_create(true));
+    if (ret == false)
+    {
+        ErrorCode err_code = FAIL_TO_SUBSCRIBE;
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(err_code));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_TEXT),
+                    jstring_create(ErrorManager::GetErrorText(err_code).c_str()));
+    }
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
 
