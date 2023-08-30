@@ -171,17 +171,17 @@ bool CameraService::open(LSMessage &message)
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
     std::string app_id = open.getAppId();
+    PLOGI("appId : %s", app_id.c_str());
     // camera id & appId validation check
-    if (cstr_invaliddeviceid == open.getCameraId() ||
-        (pAddon_ && pAddon_->hasImplementation() && app_id.empty()))
+    if (cstr_invaliddeviceid == open.getCameraId())
     {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
+        PLOGE("DEVICE_ERROR_JSON_PARSING");
         err_id = DEVICE_ERROR_JSON_PARSING;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
-    else if (pAddon_ && !pAddon_->isAppPermission(app_id))
+    else if (pAddon_ && pAddon_->hasImplementation() && !pAddon_->isAppPermission(app_id))
     {
-        PLOGI("CameraService::App Permission Fail\n");
+        PLOGE("CameraService::App Permission Fail\n");
         err_id = DEVICE_ERROR_APP_PERMISSION;
         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
     }
@@ -191,17 +191,13 @@ bool CameraService::open(LSMessage &message)
         PLOGI("device Id %d\n", ndev_id);
         std::string app_priority = open.getAppPriority();
         PLOGI("priority : %s \n", app_priority.c_str());
-        if (pAddon_ && pAddon_->hasImplementation())
-        {
-            PLOGI("appId : %s", app_id.c_str());
-        }
         int ndevice_handle = n_invalid_id;
 
         // open camera device and save fd
         err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_id, app_priority);
         if (DEVICE_OK != err_id)
         {
-            PLOGD("err_id != DEVICE_OK\n");
+            PLOGE("err_id != DEVICE_OK\n");
             open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
         }
         else
@@ -232,7 +228,7 @@ bool CameraService::open(LSMessage &message)
                     }
                     else // opened camera itself is valid, but close policy is applied.
                     {
-                        PLOGI("%s", outmsg.c_str());
+                        PLOGE("%s", outmsg.c_str());
                         err_id = DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL;
                         CommandManager::getInstance().close(ndevice_handle);
                         open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
