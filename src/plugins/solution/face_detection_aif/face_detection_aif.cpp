@@ -16,6 +16,7 @@
 #define LOG_CONTEXT "solution.FaceDetection"
 #define LOG_TAG "FaceDetectionAIF"
 #include "face_detection_aif.hpp"
+#include "camera_constants.h"
 #include "camera_log.h"
 #include "plugin.hpp"
 #include <cstdio>
@@ -165,8 +166,10 @@ void FaceDetectionAIF::processing(void)
                 }
             }
         }
-
-        std::string strOutput = json{{"faces", joutfaces}}.dump();
+        json jout;
+        jout["faces"]                      = joutfaces;
+        jout[CONST_PARAM_NAME_RETURNVALUE] = true;
+        std::string strOutput              = jout.dump();
 
         if (pEvent_ && getMetaSizeHint() > 0)
             (pEvent_.load())->onDone(strOutput.c_str());

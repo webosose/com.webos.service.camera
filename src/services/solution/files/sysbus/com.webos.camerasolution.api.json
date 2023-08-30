@@ -1,11 +1,8 @@
 {
-    "camerasolution.query": [
-        "com.webos.camerasolution.*/getMetaSizeHint"
-    ],
     "camerasolution.operation":[
-        "com.webos.camerasolution.*/createSolution",
-        "com.webos.camerasolution.*/initialize",
-        "com.webos.camerasolution.*/setEnableValue",
+        "com.webos.camerasolution.*/create",
+        "com.webos.camerasolution.*/init",
+        "com.webos.camerasolution.*/enable",
         "com.webos.camerasolution.*/release",
         "com.webos.camerasolution.*/subscribe"
     ]

@@ -60,8 +60,8 @@ class CameraSolutionProxy
 
     bool startProcess();
     bool stopProcess();
-    bool createSolution();
-    bool initSolution();
+    bool create();
+    bool init();
     bool subscribe();
     bool unsubscribe();
     bool luna_call_sync(const char *func, const std::string &payload);

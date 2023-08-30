@@ -40,6 +40,7 @@ include_directories(${CMAKE_SOURCE_DIR}/src/services/solution)
 # Camera Solution Service
 set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/solution/camera_solution_service.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/solution/error_manager.cpp
     )
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
