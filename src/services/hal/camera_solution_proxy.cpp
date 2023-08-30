@@ -141,18 +141,18 @@ void CameraSolutionProxy::processing(bool enableValue)
     {
         startProcess();
 
-        createSolution();
-        initSolution();
+        create();
+        init();
 
-        luna_call_sync("setEnableValue", to_string(jin));
+        luna_call_sync("enable", to_string(jin));
 
         subscribe();
     }
     else
     {
-        luna_call_sync("setEnableValue", to_string(jin));
+        luna_call_sync("enable", to_string(jin));
 
-        // Call this after setEnableValue false to get postProcessing callback
+        // Call this after enable false to get postProcessing callback
         unsubscribe();
 
         luna_call_sync("release", "{}");
@@ -233,7 +233,7 @@ bool CameraSolutionProxy::stopProcess()
     return true;
 }
 
-bool CameraSolutionProxy::createSolution()
+bool CameraSolutionProxy::create()
 {
     PLOGI("");
 
@@ -244,7 +244,7 @@ bool CameraSolutionProxy::createSolution()
     return luna_call_sync(__func__, to_string(jin));
 }
 
-bool CameraSolutionProxy::initSolution()
+bool CameraSolutionProxy::init()
 {
     PLOGI("");
 
@@ -257,7 +257,7 @@ bool CameraSolutionProxy::initSolution()
     jin[CONST_PARAM_NAME_BUFFERSIZE] = streamFormat_.buffer_size;
     jin[CONST_PARAM_NAME_SHMKEY]     = shmKey_;
 
-    return luna_call_sync("initialize", to_string(jin));
+    return luna_call_sync(__func__, to_string(jin));
 }
 
 bool CameraSolutionProxy::subscribe()
