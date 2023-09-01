@@ -69,6 +69,10 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
   if (it == virtualdevmgrobj_map_.end())
   {
     obj.ptr = new VirtualDeviceManager;
+    if (obj.ptr)
+    {
+      obj.ptr->setDisplayControl(&display_control_);
+    }
     PMLOG_INFO(CONST_MODULE_CM, "ptr : %p \n", obj.ptr);
   }
   else
@@ -203,8 +207,8 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey,
-                                                  LSHandle *sh, const char *subskey)
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, std::string disptype,
+                                                  int *pkey, LSHandle *sh, const char *subskey)
 {
   PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
 
@@ -214,7 +218,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string mem
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start preview
-    return ptr->startPreview(devhandle, memtype, pkey, sh, subskey);
+    return ptr->startPreview(devhandle, memtype, disptype, pkey, sh, subskey);
   else
     return DEVICE_ERROR_UNKNOWN;
 }

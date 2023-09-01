@@ -38,6 +38,7 @@ class CommandManager
 {
 private:
   std::multimap<std::string, Device> virtualdevmgrobj_map_;
+  PreviewDisplayControl display_control_;
 
   VirtualDeviceManager *getVirtualDeviceMgrObj(int);
   void removeVirtualDevMgrObj(int);
@@ -58,7 +59,7 @@ public:
   DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
-  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle*, const char*);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, std::string, int *, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(int);

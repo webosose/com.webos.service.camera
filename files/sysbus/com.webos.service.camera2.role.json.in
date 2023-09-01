@@ -2,13 +2,19 @@
     "exeName":"@WEBOS_INSTALL_SBINDIR@/com.webos.service.camera2",
     "type": "regular",
     "trustLevel": "oem",
-    "allowedNames": ["com.webos.service.camera2"],
+    "allowedNames": ["com.webos.service.camera2", "com.webos.service.camera2.display"],
     "permissions": [
         {
             "service": "com.webos.service.camera2",
             "outbound": [
                 "com.webos.service.pdm",
                 "com.webos.notification"
+            ]
+        },
+        {
+            "service": "com.webos.service.camera2.display",
+            "outbound": [
+                "com.webos.media"
             ]
         }
     ]

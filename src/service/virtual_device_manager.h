@@ -22,6 +22,7 @@
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
 #include "device_controller.h"
+#include "preview_display_control.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -54,6 +55,10 @@ private:
   // for multi obj
   DeviceControl objdevicecontrol_;
 
+  // for preview display
+  std::map<int, std::string> previewdisplay_map_;
+  PreviewDisplayControl *display_control_;
+
   bool checkDeviceOpen(int);
   bool checkAppPriorityMap();
   int getVirtualDeviceHandle(int);
@@ -63,11 +68,14 @@ private:
   void updateFormat(CAMERA_FORMAT &,int);
   DEVICE_RETURN_CODE_T openDevice(int, int *);
 
+  void startPreviewDisplay(int, std::string, std::string, int);
+  void stopPreviewDisplay(int);
+
 public:
   VirtualDeviceManager();
   DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle*, const char*);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, std::string, int *, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&,
                                     const std::string&);
@@ -89,6 +97,8 @@ public:
   bool isRegisteredClient(int);
 
   void requestPreviewCancel();
+
+  void setDisplayControl(PreviewDisplayControl*);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

@@ -21,6 +21,7 @@
 #include "virtual_device_manager.h"
 #include "constants.h"
 #include "device_manager.h"
+#include "command_manager.h"
 
 #include <fstream>
 #include <algorithm>
@@ -30,7 +31,8 @@
 
 VirtualDeviceManager::VirtualDeviceManager()
     : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_(),
-      bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), shmusrptrkey_(0), sformat_()
+      bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), shmusrptrkey_(0), sformat_(),
+      display_control_(nullptr)
 {
 }
 
@@ -272,6 +274,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::string memtype,
+                                                        std::string windowid,
                                                         int *pkey, LSHandle *sh,
                                                         const char *subskey)
 {
@@ -315,6 +318,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                     shmempreview_count_[SHMEM_POSIX]++;
                     poshmkey_ = *pkey;
                 }
+
+                if (!windowid.empty())
+                {
+                    startPreviewDisplay(devhandle, windowid, memtype, *pkey);
+                }
+
                 // add to vector the app calling startPreview
                 npreviewhandle_.push_back(devhandle);
                 // update state of device to preview
@@ -330,6 +339,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 *pkey = shmkey_;
             else
                 *pkey = poshmkey_;
+
+            if (!windowid.empty())
+            {
+                startPreviewDisplay(devhandle, windowid, memtype, *pkey);
+            }
+
             // add to vector the app calling startPreview
             npreviewhandle_.push_back(devhandle);
             // update state of device to preview
@@ -385,6 +400,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
           std::find(npreviewhandle_.begin(), npreviewhandle_.end(), devhandle);
       if (position != npreviewhandle_.end())
       {
+        stopPreviewDisplay(devhandle);
         npreviewhandle_.erase(position);
         // update state of device to open
         obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
@@ -406,6 +422,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
           std::find(npreviewhandle_.begin(), npreviewhandle_.end(), devhandle);
       if (position != npreviewhandle_.end())
       {
+        stopPreviewDisplay(devhandle);
         // last handle to call stopPreview
         void *handle;
         DeviceManager::getInstance().getDeviceHandle(&deviceid, &handle);
@@ -897,4 +914,48 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
     PMLOG_INFO(CONST_MODULE_VDM, "Device not open\n");
     return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
   }
+}
+
+void VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
+                                               std::string mem_type, int key)
+{
+    if (display_control_)
+    {
+        if (!window_id.empty())
+        {
+            std::string media_id = "";
+            std::string camera_id = "camera"
+                                  + std::to_string(CommandManager::getInstance().getCameraId(handle));
+            CAMERA_FORMAT camera_format;
+            getFormat(handle, &camera_format);
+            media_id = display_control_->load(camera_id, window_id, camera_format, mem_type, key, handle);
+            if (!media_id.empty())
+            {
+                display_control_->play(media_id);
+                previewdisplay_map_[handle] = media_id;
+            }
+        }
+    }
+}
+
+void VirtualDeviceManager::stopPreviewDisplay(int handle)
+{
+    if (display_control_)
+    {
+        std::map<int, std::string>::iterator it;
+        for (it = previewdisplay_map_.begin(); it != previewdisplay_map_.end(); ++it)
+        {
+            if (handle == it->first)
+            {
+                display_control_->unload(it->second);
+                previewdisplay_map_.erase(it);
+                return;
+            }
+        }
+    }
+}
+
+void VirtualDeviceManager::setDisplayControl(PreviewDisplayControl *dpy_control)
+{
+    display_control_ = dpy_control;
 }

@@ -189,11 +189,17 @@ void StartPreviewMethod::getStartPreviewObject(const char *input, const char *sc
         jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TYPE)));
     raw_buffer source =
         jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
+    raw_buffer display =
+        jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_WINDOW_ID)));
 
     camera_memory_source_t r_cams_source;
     r_cams_source.str_memorysource = (source.m_str) ? source.m_str : "";
     r_cams_source.str_memorytype = (type.m_str) ? type.m_str : "";
-    setParams(r_cams_source);
+    setMemParams(r_cams_source);
+
+    camera_display_source_t r_dpy_source;
+    r_dpy_source.str_window_id = (display.m_str) ? display.m_str : "";
+    setDpyParams(r_dpy_source);
   }
   else
   {

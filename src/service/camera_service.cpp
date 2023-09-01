@@ -324,6 +324,7 @@ bool CameraService::startPreview(LSMessage &message)
     PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
     camera_memory_source_t memType;
+    camera_display_source_t dispType;
 
     StartPreviewMethod obj_startpreview;
     obj_startpreview.getStartPreviewObject(payload, startPreviewSchema);
@@ -341,13 +342,14 @@ bool CameraService::startPreview(LSMessage &message)
         // start preview here
         int key = 0;
 
-        memType = obj_startpreview.rGetParams();
+        memType = obj_startpreview.rGetMemParams();
+        dispType = obj_startpreview.rGetDpyParams();
         if (memType.str_memorytype == kMemtypeShmem ||
             memType.str_memorytype == kMemtypeShmemMmap ||
             memType.str_memorytype == kMemtypePosixshm)
         {
             err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype,
-                                                                &key, this->get(),
+                                                                dispType.str_window_id, &key, this->get(),
                                                                 CONST_EVENT_KEY_PREVIEW_FAULT);
 
             if (DEVICE_OK != err_id)

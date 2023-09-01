@@ -261,6 +261,11 @@ const char *startPreviewSchema = "{ \
           \"pattern\": \"^(.*)$\" \
         } \
       } \
+    }, \
+    \"windowId\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Window Id Schema\", \
+      \"default\": \"\" \
     } \
   } \
 }";

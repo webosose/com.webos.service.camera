@@ -216,7 +216,10 @@ typedef struct
   std::string str_memorysource;
 } camera_memory_source_t;
 
-
+typedef struct
+{
+  std::string str_window_id;
+} camera_display_source_t;
 
 static inline PmLogContext getCameraLunaPmLogContext()
 {
