@@ -18,7 +18,7 @@ project(camera_solution CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(SRC 
+set(SRC
     camera_solution.cpp
     camera_solution_async.cpp)
 
@@ -27,6 +27,7 @@ add_library(${PROJECT_NAME} SHARED ${SRC})
 target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       ${PBNJSON_CPP_LDFLAGS}
+                      camera_common
                       )
 
 set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
