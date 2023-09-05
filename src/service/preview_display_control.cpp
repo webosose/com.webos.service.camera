@@ -11,7 +11,7 @@ const char *display_client_service_name = "com.webos.service.camera2.display";
 static pbnjson::JValue convertStringToJson(const char *rawData)
 {
     pbnjson::JInput input(rawData);
-    pbnjson::JSchema schema = pbnjson::JSchemaFragment("{}");
+    pbnjson::JSchema schema = pbnjson::JSchema::AllSchema();
     pbnjson::JDomParser parser;
     if (!parser.parse(input, schema))
     {
@@ -204,6 +204,8 @@ void PreviewDisplayControl::unload(std::string mediaId)
 {
     PMLOG_INFO(CONST_MODULE_DPY, "unload() starts.");
 
+    getPid(mediaId);
+
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
     if (!call("luna://com.webos.media/unload", payload, cbHandleResponseMsg))
     {
@@ -219,4 +221,29 @@ void PreviewDisplayControl::unload(std::string mediaId)
 bool PreviewDisplayControl::getControlStatus()
 {
     return bResult_;
+}
+
+int PreviewDisplayControl::getPid(std::string mediaId)
+{
+    PMLOG_INFO(CONST_MODULE_DPY, "mediaId: %s", mediaId.c_str());
+    int pid = -1;
+    std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
+    if (!call("luna://com.webos.media/getActivePipelines", payload, cbHandleResponseMsg))
+    {
+        bResult_ = false;
+        return pid;
+    }
+
+    pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
+    for (ssize_t i = 0; i < parsed.arraySize(); i++)
+    {
+        if (parsed[i]["mediaId"].asString() == mediaId)
+        {
+            pid = parsed[i]["pid"].asNumber<int32_t>();
+            break;
+        }
+    }
+
+    PMLOG_INFO(CONST_MODULE_DPY, "g-camera-pipeline PID = %d", pid);
+    return pid;
 }

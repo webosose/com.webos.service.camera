@@ -19,6 +19,7 @@ private:
     void acquireLSConnection();
     void releaseLSConnection();
     bool call(std::string uri, std::string payload, bool (*cb)(LSHandle*, LSMessage*, void*));
+    int getPid(std::string mediaId);
 
     static bool cbHandleResponseMsg(LSHandle*, LSMessage*, void*);
 

@@ -4,7 +4,8 @@
         "notifications"
     ],
     "com.webos.service.camera2.display": [
-        "media.operation"
+        "media.operation",
+        "media.query"
     ]
 }
 
