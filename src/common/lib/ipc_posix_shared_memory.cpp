@@ -184,7 +184,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
         }
         else
         {
-            DEBUG_PRINT("Create failed and error is %s\n", std::strerror(errno));
+            DEBUG_PRINT("Create failed and error is %s\n", strerror(errno));
             free(*phShmem);
             *phShmem = nullptr;
             return PSHMEM_FAILED;
@@ -299,7 +299,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
     *pShmemBuffer->write_index = -1;
     *pShmemBuffer->read_index  = -1;
 
-    DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
+    DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %zd, unit_num = %d\n", *pShmemBuffer->unit_size,
                 SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
 
     return PSHMEM_IS_OK;
@@ -420,7 +420,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index
     }
     if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
     {
-        DEBUG_PRINT("size error(%lu > %lu)!\n", bytesWritten, *shmem_buffer->unit_size);
+        DEBUG_PRINT("size error(%zu > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
         return PSHMEM_ERROR_RANGE_OUT;
     }
 
@@ -463,7 +463,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned c
     }
     if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size))
     {
-        DEBUG_PRINT("size error(%lu > %lu)!\n\n", extraBytes, *shmem_buffer->extra_size);
+        DEBUG_PRINT("size error(%zu > %d)!\n\n", extraBytes, *shmem_buffer->extra_size);
         return PSHMEM_ERROR_RANGE_OUT;
     }
     unsigned char *addr =
