@@ -158,8 +158,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 
     DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%d\n", *phShmem, unitSize, unitNum);
 
-    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) +
-                    extraSize * unitNum;
+    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + extraSize * unitNum;
     // Create shared memory name
     pid_t pid            = getpid();
     int shm_fd           = -1;
@@ -282,6 +282,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
     }
     else
     {
+        //[TODO] Execute close sequence and return fail
         pShmemBuffer->extra_size = nullptr;
         pShmemBuffer->extra_buf  = nullptr;
     }

@@ -274,6 +274,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
         }
         else
         {
+            //[TODO] Execute close sequence and return fail
             pShmemBuffer->extra_size = nullptr;
             pShmemBuffer->extra_buf  = nullptr;
         }
