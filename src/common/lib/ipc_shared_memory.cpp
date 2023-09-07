@@ -166,7 +166,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     SHMEM_COMM_T *pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
     if (!pShmemBuffer)
     {
-        PLOGI("shmem_buffer is NULL\n");
+        PLOGE("shmem_buffer is NULL\n");
         return SHMEM_FAILED;
     }
 
@@ -191,7 +191,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     pShmemBuffer->shmem_id = shmget((key_t)shmemKey, shmemSize, shmemMode);
     if (pShmemBuffer->shmem_id == -1)
     {
-        PLOGI("Can't open shared memory: %s\n", strerror(errno));
+        PLOGE("Can't open shared memory: %s\n", strerror(errno));
         free(*phShmem);
         *phShmem = nullptr;
         return SHMEM_FAILED;
@@ -209,10 +209,10 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
 
     if ((pShmemBuffer->sema_id = semget(shmemKey, 1, shmemMode)) == -1)
     {
-        PLOGD("Failed to create semaphore : %s\n", strerror(errno));
+        PLOGE("Failed to create semaphore : %s\n", strerror(errno));
         if ((pShmemBuffer->sema_id = semget((key_t)shmemKey, 1, 0666)) == -1)
         {
-            PLOGI("Failed to get semaphore : %s\n", strerror(errno));
+            PLOGE("Failed to get semaphore : %s\n", strerror(errno));
             free(*phShmem);
             *phShmem = nullptr;
             return SHMEM_FAILED;
@@ -274,6 +274,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
         }
         else
         {
+            //[TODO] Execute close sequence and return fail
             pShmemBuffer->extra_size = nullptr;
             pShmemBuffer->extra_buf  = nullptr;
         }
@@ -303,7 +304,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
     {
-        PLOGI("shmem_buffer is NULL\n");
+        PLOGE("shmem_buffer is NULL\n");
         return SHMEM_FAILED;
     }
 
@@ -319,18 +320,18 @@ SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char
     int lwrite_index = *shmem_buffer->write_index;
     if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
     {
-        PLOGI("extraDataSize should be same with extrasize used when open\n");
+        PLOGE("extraDataSize should be same with extrasize used when open\n");
         return SHMEM_FAILED;
     }
 
     if (mark == SHMEM_COMM_MARK_RESET)
     {
-        PLOGI("warning - read process isn't reset yet!\n");
+        PLOGW("warning - read process isn't reset yet!\n");
     }
 
     if ((dataSize == 0) || (dataSize > unit_size))
     {
-        PLOGI("size error(%d > %d)!\n", dataSize, unit_size);
+        PLOGE("size error(%d > %d)!\n", dataSize, unit_size);
         return SHMEM_FAILED;
     }
 
@@ -338,7 +339,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char
     // buffer again
     if (lwrite_index == unit_num)
     {
-        PLOGI("Overflow write data(write_index = %d, unit_num = %d)!\n", lwrite_index,
+        PLOGE("Overflow write data(write_index = %d, unit_num = %d)!\n", lwrite_index,
               *shmem_buffer->unit_num);
         *shmem_buffer->write_index = 0;
         return SHMEM_ERROR_RANGE_OUT; // ERROR_OVERFLOW
@@ -372,13 +373,13 @@ SHMEM_STATUS_T IPCSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem, int n
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
     {
-        PLOGI("shmem_buffer is NULL\n");
+        PLOGE("shmem_buffer is NULL\n");
         return SHMEM_IS_NULL;
     }
 
     if (numBuffers != *shmem_buffer->unit_num)
     {
-        PLOGI("shmem buffer count mismatch\n");
+        PLOGE("shmem buffer count mismatch\n");
         return SHMEM_ERROR_COUNT_MISMATCH;
     }
     if (pBufs)
@@ -406,12 +407,12 @@ SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
     {
-        PLOGI("shmem_buffer is NULL\n");
+        PLOGE("shmem_buffer is NULL\n");
         return SHMEM_IS_NULL;
     }
     if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
     {
-        PLOGI("size error(%zu > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
+        PLOGE("size error(%zu > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
         return SHMEM_ERROR_RANGE_OUT;
     }
 
@@ -427,7 +428,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pM
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
     {
-        PLOGI("shmem_buffer is NULL\n");
+        PLOGE("shmem_buffer is NULL\n");
         return SHMEM_IS_NULL;
     }
 
@@ -449,12 +450,12 @@ SHMEM_STATUS_T IPCSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned char *e
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
     {
-        PLOGI("shmem_buffer is NULL\n");
+        PLOGE("shmem_buffer is NULL\n");
         return SHMEM_IS_NULL;
     }
     if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size))
     {
-        PLOGI("size error(%zu > %d)!\n", extraBytes, *shmem_buffer->extra_size);
+        PLOGE("size error(%zu > %d)!\n", extraBytes, *shmem_buffer->extra_size);
         return SHMEM_ERROR_RANGE_OUT;
     }
     unsigned char *addr =
@@ -469,7 +470,7 @@ SHMEM_STATUS_T IPCSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
     {
-        PLOGI("shmem_buffer is NULL\n");
+        PLOGE("shmem_buffer is NULL\n");
         return SHMEM_IS_NULL;
     }
 
@@ -488,7 +489,7 @@ SHMEM_STATUS_T IPCSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem)
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)*phShmem;
     if (!shmem_buffer)
     {
-        PLOGI("shmem_bufer is NULL\n");
+        PLOGE("shmem_bufer is NULL\n");
         return SHMEM_IS_NULL;
     }
 
@@ -524,7 +525,7 @@ static int resetShmem(SHMEM_COMM_T *shmem_buffer)
 
     if (shmem_buffer == NULL)
     {
-        PLOGI("Invalid argument\n");
+        PLOGE("Invalid argument\n");
         return -1;
     }
 
@@ -546,7 +547,7 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
     pShmemBuffer = (SHMEM_COMM_T *)*phShmem;
     if (pShmemBuffer == NULL)
     {
-        PLOGI("pShmemBuffer is null\n");
+        PLOGE("pShmemBuffer is null\n");
         return SHMEM_FAILED;
     }
 
@@ -576,7 +577,7 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
     pShmemBuffer->shmem_id = shmget((key_t)shmemKey, shmemSize, shmemMode);
     if (pShmemBuffer->shmem_id == -1)
     {
-        PLOGI("Can't open shared memory: %s\n", strerror(errno));
+        PLOGE("Can't open shared memory: %s\n", strerror(errno));
         free(pShmemBuffer);
         return SHMEM_FAILED;
     }
@@ -594,11 +595,11 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
     if (nOpenMode == MODE_OPEN || (pShmemBuffer->sema_id = semget(shmemKey, 1, shmemMode)) == -1)
     {
         if (nOpenMode == MODE_CREATE)
-            PLOGD("Failed to create semaphore : %s\n", strerror(errno));
+            PLOGE("Failed to create semaphore : %s\n", strerror(errno));
 
         if ((pShmemBuffer->sema_id = semget((key_t)shmemKey, 1, 0666)) == -1)
         {
-            PLOGI("Failed to get semaphore : %s\n", strerror(errno));
+            PLOGE("Failed to get semaphore : %s\n", strerror(errno));
             free(pShmemBuffer);
             return SHMEM_FAILED;
         }
@@ -697,7 +698,7 @@ SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSiz
     first_read = false;
     if (!shmem_buffer)
     {
-        PLOGI("shmem buffer is NULL");
+        PLOGE("shmem buffer is NULL");
         return SHMEM_FAILED;
     }
     lread_index = *shmem_buffer->write_index;
@@ -726,7 +727,7 @@ SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSiz
 
             if ((size == 0) || (size > *shmem_buffer->unit_size))
             {
-                PLOGI("size error(%d)!\n", size);
+                PLOGE("size error(%d)!\n", size);
                 return SHMEM_FAILED;
             }
 
