@@ -78,6 +78,7 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_SOMETHING_IS_NOT_SET, "Some property is not set"},
     {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
     {DEVICE_ERROR_TIMEOUT, "Request timeout"},
+    {DEVICE_ERROR_INVALID_WINDOW_ID, "Invalid windowId"}
 };
 
 std::map<EventType, std::string> g_event_string = {

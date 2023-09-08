@@ -68,7 +68,7 @@ private:
   void updateFormat(CAMERA_FORMAT &,int);
   DEVICE_RETURN_CODE_T openDevice(int, int *);
 
-  void startPreviewDisplay(int, std::string, std::string, int);
+  bool startPreviewDisplay(int, std::string, std::string, int);
   void stopPreviewDisplay(int);
 
 public:

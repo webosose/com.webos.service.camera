@@ -2,11 +2,13 @@
 #include "constants.h"
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
+#include <sstream>
 
 #define LOAD_PAYLOAD_HEAD "{\"uri\":\"camera://com.webos.service.camera2/7010\",\"payload\":\
 {\"option\":{\"appId\":\"com.webos.app.mediaevents-test\", \"windowId\":\""
 
 const char *display_client_service_name = "com.webos.service.camera2.display";
+const std::string window_id_str = "_Window_Id_";
 
 static pbnjson::JValue convertStringToJson(const char *rawData)
 {
@@ -33,6 +35,42 @@ PreviewDisplayControl::PreviewDisplayControl() :
 PreviewDisplayControl::~PreviewDisplayControl()
 {
     releaseLSConnection();
+}
+
+bool PreviewDisplayControl::isValidWindowId(std::string windowId)
+{
+    std::stringstream strStream;
+    int num = 0;
+    int digit = -1;;
+    int end = -1;
+    int begin = -1;
+
+    begin = windowId.find(window_id_str);
+    if (begin != 0)
+    {
+        PMLOG_INFO(CONST_MODULE_DPY, "Invalid windowId value");
+        bResult_ = false;
+        return false;
+    }
+
+    begin = window_id_str.length();
+    end = windowId.length();
+
+    for (int index = begin; index < end; index++)
+    {
+        if (isdigit(windowId[index]))
+        {
+            strStream << windowId[index];
+            strStream >> digit;
+            strStream.clear();
+            num = digit + num * 10;
+        }
+    }
+    if (num > 0)
+    {
+        return true;
+    }
+    return false;
 }
 
 void PreviewDisplayControl::acquireLSConnection()
@@ -134,8 +172,15 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
                                         int key, int handle)
 {
     std::string media_id = "";
-    std::string mem_type = "shmem";
 
+    if (!isValidWindowId(windowId))
+    {
+        PMLOG_INFO(CONST_MODULE_DPY, "Invalid windowId value");
+        bResult_ = false;
+        return media_id;
+    }
+
+    std::string mem_type = "shmem";
     if (memType == kMemtypePosixshm)
     {
         mem_type = "posixshm";
@@ -171,12 +216,15 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
 
     if (!call("luna://com.webos.media/load", payload, cbHandleResponseMsg))
     {
+        PMLOG_INFO(CONST_MODULE_DPY, "fail to call com.webos.media/load()");
         bResult_ = false;
         return media_id;
     }
+
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
     if (parsed["returnValue"].asBool() == false)
     {
+        PMLOG_INFO(CONST_MODULE_DPY, "load() FAILED");
         bResult_ = false;
         return media_id;
     }
@@ -187,20 +235,24 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     return media_id;
 }
 
-void PreviewDisplayControl::play(std::string mediaId)
+bool PreviewDisplayControl::play(std::string mediaId)
 {
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
     if (!call("luna://com.webos.media/play", payload, cbHandleResponseMsg))
     {
+        PMLOG_INFO(CONST_MODULE_DPY, "fail to call com.webos.media/play()");
         bResult_ = false;
-        return;
+        return false;
     }
+
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
     bResult_ = parsed["returnValue"].asBool();
     PMLOG_INFO(CONST_MODULE_DPY, "returnValue : %d ", bResult_);
+
+    return bResult_;
 }
 
-void PreviewDisplayControl::unload(std::string mediaId)
+bool PreviewDisplayControl::unload(std::string mediaId)
 {
     PMLOG_INFO(CONST_MODULE_DPY, "unload() starts.");
 
@@ -209,13 +261,16 @@ void PreviewDisplayControl::unload(std::string mediaId)
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
     if (!call("luna://com.webos.media/unload", payload, cbHandleResponseMsg))
     {
+        PMLOG_INFO(CONST_MODULE_DPY, "fail to call com.webos.media/unload()");
         bResult_ = false;
-        return;
+        return false;
     }
+
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
     bResult_ =  parsed["returnValue"].asBool();
-
     PMLOG_INFO(CONST_MODULE_DPY, "returnValue : %d ", bResult_);
+
+    return bResult_;
 }
 
 bool PreviewDisplayControl::getControlStatus()
@@ -245,5 +300,7 @@ int PreviewDisplayControl::getPid(std::string mediaId)
     }
 
     PMLOG_INFO(CONST_MODULE_DPY, "g-camera-pipeline PID = %d", pid);
+
     return pid;
 }
+

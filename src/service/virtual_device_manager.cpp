@@ -318,17 +318,21 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                     shmempreview_count_[SHMEM_POSIX]++;
                     poshmkey_ = *pkey;
                 }
-
-                if (!windowid.empty())
-                {
-                    startPreviewDisplay(devhandle, windowid, memtype, *pkey);
-                }
-
                 // add to vector the app calling startPreview
                 npreviewhandle_.push_back(devhandle);
                 // update state of device to preview
                 obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
                 virtualhandle_map_[devhandle] = obj_devstate;
+
+                if (!windowid.empty())
+                {
+                    if (!startPreviewDisplay(devhandle, windowid, memtype, *pkey))
+                    {
+                        stopPreview(devhandle);
+                        PMLOG_INFO(CONST_MODULE_VDM, "Invalid windowId\n");
+                        return DEVICE_ERROR_INVALID_WINDOW_ID;
+                    }
+                }
             }
             return ret;
         }
@@ -339,11 +343,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 *pkey = shmkey_;
             else
                 *pkey = poshmkey_;
-
-            if (!windowid.empty())
-            {
-                startPreviewDisplay(devhandle, windowid, memtype, *pkey);
-            }
 
             // add to vector the app calling startPreview
             npreviewhandle_.push_back(devhandle);
@@ -361,6 +360,17 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 shmempreview_count_[SHMEM_POSIX]++;
             }
             virtualhandle_map_[devhandle] = obj_devstate;
+
+            if (!windowid.empty())
+            {
+                if (!startPreviewDisplay(devhandle, windowid, memtype, *pkey))
+                {
+                    stopPreview(devhandle);
+                    PMLOG_INFO(CONST_MODULE_VDM, "Invalid windowId\n");
+                    return DEVICE_ERROR_INVALID_WINDOW_ID;
+                }
+            }
+
             return DEVICE_OK;
         }
     }
@@ -916,7 +926,7 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
   }
 }
 
-void VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
+bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
                                                std::string mem_type, int key)
 {
     if (display_control_)
@@ -933,9 +943,15 @@ void VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id
             {
                 display_control_->play(media_id);
                 previewdisplay_map_[handle] = media_id;
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
     }
+    return true;
 }
 
 void VirtualDeviceManager::stopPreviewDisplay(int handle)

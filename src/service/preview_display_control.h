@@ -19,6 +19,8 @@ private:
     void acquireLSConnection();
     void releaseLSConnection();
     bool call(std::string uri, std::string payload, bool (*cb)(LSHandle*, LSMessage*, void*));
+
+    bool isValidWindowId(std::string windowId);
     int getPid(std::string mediaId);
 
     static bool cbHandleResponseMsg(LSHandle*, LSMessage*, void*);
@@ -29,8 +31,8 @@ public:
     std::string load(std::string cameraId, std::string windowId,
                      CAMERA_FORMAT cameraFormat, std::string memType,
                      int key, int handle);
-    void play(std::string mediaId);
-    void unload(std::string mediaId);
+    bool play(std::string mediaId);
+    bool unload(std::string mediaId);
     bool getControlStatus();
 };
 
