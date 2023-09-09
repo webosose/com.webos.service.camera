@@ -41,11 +41,11 @@ public:
         return sharedMemoryInstance;
     }
     SHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, key_t *, int, int, int, int);
-    SHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int,
+    SHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, const char *, int,
                                  unsigned char *, int);
     SHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, buffer_t[], buffer_t[]);
     SHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
-    SHMEM_STATUS_T WriteMeta(SHMEM_HANDLE, unsigned char *, size_t);
+    SHMEM_STATUS_T WriteMeta(SHMEM_HANDLE, const char *, size_t);
     SHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char *, size_t);
     SHMEM_STATUS_T IncrementWriteIndex(SHMEM_HANDLE);
     SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);

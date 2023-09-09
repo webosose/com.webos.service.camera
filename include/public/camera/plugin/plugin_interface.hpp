@@ -21,14 +21,14 @@ struct IFeature
 struct IPlugin
 {
     virtual ~IPlugin() {}
-    virtual const char *getName(void)                    = 0;
-    virtual const char *getDescription(void)             = 0;
-    virtual const char *getCategory(void)                = 0;
-    virtual const char *getVersion(void)                 = 0;
-    virtual const char *getOrganization(void)            = 0;
-    virtual size_t getFeatureCount(void)                 = 0;
-    virtual const char *getFeatureName(const int nIndex) = 0;
-    virtual IFeature *createFeature(const char *szName)  = 0;
+    virtual const char *getName(void)                       = 0;
+    virtual const char *getDescription(void)                = 0;
+    virtual const char *getCategory(void)                   = 0;
+    virtual const char *getVersion(void)                    = 0;
+    virtual const char *getOrganization(void)               = 0;
+    virtual size_t getFeatureCount(void)                    = 0;
+    virtual const char *getFeatureName(const size_t nIndex) = 0;
+    virtual IFeature *createFeature(const char *szName)     = 0;
 };
 
 /**

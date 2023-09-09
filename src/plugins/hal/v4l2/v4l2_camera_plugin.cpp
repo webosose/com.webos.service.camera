@@ -42,7 +42,7 @@ void destroy_handle(void *handle)
 }
 
 V4l2CameraPlugin::V4l2CameraPlugin()
-    : stream_format_(), buffers_(nullptr), n_buffers_(0), fd_(CAMERA_ERROR_UNKNOWN), dmafd_(),
+    : stream_format_(), buffers_(nullptr), n_buffers_(0), fd_(-1), dmafd_(),
       io_mode_(IOMODE_UNKNOWN), fourcc_format_(), camera_format_()
 {
     PLOGI("");
@@ -54,7 +54,7 @@ int V4l2CameraPlugin::openDevice(string devname, string payload)
 {
     PLOGI("devname : %s, payload :  %s", devname.c_str(), payload.c_str());
     fd_ = open(devname.c_str(), O_RDWR | O_NONBLOCK);
-    if (CAMERA_ERROR_UNKNOWN == fd_)
+    if (-1 == fd_)
     {
         PLOGE("cannot open : %s , %d, %s", devname.c_str(), errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -71,7 +71,7 @@ int V4l2CameraPlugin::closeDevice()
 {
     PLOGI("");
 
-    if (CAMERA_ERROR_UNKNOWN == close(fd_))
+    if (-1 == close(fd_))
     {
         PLOGE("cannot close fd: %d , %d, %s", fd_, errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -94,7 +94,7 @@ int V4l2CameraPlugin::setFormat(const void *stream_format)
     fmt.fmt.pix.pixelformat = getFourCCPixelFormat(in_format->pixel_format);
     fmt.fmt.pix.field       = V4L2_FIELD_INTERLACED;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_FMT, &fmt))
+    if (-1 == xioctl(fd_, VIDIOC_S_FMT, &fmt))
     {
         PLOGE("VIDIOC_S_FMT failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -123,7 +123,7 @@ int V4l2CameraPlugin::setFormat(const void *stream_format)
     parm.type                                  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     parm.parm.capture.timeperframe.numerator   = 1;
     parm.parm.capture.timeperframe.denominator = in_format->stream_fps;
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_S_PARM, &parm))
+    if (-1 == xioctl(fd_, VIDIOC_S_PARM, &parm))
     {
         PLOGE("VIDIOC_S_PARM failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -146,7 +146,7 @@ int V4l2CameraPlugin::getFormat(void *stream_format)
     struct v4l2_streamparm streamparm;
     CLEAR(streamparm);
     streamparm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_G_PARM, &streamparm))
+    if (-1 == xioctl(fd_, VIDIOC_G_PARM, &streamparm))
     {
         PLOGE("VIDIOC_G_PARM failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -158,7 +158,7 @@ int V4l2CameraPlugin::getFormat(void *stream_format)
     CLEAR(fmt);
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_G_FMT, &fmt))
+    if (-1 == xioctl(fd_, VIDIOC_G_FMT, &fmt))
     {
         PLOGE("VIDIOC_G_FMT failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -218,7 +218,7 @@ int V4l2CameraPlugin::getBuffer(void *outbuf)
         PLOGE("POLL timeout!");
         return CAMERA_ERROR_UNKNOWN;
     }
-    else if (0 > retVal)
+    else if (-1 == retVal)
     {
         PLOGE("POLL failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -235,11 +235,14 @@ int V4l2CameraPlugin::getBuffer(void *outbuf)
         buf.memory = V4L2_MEMORY_MMAP;
 
         retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
-        if (CAMERA_ERROR_NONE != retVal)
+        if (-1 == retVal)
         {
             PLOGE("VIDIOC_DQBUF failed %d, %s", errno, strerror(errno));
         }
-        out_buf->start  = buffers_[buf.index].start;
+        if (buf.index < n_buffers_)
+        {
+            out_buf->start = buffers_[buf.index].start;
+        }
         out_buf->length = buf.bytesused;
         out_buf->index  = buf.index;
         break;
@@ -252,11 +255,14 @@ int V4l2CameraPlugin::getBuffer(void *outbuf)
         buf.memory = V4L2_MEMORY_MMAP;
 
         retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
-        if (CAMERA_ERROR_NONE != retVal)
+        if (-1 == retVal)
         {
             PLOGE("VIDIOC_DQBUF failed %d, %s", errno, strerror(errno));
         }
-        out_buf->start  = buffers_[buf.index].start;
+        if (buf.index < n_buffers_)
+        {
+            out_buf->start = buffers_[buf.index].start;
+        }
         out_buf->length = buf.bytesused;
         out_buf->index  = buf.index;
         break;
@@ -269,7 +275,7 @@ int V4l2CameraPlugin::getBuffer(void *outbuf)
         buf.memory = V4L2_MEMORY_DMABUF;
 
         retVal = xioctl(fd_, VIDIOC_DQBUF, &buf);
-        if (CAMERA_ERROR_NONE != retVal)
+        if (-1 == retVal)
         {
             PLOGE("VIDIOC_DQBUF failed %d, %s", errno, strerror(errno));
         }
@@ -294,11 +300,14 @@ int V4l2CameraPlugin::releaseBuffer(const void *inbuf)
     {
         struct v4l2_buffer buf;
         memset(&buf, 0, sizeof(buf));
-        buf.type      = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        buf.memory    = V4L2_MEMORY_USERPTR;
-        buf.index     = in_buf->index;
-        buf.m.userptr = (unsigned long)buffers_[in_buf->index].start;
-        buf.length    = buffers_[in_buf->index].length;
+        buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_USERPTR;
+        buf.index  = in_buf->index;
+        if (in_buf->index < n_buffers_)
+        {
+            buf.m.userptr = (unsigned long)buffers_[in_buf->index].start;
+            buf.length    = buffers_[in_buf->index].length;
+        }
 
         if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
@@ -319,7 +328,7 @@ int V4l2CameraPlugin::releaseBuffer(const void *inbuf)
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index  = in_buf->index;
 
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
+        if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
             PLOGE("VIDIOC_QBUF failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -406,7 +415,7 @@ int V4l2CameraPlugin::stopCapture()
     {
         enum v4l2_buf_type type;
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMOFF, &type))
+        if (-1 == xioctl(fd_, VIDIOC_STREAMOFF, &type))
         {
             PLOGE("VIDIOC_STREAMOFF failed %d, %s", errno, strerror(errno));
             retVal = CAMERA_ERROR_UNKNOWN;
@@ -417,7 +426,7 @@ int V4l2CameraPlugin::stopCapture()
     {
         enum v4l2_buf_type type;
         type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMOFF, &type))
+        if (-1 == xioctl(fd_, VIDIOC_STREAMOFF, &type))
         {
             PLOGE("VIDIOC_STREAMOFF failed %d, %s", errno, strerror(errno));
             retVal = CAMERA_ERROR_UNKNOWN;
@@ -464,11 +473,6 @@ int V4l2CameraPlugin::getProperties(void *cam_out_params)
             ret = CAMERA_ERROR_NONE;
     }
 
-    if (errno == ENODEV) // No such device
-    {
-        return CAMERA_ERROR_UNKNOWN;
-    }
-
     return ret;
 }
 
@@ -479,7 +483,7 @@ int V4l2CameraPlugin::getInfo(void *cam_info, std::string devicenode)
     int ret                        = CAMERA_ERROR_NONE;
     int fd                         = open(devicenode.c_str(), O_RDWR | O_NONBLOCK, 0);
 
-    if (CAMERA_ERROR_UNKNOWN == fd)
+    if (-1 == fd)
     {
         PLOGE("cannot open : %s , %d, %s", devicenode.c_str(), errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -569,7 +573,7 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
         if (CONST_PARAM_DEFAULT_VALUE != it.second)
         {
             queryctrl.id = camera_param_map_[it.first];
-            if (xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl) != CAMERA_ERROR_NONE)
+            if (xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl) == -1)
             {
                 PLOGI("VIDIOC_QUERYCTRL[%d] failed %d, %s", (int)(queryctrl.id), errno,
                       strerror(errno));
@@ -593,9 +597,9 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
             control.value = it.second;
             PLOGI("VIDIOC_S_CTRL[%s] set value:%d ", queryctrl.name, control.value);
 
-            if (xioctl(fd_, VIDIOC_S_CTRL, &control) != CAMERA_ERROR_NONE)
+            if (xioctl(fd_, VIDIOC_S_CTRL, &control) == -1)
             {
-                PLOGE("VIDIOC_S_CTRL[%s] set value:%d, failed %d, %s", queryctrl.name,
+                PLOGW("VIDIOC_S_CTRL[%s] set value:%d, failed %d, %s", queryctrl.name,
                       control.value, errno, strerror(errno));
                 if (errno == ENODEV)
                 {
@@ -613,7 +617,7 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
 
 int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *getData)
 {
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl))
+    if (-1 == xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl))
     {
         PLOGW("VIDIOC_QUERYCTRL[%d] failed %d, %s", queryctrl.id, errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -627,7 +631,7 @@ int V4l2CameraPlugin::getV4l2Property(struct v4l2_queryctrl queryctrl, int *getD
     struct v4l2_control control;
     CLEAR(control);
     control.id = queryctrl.id;
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_G_CTRL, &control))
+    if (-1 == xioctl(fd_, VIDIOC_G_CTRL, &control))
     {
         PLOGE("VIDIOC_G_CTRL failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -673,7 +677,7 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
     req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
+    if (-1 == xioctl(fd_, VIDIOC_REQBUFS, &req))
     {
         PLOGE("VIDIOC_REQBUFS failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -695,7 +699,7 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index  = n_buffers_;
 
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYBUF, &buf))
+        if (-1 == xioctl(fd_, VIDIOC_QUERYBUF, &buf))
         {
             PLOGE("VIDIOC_QUERYBUF failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -718,7 +722,6 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
 {
     struct v4l2_requestbuffers req;
     stream_format_t stream_format;
-    int retVal = CAMERA_ERROR_NONE;
 
     CLEAR(req);
 
@@ -726,7 +729,7 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
     req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_USERPTR;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
+    if (-1 == xioctl(fd_, VIDIOC_REQBUFS, &req))
     {
         PLOGE("VIDIOC_REQBUFS failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -738,10 +741,10 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
         PLOGE("out of memory");
         return CAMERA_ERROR_UNKNOWN;
     }
-    retVal = getFormat(&stream_format);
+    int retVal = getFormat(&stream_format);
     if (CAMERA_ERROR_NONE != retVal)
     {
-        PLOGE("getFormat failed %d, %s", errno, strerror(errno));
+        PLOGE("getFormat failed");
         return retVal;
     }
 
@@ -759,7 +762,7 @@ int V4l2CameraPlugin::releaseMmapBuffers()
 {
     for (unsigned int i = 0; i < n_buffers_; ++i)
     {
-        if (CAMERA_ERROR_UNKNOWN == munmap(buffers_[i].start, buffers_[i].length))
+        if (-1 == munmap(buffers_[i].start, buffers_[i].length))
         {
             PLOGE("munmap failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -802,7 +805,7 @@ int V4l2CameraPlugin::captureDataMmapMode()
         buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index  = i;
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
+        if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
             PLOGE("VIDIOC_QBUF failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -811,7 +814,7 @@ int V4l2CameraPlugin::captureDataMmapMode()
 
     enum v4l2_buf_type type;
     type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMON, &type))
+    if (-1 == xioctl(fd_, VIDIOC_STREAMON, &type))
     {
         PLOGE("VIDIOC_STREAMON failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -833,7 +836,7 @@ int V4l2CameraPlugin::captureDataUserptrMode()
         buf.m.userptr = (unsigned long)buffers_[i].start;
         buf.length    = buffers_[i].length;
 
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
+        if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
             PLOGE("VIDIOC_QBUF failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -841,7 +844,7 @@ int V4l2CameraPlugin::captureDataUserptrMode()
     }
     enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMON, &type))
+    if (-1 == xioctl(fd_, VIDIOC_STREAMON, &type))
     {
         PLOGE("VIDIOC_STREAMON failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -859,7 +862,7 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
     req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
+    if (-1 == xioctl(fd_, VIDIOC_REQBUFS, &req))
     {
         PLOGE("VIDIOC_REQBUFS failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -880,7 +883,7 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
     bcreate.format = fmt;
     bcreate.count  = req.count;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_CREATE_BUFS, &bcreate))
+    if (-1 == xioctl(fd_, VIDIOC_CREATE_BUFS, &bcreate))
     {
         PLOGE("VIDIOC_CREATE_BUFS failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -893,7 +896,7 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
         qrybuf.memory = V4L2_MEMORY_DMABUF;
         qrybuf.index  = i;
 
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QUERYBUF, &qrybuf))
+        if (-1 == xioctl(fd_, VIDIOC_QUERYBUF, &qrybuf))
         {
             PLOGE("VIDIOC_QUERYBUF failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -912,7 +915,7 @@ int V4l2CameraPlugin::captureDataDmaMode()
         buf.memory = V4L2_MEMORY_MMAP;
         buf.index  = i;
 
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_QBUF, &buf))
+        if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
             PLOGE("VIDIOC_QBUF failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -921,7 +924,7 @@ int V4l2CameraPlugin::captureDataDmaMode()
 
     int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_STREAMON, &type))
+    if (-1 == xioctl(fd_, VIDIOC_STREAMON, &type))
     {
         PLOGE("VIDIOC_STREAMON failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
@@ -942,7 +945,7 @@ int V4l2CameraPlugin::getBufferFd(int *bufFd, int *count)
         expbuf.plane = 0;
         expbuf.flags = O_CLOEXEC | O_RDWR;
 
-        if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_EXPBUF, &expbuf))
+        if (-1 == xioctl(fd_, VIDIOC_EXPBUF, &expbuf))
         {
             PLOGE("VIDIOC_EXPBUF failed %d, %s", errno, strerror(errno));
             return CAMERA_ERROR_UNKNOWN;
@@ -1041,12 +1044,12 @@ camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(unsigned long fourc
 
 int V4l2CameraPlugin::xioctl(int fh, int request, void *arg)
 {
-    int ret = CAMERA_ERROR_NONE;
+    int ret = 0;
 
     do
     {
         ret = ioctl(fh, request, arg);
-    } while (ret == CAMERA_ERROR_UNKNOWN && ((errno == EINTR) || (errno == EAGAIN)));
+    } while (ret == -1 && ((errno == EINTR) || (errno == EAGAIN)));
 
     return ret;
 }

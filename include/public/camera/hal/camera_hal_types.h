@@ -119,7 +119,7 @@ typedef struct
 {
     void *start;
     unsigned long length;
-    int index;
+    std::size_t index;
     int fd;
 } buffer_t;
 

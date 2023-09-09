@@ -122,7 +122,12 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
         if (ch != '/')
             path += "/";
 
-        time_t t    = time(NULL);
+        time_t t = time(NULL);
+        if (t == -1)
+        {
+            PLOGE("Failed to get current time.");
+            t = 0;
+        }
         tm *timePtr = localtime(&t);
         if (timePtr == nullptr)
         {
@@ -133,19 +138,32 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
         gettimeofday(&tmnow, NULL);
 
         // create file to save data based on format
+        int result = -1;
         if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV)
-            snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.yuv", timePtr->tm_mday,
-                     (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
-                     (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.yuv",
+                              timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
+                              (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
+                              ((int)tmnow.tv_usec) / 10000);
         else if (epixelformat_ == CAMERA_PIXEL_FORMAT_JPEG)
-            snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.jpeg", timePtr->tm_mday,
-                     (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
-                     (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.jpeg",
+                              timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
+                              (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
+                              ((int)tmnow.tv_usec) / 10000);
         else if (epixelformat_ == CAMERA_PIXEL_FORMAT_H264)
-            snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.h264", timePtr->tm_mday,
-                     (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
-                     (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
-        path = path + image_name;
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.h264",
+                              timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
+                              (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
+                              ((int)tmnow.tv_usec) / 10000);
+
+        if (result >= 0 && result < 100)
+        {
+            path = path + image_name;
+        }
+        else
+        {
+            PLOGE("snprintf encountered an error or the formatted string was truncated.");
+            return DEVICE_ERROR_UNKNOWN;
+        }
     }
 
     PLOGI("path : %s\n", path.c_str());
@@ -155,9 +173,20 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
         PLOGI("path : fopen failed\n");
         return DEVICE_ERROR_CANNOT_WRITE;
     }
-    fwrite((unsigned char *)p, 1, size, fp);
-    fclose(fp);
-    return DEVICE_OK;
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+    size_t bytes_written     = fwrite((unsigned char *)p, 1, size, fp);
+    if (bytes_written != static_cast<size_t>(size))
+    {
+        PLOGE("Error writing data to file.");
+        ret = DEVICE_ERROR_FAIL_TO_WRITE_FILE;
+    }
+
+    if (fclose(fp) != 0)
+    {
+        PLOGE("fclose error");
+    }
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::checkFormat(CAMERA_FORMAT sformat)
@@ -324,7 +353,7 @@ void DeviceControl::captureThread()
     }
     // set continuous capture to false
     b_iscontinuous_capture_ = false;
-    n_imagecount_ = 0;
+    n_imagecount_           = 0;
     PLOGI("ended\n");
     return;
 }
@@ -378,8 +407,7 @@ void DeviceControl::previewThread()
             IPCSharedMemory::getInstance().WriteHeader(h_shmsystem_, frame_buffer.index,
                                                        frame_buffer.length);
 
-            IPCSharedMemory::getInstance().WriteMeta(h_shmsystem_, (unsigned char *)meta.c_str(),
-                                                     meta.size() + 1);
+            IPCSharedMemory::getInstance().WriteMeta(h_shmsystem_, meta.c_str(), meta.size() + 1);
 
             // Time stamp is currently not used actually.
             IPCSharedMemory::getInstance().WriteExtra(h_shmsystem_, (unsigned char *)&timestamp,
@@ -393,8 +421,7 @@ void DeviceControl::previewThread()
         {
             auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(
                 h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
-                (unsigned char *)meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp,
-                sizeof(timestamp));
+                meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp, sizeof(timestamp));
 
             if (retshmem != SHMEM_IS_OK)
             {
@@ -407,8 +434,8 @@ void DeviceControl::previewThread()
             IPCPosixSharedMemory::getInstance().WriteHeader(h_shmposix_, frame_buffer.index,
                                                             frame_buffer.length);
 
-            IPCPosixSharedMemory::getInstance().WriteMeta(
-                h_shmposix_, (unsigned char *)meta.c_str(), meta.size() + 1);
+            IPCPosixSharedMemory::getInstance().WriteMeta(h_shmposix_, meta.c_str(),
+                                                          meta.size() + 1);
 
             // Time stamp is currently not used actually.
             IPCPosixSharedMemory::getInstance().WriteExtra(h_shmposix_, (unsigned char *)&timestamp,

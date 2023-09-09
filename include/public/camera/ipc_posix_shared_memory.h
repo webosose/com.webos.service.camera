@@ -44,11 +44,11 @@ public:
         return sharedMemoryInstance;
     }
     PSHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, int, int, int, int, int *, std::string *);
-    PSHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, unsigned char *, int,
+    PSHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, const char *, int,
                                   unsigned char *, int);
     PSHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, buffer_t[], buffer_t[]);
     PSHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
-    PSHMEM_STATUS_T WriteMeta(SHMEM_HANDLE, unsigned char *, size_t);
+    PSHMEM_STATUS_T WriteMeta(SHMEM_HANDLE, const char *, size_t);
     PSHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char *, size_t);
     PSHMEM_STATUS_T IncrementWriteIndex(SHMEM_HANDLE);
     PSHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *, int, int, int, int, std::string, int);

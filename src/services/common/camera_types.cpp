@@ -170,24 +170,17 @@ void getFormatString(int nFormat, char *pFormats)
     return;
 }
 
-char *getTypeString(device_t etype)
+const char *getTypeString(device_t etype)
 {
-    char *pszRetString = nullptr;
-
     switch (etype)
     {
     case DEVICE_TYPE_MICROPHONE:
-        pszRetString = (char *)"microphone";
-        break;
+        return "microphone";
     case DEVICE_TYPE_CAMERA:
-        pszRetString = (char *)"camera";
-        break;
+        return "camera";
     default:
-        pszRetString = (char *)"type is out of range";
-        break;
+        return "type is out of range";
     }
-
-    return pszRetString;
 }
 
 std::string getErrorString(DEVICE_RETURN_CODE_T error_code)

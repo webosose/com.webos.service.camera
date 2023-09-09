@@ -28,15 +28,13 @@
 #include "notifier.h"
 #include <pbnjson.hpp>
 #include <signal.h>
-#include <sstream>
 #include <string>
 
 struct sigaction sigact_service_crash;
 void signal_handler_service_crash(int sig);
 void install_handler_service_crash();
 
-const std::string service   = "com.webos.service.camera2";
-const std::string camerastr = "camera";
+const std::string service = "com.webos.service.camera2";
 
 CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str()))
 {
@@ -83,37 +81,34 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
     g_main_loop_run(main_loop_ptr_.get());
 }
 
-int CameraService::getId(std::string cameraid)
+int CameraService::getId(const std::string &cameraid)
 {
-    std::stringstream strStream;
-    int num       = n_invalid_id;
-    int len       = 0;
-    int ndeviceid = 0;
+    int num               = n_invalid_id;
+    std::string camerastr = "camera";
+    std::string extractedNumbers;
 
     if ((cameraid.compare(0, camerastr.length(), camerastr)) == 0)
     {
-        cameraid.erase(0, camerastr.length());
+        extractedNumbers = cameraid.substr(camerastr.length());
     }
     else
     {
         return num;
     }
 
-    len = cameraid.length();
-
-    for (int index = 0; index < len; index++)
+    if (!extractedNumbers.empty())
     {
-        if (isdigit(cameraid[index]))
+        try
         {
-            strStream << cameraid[index];
-            strStream >> num;
-            strStream.clear();
-            ndeviceid = num + ndeviceid * 10;
-            num       = ndeviceid;
+            num = std::stoi(extractedNumbers);
         }
-        else
+        catch (const std::invalid_argument &e)
         {
-            return n_invalid_id;
+            PLOGE("Invalid argument: %s", e.what());
+        }
+        catch (const std::out_of_range &e)
+        {
+            PLOGE("Out of range: %s", e.what());
         }
     }
     return num;
@@ -663,7 +658,7 @@ bool CameraService::getCameraList(LSMessage &message)
                                              getErrorString(err_id));
 
             obj_getcameralist.setCameraCount(static_cast<int>(idList.size()));
-            for (unsigned int i = 0; i < idList.size(); i++)
+            for (std::size_t i = 0; i < idList.size(); i++)
             {
                 obj_getcameralist.setCameraList(
                     CONST_DEVICE_NAME_CAMERA + std::to_string(idList[i]), i);
@@ -979,7 +974,7 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
         PLOGI("clientName: %s\n", clientName);
         if (strstr(clientName, "com.webos.lunasend-") != NULL)
         {
-            PLOGI("can not add: %s\n", clientName);
+            PLOGE("can not add: %s\n", clientName);
             return false;
         }
     }
@@ -1002,6 +997,12 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
     const auto [clientCookie, success] =
         clientCookieMap_.insert(std::make_pair(unique_client_id, nullptr));
 
+    if (clientCookie == clientCookieMap_.end())
+    {
+        PLOGE("clientCookie is invalid");
+        return false;
+    }
+
     auto func = [](LSHandle *input_handle, const char *service_name, bool connected,
                    void *ctx) -> bool
     {
@@ -1010,7 +1011,7 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
 
         if (cookie == self->clientCookieMap_.end())
         {
-            PLOGI("can not find service_name: %s \n", service_name);
+            PLOGE("can not find service_name: %s \n", service_name);
             return true;
         }
 
@@ -1037,7 +1038,7 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
     if (!LSRegisterServerStatusEx(handle, unique_client_id, func, this, &clientCookie->second,
                                   nullptr))
     {
-        PLOGI("error LSRegisterServerStatusEx\n");
+        PLOGE("error LSRegisterServerStatusEx\n");
     }
 
     return true;

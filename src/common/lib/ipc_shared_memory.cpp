@@ -209,7 +209,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
 
     if ((pShmemBuffer->sema_id = semget(shmemKey, 1, shmemMode)) == -1)
     {
-        PLOGE("Failed to create semaphore : %s\n", strerror(errno));
+        PLOGW("Failed to create semaphore : %s\n", strerror(errno));
         if ((pShmemBuffer->sema_id = semget((key_t)shmemKey, 1, 0666)) == -1)
         {
             PLOGE("Failed to get semaphore : %s\n", strerror(errno));
@@ -298,7 +298,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
 }
 
 SHMEM_STATUS_T IPCSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char *pData,
-                                              int dataSize, unsigned char *pMeta, int metaSize,
+                                              int dataSize, const char *pMeta, int metaSize,
                                               unsigned char *pExtraData, int extraDataSize)
 {
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
@@ -422,8 +422,7 @@ SHMEM_STATUS_T IPCSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index, size
     return SHMEM_IS_OK;
 }
 
-SHMEM_STATUS_T IPCSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pMeta,
-                                          size_t metaSize)
+SHMEM_STATUS_T IPCSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, const char *pMeta, size_t metaSize)
 {
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
@@ -595,7 +594,7 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
     if (nOpenMode == MODE_OPEN || (pShmemBuffer->sema_id = semget(shmemKey, 1, shmemMode)) == -1)
     {
         if (nOpenMode == MODE_CREATE)
-            PLOGE("Failed to create semaphore : %s\n", strerror(errno));
+            PLOGW("Failed to create semaphore : %s\n", strerror(errno));
 
         if ((pShmemBuffer->sema_id = semget((key_t)shmemKey, 1, 0666)) == -1)
         {

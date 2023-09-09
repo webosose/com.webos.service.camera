@@ -56,9 +56,16 @@ public:
     virtual const char *getVersion(void) override { return strVersion_.c_str(); }
     virtual const char *getOrganization(void) override { return strOrganization_.c_str(); }
     virtual size_t getFeatureCount(void) override { return lstFeatures_.size(); }
-    virtual const char *getFeatureName(const int nIndex) override
+    virtual const char *getFeatureName(const size_t nIndex) override
     {
-        return lstFeatures_[nIndex].first.c_str();
+        if (nIndex < lstFeatures_.size())
+        {
+            return lstFeatures_[nIndex].first.c_str();
+        }
+        else
+        {
+            return nullptr;
+        }
     }
     virtual IFeature *createFeature(const char *szName) override
     {

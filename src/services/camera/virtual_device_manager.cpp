@@ -370,6 +370,13 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
 
         int size = npreviewhandle_.size();
         PLOGI("size : %d \n", size);
+
+        if (memtype < SHMEM_SYSTEMV || memtype > SHMEM_POSIX)
+        {
+            PLOGE("Invalid memtype : %d", memtype);
+            return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
+        }
+
         if (1 < shmempreview_count_[memtype])
         {
             // remove the handle from vector since stopPreview is called

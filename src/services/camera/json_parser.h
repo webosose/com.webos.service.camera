@@ -60,8 +60,24 @@ public:
     }
     ~GetCameraListMethod() {}
 
-    void setCameraList(const std::string &str_id, unsigned int count) { str_list_[count] = str_id; }
-    std::string strGetCameraList(int count) const { return str_list_[count]; }
+    void setCameraList(const std::string &str_id, std::size_t count)
+    {
+        if (count < CONST_MAX_DEVICE_COUNT)
+        {
+            str_list_[count] = str_id;
+        }
+    }
+    std::string strGetCameraList(std::size_t count) const
+    {
+        if (count < CONST_MAX_DEVICE_COUNT)
+        {
+            return str_list_[count];
+        }
+        else
+        {
+            return "";
+        }
+    }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -72,7 +88,7 @@ public:
     MethodReply getMethodReply() const { return objreply_; }
 
     void setCameraCount(int count) { n_camcount_ = count; }
-    int getCameraCount() const { return n_camcount_; }
+    std::size_t getCameraCount() const { return n_camcount_; }
 
     static bool getCameraListObject(const char *, const char *);
     std::string createCameraListObjectJsonString() const;
@@ -81,7 +97,7 @@ public:
 private:
     std::string str_list_[CONST_MAX_DEVICE_COUNT];
     MethodReply objreply_;
-    int n_camcount_;
+    std::size_t n_camcount_;
     bool b_issubscribed_;
 };
 

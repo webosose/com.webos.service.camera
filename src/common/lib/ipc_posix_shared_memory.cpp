@@ -161,7 +161,12 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 
     while (1)
     {
-        snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm", (int)pid++);
+        int result = snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm", (int)pid++);
+        if (result < 0 || static_cast<size_t>(result) >= sizeof(poshm_name))
+        {
+            PLOGE("snprintf failed");
+            return PSHMEM_FAILED;
+        }
 
         shm_fd = shm_open(poshm_name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP);
 
@@ -171,17 +176,20 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
             *shmemname = poshm_name;
             break;
         }
-        else if (shm_fd == -1 && errno == EEXIST)
+        else if (shm_fd == -1)
         {
-            PLOGI("POSIX shared memory name %s already exist \n", poshm_name);
-            continue;
-        }
-        else
-        {
-            PLOGE("Create failed and error is %s\n", strerror(errno));
-            free(*phShmem);
-            *phShmem = nullptr;
-            return PSHMEM_FAILED;
+            if (errno == EEXIST)
+            {
+                PLOGI("POSIX shared memory name %s already exist \n", poshm_name);
+                continue;
+            }
+            else
+            {
+                PLOGE("Create failed and error is %s\n", strerror(errno));
+                free(*phShmem);
+                *phShmem = nullptr;
+                return PSHMEM_FAILED;
+            }
         }
     }
     if (ftruncate(shm_fd, shmemSize) == -1)
@@ -300,9 +308,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 }
 
 PSHMEM_STATUS_T IPCPosixSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char *pData,
-                                                    int dataSize, unsigned char *pMeta,
-                                                    int metaSize, unsigned char *pExtraData,
-                                                    int extraDataSize)
+                                                    int dataSize, const char *pMeta, int metaSize,
+                                                    unsigned char *pExtraData, int extraDataSize)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
@@ -424,7 +431,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pMeta,
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, const char *pMeta,
                                                 size_t metaSize)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;

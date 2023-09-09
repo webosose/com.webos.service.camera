@@ -51,8 +51,8 @@ std::string GetCameraListMethod::createCameraListObjectJsonString() const
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(objreply.bGetReturnValue()));
 
-        int count = getCameraCount();
-        for (int i = 0; i < count; i++)
+        std::size_t count = getCameraCount();
+        for (std::size_t i = 0; i < count; i++)
         {
             jvalue_ref json_outdevicelistitem = jobject_create();
             jobject_put(json_outdevicelistitem, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ID),
