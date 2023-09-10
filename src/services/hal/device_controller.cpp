@@ -104,12 +104,20 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
         path = "/tmp/";
 
     // find the file extension to check if file name is provided or path is provided
-    std::size_t position  = path.find_last_of(".");
-    std::string extension = path.substr(position + 1);
+    std::string extension;
+    auto position = path.find_last_of(".");
+    if (position != path.npos)
+    {
+        if (position + 1 < SIZE_MAX)
+        {
+            extension = path.substr(position + 1);
+        }
+    }
 
     if ((extension == "yuv") || (extension == "jpeg") || (extension == "h264"))
     {
-        if (cstr_burst == str_capturemode_ || cstr_continuous == str_capturemode_)
+        if ((cstr_burst == str_capturemode_ || cstr_continuous == str_capturemode_) &&
+            n_imagecount_ < INT_MAX)
         {
             path.insert(position, std::to_string(n_imagecount_));
             n_imagecount_++;
@@ -170,7 +178,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
 
     if (NULL == (fp = fopen(path.c_str(), "w")))
     {
-        PLOGI("path : fopen failed\n");
+        PLOGE("path : fopen failed\n");
         return DEVICE_ERROR_CANNOT_WRITE;
     }
 
@@ -523,7 +531,10 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
     PLOGI("Driver set width : %d height : %d", streamformat.stream_width,
           streamformat.stream_height);
 
-    buf_size_ = streamformat.buffer_size + extra_buffer;
+    if (streamformat.buffer_size < INT_MAX - extra_buffer)
+    {
+        buf_size_ = streamformat.buffer_size + extra_buffer;
+    }
     PLOGI("buf_size : %d = %d + %d", buf_size_, streamformat.buffer_size, extra_buffer);
 
     int32_t meta_size = 0;

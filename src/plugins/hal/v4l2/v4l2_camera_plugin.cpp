@@ -18,6 +18,7 @@
 #define LOG_TAG "V4l2CameraPlugin"
 #include "v4l2_camera_plugin.h"
 #include "camera_log.h"
+#include <climits>
 #include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>
@@ -953,7 +954,10 @@ int V4l2CameraPlugin::getBufferFd(int *bufFd, int *count)
         dmafd_[i] = expbuf.fd;
         *bufFd    = expbuf.fd;
         bufFd++;
-        *count = *count + 1;
+        if (*count < INT_MAX)
+        {
+            *count = *count + 1;
+        }
     }
     return CAMERA_ERROR_NONE;
 }
@@ -1054,7 +1058,6 @@ int V4l2CameraPlugin::xioctl(int fh, int request, void *arg)
     return ret;
 }
 
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 extern "C"
 {
     IPlugin *plugin_init(void)

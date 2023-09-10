@@ -105,8 +105,10 @@ int DeviceManager::getDeviceCounts(std::string type)
     int count = 0;
     for (auto iter : deviceMap_)
     {
-        if (iter.second.stList.strDeviceType == type)
+        if (iter.second.stList.strDeviceType == type && count < INT_MAX)
+        {
             ++count;
+        }
     }
 
     return count;

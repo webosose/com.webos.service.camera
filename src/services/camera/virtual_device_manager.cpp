@@ -330,12 +330,18 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
             {
                 obj_devstate.shmemtype = SHMEM_SYSTEMV;
-                shmempreview_count_[SHMEM_SYSTEMV]++;
+                if (shmempreview_count_[SHMEM_SYSTEMV] < INT_MAX)
+                {
+                    shmempreview_count_[SHMEM_SYSTEMV]++;
+                }
             }
             else
             {
                 obj_devstate.shmemtype = SHMEM_POSIX;
-                shmempreview_count_[SHMEM_POSIX]++;
+                if (shmempreview_count_[SHMEM_POSIX] < INT_MAX)
+                {
+                    shmempreview_count_[SHMEM_POSIX]++;
+                }
             }
             virtualhandle_map_[devhandle] = obj_devstate;
             return DEVICE_OK;

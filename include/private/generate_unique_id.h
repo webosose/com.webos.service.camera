@@ -27,7 +27,7 @@
 class GenerateUniqueID
 {
     const std::string source_;
-    const int base_;
+    const std::size_t base_;
     const std::function<int()> rand_;
 
 public:

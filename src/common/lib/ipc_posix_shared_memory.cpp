@@ -152,8 +152,18 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 
     PLOGI("hShmem = %p, unitSize=%d, unitNum=%d\n", *phShmem, unitSize, unitNum);
 
-    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+    int shmemSize = 0;
+    if ((unitSize + SHMEM_LENGTH_SIZE) + (metaSize + SHMEM_LENGTH_SIZE) + extraSize <
+        (INT_MAX - sizeof(int) - SHMEM_HEADER_SIZE) / unitNum)
+    {
+        shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
                     (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + extraSize * unitNum;
+    }
+    else
+    {
+        PLOGE("shmemSize error\n");
+    }
+
     // Create shared memory name
     pid_t pid            = getpid();
     int shm_fd           = -1;
@@ -161,7 +171,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 
     while (1)
     {
-        int result = snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm", (int)pid++);
+        int result = snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm",
+                              ((int)pid < INT_MAX) ? (int)pid++ : -1);
         if (result < 0 || static_cast<size_t>(result) >= sizeof(poshm_name))
         {
             PLOGE("snprintf failed");
@@ -353,16 +364,20 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigne
     }
 
     *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
-    memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
 
-    if (metaSize < meta_size)
+    if (lwrite_index < INT_MAX / (*shmem_buffer->unit_size))
+    {
+        memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
+    }
+
+    if (metaSize < meta_size && lwrite_index < INT_MAX / (*shmem_buffer->meta_size))
     {
         *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
         memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
                metaSize);
     }
 
-    if (pExtraData && extraDataSize > 0)
+    if (pExtraData && extraDataSize > 0 && lwrite_index < INT_MAX / (*shmem_buffer->extra_size))
     {
         memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size), pExtraData,
                extraDataSize);
@@ -394,7 +409,10 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
 
     for (int i = 0; i < *shmem_buffer->unit_num; i++)
     {
-        pBufs[i].start  = shmem_buffer->data_buf + i * (*shmem_buffer->unit_size);
+        int size_temp = 0;
+        (i < INT_MAX / (*shmem_buffer->unit_size)) ? size_temp = i * (*shmem_buffer->unit_size)
+                                                   : PLOGE("cert violation\n");
+        pBufs[i].start  = shmem_buffer->data_buf + size_temp;
         pBufs[i].length = *shmem_buffer->unit_size;
     }
 
@@ -402,7 +420,11 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
     {
         for (int i = 0; i < *shmem_buffer->unit_num; i++)
         {
-            pBufsExt[i].start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
+            int size_temp = 0;
+            (i < INT_MAX / (*shmem_buffer->extra_size))
+                ? size_temp = i * (*shmem_buffer->extra_size)
+                : PLOGE("cert violation\n");
+            pBufsExt[i].start  = shmem_buffer->extra_buf + size_temp;
             pBufsExt[i].length = *shmem_buffer->extra_size;
         }
     }
@@ -447,8 +469,17 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, const char 
     if ((int)metaSize < meta_size)
     {
         *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
-        memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
-               metaSize);
+
+        if (lwrite_index > INT_MAX / (*shmem_buffer->meta_size))
+        {
+            PLOGE("cert violation\n");
+            return PSHMEM_ERROR_RANGE_OUT;
+        }
+        else
+        {
+            memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
+                   metaSize);
+        }
     }
     return PSHMEM_IS_OK;
 }
@@ -462,7 +493,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned c
         PLOGE("shmem_buffer is NULL\n");
         return PSHMEM_IS_NULL;
     }
-    if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size))
+    if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size) ||
+        *shmem_buffer->write_index > INT_MAX / (*shmem_buffer->extra_size))
     {
         PLOGE("size error(%zu > %d)!\n\n", extraBytes, *shmem_buffer->extra_size);
         return PSHMEM_ERROR_RANGE_OUT;
@@ -484,7 +516,10 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
     }
 
     // Increase the write index to match the read index of ReadShmem
-    *shmem_buffer->write_index += 1;
+    if (*shmem_buffer->write_index < INT_MAX)
+    {
+        *shmem_buffer->write_index += 1;
+    }
     if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
         *shmem_buffer->write_index = 0;
 
@@ -504,8 +539,17 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem, int u
         return PSHMEM_IS_NULL;
     }
 
-    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+    int shmemSize = 0;
+    if ((unitSize + SHMEM_LENGTH_SIZE) + (metaSize + SHMEM_LENGTH_SIZE) + extraSize <
+        (INT_MAX - sizeof(int) - SHMEM_HEADER_SIZE) / unitNum)
+    {
+        shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
                     (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + (extraSize)*unitNum;
+    }
+    else
+    {
+        PLOGE("shmemSize error\n");
+    }
 
     void *shmem_addr = shmem_buffer->write_index;
 

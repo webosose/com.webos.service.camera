@@ -1192,7 +1192,10 @@ bool CameraService::setSolutions(LSMessage &message)
                 {
                     if (s == i)
                     {
-                        candidateSolutionCnt++;
+                        if (candidateSolutionCnt < UINT_MAX)
+                        {
+                            candidateSolutionCnt++;
+                        }
                         PLOGI("candidate enabled solutionName %s", s.c_str());
                     }
                 }
@@ -1217,7 +1220,10 @@ bool CameraService::setSolutions(LSMessage &message)
                 {
                     if (s == i)
                     {
-                        candidateSolutionCnt++;
+                        if (candidateSolutionCnt < UINT_MAX)
+                        {
+                            candidateSolutionCnt++;
+                        }
                         PLOGI("candidate enabled solutionName %s", s.c_str());
                     }
                 }

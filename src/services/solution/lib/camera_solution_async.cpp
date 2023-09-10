@@ -60,9 +60,10 @@ struct PerformanceControl
         if (timeMultiple_ > 0)
             g_usleep(timeScale_ * timeMultiple_);
 
-        uint32_t adj = abs(avrFPS_ - 0.0) < 1e-9 ? 0 : avrFPS_ > 1 ? 27 / (int)avrFPS_ : 27;
+        uint32_t adj       = abs(avrFPS_ - 0.0) < 1e-9 ? 0 : avrFPS_ > 1 ? 27 / (int)avrFPS_ : 27;
+        uint32_t adj_check = (adj < 30) ? 30 - adj : 0;
 
-        if (frameCount_ < (30 - adj))
+        if (frameCount_ < adj_check)
             return;
 
         uint64_t totalDur = std::accumulate(lstDur_.begin(), lstDur_.end(), 0);

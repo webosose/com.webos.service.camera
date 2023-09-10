@@ -136,7 +136,10 @@ int getRandomNumber()
     }
     else
     {
-        random_value++;
+        if (random_value < UINT_MAX)
+        {
+            random_value++;
+        }
     }
     return random_value;
 }

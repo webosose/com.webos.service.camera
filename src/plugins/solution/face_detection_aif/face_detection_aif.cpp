@@ -280,7 +280,6 @@ void FaceDetectionAIF::sendReply(std::string message)
     }
 }
 
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 extern "C"
 {
     IPlugin *plugin_init(void)

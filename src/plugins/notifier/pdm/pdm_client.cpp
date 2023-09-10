@@ -219,7 +219,6 @@ bool PDMClient::getDeviceListCallback(const char *message)
     return true;
 }
 
-#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 extern "C"
 {
     IPlugin *plugin_init(void)

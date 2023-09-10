@@ -1,8 +1,17 @@
 #pragma once
 #include <cstddef>
+#include <cstring>
 #include <functional>
 #include <string>
 #include <vector>
+
+inline const char *basename(const char *path)
+{
+    const char *cp = strrchr(path, '/');
+    return (cp ? cp + 1 : path);
+}
+
+#define __FILENAME__ (basename(__FILE__))
 
 /**
  * IFeature:
