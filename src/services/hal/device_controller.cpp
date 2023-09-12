@@ -324,7 +324,6 @@ void DeviceControl::captureThread()
     }
     // set continuous capture to false
     b_iscontinuous_capture_ = false;
-    tidCapture.detach();
     n_imagecount_ = 0;
     PLOGI("ended\n");
     return;
