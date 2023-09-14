@@ -619,7 +619,8 @@ bool CameraHalProxy::subscribe()
         return true;
     };
 
-    if (!LSRegisterServerStatusEx(sh_, uid_.c_str(), func, this, &cookie, nullptr))
+    if (!LSRegisterServerStatusEx(sh_, uid_.c_str(), func, static_cast<void *>(this), &cookie,
+                                  nullptr))
     {
         PLOGE("[ServerStatus cb] error LSRegisterServerStatusEx\n");
     }

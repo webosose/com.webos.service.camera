@@ -289,7 +289,7 @@ bool CameraSolutionProxy::subscribe()
                 }
                 return true;
             },
-            this, &cookie, nullptr))
+            static_cast<void *>(this), &cookie, nullptr))
     {
         PLOGE("[ServerStatus cb] LSRegisterServerStatusEx FAILED");
     }

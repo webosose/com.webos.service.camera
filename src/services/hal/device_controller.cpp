@@ -183,7 +183,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
     }
 
     DEVICE_RETURN_CODE_T ret = DEVICE_OK;
-    size_t bytes_written     = fwrite((unsigned char *)p, 1, size, fp);
+    size_t bytes_written     = fwrite(p, 1, size, fp);
     if (bytes_written != static_cast<size_t>(size))
     {
         PLOGE("Error writing data to file.");

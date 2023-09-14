@@ -21,7 +21,7 @@
 static bool updateDeviceListCb(std::string deviceType, const void *deviceList)
 {
     return DeviceManager::getInstance().updateDeviceList(
-        deviceType, *((std::vector<DEVICE_LIST_T> *)deviceList));
+        deviceType, *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
 }
 
 Notifier::~Notifier()

@@ -70,8 +70,6 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     if (it == virtualdevmgrobj_map_.end())
     {
         obj.ptr = new VirtualDeviceManager;
-        obj.ptr->setAddon(pAddon_);
-        PLOGI("ptr : %p \n", obj.ptr);
     }
     else
         obj = it->second;
@@ -80,6 +78,8 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
 
     if (nullptr != obj.ptr)
     {
+        obj.ptr->setAddon(pAddon_);
+
         // open device and return devicehandle
         DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, appId, apppriority);
         if (DEVICE_OK == ret)

@@ -1035,8 +1035,8 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
         return true;
     };
 
-    if (!LSRegisterServerStatusEx(handle, unique_client_id, func, this, &clientCookie->second,
-                                  nullptr))
+    if (!LSRegisterServerStatusEx(handle, unique_client_id, func, static_cast<void *>(this),
+                                  &clientCookie->second, nullptr))
     {
         PLOGE("error LSRegisterServerStatusEx\n");
     }

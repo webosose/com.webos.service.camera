@@ -257,7 +257,6 @@ bool CameraHalService::startPreview(LSMessage &message)
 bool CameraHalService::stopPreview(LSMessage &message)
 {
     int memtype = 0;
-    ;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
