@@ -44,8 +44,8 @@ void CommandManager::removeVirtualDevMgrObj(int devhandle)
         if (devhandle == obj.devicehandle)
         {
             PLOGI("ptr : %p \n", obj.ptr);
-            int count = virtualdevmgrobj_map_.count(it->first);
-            PLOGI("count : %d \n", count);
+            unsigned long count = virtualdevmgrobj_map_.count(it->first);
+            PLOGI("count : %lu \n", count);
             if (count == 1)
                 delete obj.ptr;
             virtualdevmgrobj_map_.erase(it);
@@ -401,7 +401,7 @@ void CommandManager::closeClientDevice(std::string clientName)
             obj.ptr->stopPreview(obj.devicehandle);
             obj.ptr->close(obj.devicehandle);
 
-            int count = virtualdevmgrobj_map_.count(it->first);
+            unsigned long count = virtualdevmgrobj_map_.count(it->first);
             if (count == 1)
             {
                 delete obj.ptr;
@@ -430,7 +430,7 @@ void CommandManager::handleCrash()
         obj.ptr->stopPreview(obj.devicehandle);
         obj.ptr->close(obj.devicehandle);
 
-        int count = virtualdevmgrobj_map_.count(it->first);
+        unsigned long count = virtualdevmgrobj_map_.count(it->first);
         if (count == 1)
         {
             delete obj.ptr;
@@ -459,7 +459,7 @@ void CommandManager::release(int deviceid)
             obj.ptr->stopPreview(obj.devicehandle);
             obj.ptr->close(obj.devicehandle);
 
-            int count = virtualdevmgrobj_map_.count(it->first);
+            unsigned long count = virtualdevmgrobj_map_.count(it->first);
             if (count == 1)
             {
                 delete obj.ptr;

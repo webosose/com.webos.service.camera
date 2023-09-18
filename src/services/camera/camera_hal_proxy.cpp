@@ -42,9 +42,9 @@ static bool cameraHalServiceCb(const char *msg, void *data)
     {
         CameraHalProxy *client = (CameraHalProxy *)data;
 
-        int num_subscribers =
+        unsigned int num_subscribers =
             LSSubscriptionGetHandleSubscribersCount(client->sh_, client->subsKey_.c_str());
-        PLOGI("num_subscribers : %d", num_subscribers);
+        PLOGI("num_subscribers : %u", num_subscribers);
         if (num_subscribers > 0)
         {
             LSError lserror;
@@ -394,8 +394,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
 
     if (ret == DEVICE_OK)
     {
-        pformat->nWidth  = get_optional<int>(jOut, CONST_PARAM_NAME_WIDTH).value_or(0);
-        pformat->nHeight = get_optional<int>(jOut, CONST_PARAM_NAME_HEIGHT).value_or(0);
+        int w            = get_optional<int>(jOut, CONST_PARAM_NAME_WIDTH).value_or(0);
+        int h            = get_optional<int>(jOut, CONST_PARAM_NAME_HEIGHT).value_or(0);
+        pformat->nWidth  = (w > 0) ? w : 0;
+        pformat->nHeight = (h > 0) ? h : 0;
         pformat->nFps    = get_optional<int>(jOut, CONST_PARAM_NAME_FPS).value_or(0);
         pformat->eFormat = get_optional<camera_format_t>(jOut, CONST_PARAM_NAME_FORMAT)
                                .value_or(CAMERA_FORMAT_UNDEFINED);

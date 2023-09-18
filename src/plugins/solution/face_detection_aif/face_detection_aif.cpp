@@ -195,8 +195,9 @@ bool FaceDetectionAIF::detectFace(void)
     std::lock_guard<std::mutex> lock(mtxAi_);
     EdgeAIVision::getInstance().detect(
         type,
-        Mat(Size(oDecodedImage_.outWidth_, oDecodedImage_.outHeight_), CV_8UC3,
-            oDecodedImage_.pImage_),
+        Mat(Size((oDecodedImage_.outWidth_ <= INT_MAX) ? oDecodedImage_.outWidth_ : 0,
+                 (oDecodedImage_.outHeight_ <= INT_MAX) ? oDecodedImage_.outHeight_ : 0),
+            CV_8UC3, oDecodedImage_.pImage_),
         output);
     return true;
     // TODO : Do we need to decide success or failure from here?
@@ -222,7 +223,7 @@ bool FaceDetectionAIF::decodeJpeg(void)
         return false;
     }
 
-    oDecodedImage_.srcColorSpace_ = cinfo.jpeg_color_space;
+    oDecodedImage_.srcColorSpace_ = (cinfo.jpeg_color_space > 0) ? cinfo.jpeg_color_space : 0;
     oDecodedImage_.srcWidth_      = cinfo.image_width;
     oDecodedImage_.srcHeight_     = cinfo.image_height;
 
@@ -235,8 +236,9 @@ bool FaceDetectionAIF::decodeJpeg(void)
     oDecodedImage_.outColorSpace_ = cinfo.out_color_space;
     oDecodedImage_.outWidth_      = cinfo.output_width;
     oDecodedImage_.outHeight_     = cinfo.output_height;
-    oDecodedImage_.outChannels_   = cinfo.num_components;
-    oDecodedImage_.outStride_     = cinfo.output_width * cinfo.num_components;
+    oDecodedImage_.outChannels_   = (cinfo.num_components > 0) ? cinfo.num_components : 0;
+    oDecodedImage_.outStride_ =
+        cinfo.output_width * ((cinfo.num_components > 0) ? cinfo.num_components : 0);
 
     oDecodedImage_.prepareImage();
 
@@ -257,12 +259,12 @@ void FaceDetectionAIF::sendReply(std::string message)
 {
     if (sh_)
     {
-        int num_subscribers = 0;
+        unsigned int num_subscribers = 0;
         LSError lserror;
         LSErrorInit(&lserror);
 
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, SOL_SUBSCRIPTION_KEY);
-        PLOGD("cnt %d", num_subscribers);
+        PLOGD("cnt %u", num_subscribers);
 
         if (num_subscribers > 0)
         {

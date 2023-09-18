@@ -31,6 +31,8 @@
 #include <sys/time.h>
 #include <system_error>
 
+#define FRAME_COUNT 8
+
 using namespace nlohmann;
 
 /**
@@ -131,7 +133,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
             path += "/";
 
         time_t t = time(NULL);
-        if (t == -1)
+        if (t == ((time_t)-1))
         {
             PLOGE("Failed to get current time.");
             t = 0;
@@ -148,20 +150,20 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
         // create file to save data based on format
         int result = -1;
         if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.yuv",
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02ld.yuv",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              ((int)tmnow.tv_usec) / 10000);
+                              (tmnow.tv_usec / 10000));
         else if (epixelformat_ == CAMERA_PIXEL_FORMAT_JPEG)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.jpeg",
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02ld.jpeg",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              ((int)tmnow.tv_usec) / 10000);
+                              (tmnow.tv_usec / 10000));
         else if (epixelformat_ == CAMERA_PIXEL_FORMAT_H264)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.h264",
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02ld.h264",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              ((int)tmnow.tv_usec) / 10000);
+                              (tmnow.tv_usec / 10000));
 
         if (result >= 0 && result < 100)
         {
@@ -183,8 +185,9 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
     }
 
     DEVICE_RETURN_CODE_T ret = DEVICE_OK;
-    size_t bytes_written     = fwrite(p, 1, size, fp);
-    if (bytes_written != static_cast<size_t>(size))
+    size_t sz                = (size > 0) ? (size_t)size : 0;
+    size_t bytes_written     = fwrite(p, 1, sz, fp);
+    if (bytes_written != sz)
     {
         PLOGE("Error writing data to file.");
         ret = DEVICE_ERROR_FAIL_TO_WRITE_FILE;
@@ -545,9 +548,8 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
 
     if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
     {
-        // frame_count = 8 (see "constants.h")
         auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
-            &h_shmsystem_, pkey, buf_size_, meta_size, frame_count, sizeof(unsigned int));
+            &h_shmsystem_, pkey, buf_size_, meta_size, FRAME_COUNT, sizeof(unsigned int));
         if (retshmem != SHMEM_IS_OK)
         {
             PLOGE("CreateShmemory error %d \n", retshmem);
@@ -558,9 +560,8 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
     {
         std::string shmname = "";
 
-        // frame_count = 8 (see "constants.h")
         auto retshmem = IPCPosixSharedMemory::getInstance().CreateShmemory(
-            &h_shmposix_, buf_size_, meta_size, frame_count, sizeof(unsigned int), pkey, &shmname);
+            &h_shmposix_, buf_size_, meta_size, FRAME_COUNT, sizeof(unsigned int), pkey, &shmname);
         if (retshmem != PSHMEM_IS_OK)
         {
             PLOGE("CreatePosixShmemory error %d \n", retshmem);
@@ -582,7 +583,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         if (memtype == kMemtypeShmem)
         {
             // user pointer buffer set-up.
-            usrpbufs_ = (buffer_t *)calloc(frame_count, sizeof(buffer_t));
+            usrpbufs_ = (buffer_t *)calloc(FRAME_COUNT, sizeof(buffer_t));
             if (!usrpbufs_)
             {
                 PLOGE("USERPTR buffer allocation failed \n");
@@ -590,11 +591,10 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
                 PLOGI("CloseShmemory %d", status);
                 return DEVICE_ERROR_UNKNOWN;
             }
-            IPCSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmsystem_, frame_count,
+            IPCSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmsystem_, FRAME_COUNT,
                                                                  usrpbufs_, nullptr);
 
-            // frame_count = 8 (see "constants.h")
-            auto retval = p_cam_hal->setBuffer(frame_count, IOMODE_USERPTR, (void **)&usrpbufs_);
+            auto retval = p_cam_hal->setBuffer(FRAME_COUNT, IOMODE_USERPTR, (void **)&usrpbufs_);
             if (retval != CAMERA_ERROR_NONE)
             {
                 PLOGE("setBuffer failed");
@@ -641,27 +641,26 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         else // memtype == kMemtypePosixshm
         {
             // user pointer buffer set-up.
-            usrpbufs_ = (buffer_t *)calloc(frame_count, sizeof(buffer_t));
+            usrpbufs_ = (buffer_t *)calloc(FRAME_COUNT, sizeof(buffer_t));
             if (!usrpbufs_)
             {
                 PLOGE("USERPTR buffer allocation failed \n");
                 IPCPosixSharedMemory::getInstance().CloseShmemory(
-                    &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                    &h_shmposix_, FRAME_COUNT, buf_size_, meta_size, sizeof(unsigned int),
                     str_shmemname_, shmemfd_);
                 return DEVICE_ERROR_UNKNOWN;
             }
-            IPCPosixSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmposix_, frame_count,
+            IPCPosixSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmposix_, FRAME_COUNT,
                                                                       usrpbufs_, nullptr);
 
-            // frame_count = 8 (see "constants.h")
-            auto retval = p_cam_hal->setBuffer(frame_count, IOMODE_USERPTR, (void **)&usrpbufs_);
+            auto retval = p_cam_hal->setBuffer(FRAME_COUNT, IOMODE_USERPTR, (void **)&usrpbufs_);
             if (retval != CAMERA_ERROR_NONE)
             {
                 PLOGE("setBuffer failed");
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
                 IPCPosixSharedMemory::getInstance().CloseShmemory(
-                    &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                    &h_shmposix_, FRAME_COUNT, buf_size_, meta_size, sizeof(unsigned int),
                     str_shmemname_, shmemfd_);
                 return DEVICE_ERROR_UNKNOWN;
             }
@@ -673,7 +672,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
                 free(usrpbufs_);
                 usrpbufs_ = nullptr;
                 IPCPosixSharedMemory::getInstance().CloseShmemory(
-                    &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                    &h_shmposix_, FRAME_COUNT, buf_size_, meta_size, sizeof(unsigned int),
                     str_shmemname_, shmemfd_);
                 return DEVICE_ERROR_UNKNOWN;
             }
@@ -764,7 +763,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
         if (h_shmposix_ != nullptr)
         {
             auto retshmem = IPCPosixSharedMemory::getInstance().CloseShmemory(
-                &h_shmposix_, frame_count, buf_size_, meta_size, sizeof(unsigned int),
+                &h_shmposix_, FRAME_COUNT, buf_size_, meta_size, sizeof(unsigned int),
                 str_shmemname_, shmemfd_);
             if (retshmem != PSHMEM_IS_OK)
             {
@@ -1125,7 +1124,7 @@ void DeviceControl::requestPreviewCancel() { cancel_preview_ = true; }
 
 void DeviceControl::notifyDeviceFault_()
 {
-    int num_subscribers = 0;
+    unsigned int num_subscribers = 0;
     std::string reply;
     LSError lserror;
     LSErrorInit(&lserror);
@@ -1135,7 +1134,7 @@ void DeviceControl::notifyDeviceFault_()
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
         int fd          = halFd_;
 
-        PLOGI("[fd : %d] notifying device fault ... num_subscribers = %d\n", fd, num_subscribers);
+        PLOGI("[fd : %d] notifying device fault ... num_subscribers = %u\n", fd, num_subscribers);
 
         if (num_subscribers > 0)
         {

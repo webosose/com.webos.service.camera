@@ -184,8 +184,8 @@ bool PDMClient::getDeviceListCallback(const char *message)
     std::vector<DEVICE_LIST_T> devList;
     for (auto jDevice : jPayload["videoDeviceList"])
     {
-        VideoDevice device          = jDevice;
-        unsigned int subdeviceCount = device.subDeviceList.size();
+        VideoDevice device           = jDevice;
+        unsigned long subdeviceCount = device.subDeviceList.size();
         for (auto subdevice : device.subDeviceList)
         {
             DEVICE_LIST_T devInfo;

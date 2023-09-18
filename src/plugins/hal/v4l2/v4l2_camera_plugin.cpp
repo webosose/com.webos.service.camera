@@ -121,9 +121,10 @@ int V4l2CameraPlugin::setFormat(const void *stream_format)
     // set framerate
     struct v4l2_streamparm parm;
     CLEAR(parm);
-    parm.type                                  = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    parm.parm.capture.timeperframe.numerator   = 1;
-    parm.parm.capture.timeperframe.denominator = in_format->stream_fps;
+    parm.type                                = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    parm.parm.capture.timeperframe.numerator = 1;
+    parm.parm.capture.timeperframe.denominator =
+        (in_format->stream_fps > 0) ? in_format->stream_fps : 0;
     if (-1 == xioctl(fd_, VIDIOC_S_PARM, &parm))
     {
         PLOGE("VIDIOC_S_PARM failed %d, %s", errno, strerror(errno));
@@ -152,8 +153,9 @@ int V4l2CameraPlugin::getFormat(void *stream_format)
         PLOGE("VIDIOC_G_PARM failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
     }
-    out_format->stream_fps = streamparm.parm.capture.timeperframe.denominator /
-                             streamparm.parm.capture.timeperframe.numerator;
+    unsigned int stream_fps = streamparm.parm.capture.timeperframe.denominator /
+                              streamparm.parm.capture.timeperframe.numerator;
+    out_format->stream_fps = (stream_fps <= INT_MAX) ? stream_fps : 0;
 
     struct v4l2_format fmt;
     CLEAR(fmt);
@@ -177,7 +179,7 @@ int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode, void **usrbufs)
     PLOGI("num_buffer %d, io_mode %d", num_buffer, io_mode);
     int retVal = CAMERA_ERROR_NONE;
     io_mode_   = io_mode;
-    n_buffers_ = num_buffer;
+    n_buffers_ = (num_buffer > 0) ? num_buffer : 0;
 
     switch (io_mode)
     {
@@ -303,11 +305,14 @@ int V4l2CameraPlugin::releaseBuffer(const void *inbuf)
         memset(&buf, 0, sizeof(buf));
         buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_USERPTR;
-        buf.index  = in_buf->index;
+        buf.index =
+            (in_buf->index <= ((unsigned long)SIZE_MAX)) ? ((unsigned int)in_buf->index) : 0;
         if (in_buf->index < n_buffers_)
         {
             buf.m.userptr = (unsigned long)buffers_[in_buf->index].start;
-            buf.length    = buffers_[in_buf->index].length;
+            buf.length    = (buffers_[in_buf->index].length <= (unsigned long)SIZE_MAX)
+                                ? ((unsigned int)buffers_[in_buf->index].length)
+                                : 0;
         }
 
         if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
@@ -327,7 +332,7 @@ int V4l2CameraPlugin::releaseBuffer(const void *inbuf)
         CLEAR(buf);
         buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
-        buf.index  = in_buf->index;
+        buf.index  = (in_buf->index <= (unsigned long)SIZE_MAX) ? ((unsigned int)in_buf->index) : 0;
 
         if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
@@ -576,8 +581,7 @@ int V4l2CameraPlugin::setV4l2Property(std::map<int, int> &gIdWithPropertyValue)
             queryctrl.id = camera_param_map_[it.first];
             if (xioctl(fd_, VIDIOC_QUERYCTRL, &queryctrl) == -1)
             {
-                PLOGI("VIDIOC_QUERYCTRL[%d] failed %d, %s", (int)(queryctrl.id), errno,
-                      strerror(errno));
+                PLOGI("VIDIOC_QUERYCTRL[%u] failed %d, %s", queryctrl.id, errno, strerror(errno));
                 if (errno == ENODEV)
                 {
                     return CAMERA_ERROR_UNKNOWN;
@@ -674,7 +678,7 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
 
     CLEAR(req);
 
-    req.count  = num_buffer;
+    req.count  = (num_buffer > 0) ? num_buffer : 0;
     req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
 
@@ -726,7 +730,7 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
 
     CLEAR(req);
 
-    req.count  = num_buffer;
+    req.count  = (num_buffer > 0) ? num_buffer : 0;
     req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_USERPTR;
 
@@ -835,7 +839,9 @@ int V4l2CameraPlugin::captureDataUserptrMode()
         buf.memory    = V4L2_MEMORY_USERPTR;
         buf.index     = i;
         buf.m.userptr = (unsigned long)buffers_[i].start;
-        buf.length    = buffers_[i].length;
+        buf.length    = (buffers_[i].length <= (unsigned long)SIZE_MAX)
+                            ? ((unsigned int)buffers_[i].length)
+                            : 0;
 
         if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
@@ -859,7 +865,7 @@ int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
 
     CLEAR(req);
 
-    req.count  = num_buffer;
+    req.count  = (num_buffer > 0) ? num_buffer : 0;
     req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
     req.memory = V4L2_MEMORY_MMAP;
 
@@ -1013,10 +1019,10 @@ void V4l2CameraPlugin::createCameraParamMap()
     camera_param_map_.insert(std::make_pair(PROPERTY_FOCUSABSOLUTE, V4L2_CID_FOCUS_ABSOLUTE));
 }
 
-unsigned long V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camera_format)
+unsigned int V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camera_format)
 {
-    unsigned long pixel_format                                  = V4L2_PIX_FMT_YUYV;
-    std::map<camera_pixel_format_t, unsigned long>::iterator it = fourcc_format_.begin();
+    unsigned int pixel_format                                  = V4L2_PIX_FMT_YUYV;
+    std::map<camera_pixel_format_t, unsigned int>::iterator it = fourcc_format_.begin();
     while (it != fourcc_format_.end())
     {
         if (it->first == camera_format)
@@ -1029,11 +1035,11 @@ unsigned long V4l2CameraPlugin::getFourCCPixelFormat(camera_pixel_format_t camer
     return pixel_format;
 }
 
-camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(unsigned long fourcc_format)
+camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(unsigned int fourcc_format)
 {
     camera_pixel_format_t camera_format = CAMERA_PIXEL_FORMAT_MAX;
 
-    std::map<unsigned long, camera_pixel_format_t>::iterator it = camera_format_.begin();
+    std::map<unsigned int, camera_pixel_format_t>::iterator it = camera_format_.begin();
     while (it != camera_format_.end())
     {
         if (it->first == fourcc_format)
@@ -1046,7 +1052,7 @@ camera_pixel_format_t V4l2CameraPlugin::getCameraPixelFormat(unsigned long fourc
     return camera_format;
 }
 
-int V4l2CameraPlugin::xioctl(int fh, int request, void *arg)
+int V4l2CameraPlugin::xioctl(int fh, unsigned long request, void *arg)
 {
     int ret = 0;
 

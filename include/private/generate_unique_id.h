@@ -34,8 +34,9 @@ public:
     explicit GenerateUniqueID(
         const std::string &src = "0123456789ABCDEFGIJKLMNOPQRSTUVWXYZabcdefgijklmnopqrstuvwxyz")
         : source_(src), base_(source_.size()),
-          rand_(std::bind(std::uniform_int_distribution<int>(0, base_ - 1),
-                          std::mt19937(std::random_device()())))
+          rand_(std::bind(
+              std::uniform_int_distribution<int>(0, (base_ - 1 <= INT_MAX) ? (int)(base_ - 1) : 0),
+              std::mt19937(std::random_device()())))
     {
     }
 
@@ -45,19 +46,21 @@ public:
         std::string s(DEVICECONTROL_UNIQUE_ID_LENGTH, '0');
 
         clock_gettime(CLOCK_MONOTONIC, &time);
+        size_t tv_nsec = (time.tv_nsec > 0) ? time.tv_nsec : 0;
+        size_t tv_sec  = (time.tv_sec > 0) ? time.tv_sec : 0;
 
         s[0] = '_'; // Prepend uid with _ to comply with luna requirements
         for (int i = 1; i < DEVICECONTROL_UNIQUE_ID_LENGTH; ++i)
         {
             if (i < 5 && i < DEVICECONTROL_UNIQUE_ID_LENGTH - 6)
             {
-                s[i] = source_[time.tv_nsec % base_];
-                time.tv_nsec /= base_;
+                s[i] = source_[tv_nsec % base_];
+                tv_nsec /= base_;
             }
             else if (time.tv_sec > 0 && i < DEVICECONTROL_UNIQUE_ID_LENGTH - 3)
             {
-                s[i] = source_[time.tv_sec % base_];
-                time.tv_sec /= base_;
+                s[i] = source_[tv_sec % base_];
+                tv_sec /= base_;
             }
             else
             {

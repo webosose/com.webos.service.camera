@@ -38,8 +38,8 @@
 
 // constants
 
-#define SHMEM_HEADER_SIZE (6 * sizeof(int))
-#define SHMEM_LENGTH_SIZE sizeof(int)
+#define SHMEM_HEADER_SIZE ((int)(6 * sizeof(int)))
+#define SHMEM_LENGTH_SIZE ((int)sizeof(int))
 
 typedef enum
 {
@@ -154,10 +154,11 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
 
     int shmemSize = 0;
     if ((unitSize + SHMEM_LENGTH_SIZE) + (metaSize + SHMEM_LENGTH_SIZE) + extraSize <
-        (INT_MAX - sizeof(int) - SHMEM_HEADER_SIZE) / unitNum)
+        (INT_MAX - ((int)sizeof(int)) - SHMEM_HEADER_SIZE) / unitNum)
     {
         shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
-                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + extraSize * unitNum;
+                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + ((int)sizeof(int)) +
+                    extraSize * unitNum;
     }
     else
     {
@@ -239,28 +240,28 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
     *pShmemBuffer->meta_size = metaSize;
     *pShmemBuffer->unit_num  = unitNum;
 
-    size_t length_buf_offset = sizeof(int) * 6;
+    int length_buf_offset = (int)(sizeof(int) * 6);
 
-    size_t data_buf_offset = SHMEM_HEADER_SIZE + (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+    int data_buf_offset = SHMEM_HEADER_SIZE + (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
 
-    size_t length_meta_offset =
-        SHMEM_HEADER_SIZE +
-        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+    int length_meta_offset = SHMEM_HEADER_SIZE + ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) *
+                                                     (*pShmemBuffer->unit_num);
 
-    size_t data_meta_offset =
+    int data_meta_offset =
         SHMEM_HEADER_SIZE +
         ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
         (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
 
-    size_t extra_size_offset =
+    int extra_size_offset =
         SHMEM_HEADER_SIZE +
         ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
         ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
 
-    size_t extra_buf_offset =
+    int extra_buf_offset =
         SHMEM_HEADER_SIZE +
         ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
-        ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) + sizeof(int);
+        ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+        ((int)sizeof(int));
 
     pShmemBuffer->length_buf = (unsigned int *)(pSharedmem + length_buf_offset);
 
@@ -288,7 +289,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
         return PSHMEM_FAILED;
     }
     // shared momory size larger than total, we use extra data
-    if ((unsigned long)sb.st_size > extra_size_offset)
+    if (sb.st_size > (long)extra_size_offset)
     {
         pShmemBuffer->extra_size = (int *)(pSharedmem + extra_size_offset);
         pShmemBuffer->extra_buf  = pSharedmem + extra_buf_offset;
@@ -312,7 +313,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
     *pShmemBuffer->write_index = -1;
     *pShmemBuffer->read_index  = -1;
 
-    PLOGI("unitSize = %d, SHMEM_LENGTH_SIZE = %zd, unit_num = %d\n", *pShmemBuffer->unit_size,
+    PLOGI("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
           SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
 
     return PSHMEM_IS_OK;
@@ -413,7 +414,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
         (i < INT_MAX / (*shmem_buffer->unit_size)) ? size_temp = i * (*shmem_buffer->unit_size)
                                                    : PLOGE("cert violation\n");
         pBufs[i].start  = shmem_buffer->data_buf + size_temp;
-        pBufs[i].length = *shmem_buffer->unit_size;
+        pBufs[i].length = (*shmem_buffer->unit_size > 0) ? (*shmem_buffer->unit_size) : 0;
     }
 
     if (pBufsExt)
@@ -441,7 +442,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index
         PLOGE("shmem_buffer is NULL\n");
         return PSHMEM_IS_NULL;
     }
-    if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
+    size_t sz_unit = (*shmem_buffer->unit_size > 0) ? (*shmem_buffer->unit_size) : 0;
+    if ((bytesWritten == 0) || (bytesWritten > sz_unit))
     {
         PLOGE("size error(%zu > %d)!\n", bytesWritten, *shmem_buffer->unit_size);
         return PSHMEM_ERROR_RANGE_OUT;
@@ -463,10 +465,10 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, const char 
         return PSHMEM_IS_NULL;
     }
 
-    int meta_size    = *shmem_buffer->meta_size;
+    size_t meta_size = (*shmem_buffer->meta_size > 0) ? (*shmem_buffer->meta_size) : 0;
     int lwrite_index = *shmem_buffer->write_index;
 
-    if ((int)metaSize < meta_size)
+    if (metaSize < meta_size)
     {
         *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
 
@@ -493,7 +495,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned c
         PLOGE("shmem_buffer is NULL\n");
         return PSHMEM_IS_NULL;
     }
-    if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size) ||
+    size_t sz_extra = (*shmem_buffer->extra_size > 0) ? (*shmem_buffer->extra_size) : 0;
+    if (extraBytes == 0 || extraBytes > sz_extra ||
         *shmem_buffer->write_index > INT_MAX / (*shmem_buffer->extra_size))
     {
         PLOGE("size error(%zu > %d)!\n\n", extraBytes, *shmem_buffer->extra_size);
@@ -541,10 +544,11 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem, int u
 
     int shmemSize = 0;
     if ((unitSize + SHMEM_LENGTH_SIZE) + (metaSize + SHMEM_LENGTH_SIZE) + extraSize <
-        (INT_MAX - sizeof(int) - SHMEM_HEADER_SIZE) / unitNum)
+        (INT_MAX - ((int)sizeof(int)) - SHMEM_HEADER_SIZE) / unitNum)
     {
         shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
-                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + (extraSize)*unitNum;
+                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + ((int)sizeof(int)) +
+                    (extraSize)*unitNum;
     }
     else
     {

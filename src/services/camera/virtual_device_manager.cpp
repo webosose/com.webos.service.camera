@@ -191,8 +191,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
     }
 
     // get number of elements in map
-    int nelements = handlepriority_map_.size();
-    PLOGI("nelements : %d \n", nelements);
+    unsigned long nelements = handlepriority_map_.size();
+    PLOGI("nelements : %lu \n", nelements);
 
     if (1 <= nelements)
     {
@@ -374,8 +374,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
             return DEVICE_ERROR_CAN_NOT_STOP;
         }
 
-        int size = npreviewhandle_.size();
-        PLOGI("size : %d \n", size);
+        unsigned long size = npreviewhandle_.size();
+        PLOGI("size : %lu \n", size);
 
         if (memtype < SHMEM_SYSTEMV || memtype > SHMEM_POSIX)
         {
@@ -579,9 +579,9 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
 
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
-        int size = ncapturehandle_.size();
+        unsigned long size = ncapturehandle_.size();
 
-        PLOGI("size : %d \n", size);
+        PLOGI("size : %lu \n", size);
         if (1 < size)
         {
             // remove the handle from vector since stopCapture is called

@@ -656,8 +656,7 @@ bool CameraService::getCameraList(LSMessage &message)
             PLOGD("err_id == DEVICE_OK");
             obj_getcameralist.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                              getErrorString(err_id));
-
-            obj_getcameralist.setCameraCount(static_cast<int>(idList.size()));
+            obj_getcameralist.setCameraCount(idList.size());
             for (std::size_t i = 0; i < idList.size(); i++)
             {
                 obj_getcameralist.setCameraList(

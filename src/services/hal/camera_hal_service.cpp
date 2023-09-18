@@ -256,7 +256,7 @@ bool CameraHalService::startPreview(LSMessage &message)
 
 bool CameraHalService::stopPreview(LSMessage &message)
 {
-    int memtype = 0;
+    int memtype            = 0;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
@@ -306,12 +306,14 @@ bool CameraHalService::startCapture(LSMessage &message)
 
     if (parsed.hasKey(CONST_PARAM_NAME_WIDTH))
     {
-        sformat.nWidth = parsed[CONST_PARAM_NAME_WIDTH].asNumber<int>();
+        int w          = parsed[CONST_PARAM_NAME_WIDTH].asNumber<int>();
+        sformat.nWidth = (w > 0) ? w : 0;
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_HEIGHT))
     {
-        sformat.nHeight = parsed[CONST_PARAM_NAME_HEIGHT].asNumber<int>();
+        int h           = parsed[CONST_PARAM_NAME_HEIGHT].asNumber<int>();
+        sformat.nHeight = (h > 0) ? h : 0;
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_FORMAT))
@@ -492,12 +494,14 @@ bool CameraHalService::setFormat(LSMessage &message)
 
     if (parsed.hasKey(CONST_PARAM_NAME_WIDTH))
     {
-        sformat.nWidth = parsed[CONST_PARAM_NAME_WIDTH].asNumber<int>();
+        int w          = parsed[CONST_PARAM_NAME_WIDTH].asNumber<int>();
+        sformat.nWidth = (w > 0) ? w : 0;
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_HEIGHT))
     {
-        sformat.nHeight = parsed[CONST_PARAM_NAME_HEIGHT].asNumber<int>();
+        int h           = parsed[CONST_PARAM_NAME_HEIGHT].asNumber<int>();
+        sformat.nHeight = (h > 0) ? h : 0;
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_FPS))
@@ -545,10 +549,10 @@ bool CameraHalService::getFormat(LSMessage &message)
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getFormat(&sformat);
     if (ret == DEVICE_OK)
     {
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
-                    jnumber_create_i32(sformat.nWidth));
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
-                    jnumber_create_i32(sformat.nHeight));
+        int w = (sformat.nWidth <= INT_MAX) ? (int)sformat.nWidth : 0;
+        int h = (sformat.nHeight <= INT_MAX) ? (int)sformat.nHeight : 0;
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH), jnumber_create_i32(w));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT), jnumber_create_i32(h));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
                     jnumber_create_i32(sformat.nFps));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
@@ -920,7 +924,8 @@ bool CameraHalService::enableCameraSolution(LSMessage &message)
     if (parsed.hasKey(CONST_PARAM_NAME_SOLUTIONS))
     {
         auto obj_solutions = parsed[CONST_PARAM_NAME_SOLUTIONS];
-        size_t count       = obj_solutions.arraySize();
+        long arrsz         = obj_solutions.arraySize();
+        size_t count       = (arrsz > 0) ? arrsz : 0;
         for (size_t i = 0; i < count; i++)
         {
             std::string name = obj_solutions[i].asString();
@@ -972,7 +977,8 @@ bool CameraHalService::disableCameraSolution(LSMessage &message)
     if (parsed.hasKey(CONST_PARAM_NAME_SOLUTIONS))
     {
         auto obj_solutions = parsed[CONST_PARAM_NAME_SOLUTIONS];
-        size_t count       = obj_solutions.arraySize();
+        long arrsz         = obj_solutions.arraySize();
+        size_t count       = (arrsz > 0) ? arrsz : 0;
         for (size_t i = 0; i < count; i++)
         {
             std::string name = obj_solutions[i].asString();

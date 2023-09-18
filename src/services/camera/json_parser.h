@@ -87,7 +87,7 @@ public:
     }
     MethodReply getMethodReply() const { return objreply_; }
 
-    void setCameraCount(int count) { n_camcount_ = count; }
+    void setCameraCount(std::size_t count) { n_camcount_ = count; }
     std::size_t getCameraCount() const { return n_camcount_; }
 
     static bool getCameraListObject(const char *, const char *);
