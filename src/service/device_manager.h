@@ -1,4 +1,4 @@
-// Copyright (c) 2019 LG Electronics, Inc.
+// Copyright (c) 2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ typedef struct _DEVICE_STATUS
   DEVICE_TYPE_T devType;  // CAM or MIC
   DEVICE_LIST_T stList;   // name, id, node ...
   std::vector<int> handleList;
+  bool isDeviceInfoSaved;
+  camera_device_info_t deviceInfoDB;
 } DEVICE_STATUS;
 
 class DeviceManager
@@ -61,7 +63,7 @@ public:
   bool addDevice(DEVICE_LIST_T *pList);
   bool removeDevice(int devid);
 
-  DEVICE_RETURN_CODE_T getList(int *, int *, int *, int *) const;
+  DEVICE_RETURN_CODE_T getDeviceIdList(std::vector<int> &);
   DEVICE_RETURN_CODE_T updateList(DEVICE_LIST_T *, int, DEVICE_EVENT_STATE_T *,
                                   DEVICE_EVENT_STATE_T *);
   DEVICE_RETURN_CODE_T getInfo(int, camera_device_info_t *);

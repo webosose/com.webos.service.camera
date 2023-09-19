@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
 #ifndef V4L2_CAMERA_PLUGIN
 #define V4L2_CAMERA_PLUGIN
 
+#include "camera_hal_types.h"
+#include "camera_hal_if_types.h"
 #include <camera_base.h>
 #include <iostream>
 #include <linux/videodev2.h>
@@ -36,30 +38,28 @@ extern "C"
   public:
     V4l2CameraPlugin();
 
-    virtual int openDevice(std::string) override;
+    virtual int openDevice(std::string devname) override;
     virtual int closeDevice() override;
-    virtual int setFormat(stream_format_t) override;
-    virtual int getFormat(stream_format_t *) override;
-    virtual int setBuffer(int, int) override;
-    virtual int getBuffer(buffer_t *) override;
-    virtual int releaseBuffer(buffer_t) override;
+    virtual int setFormat(const void *stream_format) override;
+    virtual int getFormat(void *stream_format) override;
+    virtual int setBuffer(int num_buffer, int io_mode, void **usrbufs) override;
+    virtual int getBuffer(void *outbuf) override;
+    virtual int releaseBuffer(const void *inbuf) override;
     virtual int destroyBuffer() override;
     virtual int startCapture() override;
     virtual int stopCapture() override;
-    virtual int setProperties(const camera_properties_t *) override;
-    virtual int getProperties(camera_properties_t *) override;
-    virtual int getInfo(camera_device_info_t *, std::string) override;
-    virtual int getBufferFd(int *, int *) override;
+    virtual int setProperties(const void *cam_in_param) override;
+    virtual int getProperties(void *cam_out_param) override;
+    virtual int getInfo(void *cam_info, std::string devicenode) override;
+    virtual int getBufferFd(int *bufFd, int *count) override;
 
   private:
-    int findQueryId(int value);
     int setV4l2Property(std::map <int,int> &);
-    int getV4l2Property(struct v4l2_queryctrl, int * value, int *);
-    void getCameraFormatProperty(struct v4l2_fmtdesc, camera_properties_t *);
-    void getResolutionProperty(camera_properties_t *);
+    int getV4l2Property(struct v4l2_queryctrl, int *);
+    camera_format_t getCameraFormatProperty(struct v4l2_fmtdesc);
 
     int requestMmapBuffers(int);
-    int requestUserptrBuffers(int);
+    int requestUserptrBuffers(int, buffer_t **);
     int releaseMmapBuffers();
     int releaseUserptrBuffers();
     int captureDataMmapMode();
@@ -71,6 +71,7 @@ extern "C"
 
     void createFourCCPixelFormatMap();
     void createCameraPixelFormatMap();
+    void createCameraParamMap();
     unsigned long getFourCCPixelFormat(camera_pixel_format_t);
     camera_pixel_format_t getCameraPixelFormat(unsigned long);
 
@@ -85,9 +86,7 @@ extern "C"
     int io_mode_;
     std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
     std::map<unsigned long, camera_pixel_format_t> camera_format_;
-
-    // handle to help zero-copy write to shmem
-    void * husrptr_;
+    std::map<int, unsigned int> camera_param_map_;
   };
 
 #ifdef __cplusplus

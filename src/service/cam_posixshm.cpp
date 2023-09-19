@@ -145,247 +145,386 @@ typedef struct
 //         LENGTH(sizeof(int) * unit_num) + DATA(meta_size * unit_num) +
 //         EXTRA_SZ(sizeof(int)) + EXTRA_BUF(extra_size * unit_num))
 
-POSHMEM_STATUS_T IPCPosixSharedMemory::CreatePosixShmemory(SHMEM_HANDLE *phShmem,
-                 int unitSize, int metaSize, int unitNum, int extraSize, int *fd,
-                 std::string *shmemname)
+PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem,int unitSize,
+                                                     int metaSize, int unitNum, int extraSize,
+                                                     int *fd, std::string *shmemname)
 {
-  *phShmem = (SHMEM_HANDLE)malloc(sizeof(POSHMEM_COMM_T));
-  POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
-  if (pShmemBuffer == NULL) {
-    DEBUG_PRINT("failed to created memory for shm handle");
-    return POSHMEM_COMM_FAIL;
-  }
-
-  DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%di, metaSize=%d\n", *phShmem,
-              unitSize, unitNum, metaSize);
-
-  int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
-                  (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + extraSize * unitNum;
-  //Create shared memory name
-  pid_t pid = getpid();
-  int shm_fd = -1;
-  char poshm_name[100] = {};
-
-  while(TRUE)
-  {
-    snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm",(int)pid++);
-
-    shm_fd = shm_open(poshm_name, O_CREAT|O_EXCL|O_RDWR, S_IRUSR|S_IWUSR|S_IRGRP);
-
-    if(shm_fd > 0)
+    *phShmem                     = (SHMEM_HANDLE)calloc(1, sizeof(POSHMEM_COMM_T));
+    POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
+    if (pShmemBuffer == nullptr)
     {
-      DEBUG_PRINT("POSIX shared memory created.\n");
-      *shmemname = poshm_name;
-      break;
+        DEBUG_PRINT("failed to created memory for shm handle");
+        return PSHMEM_FAILED;
     }
-    else if(shm_fd == -1 && errno == EEXIST)
+
+    DEBUG_PRINT("hShmem = %p, unitSize=%d, unitNum=%di, metaSize=%d\n", *phShmem,
+                unitSize, unitNum, metaSize);
+
+    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + extraSize * unitNum;
+    //Create shared memory name
+    pid_t pid = getpid();
+    int shm_fd = -1;
+    char poshm_name[100] = {};
+
+    while (1)
     {
-      DEBUG_PRINT("POSIX shared memory name %s already exist \n", poshm_name);
-      continue;
+        snprintf(poshm_name, sizeof(poshm_name), "/cam%d_poshm",(int)pid++);
+
+        shm_fd = shm_open(poshm_name, O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP);
+
+        if(shm_fd > 0)
+        {
+            DEBUG_PRINT("POSIX shared memory created.\n");
+            *shmemname = poshm_name;
+            break;
+        }
+        else if(shm_fd == -1 && errno == EEXIST)
+        {
+            DEBUG_PRINT("POSIX shared memory name %s already exist \n", poshm_name);
+            continue;
+        }
+        else
+        {
+            DEBUG_PRINT("Create failed and error is %s\n", std::strerror(errno));
+            return PSHMEM_FAILED;
+        }
+    }
+    if (ftruncate(shm_fd, shmemSize) == -1)
+    {
+        DEBUG_PRINT("Failed to set size of shared memory \n");
+        close(shm_fd);
+        free(*phShmem);
+        *phShmem = nullptr;
+        return PSHMEM_FAILED;
+    }
+    *fd = shm_fd;
+
+    DEBUG_PRINT("Posix shared memory created/opened successfully!\n");
+
+    unsigned char *pSharedmem = (unsigned char *)mmap(NULL, shmemSize,
+                                                      PROT_READ|PROT_WRITE,
+                                                      MAP_SHARED, shm_fd, 0);
+    if (pSharedmem == MAP_FAILED || pSharedmem == NULL)
+    {
+        DEBUG_PRINT("mmap failed \n");
+        shm_unlink(poshm_name);
+        close(shm_fd);
+        free(*phShmem);
+        *phShmem = nullptr;
+        *fd      = -1;
+        return PSHMEM_FAILED;
+    }
+
+    pShmemBuffer->write_index = (int *)(pSharedmem);
+    pShmemBuffer->read_index  = (int *)(pSharedmem + sizeof(int));
+    pShmemBuffer->unit_size   = (int *)(pSharedmem + sizeof(int) * 2);
+    pShmemBuffer->meta_size   = (int *)(pSharedmem + sizeof(int) * 3);
+    pShmemBuffer->unit_num    = (int *)(pSharedmem + sizeof(int) * 4);
+    pShmemBuffer->mark        = (POSHMEM_MARK_T *)(pSharedmem + sizeof(int) * 5);
+
+    *pShmemBuffer->unit_size = unitSize;
+    *pShmemBuffer->meta_size = metaSize;
+    *pShmemBuffer->unit_num  = unitNum;
+
+    size_t length_buf_offset = sizeof(int) * 6;
+
+    size_t data_buf_offset = SHMEM_HEADER_SIZE + (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t length_meta_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t data_meta_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+        (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t extra_size_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+        ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
+
+    size_t extra_buf_offset =
+        SHMEM_HEADER_SIZE +
+        ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
+        ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) + sizeof(int);
+
+    pShmemBuffer->length_buf = (unsigned int *)(pSharedmem + length_buf_offset);
+
+    pShmemBuffer->data_buf = pSharedmem + data_buf_offset;
+
+    pShmemBuffer->length_meta = (unsigned int *)(pSharedmem + length_meta_offset);
+
+    pShmemBuffer->data_meta = pSharedmem + data_meta_offset;
+
+    pShmemBuffer->extra_size = nullptr;
+
+    pShmemBuffer->extra_buf  = nullptr;
+
+    struct stat sb ;
+
+    if( fstat (shm_fd , &sb) == -1)
+    {
+        DEBUG_PRINT("Failed to get size of shared memory \n");
+        return PSHMEM_FAILED;
+        munmap(pSharedmem, shmemSize);
+        shm_unlink(poshm_name);
+        close(shm_fd);
+        free(*phShmem);
+        *phShmem = nullptr;
+        *fd      = -1;
+        return PSHMEM_FAILED;
+    }
+    // shared momory size larger than total, we use extra data
+    if (sb.st_size > extra_size_offset)
+    {
+        pShmemBuffer->extra_size = (int *)(pSharedmem + extra_size_offset);
+        pShmemBuffer->extra_buf  = pSharedmem + extra_buf_offset;
     }
     else
     {
-      DEBUG_PRINT("Create failed and error is %s\n", std::strerror(errno));
-      return POSHMEM_COMM_FAIL;
+        pShmemBuffer->extra_size = nullptr;
+        pShmemBuffer->extra_buf  = nullptr;
     }
-  }
-  if (ftruncate(shm_fd, shmemSize) == -1)
-  {
-    DEBUG_PRINT("Failed to set size of shared memory \n");
-  }
-  *fd = shm_fd;
 
-  DEBUG_PRINT("Posix shared memory created/opened successfully!\n");
+    if (pShmemBuffer->extra_size)
+    {
+        *pShmemBuffer->extra_size = extraSize;
+    }
 
-  unsigned char *pSharedmem = (unsigned char *)mmap(NULL, shmemSize,
-                                  PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0);
-  if (pSharedmem == MAP_FAILED || pSharedmem == NULL)
-  {
-    DEBUG_PRINT("mmap failed \n");
-    return POSHMEM_COMM_FAIL;
-  }
+    *pShmemBuffer->mark = POSHMEM_COMM_MARK_NORMAL;
+    // Until the writter starts to write both write index and read index are
+    // set to -1 . So the reader can get to know that the writter has not
+    // started to write yet
+    *pShmemBuffer->write_index = -1;
+    *pShmemBuffer->read_index  = -1;
 
-  pShmemBuffer->write_index = (int *)(pSharedmem);
-  pShmemBuffer->read_index  = (int *)(pSharedmem + sizeof(int));
-  pShmemBuffer->unit_size   = (int *)(pSharedmem + sizeof(int) * 2);
-  pShmemBuffer->meta_size   = (int *)(pSharedmem + sizeof(int) * 3);
-  pShmemBuffer->unit_num    = (int *)(pSharedmem + sizeof(int) * 4);
-  pShmemBuffer->mark        = (POSHMEM_MARK_T *)(pSharedmem + sizeof(int) * 5);
+    DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
+                SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
 
-  *pShmemBuffer->unit_size = unitSize;
-  *pShmemBuffer->meta_size = metaSize;
-  *pShmemBuffer->unit_num  = unitNum;
-
-  size_t length_buf_offset = sizeof(int) * 6;
-
-  size_t data_buf_offset = SHMEM_HEADER_SIZE + (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
-
-  size_t length_meta_offset =
-      SHMEM_HEADER_SIZE +
-      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
-
-  size_t data_meta_offset =
-      SHMEM_HEADER_SIZE +
-      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
-      (SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
-
-  size_t extra_size_offset =
-      SHMEM_HEADER_SIZE +
-      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
-      ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num);
-
-  size_t extra_buf_offset =
-      SHMEM_HEADER_SIZE +
-      ((*pShmemBuffer->unit_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) +
-      ((*pShmemBuffer->meta_size) + SHMEM_LENGTH_SIZE) * (*pShmemBuffer->unit_num) + sizeof(int);
-
-  pShmemBuffer->length_buf = (unsigned int *)(pSharedmem + length_buf_offset);
-
-  pShmemBuffer->data_buf = pSharedmem + data_buf_offset;
-
-  pShmemBuffer->length_meta = (unsigned int *)(pSharedmem + length_meta_offset);
-
-  pShmemBuffer->data_meta = pSharedmem + data_meta_offset;
-
-  pShmemBuffer->extra_size = nullptr;
-  pShmemBuffer->extra_buf  = nullptr;
-
-  struct stat sb ;
-
-  if( fstat (shm_fd , &sb) == -1)
-  {
-    DEBUG_PRINT("Failed to get size of shared memory \n");
-    return POSHMEM_COMM_FAIL;
-  }
-    // shared momory size larger than total, we use extra data
-  if (sb.st_size > extra_size_offset)
-  {
-    pShmemBuffer->extra_size = (int *)(pSharedmem + extra_size_offset);
-    pShmemBuffer->extra_buf  = pSharedmem + extra_buf_offset;
-  }
-  else
-  {
-    pShmemBuffer->extra_size = nullptr;
-    pShmemBuffer->extra_buf  = nullptr;
-  }
-
-  if (pShmemBuffer->extra_size)
-  {
-    *pShmemBuffer->extra_size = extraSize;
-  }
-
-  *pShmemBuffer->mark = POSHMEM_COMM_MARK_NORMAL;
-  // Until the writter starts to write both write index and read index are
-  // set to -1 . So the reader can get to know that the writter has not
-  // started to write yet
-  *pShmemBuffer->write_index = -1;
-  *pShmemBuffer->read_index  = -1;
-
-  DEBUG_PRINT("unitSize = %d, SHMEM_LENGTH_SIZE = %d, unit_num = %d\n", *pShmemBuffer->unit_size,
-              SHMEM_LENGTH_SIZE, *pShmemBuffer->unit_num);
-
-  return POSHMEM_COMM_OK;
+    return PSHMEM_IS_OK;
 }
 
-POSHMEM_STATUS_T IPCPosixSharedMemory::WritePosixShmemory(SHMEM_HANDLE hShmem,
-                 unsigned char *pData, int dataSize, unsigned char *pMeta,
-                 int metaSize, unsigned char *pExtraData, int extraDataSize)
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem,
+                                                    unsigned char *pData, int dataSize,
+                                                    unsigned char *pMeta, int metaSize,
+                                                    unsigned char *pExtraData, int extraDataSize)
 {
-  POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
-  if (!shmem_buffer)
-  {
-    DEBUG_PRINT("shmem_buffer is NULL\n");
-    return POSHMEM_COMM_FAIL;
-  }
-  if (*shmem_buffer->write_index == -1)
-  {
-    *shmem_buffer->write_index = 0;
-  }
-  int mark = *shmem_buffer->mark;
-  int unit_size = *shmem_buffer->unit_size;
-  int meta_size = *shmem_buffer->meta_size;
-  int unit_num = *shmem_buffer->unit_num;
-  int lwrite_index = *shmem_buffer->write_index;
-  if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
-  {
-    DEBUG_PRINT("extraDataSize should be same with extrasize used when open\n");
-    return POSHMEM_COMM_FAIL;
-  }
-  if (mark == POSHMEM_COMM_MARK_RESET)
-  {
-    DEBUG_PRINT("warning - read process isn't reset yet!\n");
-  }
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+    if (*shmem_buffer->write_index == -1)
+    {
+        *shmem_buffer->write_index = 0;
+    }
+    int mark = *shmem_buffer->mark;
+    int unit_size = *shmem_buffer->unit_size;
+    int meta_size = *shmem_buffer->meta_size;
+    int unit_num = *shmem_buffer->unit_num;
+    int lwrite_index = *shmem_buffer->write_index;
+    if (extraDataSize > 0 && extraDataSize != *shmem_buffer->extra_size)
+    {
+        DEBUG_PRINT("extraDataSize should be same with extrasize used when open\n");
+        return PSHMEM_FAILED;
+    }
+    if (mark == POSHMEM_COMM_MARK_RESET)
+    {
+        DEBUG_PRINT("warning - read process isn't reset yet!\n");
+    }
 
-  if ((dataSize == 0) || (dataSize > unit_size))
-  {
-    DEBUG_PRINT("size error(%d > %d)!\n", dataSize, unit_size);
-    return POSHMEM_COMM_FAIL;
-  }
+    if ((dataSize == 0) || (dataSize > unit_size))
+    {
+        DEBUG_PRINT("size error(%d > %d)!\n", dataSize, unit_size);
+        return PSHMEM_FAILED;
+    }
 
-  // Once the writer writes the last buffer, it is made to point to the first
-  // buffer again
-  if (lwrite_index == unit_num)
-  {
-    PMLOG_INFO(CONST_MODULE_DC, "Overflow write data(write_index = %d, unit_num = %d)!\n",
-                lwrite_index, *shmem_buffer->unit_num);
-    *shmem_buffer->write_index = 0;
-    return POSHMEM_COMM_OVERFLOW;
-  }
+    // Once the writer writes the last buffer, it is made to point to the first
+    // buffer again
+    if (lwrite_index == unit_num)
+    {
+        PMLOG_INFO(CONST_MODULE_DC, "Overflow write data(write_index = %d, unit_num = %d)!\n",
+                   lwrite_index, *shmem_buffer->unit_num);
+        *shmem_buffer->write_index = 0;
+        return PSHMEM_ERROR_RANGE_OUT; // ERROR_OVERFLOW
+    }
 
-  *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
-  memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
+    *(int *)(shmem_buffer->length_buf + lwrite_index) = dataSize;
+    memcpy(shmem_buffer->data_buf + lwrite_index * (*shmem_buffer->unit_size), pData, dataSize);
 
-  if (metaSize < meta_size)
-  {
-      *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
-      memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
-             metaSize);
-  }
+    if (metaSize < meta_size)
+    {
+        *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
+        memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
+               metaSize);
+    }
 
-  if (pExtraData && extraDataSize > 0)
-  {
-      memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size), pExtraData,
-             extraDataSize);
-  }
+    if (pExtraData && extraDataSize > 0)
+    {
+        memcpy(shmem_buffer->extra_buf + lwrite_index * (*shmem_buffer->extra_size), pExtraData,
+               extraDataSize);
+    }
 
-  *shmem_buffer->write_index += 1;
+    *shmem_buffer->write_index += 1;
 
-  if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
-    *shmem_buffer->write_index = 0;
-  return POSHMEM_COMM_OK;
+    if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
+        *shmem_buffer->write_index = 0;
+    return PSHMEM_IS_OK;
 }
 
-POSHMEM_STATUS_T IPCPosixSharedMemory::ClosePosixShmemory(SHMEM_HANDLE *phShmem,
-                                     int unitNum, int unitSize, int metaSize,
-                                     int extraSize, std::string shmemname, int shmemfd)
+PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem, int numBuffers,
+                                                            buffer_t pBufs[], buffer_t pBufsExt[])
 {
-  DEBUG_PRINT("CloseShmemory start");
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
 
-  POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)*phShmem;
-  if (!shmem_buffer)
-  {
-    DEBUG_PRINT("shmem_bufer is NULL\n");
-    return POSHMEM_COMM_FAIL;
-  }
+    if (numBuffers != *shmem_buffer->unit_num)
+    {
+        DEBUG_PRINT("posixshm buffer count mismatch\n");
+        return PSHMEM_ERROR_COUNT_MISMATCH;
+    }
 
-  int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
-                  (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + (extraSize)*unitNum;
+    for (int i = 0; i < *shmem_buffer->unit_num; i++)
+    {
+        pBufs[i].start  = shmem_buffer->data_buf + i * (*shmem_buffer->unit_size);
+        pBufs[i].length = *shmem_buffer->unit_size;
+    }
 
-  void *shmem_addr = shmem_buffer->write_index;
+    if (pBufsExt)
+    {
+        for (int i = 0; i < *shmem_buffer->unit_num; i++)
+        {
+            pBufsExt[i].start  = shmem_buffer->extra_buf + i * (*shmem_buffer->extra_size);
+            pBufsExt[i].length = *shmem_buffer->extra_size;
+        }
+    }
 
-  if (munmap(shmem_addr, shmemSize) == -1)
-  {
-    return POSHMEM_COMM_FAIL;
-  }
+    return PSHMEM_IS_OK;
+}
 
-  if (shm_unlink(shmemname.c_str()) == -1)
-  {
-    return POSHMEM_COMM_FAIL;
-  }
-  close(shmemfd);
-  free(shmem_buffer);
-  shmem_buffer = nullptr;
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index,
+                                                  size_t bytesWritten)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+    if ((bytesWritten == 0) || (bytesWritten > (size_t)(*shmem_buffer->unit_size)))
+    {
+        DEBUG_PRINT("size error(%lu > %lu)!\n", bytesWritten, *shmem_buffer->unit_size);
+        return PSHMEM_ERROR_RANGE_OUT;
+    }
 
-  DEBUG_PRINT("CloseShmemory end");
-  return POSHMEM_COMM_OK;
+    *shmem_buffer->write_index                 = index;
+    *(int *)(shmem_buffer->length_buf + index) = bytesWritten;
+
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, unsigned char *pMeta,
+                                                size_t metaSize)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+
+    int meta_size    = *shmem_buffer->meta_size;
+    int lwrite_index = *shmem_buffer->write_index;
+
+    if ((int)metaSize < meta_size)
+    {
+        *(int *)(shmem_buffer->length_meta + lwrite_index) = metaSize;
+        memcpy(shmem_buffer->data_meta + lwrite_index * (*shmem_buffer->meta_size), pMeta,
+               metaSize);
+    }
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned char *extraData,
+                                                 size_t extraBytes)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+    if (extraBytes == 0 || extraBytes > (size_t)(*shmem_buffer->extra_size))
+    {
+        DEBUG_PRINT("size error(%lu > %lu)!\n\n", extraBytes, *shmem_buffer->extra_size);
+        return PSHMEM_ERROR_RANGE_OUT;
+    }
+    unsigned char *addr =
+        shmem_buffer->extra_buf + (*shmem_buffer->write_index) * (*shmem_buffer->extra_size);
+    memcpy(addr, extraData, extraBytes);
+
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_buffer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+
+    // Increase the write index to match the read index of ReadShmem
+    *shmem_buffer->write_index += 1;
+    if (*shmem_buffer->write_index == *shmem_buffer->unit_num)
+        *shmem_buffer->write_index = 0;
+
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem,
+                                                    int unitNum, int unitSize, int metaSize,
+                                                    int extraSize, std::string shmemname, int shmemfd)
+{
+    DEBUG_PRINT("CloseShmemory start");
+
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)*phShmem;
+    if (!shmem_buffer)
+    {
+        DEBUG_PRINT("shmem_bufer is NULL\n");
+        return PSHMEM_IS_NULL;
+    }
+
+    int shmemSize = SHMEM_HEADER_SIZE + (unitSize + SHMEM_LENGTH_SIZE) * unitNum +
+                    (metaSize + SHMEM_LENGTH_SIZE) * unitNum + sizeof(int) + (extraSize)*unitNum;
+
+    void *shmem_addr = shmem_buffer->write_index;
+
+    /* FIX-ME: We should try close shmemfd anyway, aren't we? */
+    if (munmap(shmem_addr, shmemSize) == -1)
+    {
+        DEBUG_PRINT("munmap failed!!\n");
+        // return PSHMEM_ERROR_MUNMAP_FAIL;
+    }
+
+    if (shm_unlink(shmemname.c_str()) == -1)
+    {
+        DEBUG_PRINT("shm_unlink failed!!\n");
+        // return PSHMEM_ERROR_UNLINK_FAIL;
+    }
+
+    close(shmemfd);
+    free(shmem_buffer);
+    shmem_buffer = nullptr;
+
+    DEBUG_PRINT("CloseShmemory end");
+    return PSHMEM_IS_OK;
 }

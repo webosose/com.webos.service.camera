@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,9 +46,6 @@ const char *getInfoSchema = "{ \
 const char *getPropertiesSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
-    \"required\": [ \
-      \"handle\" \
-    ], \
     \"params\": { \
       \"type\": \"array\", \
       \"title\": \"The Params Schema\", \
@@ -60,10 +57,16 @@ const char *getPropertiesSchema = "{ \
       }\
     },\
     \"properties\": { \
-      \"handle\": { \
-        \"type\": \"integer\", \
-        \"title\": \"The Handle Schema\", \
-        \"default\": 0 \
+      \"id\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Id Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+      }, \
+      \"subscribe\": { \
+      \"type\": \"boolean\", \
+      \"title\": \"The subscribe Schema\", \
+      \"default\": false \
       } \
     } \
 }";
@@ -384,4 +387,26 @@ const char *setSolutionsSchema = "{ \
     }\
   }\
 }";
+
+const char *getFormatSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"id\" \
+  ], \
+  \"properties\": { \
+    \"id\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Id Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+    }, \
+    \"subscribe\": { \
+      \"type\": \"boolean\", \
+      \"title\": \"The subscribe Schema\", \
+      \"default\": false \
+    } \
+  } \
+}";
+
 #endif /*SRC_SERVICE_JSON_SCHEMA_H_*/

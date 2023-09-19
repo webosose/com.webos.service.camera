@@ -58,7 +58,11 @@ std::string GetCameraListMethod::createCameraListObjectJsonString() const
                   jstring_create(strGetCameraList(i).c_str()));
       jarray_append(json_outdevicelistarray, json_outdevicelistitem);
     }
-
+    if (b_issubscribed_ == true)
+    {
+         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                     jboolean_create(b_issubscribed_));
+    }
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEVICE_LIST), json_outdevicelistarray);
   }
   else
@@ -387,29 +391,21 @@ void GetInfoMethod::getInfoObject(const char *input, const char *schemapath)
   j_release(&j_obj);
 }
 
-std::string GetInfoMethod::createInfoObjectJsonString() const
+std::string GetInfoMethod::createInfoObjectJsonString(bool supported) const
 {
-  jvalue_ref json_outobj = jobject_create();
+  jvalue_ref json_outobj   = jobject_create();
   jvalue_ref json_info_obj = jobject_create();
-  jvalue_ref json_detailsobj = jobject_create();
-  jvalue_ref json_video_obj = jobject_create();
-  jvalue_ref json_pictureobj = jobject_create();
   std::string strreply;
 
   MethodReply objreply = getMethodReply();
 
   if (objreply.bGetReturnValue())
   {
-    char strformat[CONST_MAX_STRING_LENGTH];
-    bool supported = WhitelistChecker::getInstance().isSupportedCamera(rGetCameraInfo().str_vendorname,
-                                                                       rGetCameraInfo().str_productname);
-
-    getFormatString(rGetCameraInfo().n_format, strformat);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
-                jboolean_create(objreply.bGetReturnValue()));
+                  jboolean_create(objreply.bGetReturnValue()));
 
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_NAME),
-                jstring_create(rGetCameraInfo().str_devicename));
+                jstring_create(rGetCameraInfo().str_devicename.c_str()));
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TYPE),
                 jstring_create(getTypeString(rGetCameraInfo().n_devicetype)));
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BUILTIN),
@@ -417,25 +413,18 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
     jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUPPORTED),
                 jboolean_create(supported));
 
-    jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
-                jnumber_create_i32(rGetCameraInfo().n_maxvideowidth));
-    jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXHEIGHT),
-                jnumber_create_i32(rGetCameraInfo().n_maxvideoheight));
-    jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FRAMERATE),
-                jnumber_create_i32(rGetCameraInfo().n_cur_fps));
-    jobject_put(json_video_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT), jstring_create(strformat));
-
-    jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXWIDTH),
-                jnumber_create_i32(rGetCameraInfo().n_maxpicturewidth));
-    jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAXHEIGHT),
-                jnumber_create_i32(rGetCameraInfo().n_maxpictureheight));
-    jobject_put(json_pictureobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
-                jstring_create(strformat));
-
-    jobject_put(json_detailsobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VIDEO), json_video_obj);
-    jobject_put(json_detailsobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PICTURE), json_pictureobj);
-
-    jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DETAILS), json_detailsobj);
+    jvalue_ref json_resolutionobj = jobject_create();
+    for (auto const &v : rGetCameraInfo().stResolution)
+    {
+        jvalue_ref json_resolutionarray = jarray_create(0);
+        for (auto const &res : v.c_res)
+        {
+            jarray_append(json_resolutionarray, jstring_create(res.c_str()));
+        }
+        jobject_put(json_resolutionobj, jstring_create(getResolutionString(v.e_format).c_str()),
+                    json_resolutionarray);
+    }
+    jobject_put(json_info_obj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION), json_resolutionobj);
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_INFO), json_info_obj);
   }
   else
@@ -451,7 +440,8 @@ std::string GetInfoMethod::createInfoObjectJsonString() const
 }
 
 GetSetPropertiesMethod::GetSetPropertiesMethod()
-    : n_devicehandle_(n_invalid_id), ro_camproperties_(), str_params_()
+    : n_devicehandle_(n_invalid_id), ro_camproperties_(), str_params_(), str_devid_(cstr_empty),
+      b_issubscribed_(false)
 {
 }
 
@@ -478,14 +468,25 @@ bool GetSetPropertiesMethod::isParamsEmpty(const char *input, const char *schema
 void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *schemapath)
 {
   jvalue_ref j_obj;
+  jvalue_ref j_name_id_obj;
   int retval = deSerialize(input, schemapath, j_obj);
 
   if (0 == retval)
   {
-    int devicehandle = n_invalid_id;
-    jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
-    setDeviceHandle(devicehandle);
+    j_name_id_obj     = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+    raw_buffer str_id = jstring_get_fast(j_name_id_obj);
 
+    // set camera id
+    if (strstr(str_id.m_str, "camera") == NULL)
+    {
+      setCameraId(cstr_invaliddeviceid);
+    }
+    else
+    {
+      setCameraId(str_id.m_str);
+    }
+
+    // set params
     jvalue_ref params = jobject_get(j_obj, J_CSTR_TO_BUF("params"));
     for (ssize_t i = 0; i != jarray_size(params); i++)
     {
@@ -495,7 +496,7 @@ void GetSetPropertiesMethod::getPropertiesObject(const char *input, const char *
   }
   else
   {
-    setDeviceHandle(n_invalid_id);
+    setCameraId(cstr_invaliddeviceid);
   }
   j_release(&j_obj);
 }
@@ -516,44 +517,71 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
     if (0 == str_params_.size())
     {
       CAMERA_PROPERTIES_T obj = rGetCameraProperties();
-      CAMERA_PROPERTIES_T default_obj;
 
-      createGetPropertiesJsonString(&obj, &default_obj, json_outobjparams);
-
-      // add resolution structure
-      jvalue_ref json_resolutionobj = jobject_create();
-      for (int nformat = 0; nformat < rGetCameraProperties().stResolution.n_formatindex; nformat++)
+      for (int i = 0; i < PROPERTY_END; i++)
       {
-        jvalue_ref json_resolutionarray = jarray_create(0);
-        for (int count = 0; count < rGetCameraProperties().stResolution.n_framecount[nformat];
-             count++)
+        if (obj.stGetData.data[i][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE)
         {
-          jarray_append(json_resolutionarray,
-                        jstring_create(rGetCameraProperties().stResolution.c_res[nformat][count]));
+          jvalue_ref json_propertyobj = jobject_create();
+          jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN),
+                      jnumber_create_i32(obj.stGetData.data[i][QUERY_MIN]));
+          jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX),
+                      jnumber_create_i32(obj.stGetData.data[i][QUERY_MAX]));
+          jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),
+                      jnumber_create_i32(obj.stGetData.data[i][QUERY_STEP]));
+          jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE),
+                      jnumber_create_i32(obj.stGetData.data[i][QUERY_DEFAULT]));
+          jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE),
+                      jnumber_create_i32(obj.stGetData.data[i][QUERY_VALUE]));
+          jobject_put(json_outobjparams, jstring_create(getParamString(i).c_str()),
+                      json_propertyobj);
         }
-        jobject_put(json_resolutionobj,
-                    jstring_create(
-                        getResolutionString(rGetCameraProperties().stResolution.e_format[nformat])
-                            .c_str()),
-                    json_resolutionarray);
       }
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION),
-                  json_resolutionobj);
     }
     else
     {
       CAMERA_PROPERTIES_T obj = rGetCameraProperties();
-      for (size_t nelementcount = 0; nelementcount < str_params_.size(); nelementcount++)
+      for(auto const &it : str_params_)
       {
-        createGetPropertiesOutputParamJsonString(str_params_.at(nelementcount), &obj,
-                                                 json_outobjparams);
+        int param_enum = getParamNumFromString(it);
+        if(param_enum != -1)
+        {
+          if( obj.stGetData.data[param_enum][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE )
+          {
+              jvalue_ref json_propertyobj = jobject_create();
+              jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN),
+                          jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_MIN]));
+              jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX),
+                          jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_MAX]));
+              jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),
+                          jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_STEP]));
+              jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE),
+                          jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_DEFAULT]));
+              jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE),
+                          jnumber_create_i32(obj.stGetData.data[param_enum][QUERY_VALUE]));
+              jobject_put(json_outobjparams, jstring_create((it).c_str()),json_propertyobj);
+          }
+        }
       }
+    }
+    if (b_issubscribed_ == true)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                    jboolean_create(b_issubscribed_));
     }
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
   }
   else
   {
     createJsonStringFailure(objreply, json_outobj);
+
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
+
+    if (b_issubscribed_ == true)
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                    jboolean_create(b_issubscribed_));
+    }
   }
 
   const char* strvalue = jvalue_stringify(json_outobj);
@@ -577,43 +605,13 @@ void GetSetPropertiesMethod::getSetPropertiesObject(const char *input, const cha
     CAMERA_PROPERTIES_T r_camproperties;
 
     jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
-    jvalue_ref jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_PAN));
-    jnumber_get_i32(jparams, &r_camproperties.nPan);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TILT));
-    jnumber_get_i32(jparams, &r_camproperties.nTilt);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_CONTRAST));
-    jnumber_get_i32(jparams, &r_camproperties.nContrast);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_BIRGHTNESS));
-    jnumber_get_i32(jparams, &r_camproperties.nBrightness);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SATURATION));
-    jnumber_get_i32(jparams, &r_camproperties.nSaturation);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SHARPNESS));
-    jnumber_get_i32(jparams, &r_camproperties.nSharpness);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_HUE));
-    jnumber_get_i32(jparams, &r_camproperties.nHue);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE));
-    jnumber_get_i32(jparams, &r_camproperties.nWhiteBalanceTemperature);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_GAIN));
-    jnumber_get_i32(jparams, &r_camproperties.nGain);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_GAMMA));
-    jnumber_get_i32(jparams, &r_camproperties.nGamma);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FREQUENCY));
-    jnumber_get_i32(jparams, &r_camproperties.nFrequency);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_EXPOSURE));
-    jnumber_get_i32(jparams, &r_camproperties.nExposure);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOEXPOSURE));
-    jnumber_get_i32(jparams, &r_camproperties.nAutoExposure);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOWHITEBALANCE));
-    jnumber_get_i32(jparams, &r_camproperties.nAutoWhiteBalance);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION));
-    jnumber_get_i32(jparams, &r_camproperties.nBacklightCompensation);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_ZOOM_ABSOLUTE));
-    jnumber_get_i32(jparams, &r_camproperties.nZoomAbsolute);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_AUTOFOCUS));
-    jnumber_get_i32(jparams, &r_camproperties.nAutoFocus);
-    jparams = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FOCUS_ABSOLUTE));
-    jnumber_get_i32(jparams, &r_camproperties.nFocusAbsolute);
-    r_camproperties.stResolution.n_formatindex = 0;
+    jvalue_ref jparams;
+    for (int i = 0; i < PROPERTY_END; i++)
+    {
+      jparams = jobject_get(jobj_params, j_cstr_to_buffer(getParamString(i).c_str()));
+      jnumber_get_i32(jparams, &r_camproperties.stGetData.data[i][QUERY_VALUE]);
+    }
+
     setCameraProperties(r_camproperties);
   }
   else
@@ -721,630 +719,6 @@ void createJsonStringFailure(MethodReply obj_reply, jvalue_ref &json_outobj)
               jnumber_create_i32(obj_reply.getErrorCode()));
   jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_TEXT),
               jstring_create(obj_reply.strGetErrorText().c_str()));
-
-  return;
-}
-
-void createGetPropertiesJsonString(CAMERA_PROPERTIES_T *properties, CAMERA_PROPERTIES_T *old_property, jvalue_ref &json_outobjparams)
-{
-  if (nullptr != old_property)
-  {
-    if (properties->nContrast != old_property->nContrast)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nContrast));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST), json_propertyobj);
-    } else if(properties->nContrast == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nBrightness != old_property->nBrightness)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nBrightness));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS), json_propertyobj);
-    } else if(properties->nBrightness == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nAutoFocus != old_property->nAutoFocus)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nAutoFocus));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS), json_propertyobj);
-    } else if(properties->nAutoFocus == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nFocusAbsolute != old_property->nFocusAbsolute)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nFocusAbsolute));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE), json_propertyobj);
-    } else if(properties->nFocusAbsolute == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nZoomAbsolute != old_property->nZoomAbsolute)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nZoomAbsolute));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE), json_propertyobj);
-    } else if(properties->nZoomAbsolute == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-
-    if (properties->nPan != old_property->nPan)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nPan));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN), json_propertyobj);
-    } else if(properties->nPan == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nTilt != old_property->nTilt)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nTilt));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT), json_propertyobj);
-    } else if(properties->nTilt == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nContrast != old_property->nContrast)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nContrast));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST), json_propertyobj);
-    } else if(properties->nContrast == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nBrightness != old_property->nBrightness)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nBrightness));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS), json_propertyobj);
-    } else if(properties->nBrightness == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nSaturation != old_property->nSaturation)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nSaturation));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION), json_propertyobj);
-    } else if(properties->nSaturation == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-
-    if (properties->nSharpness != old_property->nSharpness)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nSharpness));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS), json_propertyobj);
-    } else if(properties->nSharpness == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nHue != old_property->nHue)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nHue));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE), json_propertyobj);
-    } else if(properties->nHue == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nWhiteBalanceTemperature != old_property->nWhiteBalanceTemperature)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nWhiteBalanceTemperature));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE), json_propertyobj);
-    } else if(properties->nWhiteBalanceTemperature == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nGain != old_property->nGain)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nGain));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN), json_propertyobj);
-    } else if(properties->nGain == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nGamma != old_property->nGamma)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nGamma));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA), json_propertyobj);
-    } else if(properties->nGamma == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nFrequency != old_property->nFrequency)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nFrequency));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY), json_propertyobj);
-    } else if(properties->nFrequency == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nExposure != old_property->nExposure)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nExposure));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE), json_propertyobj);
-    } else if(properties->nExposure == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nAutoExposure != old_property->nAutoExposure)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nAutoExposure));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE), json_propertyobj);
-    } else if(properties->nAutoExposure == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nAutoWhiteBalance != old_property->nAutoWhiteBalance)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nAutoWhiteBalance));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE), json_propertyobj);
-    } else if(properties->nAutoWhiteBalance == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    if (properties->nBacklightCompensation != old_property->nBacklightCompensation)
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nBacklightCompensation));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION), json_propertyobj);
-    } else if(properties->nBacklightCompensation == CONST_PARAM_DEFAULT_VALUE) {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-  }
-  return;
-}
-
-void mappingPropertieswithConstValues(std::map<std::string,int> &gPropertyMap, CAMERA_PROPERTIES_T *properties)
-{
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_PAN,properties->nPan));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_TILT,properties->nTilt));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_CONTRAST,properties->nContrast));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_BIRGHTNESS,properties->nBrightness));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_SATURATION,properties->nSaturation));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_SHARPNESS,properties->nSharpness));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_HUE,properties->nHue));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE,properties->nWhiteBalanceTemperature));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_GAIN,properties->nGain));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_GAMMA,properties->nGamma));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_FREQUENCY,properties->nFrequency));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_EXPOSURE,properties->nExposure));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_AUTOEXPOSURE,properties->nAutoExposure));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_AUTOWHITEBALANCE,properties->nAutoWhiteBalance));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION,properties->nBacklightCompensation));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_ZOOM_ABSOLUTE,properties->nZoomAbsolute));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_FOCUS_ABSOLUTE,properties->nFocusAbsolute));
-  gPropertyMap.insert(std::make_pair(CONST_PARAM_NAME_AUTOFOCUS,properties->nAutoFocus));
-
-}
-
-void createGetPropertiesOutputJsonString(const std::string propertyName,
-                                                   CAMERA_PROPERTIES_T *properties,  jvalue_ref &json_outobjparams)
-{
-
-  if (propertyName == CONST_PARAM_NAME_AUTOFOCUS)
-  {
-    if (properties->nAutoFocus == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOFOCUS][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nAutoFocus));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOFOCUS), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_FOCUS_ABSOLUTE)
-  {
-    if (properties->nFocusAbsolute == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_FOCUSABSOLUTE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nFocusAbsolute));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FOCUS_ABSOLUTE), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_ZOOM_ABSOLUTE)
-  {
-    if (properties->nZoomAbsolute == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_ZOOMABSOLUTE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nZoomAbsolute));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ZOOM_ABSOLUTE), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_PAN)
-  {
-    if (properties->nPan == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_PAN][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nPan));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PAN), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_TILT)
-  {
-    if (properties->nTilt == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_TILT][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nTilt));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_TILT), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_CONTRAST)
-  {
-    if (properties->nContrast == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_CONTRAST][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nContrast));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_CONTRAST), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_BIRGHTNESS)
-  {
-    if (properties->nBrightness == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_BRIGHTNESS][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nBrightness));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BIRGHTNESS), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_SATURATION)
-  {
-    if (properties->nSaturation == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_SATURATION][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nSaturation));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SATURATION), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_SHARPNESS)
-  {
-    if (properties->nSharpness == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_SHARPNESS][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nSharpness));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHARPNESS), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_HUE)
-  {
-    if (properties->nHue == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_HUE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nHue));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HUE), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_WHITEBALANCETEMPERATURE)
-  {
-    if (properties->nWhiteBalanceTemperature == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_WHITEBALANCETEMPERATURE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nWhiteBalanceTemperature));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WHITEBALANCETEMPERATURE), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_GAIN)
-  {
-    if (properties->nGain == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAIN][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nGain));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAIN), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_GAMMA)
-  {
-    if (properties->nGamma == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_GAMMA][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nGamma));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_GAMMA), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_FREQUENCY)
-  {
-    if (properties->nFrequency == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_FREQUENCY][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nFrequency));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FREQUENCY), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_EXPOSURE)
-  {
-    if (properties->nExposure == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_EXPOSURE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nExposure));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_EXPOSURE), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_AUTOEXPOSURE)
-  {
-    if (properties->nAutoExposure == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOEXPOSURE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nAutoExposure));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOEXPOSURE), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_AUTOWHITEBALANCE)
-  {
-    if (properties->nAutoWhiteBalance == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_AUTOWHITEBALANCE][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nAutoWhiteBalance));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_AUTOWHITEBALANCE), json_propertyobj);
-    }
-  }
-  if (propertyName == CONST_PARAM_NAME_BACKLIGHT_COMPENSATION)
-  {
-    if (properties->nBacklightCompensation == CONST_PARAM_DEFAULT_VALUE)
-    {
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION), jstring_create(CONST_PARAM_NAME_NOTSUPPORT));
-    }
-    else
-    {
-      jvalue_ref json_propertyobj = jobject_create();
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MIN), jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_MIN]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MAX), jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_MAX]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_STEP),jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_STEP]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEFAULT_VALUE), jnumber_create_i32(properties->stGetData.data[PROPERTY_BACKLIGHTCOMPENSATION][QUERY_DEFAULT]));
-      jobject_put(json_propertyobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_VALUE), jnumber_create_i32(properties->nBacklightCompensation));
-      jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_BACKLIGHT_COMPENSATION), json_propertyobj);
-     }
-  }
-}
-
-void createGetPropertiesOutputParamJsonString(const std::string strparam,
-                                              CAMERA_PROPERTIES_T *properties,
-                                              jvalue_ref &json_outobjparams)
-{
-  std::map<std::string,int> gPropertyMap;
-
-  mappingPropertieswithConstValues(gPropertyMap,properties);
-
-  std::map<std::string,int>::iterator it = gPropertyMap.find(strparam);
-
-  if (it != gPropertyMap.end())
-  {
-     createGetPropertiesOutputJsonString(strparam, properties, json_outobjparams);
-  }
-  else if (CONST_PARAM_NAME_RESOLUTION == strparam)
-  {
-    jvalue_ref json_resolutionobj = jobject_create();
-    for (int nformat = 0; nformat < properties->stResolution.n_formatindex; nformat++)
-    {
-      jvalue_ref json_resolutionarray = jarray_create(0);
-      for (int count = 0; count < properties->stResolution.n_framecount[nformat]; count++)
-      {
-        jarray_append(json_resolutionarray, jstring_create(properties->stResolution.c_res[nformat][count]));
-      }
-      jobject_put(
-          json_resolutionobj,
-          jstring_create(getResolutionString(properties->stResolution.e_format[nformat]).c_str()),
-          json_resolutionarray);
-    }
-    jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RESOLUTION), json_resolutionobj);
-  }
-  else
-  {
-    // do nothing
-  }
 
   return;
 }
@@ -1590,4 +964,125 @@ std::string SetSolutionsMethod::createObjectJsonString() const
   j_release(&json_outobj);
 
   return str_reply;
+}
+
+GetFormatMethod::GetFormatMethod() : str_devid_(cstr_empty), ro_params_(), b_issubscribed_(false) {}
+
+void GetFormatMethod::getObject(const char *input, const char *schemapath)
+{
+    jvalue_ref j_obj;
+    jvalue_ref j_param_obj;
+    int retval = deSerialize(input, schemapath, j_obj);
+
+    if (0 == retval)
+    {
+        j_param_obj       = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_ID));
+        raw_buffer str_id = jstring_get_fast(j_param_obj);
+
+        if (strstr(str_id.m_str, "camera") == NULL)
+        {
+            setCameraId(cstr_invaliddeviceid);
+        }
+        else
+        {
+            setCameraId(str_id.m_str);
+        }
+    }
+    else
+    {
+        setCameraId(cstr_invaliddeviceid);
+    }
+    j_release(&j_obj);
+}
+
+std::string GetFormatMethod::createObjectJsonString() const
+{
+    jvalue_ref json_outobj       = jobject_create();
+    jvalue_ref json_outobjparams = jobject_create();
+
+    std::string str_reply;
+
+    MethodReply obj_reply = getMethodReply();
+
+    if (obj_reply.bGetReturnValue())
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(obj_reply.bGetReturnValue()));
+
+        std::string strformat = getFormatStringFromCode(rGetCameraFormat().eFormat);
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
+                    jstring_create(strformat.c_str()));
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
+                    jnumber_create_i32(rGetCameraFormat().nWidth));
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
+                    jnumber_create_i32(rGetCameraFormat().nHeight));
+        jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
+                    jnumber_create_i32(rGetCameraFormat().nFps));
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_PARAMS), json_outobjparams);
+    }
+    else
+    {
+        createJsonStringFailure(obj_reply, json_outobj);
+
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
+    }
+
+    const char *str = jvalue_stringify(json_outobj);
+    if (str)
+        str_reply = str;
+    j_release(&json_outobj);
+
+    return str_reply;
+}
+
+void EventNotificationMethod::getEventObject(const char *input, const char *schemapath)
+{
+    jvalue_ref j_obj = jobject_create();
+    int retval       = deSerialize(input, schemapath, j_obj);
+
+    if (retval == 0)
+    {
+        setIsErrorParam(false);
+    }
+
+    j_release(&j_obj);
+}
+
+std::string EventNotificationMethod::createObjectJsonString() const
+{
+    jvalue_ref json_outobj = jobject_create();
+    std::string str_reply;
+    MethodReply obj_reply = getMethodReply();
+
+    if (obj_reply.bGetReturnValue())
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(obj_reply.bGetReturnValue()));
+
+        if (b_issubscribed_ == true)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SUBSCRIBED),
+                        jboolean_create(b_issubscribed_));
+        }
+    }
+    else
+    {
+        createJsonStringFailure(obj_reply, json_outobj);
+    }
+
+    const char *str = jvalue_stringify(json_outobj);
+    if (str)
+        str_reply = str;
+    j_release(&json_outobj);
+
+    return str_reply;
 }

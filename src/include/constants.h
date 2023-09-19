@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -109,7 +109,10 @@
 #define CONST_PARAM_NAME_RESOLUTION "resolution"
 #define CONST_PARAM_NAME_FORMATINFO "formatInfo"
 #define CONST_PARAM_NAME_PROPERTIESINFO "propertiesInfo"
-#define CONST_EVENT_NOTIFICATION "getEventNotification"
+#define CONST_EVENT_KEY_PREVIEW_FAULT "EventPreviewFault"
+#define CONST_EVENT_KEY_CAMERA_LIST "EventCameraList"
+#define CONST_EVENT_KEY_FORMAT "EventFormat"
+#define CONST_EVENT_KEY_PROPERTIES "EventProperties"
 #define CONST_PARAM_NAME_FPS "fps"
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
@@ -126,6 +129,8 @@
 #define CONST_PARAM_NAME_NOTSUPPORT "not support"
 #define CONST_PARAM_NAME_SUPPORTED "supported"
 #define CONST_PARAM_NAME_SOLUTION "solutions"
+#define CONST_PARAM_NAME_SUBSCRIBED "subscribed"
+#define CONST_EVENT_KEY_FORMAT "EventFormat"
 
 const int n_invalid_id = -1;
 const int frame_count = 8;
@@ -137,7 +142,7 @@ const int n_invalid_sig = -1;
 const std::string cstr_empty = "";
 const std::string cstr_pdmclient = "com.webos.service.pdmclient";
 const std::string cstr_uri = "luna://com.webos.service.pdm/getAttachedNonStorageDeviceList";
-const std::string cstr_payload = "{\"subscribe\":true,\"category\":\"Video\"}";
+const std::string cstr_payload = "{\"subscribe\":true,\"category\":\"Video\", \"groupSubDevices\":true}";
 const std::string cstr_powerstatus = "powerStatus";
 const std::string cstr_cam = "CAM";
 const std::string cstr_capture = ":capture:";

@@ -34,7 +34,6 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_DEVICE_IS_ALREADY_OPENED, "Camera device is already opened"},
     {DEVICE_ERROR_DEVICE_IS_ALREADY_STARTED, "Camera device is already started"},
     {DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED, "Camera device is already stopped"},
-    {DEVICE_ERROR_DEVICE_IS_BUSY, "Camera device is busy"},
     {DEVICE_ERROR_DEVICE_IS_NOT_OPENED, "Camera device is not opened"},
     {DEVICE_ERROR_DEVICE_IS_NOT_STARTED, "Camera device is not started"},
     {DEVICE_ERROR_NODEVICE, "There is no device"},
@@ -47,16 +46,11 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_OUT_OF_MEMORY, "Out of memory"},
     {DEVICE_ERROR_OUT_OF_PARAM_RANGE, "Out of param range"},
     {DEVICE_ERROR_PARAM_IS_MISSING, "Param is missing"},
-    {DEVICE_ERROR_SERVICE_IS_NOT_READY, "Service is not ready"},
-    {DEVICE_ERROR_SOMETHING_IS_NOT_SET, "Some property is not set"},
-    {DEVICE_ERROR_TIMEOUT, "Request timeout"},
-    {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
     {DEVICE_ERROR_UNKNOWN_SERVICE, "Unknown service"},
     {DEVICE_ERROR_UNSUPPORTED_DEVICE, "Unsupported device"},
     {DEVICE_ERROR_UNSUPPORTED_FORMAT, "Unsupported format"},
     {DEVICE_ERROR_UNSUPPORTED_SAMPLINGRATE, "Unsupported samplingrate"},
     {DEVICE_ERROR_UNSUPPORTED_VIDEO_SIZE, "Unsupported video size"},
-    {DEVICE_ERROR_UNKNOWN_SERVICE, "Unknown service"},
     {DEVICE_ERROR_WRONG_DEVICE_NUMBER, "Wrong device number"},
     {DEVICE_ERROR_WRONG_ID, "Session id error"},
     {DEVICE_ERROR_WRONG_PARAM, "Wrong param"},
@@ -75,8 +69,16 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_HANDLE_NOT_EXIST, "Wrong handle"},
     {DEVICE_ERROR_PREVIEW_NOT_STARTED, "Preview not started"},
     {DEVICE_ERROR_NOT_POSIXSHM, "Handle is not in POSIXSHM mode"},
+    {DEVICE_ERROR_APP_PERMISSION, "app permission fail"},
     {DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL, "Failed to register pid with specified signal"},
-    {DEVICE_ERROR_CLIENT_PID_IS_MISSING, "Must specify client pid"}};
+    {DEVICE_ERROR_CLIENT_PID_IS_MISSING, "Must specify client pid"},
+    {DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED, "Subscribed camera has been disconnected"},
+    {DEVICE_ERROR_DEVICE_IS_BUSY, "Camera device is busy"},
+    {DEVICE_ERROR_SERVICE_IS_NOT_READY, "Service is not ready"},
+    {DEVICE_ERROR_SOMETHING_IS_NOT_SET, "Some property is not set"},
+    {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
+    {DEVICE_ERROR_TIMEOUT, "Request timeout"},
+};
 
 std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_FORMAT, cstr_format},
@@ -85,11 +87,33 @@ std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_DISCONNECT, cstr_disconnect},
     {EventType::EVENT_TYPE_DEVICE_FAULT, cstr_devicefault}};
 
-std::map<camera_format_t, std::string> g_format_string = {{CAMERA_FORMAT_UNDEFINED, "Undefined"},
-                                                          {CAMERA_FORMAT_YUV, "YUV"},
-                                                          {CAMERA_FORMAT_H264ES, "H264ES"},
-                                                          {CAMERA_FORMAT_JPEG, "JPEG"},
-                                                          {CAMERA_FORMAT_NV12, "NV12"},};
+std::map<camera_format_t, std::string> g_format_string = {
+    {CAMERA_FORMAT_UNDEFINED, "Unsupported format"},
+    {CAMERA_FORMAT_YUV, "YUV"},
+    {CAMERA_FORMAT_H264ES, "H264ES"},
+    {CAMERA_FORMAT_JPEG, "JPEG"},
+    {CAMERA_FORMAT_NV12, "NV12"},};
+
+std::map<int, std::string> g_param_string = {
+    {properties_t::PROPERTY_BRIGHTNESS, CONST_PARAM_NAME_BIRGHTNESS},
+    {properties_t::PROPERTY_CONTRAST, CONST_PARAM_NAME_CONTRAST},
+    {properties_t::PROPERTY_SATURATION, CONST_PARAM_NAME_SATURATION},
+    {properties_t::PROPERTY_HUE, CONST_PARAM_NAME_HUE},
+    {properties_t::PROPERTY_AUTOWHITEBALANCE, CONST_PARAM_NAME_AUTOWHITEBALANCE},
+    {properties_t::PROPERTY_GAMMA, CONST_PARAM_NAME_GAMMA},
+    {properties_t::PROPERTY_GAIN, CONST_PARAM_NAME_GAIN},
+    {properties_t::PROPERTY_FREQUENCY, CONST_PARAM_NAME_FREQUENCY},
+    {properties_t::PROPERTY_SHARPNESS, CONST_PARAM_NAME_SHARPNESS},
+    {properties_t::PROPERTY_BACKLIGHTCOMPENSATION, CONST_PARAM_NAME_BACKLIGHT_COMPENSATION},
+    {properties_t::PROPERTY_AUTOEXPOSURE, CONST_PARAM_NAME_AUTOEXPOSURE},
+    {properties_t::PROPERTY_PAN, CONST_PARAM_NAME_PAN},
+    {properties_t::PROPERTY_TILT, CONST_PARAM_NAME_TILT},
+    {properties_t::PROPERTY_AUTOFOCUS, CONST_PARAM_NAME_AUTOFOCUS},
+    {properties_t::PROPERTY_ZOOMABSOLUTE, CONST_PARAM_NAME_ZOOM_ABSOLUTE},
+    {properties_t::PROPERTY_WHITEBALANCETEMPERATURE, CONST_PARAM_NAME_WHITEBALANCETEMPERATURE},
+    {properties_t::PROPERTY_EXPOSURE, CONST_PARAM_NAME_EXPOSURE},
+    {properties_t::PROPERTY_FOCUSABSOLUTE, CONST_PARAM_NAME_FOCUS_ABSOLUTE},
+};
 
 int getRandomNumber()
 {
@@ -122,19 +146,19 @@ void getFormatString(int nFormat, char *pFormats)
     switch (CHECK_BIT_POS(nFormat, i))
     {
     case CAMERA_FORMAT_YUV:
-      strncat(pFormats, "YUV|", 4);
-      break;
+        strncat(pFormats, "YUV|", strlen("YUV|") + 1);
+        break;
     case CAMERA_FORMAT_H264ES:
-      strncat(pFormats, "H264ES|", 7);
-      break;
+        strncat(pFormats, "H264ES|", strlen("H264ES|") + 1);
+        break;
     case CAMERA_FORMAT_JPEG:
-      strncat(pFormats, "JPEG|", 5);
-      break;
+        strncat(pFormats, "JPEG|", strlen("JPEG|") + 1);
+        break;
     case CAMERA_FORMAT_NV12:
-      strncat(pFormats, "NV12|", 5);
-      break;
+        strncat(pFormats, "NV12|", strlen("NV12|") + 1);
+        break;
     default:
-      break;
+        break;
     }
   }
 
@@ -245,29 +269,43 @@ std::string getResolutionString(camera_format_t eformat)
   return str_resolution;
 }
 
+std::string getParamString(int properties_enum)
+{
+    std::string retstring;
+    std::map<int, std::string>::iterator it;
+
+    it = g_param_string.find(properties_enum);
+    if (it != g_param_string.end())
+        retstring = it->second;
+    else
+        retstring = "";
+
+    return retstring;
+}
+
+int getParamNumFromString(std::string str)
+{
+    int ret = -1;
+
+    for (auto it = g_param_string.begin(); it != g_param_string.end(); ++it)
+    {
+        if (it->second == str)
+            return it->first;
+    }
+
+    return ret;
+}
+
 bool CAMERA_PROPERTIES_T::operator != (const CAMERA_PROPERTIES_T &new_property)
 {
-  if ((this->nFocusAbsolute != new_property.nFocusAbsolute) ||
-      (this->nAutoFocus != new_property.nAutoFocus) ||
-      (this->nZoomAbsolute != new_property.nZoomAbsolute) ||
-      (this->nPan != new_property.nPan) ||
-      (this->nTilt != new_property.nTilt) ||
-      (this->nContrast != new_property.nContrast) ||
-      (this->nBrightness != new_property.nBrightness) ||
-      (this->nSaturation != new_property.nSaturation) ||
-      (this->nSharpness != new_property.nSharpness) ||
-      (this->nHue != new_property.nHue) ||
-      (this->nWhiteBalanceTemperature != new_property.nWhiteBalanceTemperature) ||
-      (this->nGain != new_property.nGain) ||
-      (this->nGamma != new_property.nGamma) ||
-      (this->nFrequency != new_property.nFrequency) ||
-      (this->nExposure != new_property.nExposure) ||
-      (this->nAutoExposure != new_property.nAutoExposure) ||
-      (this->nAutoWhiteBalance != new_property.nAutoWhiteBalance) ||
-      (this->nBacklightCompensation != new_property.nBacklightCompensation))
-         return true;
-  else
-    return false;
+  for (int i = 0; i < PROPERTY_END; i++)
+  {
+    if (this->stGetData.data[i][QUERY_VALUE] != new_property.stGetData.data[i][QUERY_VALUE])
+    {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool CAMERA_FORMAT::operator != (const CAMERA_FORMAT &new_format)

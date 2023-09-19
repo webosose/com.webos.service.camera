@@ -31,7 +31,7 @@ int DeviceManager::findDevNum(int ndevicehandle)
 {
   int nDeviceID = n_invalid_id;
   PMLOG_DEBUG("ndevicehandle : %d", ndevicehandle);
-  PMLOG_DEBUG("deviceMap_.count : %d", deviceMap_.size());
+  PMLOG_DEBUG("deviceMap_.count : %zd", deviceMap_.size());
 
   if (ndevicehandle == n_invalid_id)
     return nDeviceID;
@@ -167,7 +167,7 @@ bool DeviceManager::addVirtualHandle(int devid, int virtualHandle)
   if (deviceMap_.find(devid) != deviceMap_.end())
   {
     deviceMap_[devid].handleList.push_back(virtualHandle);
-    PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d",
+    PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %zd",
                devid, deviceMap_[devid].handleList.size());
     return true;
   }
@@ -205,7 +205,7 @@ bool DeviceManager::eraseVirtualHandle(int deviceId, int virtualHandle)
       if (*it == virtualHandle)
       {
         deviceMap_[devid].handleList.erase(it);
-        PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %d",
+        PMLOG_INFO(CONST_MODULE_DM, "deviceMap_[%d].handleList.size : %zd",
                    devid, deviceMap_[devid].handleList.size());
         return true;
       }
@@ -215,29 +215,11 @@ bool DeviceManager::eraseVirtualHandle(int deviceId, int virtualHandle)
   return false;
 }
 
-DEVICE_RETURN_CODE_T DeviceManager::getList(int *pCamDev, int *pMicDev, int *pCamSupport,
-                                            int *pMicSupport) const
+DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
-  PMLOG_INFO(CONST_MODULE_DM, "started!");
-
-  int devCount = deviceMap_.size();
-  if (devCount)
-  {
-    int i = 0;
-    for (auto iter : deviceMap_)
-    {
-      pCamDev[i] = iter.first;
-      pCamSupport[i] = 1;
-      i++;
-    }
-  }
-  else
-  {
-    PMLOG_INFO(CONST_MODULE_DM, "No device detected by PDM!!!\n");
+    for (auto list : deviceMap_)
+        idList.push_back(list.first);
     return DEVICE_OK;
-  }
-
-  return DEVICE_OK;
 }
 
 bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
@@ -245,6 +227,7 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
   DEVICE_STATUS devStatus;
   devStatus.devType = DEVICE_CAMERA;
   devStatus.isDeviceOpen = false;
+  devStatus.isDeviceInfoSaved = false;
   devStatus.pcamhandle = nullptr;
   devStatus.nDeviceID = n_invalid_id;
   strncpy(devStatus.stList.strVendorName, pList->strVendorName,
@@ -307,7 +290,7 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
   devStatus.nDevIndex = devidx;
   PMLOG_INFO(CONST_MODULE_DM, "devStatus.nDevIndex : %d \n", devStatus.nDevIndex);
 
-  /* double-check device path */ 
+  /* double-check device path */
   if (strstr(pList->strDeviceNode, "/dev/video") != NULL)
   {
       strncpy(devStatus.stList.strDeviceNode, pList->strDeviceNode,
@@ -323,11 +306,11 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
       PMLOG_INFO(CONST_MODULE_DM, "fail to add device:  %s is not a valid device node!!", pList->strDeviceNode);
       return false;
   }
-  
+
   PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
               devStatus.stList.strDeviceNode);
   deviceMap_[devidx] = devStatus;
-  PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %d \n", devidx, deviceMap_.size());
+  PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %zd \n", devidx, deviceMap_.size());
   return true;
 }
 
@@ -338,7 +321,7 @@ bool DeviceManager::removeDevice(int devid)
   if (dev != deviceMap_.end())
   {
     deviceMap_.erase(dev);
-    PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %d", deviceMap_.size());
+    PMLOG_INFO(CONST_MODULE_DM, "erase OK, deviceMap_.size : %zd", deviceMap_.size());
     return true;
   }
   PMLOG_INFO(CONST_MODULE_DM, "can not found device for devid : %d", devid);
@@ -421,6 +404,8 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
 {
   PMLOG_INFO(CONST_MODULE_DM, "started ! ndev_id : %d \n", ndev_id);
 
+  DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+
   int ncam_id = findDevNum(ndev_id);
   if (n_invalid_id == ncam_id)
     return DEVICE_ERROR_NODEVICE;
@@ -439,20 +424,52 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
     return DEVICE_ERROR_NODEVICE;
   }
 
-  DEVICE_RETURN_CODE_T ret = DeviceControl::getDeviceInfo(strdevicenode, p_info);
-  if (DEVICE_OK != ret)
+  if(!deviceMap_[ncam_id].isDeviceInfoSaved)
   {
-    PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
+      ret = DeviceControl::getDeviceInfo(strdevicenode, p_info);
+
+      if (DEVICE_OK != ret)
+      {
+        PMLOG_INFO(CONST_MODULE_DM, "Failed to get device info\n");
+      }
+      // save DB data S
+      deviceMap_[ncam_id].deviceInfoDB.stResolution.clear();
+
+      for (auto const &v : p_info->stResolution)
+      {
+          std::vector<std::string> c_res;
+          c_res.clear();
+          c_res.assign(v.c_res.begin(), v.c_res.end());
+          deviceMap_[ncam_id].deviceInfoDB.stResolution.emplace_back(c_res, v.e_format);
+      }
+
+      deviceMap_[ncam_id].deviceInfoDB.n_devicetype = p_info->n_devicetype;
+      deviceMap_[ncam_id].deviceInfoDB.b_builtin    = p_info->b_builtin;
+      PMLOG_INFO(CONST_MODULE_DM,"save DB, deviceid:%d\n", ncam_id);
+      // save DB data E
+
+      deviceMap_[ncam_id].isDeviceInfoSaved = true;
   }
-  memset(p_info->str_devicename, '\0', sizeof(p_info->str_devicename));
-  strncpy(p_info->str_devicename, deviceMap_[ncam_id].stList.strProductName,
-          sizeof(p_info->str_devicename)-1);
-  memset(p_info->str_vendorname, '\0', sizeof(p_info->str_vendorname));
-  strncpy(p_info->str_vendorname, deviceMap_[ncam_id].stList.strVendorName,
-          sizeof(p_info->str_vendorname)-1);
-  memset(p_info->str_productname, '\0', sizeof(p_info->str_productname));
-  strncpy(p_info->str_productname, deviceMap_[ncam_id].stList.strProductName,
-          sizeof(p_info->str_productname)-1);
+  else
+  {
+      PMLOG_INFO(CONST_MODULE_DM,"load DB, deviceid:%d\n", ncam_id);
+      // Load DB data S
+      for (auto const &v : deviceMap_[ncam_id].deviceInfoDB.stResolution)
+      {
+          std::vector<std::string> c_res;
+          c_res.clear();
+          c_res.assign(v.c_res.begin(), v.c_res.end());
+          p_info->stResolution.emplace_back(c_res, v.e_format);
+      }
+
+      p_info->n_devicetype = deviceMap_[ncam_id].deviceInfoDB.n_devicetype;
+      p_info->b_builtin    = deviceMap_[ncam_id].deviceInfoDB.b_builtin;
+      // Load DB data E
+  }
+
+  p_info->str_devicename = deviceMap_[ncam_id].stList.strProductName;
+  p_info->str_vendorid   = deviceMap_[ncam_id].stList.strVendorID;
+  p_info->str_productid  = deviceMap_[ncam_id].stList.strProductID;
 
   return ret;
 }

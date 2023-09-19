@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "camera_hal_if.h"
+#include "camera_hal_if_types.h"
 #include "camera_hal_types.h"
 
 const char *subsystem = "libv4l2-camera-plugin.so.1";
@@ -147,19 +148,19 @@ TEST(CameraHAL, SetFormat_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  int retval = camera_hal_if_set_format(p_h_camera, streamformat);
+  int retval = camera_hal_if_set_format(p_h_camera, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   // yuv format with resolution 800x600
   streamformat.stream_height = 600;
   streamformat.stream_width = 800;
   streamformat.stream_fps  = fps_30;
-  retval = camera_hal_if_set_format(p_h_camera, streamformat);
+  retval = camera_hal_if_set_format(p_h_camera, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   // yuv format with resolution 1920x1080
   streamformat.stream_height = 1080;
   streamformat.stream_width = 1920;
   streamformat.stream_fps  = fps_30;
-  retval = camera_hal_if_set_format(p_h_camera, streamformat);
+  retval = camera_hal_if_set_format(p_h_camera, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   // jpeg format with resolution 640x480
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_JPEG;
@@ -169,18 +170,18 @@ TEST(CameraHAL, SetFormat_Validparameters)
   // jpeg format with resolution 640x360
   streamformat.stream_height = 360;
   streamformat.stream_width = 640;
-  retval = camera_hal_if_set_format(p_h_camera, streamformat);
+  retval = camera_hal_if_set_format(p_h_camera, &streamformat);
   // jpeg format with resolution 1920x1080
   streamformat.stream_height = 1080;
   streamformat.stream_width = 1920;
   streamformat.stream_fps  = fps_30;
-  retval = camera_hal_if_set_format(p_h_camera, streamformat);
+  retval = camera_hal_if_set_format(p_h_camera, &streamformat);
   // unsupported yuv format with resolution 640x220
   streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
   streamformat.stream_height = 220;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  retval = camera_hal_if_set_format(p_h_camera, streamformat);
+  retval = camera_hal_if_set_format(p_h_camera, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_close_device(p_h_camera);
 }
@@ -192,7 +193,7 @@ TEST(CameraHAL, SetFormat_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  int retval = camera_hal_if_set_format(NULL, streamformat);
+  int retval = camera_hal_if_set_format(NULL, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_SET_FORMAT, retval);
 }
 
@@ -205,7 +206,7 @@ TEST(CameraHAL, SetFormat_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  int retval = camera_hal_if_set_format(p_h_camera, streamformat);
+  int retval = camera_hal_if_set_format(p_h_camera, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_SET_FORMAT, retval);
 }
 
@@ -219,7 +220,7 @@ TEST(CameraHAL, GetFormat_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
   int retval = camera_hal_if_get_format(p_h_camera, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_close_device(p_h_camera);
@@ -235,7 +236,7 @@ TEST(CameraHAL, GetFormat_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
   int retval = camera_hal_if_get_format(NULL, &streamformat);
   EXPECT_EQ(CAMERA_ERROR_GET_FORMAT, retval);
   camera_hal_if_close_device(p_h_camera);
@@ -258,8 +259,8 @@ TEST(CameraHAL, SetBufferDMA_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
   camera_hal_if_close_device(p_h_camera);
@@ -275,8 +276,8 @@ TEST(CameraHAL, SetBufferDMA_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(NULL, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  int retval = camera_hal_if_set_buffer(NULL, buffers, IOMODE_DMABUF, nullptr);
   EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
   camera_hal_if_close_device(p_h_camera);
 }
@@ -290,8 +291,8 @@ TEST(CameraHAL, SetBufferDMA_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
 }
 
@@ -305,8 +306,8 @@ TEST(CameraHAL, SetBufferMMAP_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
   camera_hal_if_close_device(p_h_camera);
@@ -322,8 +323,8 @@ TEST(CameraHAL, SetBufferMMAP_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(NULL, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  int retval = camera_hal_if_set_buffer(NULL, buffers, IOMODE_MMAP, nullptr);
   EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
   camera_hal_if_close_device(p_h_camera);
 }
@@ -337,58 +338,91 @@ TEST(CameraHAL, SetBufferMMAP_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
   camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, SetBufferUSERPTR_Validparameters)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, SetBufferUSERPTR_Invalidhandle)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(NULL, buffers, IOMODE_USERPTR);
-  EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    int retval = camera_hal_if_set_buffer(NULL, buffers, IOMODE_USERPTR, (void **)&bufs);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, SetBufferUSERPTR_Invalidstate)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
-  camera_hal_if_destroy_buffer(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    int retval = camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    EXPECT_EQ(CAMERA_ERROR_SET_BUFFER, retval);
+    camera_hal_if_destroy_buffer(p_h_camera);
 }
 
 TEST(CameraHAL, StartCaptureDMA_Validparameters)
@@ -401,8 +435,8 @@ TEST(CameraHAL, StartCaptureDMA_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   int retval = camera_hal_if_start_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_stop_capture(p_h_camera);
@@ -420,8 +454,8 @@ TEST(CameraHAL, StartCaptureDMA_Multiplerequest)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   int retval = camera_hal_if_start_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
@@ -440,8 +474,8 @@ TEST(CameraHAL, StartCaptureDMA_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   int retval = camera_hal_if_start_capture(NULL);
   EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
@@ -466,8 +500,8 @@ TEST(CameraHAL, StartCaptureMMAP_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   int retval = camera_hal_if_start_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_stop_capture(p_h_camera);
@@ -485,8 +519,8 @@ TEST(CameraHAL, StartCaptureMMAP_Multiplerequest)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   int retval = camera_hal_if_start_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
@@ -505,8 +539,8 @@ TEST(CameraHAL, StartCaptureMMAP_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   int retval = camera_hal_if_start_capture(NULL);
   EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
@@ -523,59 +557,92 @@ TEST(CameraHAL, StartCaptureMMAP_Invalidstate)
 
 TEST(CameraHAL, StartCaptureUSERPTR_Validparameters)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  int retval = camera_hal_if_start_capture(p_h_camera);
-  EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  camera_hal_if_stop_capture(p_h_camera);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    int retval = camera_hal_if_start_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    camera_hal_if_stop_capture(p_h_camera);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StartCaptureUSERPTR_Multiplerequest)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  camera_hal_if_start_capture(p_h_camera);
-  int retval = camera_hal_if_start_capture(p_h_camera);
-  EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
-  camera_hal_if_stop_capture(p_h_camera);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    camera_hal_if_start_capture(p_h_camera);
+    int retval = camera_hal_if_start_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
+    camera_hal_if_stop_capture(p_h_camera);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StartCaptureUSERPTR_Invalidhandle)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  int retval = camera_hal_if_start_capture(NULL);
-  EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    int retval = camera_hal_if_start_capture(NULL);
+    EXPECT_EQ(CAMERA_ERROR_START_CAPTURE, retval);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StartCaptureUSERPTR_Invalidstate)
@@ -596,8 +663,8 @@ TEST(CameraHAL, StopCaptureDMA_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   int retval = camera_hal_if_stop_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
@@ -615,8 +682,8 @@ TEST(CameraHAL, StopCaptureDMA_Multiplerequest)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   camera_hal_if_stop_capture(p_h_camera);
   int retval = camera_hal_if_stop_capture(p_h_camera);
@@ -635,8 +702,8 @@ TEST(CameraHAL, StopCaptureDMA_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   int retval = camera_hal_if_stop_capture(NULL);
   EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
@@ -655,8 +722,8 @@ TEST(CameraHAL, StopCaptureDMA_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   int retval = camera_hal_if_stop_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
@@ -665,79 +732,123 @@ TEST(CameraHAL, StopCaptureDMA_Invalidstate)
 
 TEST(CameraHAL, StopCaptureUSERPTR_Validparameters)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  camera_hal_if_start_capture(p_h_camera);
-  int retval = camera_hal_if_stop_capture(p_h_camera);
-  EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    camera_hal_if_start_capture(p_h_camera);
+    int retval = camera_hal_if_stop_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StopCaptureUSERPTR_Multiplerequest)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  camera_hal_if_start_capture(p_h_camera);
-  camera_hal_if_stop_capture(p_h_camera);
-  int retval = camera_hal_if_stop_capture(p_h_camera);
-  EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    camera_hal_if_start_capture(p_h_camera);
+    camera_hal_if_stop_capture(p_h_camera);
+    int retval = camera_hal_if_stop_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StopCaptureUSERPTR_Invalidhandle)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  camera_hal_if_start_capture(p_h_camera);
-  int retval = camera_hal_if_stop_capture(NULL);
-  EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
-  camera_hal_if_stop_capture(p_h_camera);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    camera_hal_if_start_capture(p_h_camera);
+    int retval = camera_hal_if_stop_capture(NULL);
+    EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
+    camera_hal_if_stop_capture(p_h_camera);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StopCaptureUSERPTR_Invalidstate)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  int retval = camera_hal_if_stop_capture(p_h_camera);
-  EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    int retval = camera_hal_if_stop_capture(p_h_camera);
+    EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, StopCaptureMMAP_Validparameters)
@@ -750,8 +861,8 @@ TEST(CameraHAL, StopCaptureMMAP_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   int retval = camera_hal_if_stop_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
@@ -769,8 +880,8 @@ TEST(CameraHAL, StopCaptureMMAP_Multiplerequest)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   camera_hal_if_stop_capture(p_h_camera);
   int retval = camera_hal_if_stop_capture(p_h_camera);
@@ -789,8 +900,8 @@ TEST(CameraHAL, StopCaptureMMAP_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   int retval = camera_hal_if_stop_capture(NULL);
   EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
@@ -809,8 +920,8 @@ TEST(CameraHAL, StopCaptureMMAP_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   int retval = camera_hal_if_stop_capture(p_h_camera);
   EXPECT_EQ(CAMERA_ERROR_STOP_CAPTURE, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
@@ -827,8 +938,8 @@ TEST(CameraHAL, GetBufferMMAP_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
 
   buffer_t buf;
@@ -836,7 +947,7 @@ TEST(CameraHAL, GetBufferMMAP_Validparameters)
   int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   free(buf.start);
-  camera_hal_if_release_buffer(p_h_camera, buf);
+  camera_hal_if_release_buffer(p_h_camera, &buf);
   camera_hal_if_stop_capture(p_h_camera);
   camera_hal_if_destroy_buffer(p_h_camera);
   camera_hal_if_close_device(p_h_camera);
@@ -852,8 +963,8 @@ TEST(CameraHAL, GetBufferMMAP_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
 
   buffer_t buf;
@@ -875,8 +986,8 @@ TEST(CameraHAL, GetBufferMMAP_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
 
   buffer_t buf;
   int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
@@ -896,14 +1007,14 @@ TEST(CameraHAL, GetBufferDMA_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   camera_hal_if_start_capture(p_h_camera);
 
   buffer_t buf;
   int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  camera_hal_if_release_buffer(p_h_camera, buf);
+  camera_hal_if_release_buffer(p_h_camera, &buf);
   camera_hal_if_stop_capture(p_h_camera);
   camera_hal_if_destroy_buffer(p_h_camera);
   camera_hal_if_close_device(p_h_camera);
@@ -919,8 +1030,8 @@ TEST(CameraHAL, GetBufferDMA_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
   camera_hal_if_start_capture(p_h_camera);
 
   buffer_t buf;
@@ -942,8 +1053,8 @@ TEST(CameraHAL, GetBufferDMA_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_DMABUF, nullptr);
 
   buffer_t buf;
   int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
@@ -955,69 +1066,102 @@ TEST(CameraHAL, GetBufferDMA_Invalidstate)
 
 TEST(CameraHAL, GetBufferUSERPTR_Validparameters)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  camera_hal_if_start_capture(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height = height_480;
+    streamformat.stream_width = width_640;
+    streamformat.stream_fps  = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    camera_hal_if_start_capture(p_h_camera);
 
-  buffer_t buf;
-  int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
-  EXPECT_EQ(CAMERA_ERROR_NONE, retval);
-  camera_hal_if_release_buffer(p_h_camera, buf);
-  camera_hal_if_stop_capture(p_h_camera);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    buffer_t buf;
+    int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
+    EXPECT_EQ(CAMERA_ERROR_NONE, retval);
+    camera_hal_if_release_buffer(p_h_camera, &buf);
+    camera_hal_if_stop_capture(p_h_camera);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, GetBufferUSERPTR_Invalidhandle)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
-  camera_hal_if_start_capture(p_h_camera);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format    = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height   = height_480;
+    streamformat.stream_width    = width_640;
+    streamformat.stream_fps      = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
+    camera_hal_if_start_capture(p_h_camera);
 
-  buffer_t buf;
-  int retval = camera_hal_if_get_buffer(NULL, &buf);
-  EXPECT_EQ(CAMERA_ERROR_GET_BUFFER, retval);
+    buffer_t buf;
+    int retval = camera_hal_if_get_buffer(NULL, &buf);
+    EXPECT_EQ(CAMERA_ERROR_GET_BUFFER, retval);
 
-  camera_hal_if_stop_capture(p_h_camera);
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    camera_hal_if_stop_capture(p_h_camera);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, GetBufferUSERPTR_Invalidstate)
 {
-  void *p_h_camera = nullptr;
-  camera_hal_if_init(&p_h_camera, subsystem);
-  camera_hal_if_open_device(p_h_camera, devname);
-  stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-  streamformat.pixel_format = CAMERA_PIXEL_FORMAT_YUYV;
-  streamformat.stream_height = height_480;
-  streamformat.stream_width = width_640;
-  streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR);
+    void *p_h_camera = nullptr;
+    camera_hal_if_init(&p_h_camera, subsystem);
+    camera_hal_if_open_device(p_h_camera, devname);
+    stream_format_t streamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
+    streamformat.pixel_format    = CAMERA_PIXEL_FORMAT_YUYV;
+    streamformat.stream_height   = height_480;
+    streamformat.stream_width    = width_640;
+    streamformat.stream_fps      = fps_30;
+    camera_hal_if_set_format(p_h_camera, &streamformat);
+    buffer_t *bufs = (buffer_t *)malloc(buffers * sizeof(buffer_t));
+    for (int i = 0; i < buffers; i++)
+    {
+        bufs[i].start  = malloc(height_480 * width_640 * buffers);
+        bufs[i].length = height_480 * width_640 * buffers;
+    }
+    camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_USERPTR, (void **)&bufs);
 
-  buffer_t buf;
-  int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
-  EXPECT_EQ(CAMERA_ERROR_GET_BUFFER, retval);
+    buffer_t buf;
+    int retval = camera_hal_if_get_buffer(p_h_camera, &buf);
+    EXPECT_EQ(CAMERA_ERROR_GET_BUFFER, retval);
 
-  camera_hal_if_destroy_buffer(p_h_camera);
-  camera_hal_if_close_device(p_h_camera);
+    camera_hal_if_destroy_buffer(p_h_camera);
+    for (int i = 0; i < buffers; i++)
+    {
+        free(bufs[i].start);
+    }
+    free(bufs);
+    camera_hal_if_close_device(p_h_camera);
 }
 
 TEST(CameraHAL, ReleaseBuffer_Validparameters)
@@ -1030,15 +1174,15 @@ TEST(CameraHAL, ReleaseBuffer_Validparameters)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   buffer_t buf;
   buf.start = malloc(framesize);
   camera_hal_if_get_buffer(p_h_camera, &buf);
   free(buf.start);
 
-  int retval = camera_hal_if_release_buffer(p_h_camera, buf);
+  int retval = camera_hal_if_release_buffer(p_h_camera, &buf);
   EXPECT_EQ(CAMERA_ERROR_NONE, retval);
   camera_hal_if_stop_capture(p_h_camera);
   camera_hal_if_destroy_buffer(p_h_camera);
@@ -1055,17 +1199,17 @@ TEST(CameraHAL, ReleaseBuffer_Invalidhandle)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
   camera_hal_if_start_capture(p_h_camera);
   buffer_t buf;
   buf.start = malloc(framesize);
   camera_hal_if_get_buffer(p_h_camera, &buf);
   free(buf.start);
 
-  int retval = camera_hal_if_release_buffer(NULL, buf);
+  int retval = camera_hal_if_release_buffer(NULL, &buf);
   EXPECT_EQ(CAMERA_ERROR_RELEASE_BUFFER, retval);
-  camera_hal_if_release_buffer(p_h_camera, buf);
+  camera_hal_if_release_buffer(p_h_camera, &buf);
   camera_hal_if_stop_capture(p_h_camera);
   camera_hal_if_destroy_buffer(p_h_camera);
   camera_hal_if_close_device(p_h_camera);
@@ -1081,15 +1225,15 @@ TEST(CameraHAL, ReleaseBuffer_Invalidstate)
   streamformat.stream_height = height_480;
   streamformat.stream_width = width_640;
   streamformat.stream_fps  = fps_30;
-  camera_hal_if_set_format(p_h_camera, streamformat);
-  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP);
+  camera_hal_if_set_format(p_h_camera, &streamformat);
+  camera_hal_if_set_buffer(p_h_camera, buffers, IOMODE_MMAP, nullptr);
 
   buffer_t buf;
   buf.start = malloc(framesize);
   camera_hal_if_get_buffer(p_h_camera, &buf);
   free(buf.start);
 
-  int retval = camera_hal_if_release_buffer(p_h_camera, buf);
+  int retval = camera_hal_if_release_buffer(p_h_camera, &buf);
   EXPECT_EQ(CAMERA_ERROR_RELEASE_BUFFER, retval);
   camera_hal_if_destroy_buffer(p_h_camera);
   camera_hal_if_close_device(p_h_camera);

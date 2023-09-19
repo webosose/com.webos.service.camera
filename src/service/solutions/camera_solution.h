@@ -1,5 +1,5 @@
 /**
- * Copyright(c) 2022 by LG Electronics Inc.
+ * Copyright(c) 2023 by LG Electronics Inc.
  * CTO, LG Electronics., Seoul, Korea
  *
  * All rights reserved. No part of this work may be reproduced,
@@ -16,7 +16,7 @@
 #pragma once
 
 // System dependencies
-#include "camera_hal_if.h"
+#include "camera_hal_if_types.h"
 #include <atomic>
 #include <string>
 

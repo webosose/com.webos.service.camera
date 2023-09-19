@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@
 #define CAMERA_BASE_WRAPPER
 
 #include "camera_hal_types.h"
-#include "camera_hal_if_types.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -27,17 +26,17 @@ extern "C"
 
   int open_device(camera_handle_t *, const char *);
   int close_device(camera_handle_t *);
-  int set_format(camera_handle_t *, stream_format_t);
-  int get_format(camera_handle_t *, stream_format_t *);
-  int set_buffer(camera_handle_t *, int, int);
-  int get_buffer(camera_handle_t *, buffer_t *);
-  int release_buffer(camera_handle_t *, buffer_t);
+  int set_format(camera_handle_t *, const void *);
+  int get_format(camera_handle_t *, void *);
+  int set_buffer(camera_handle_t *, int, int, void **);
+  int get_buffer(camera_handle_t *, void *);
+  int release_buffer(camera_handle_t *, const void *);
   int destroy_buffer(camera_handle_t *);
   int start_capture(camera_handle_t *);
   int stop_capture(camera_handle_t *);
-  int set_properties(camera_handle_t *, const camera_properties_t *);
-  int get_properties(camera_handle_t *, camera_properties_t *);
-  int get_info(camera_handle_t *, camera_device_info_t *, const char *);
+  int set_properties(camera_handle_t *, const void *);
+  int get_properties(camera_handle_t *, void *);
+  int get_info(camera_handle_t *, void *, const char *);
   int get_buffer_fd(camera_handle_t *, int *, int *);
   int destroy_dma_fd(camera_handle_t *);
 

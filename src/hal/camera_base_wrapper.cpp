@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int set_format(camera_handle_t *h, stream_format_t cam_format)
+  int set_format(camera_handle_t *h, const void *cam_format)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
@@ -49,7 +49,7 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int get_format(camera_handle_t *h, stream_format_t *cam_format)
+  int get_format(camera_handle_t *h, void *cam_format)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
@@ -58,16 +58,16 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int set_buffer(camera_handle_t *h, int num_buffer, int io_mode)
+  int set_buffer(camera_handle_t *h, int num_buffer, int io_mode, void **usrpbufs)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
-      return camera_base->setBuffer(num_buffer, io_mode);
+      return camera_base->setBuffer(num_buffer, io_mode, usrpbufs);
     else
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int get_buffer(camera_handle_t *h, buffer_t *buf)
+  int get_buffer(camera_handle_t *h, void *buf)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
@@ -76,7 +76,7 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int release_buffer(camera_handle_t *h, buffer_t buf)
+  int release_buffer(camera_handle_t *h, const void *buf)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
@@ -112,7 +112,7 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int set_properties(camera_handle_t *h, const camera_properties_t *cam_params)
+  int set_properties(camera_handle_t *h, const void *cam_params)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
@@ -121,7 +121,7 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int get_properties(camera_handle_t *h, camera_properties_t *cam_params)
+  int get_properties(camera_handle_t *h, void *cam_params)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
@@ -130,7 +130,7 @@ extern "C"
       return CAMERA_ERROR_UNKNOWN;
   }
 
-  int get_info(camera_handle_t *h, camera_device_info_t *cam_info, const char *devicenode)
+  int get_info(camera_handle_t *h, void *cam_info, const char *devicenode)
   {
     CameraBase *camera_base = static_cast<CameraBase *>(h->handle);
     if (NULL != camera_base)
