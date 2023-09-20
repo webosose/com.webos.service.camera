@@ -217,8 +217,15 @@ std::string EventNotification::getEventKeyWithId(int dev_handle, std::string key
 std::string EventNotification::getCameraIdFromKey(std::string key)
 {
     std::string str_reply;
-    unsigned long split_pos = key.find("_");
-    str_reply               = key.substr(split_pos + 1);
+    auto split_pos = key.find("_");
+    if (split_pos != key.npos)
+    {
+        if (split_pos + 1 < SIZE_MAX)
+        {
+            str_reply = key.substr(split_pos + 1);
+        }
+    }
+
     return str_reply;
 }
 
