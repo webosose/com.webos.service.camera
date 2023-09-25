@@ -103,13 +103,9 @@ int CameraService::getId(const std::string &cameraid)
         {
             num = std::stoi(extractedNumbers);
         }
-        catch (const std::invalid_argument &e)
+        catch (const std::exception &e)
         {
-            PLOGE("Invalid argument: %s", e.what());
-        }
-        catch (const std::out_of_range &e)
-        {
-            PLOGE("Out of range: %s", e.what());
+            PLOGE("Error: %s", e.what());
         }
     }
     return num;
