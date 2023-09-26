@@ -26,6 +26,7 @@
 #include "device_manager.h"
 #include "json_schema.h"
 #include "notifier.h"
+#include "whitelist_checker.h"
 #include <pbnjson.hpp>
 #include <signal.h>
 #include <string>
@@ -602,8 +603,15 @@ bool CameraService::getInfo(LSMessage &message)
             obj_getinfo.setCameraInfo(o_camerainfo);
 
             if (pAddon_ && pAddon_->hasImplementation())
+            {
                 supported = pAddon_->isSupportedCamera(o_camerainfo.str_productid,
                                                        o_camerainfo.str_vendorid);
+            }
+            else
+            {
+                supported = WhitelistChecker::isSupportedCamera(o_camerainfo.str_productid,
+                                                                o_camerainfo.str_vendorid);
+            }
         }
     }
 
