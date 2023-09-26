@@ -42,9 +42,9 @@ static bool cameraHalServiceCb(const char *msg, void *data)
     {
         CameraHalProxy *client = (CameraHalProxy *)data;
 
-        int num_subscribers =
+        unsigned int num_subscribers =
             LSSubscriptionGetHandleSubscribersCount(client->sh_, client->subsKey_.c_str());
-        PLOGI("num_subscribers : %d", num_subscribers);
+        PLOGI("num_subscribers : %u", num_subscribers);
         if (num_subscribers > 0)
         {
             LSError lserror;
@@ -394,8 +394,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
 
     if (ret == DEVICE_OK)
     {
-        pformat->nWidth  = get_optional<int>(jOut, CONST_PARAM_NAME_WIDTH).value_or(0);
-        pformat->nHeight = get_optional<int>(jOut, CONST_PARAM_NAME_HEIGHT).value_or(0);
+        int w            = get_optional<int>(jOut, CONST_PARAM_NAME_WIDTH).value_or(0);
+        int h            = get_optional<int>(jOut, CONST_PARAM_NAME_HEIGHT).value_or(0);
+        pformat->nWidth  = (w > 0) ? w : 0;
+        pformat->nHeight = (h > 0) ? h : 0;
         pformat->nFps    = get_optional<int>(jOut, CONST_PARAM_NAME_FPS).value_or(0);
         pformat->eFormat = get_optional<camera_format_t>(jOut, CONST_PARAM_NAME_FORMAT)
                                .value_or(CAMERA_FORMAT_UNDEFINED);
@@ -619,7 +621,8 @@ bool CameraHalProxy::subscribe()
         return true;
     };
 
-    if (!LSRegisterServerStatusEx(sh_, uid_.c_str(), func, this, &cookie, nullptr))
+    if (!LSRegisterServerStatusEx(sh_, uid_.c_str(), func, static_cast<void *>(this), &cookie,
+                                  nullptr))
     {
         PLOGE("[ServerStatus cb] error LSRegisterServerStatusEx\n");
     }
@@ -682,7 +685,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
     int64_t startClk = g_get_monotonic_time();
     luna_client->callSync(uri.c_str(), payload.c_str(), &resp, timeout);
     int64_t endClk = g_get_monotonic_time();
-    PLOGI("response %s, runtime %lld", resp.c_str(), (long long int)((endClk - startClk) / 1000));
+
+    (startClk > endClk) ? PLOGE("diffClk is error")
+                        : PLOGI("response %s, runtime %lld", resp.c_str(),
+                                (long long int)((endClk - startClk) / 1000));
 
     try
     {

@@ -191,8 +191,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
     }
 
     // get number of elements in map
-    int nelements = handlepriority_map_.size();
-    PLOGI("nelements : %d \n", nelements);
+    unsigned long nelements = handlepriority_map_.size();
+    PLOGI("nelements : %lu \n", nelements);
 
     if (1 <= nelements)
     {
@@ -330,12 +330,18 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
             {
                 obj_devstate.shmemtype = SHMEM_SYSTEMV;
-                shmempreview_count_[SHMEM_SYSTEMV]++;
+                if (shmempreview_count_[SHMEM_SYSTEMV] < INT_MAX)
+                {
+                    shmempreview_count_[SHMEM_SYSTEMV]++;
+                }
             }
             else
             {
                 obj_devstate.shmemtype = SHMEM_POSIX;
-                shmempreview_count_[SHMEM_POSIX]++;
+                if (shmempreview_count_[SHMEM_POSIX] < INT_MAX)
+                {
+                    shmempreview_count_[SHMEM_POSIX]++;
+                }
             }
             virtualhandle_map_[devhandle] = obj_devstate;
             return DEVICE_OK;
@@ -368,8 +374,15 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
             return DEVICE_ERROR_CAN_NOT_STOP;
         }
 
-        int size = npreviewhandle_.size();
-        PLOGI("size : %d \n", size);
+        unsigned long size = npreviewhandle_.size();
+        PLOGI("size : %lu \n", size);
+
+        if (memtype < SHMEM_SYSTEMV || memtype > SHMEM_POSIX)
+        {
+            PLOGE("Invalid memtype : %d", memtype);
+            return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
+        }
+
         if (1 < shmempreview_count_[memtype])
         {
             // remove the handle from vector since stopPreview is called
@@ -566,9 +579,9 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
 
     if (DeviceManager::getInstance().isDeviceOpen(deviceid))
     {
-        int size = ncapturehandle_.size();
+        unsigned long size = ncapturehandle_.size();
 
-        PLOGI("size : %d \n", size);
+        PLOGI("size : %lu \n", size);
         if (1 < size)
         {
             // remove the handle from vector since stopCapture is called

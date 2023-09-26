@@ -44,8 +44,8 @@ void CommandManager::removeVirtualDevMgrObj(int devhandle)
         if (devhandle == obj.devicehandle)
         {
             PLOGI("ptr : %p \n", obj.ptr);
-            int count = virtualdevmgrobj_map_.count(it->first);
-            PLOGI("count : %d \n", count);
+            unsigned long count = virtualdevmgrobj_map_.count(it->first);
+            PLOGI("count : %lu \n", count);
             if (count == 1)
                 delete obj.ptr;
             virtualdevmgrobj_map_.erase(it);
@@ -70,8 +70,6 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
     if (it == virtualdevmgrobj_map_.end())
     {
         obj.ptr = new VirtualDeviceManager;
-        obj.ptr->setAddon(pAddon_);
-        PLOGI("ptr : %p \n", obj.ptr);
     }
     else
         obj = it->second;
@@ -80,6 +78,8 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
 
     if (nullptr != obj.ptr)
     {
+        obj.ptr->setAddon(pAddon_);
+
         // open device and return devicehandle
         DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, appId, apppriority);
         if (DEVICE_OK == ret)
@@ -401,7 +401,7 @@ void CommandManager::closeClientDevice(std::string clientName)
             obj.ptr->stopPreview(obj.devicehandle);
             obj.ptr->close(obj.devicehandle);
 
-            int count = virtualdevmgrobj_map_.count(it->first);
+            unsigned long count = virtualdevmgrobj_map_.count(it->first);
             if (count == 1)
             {
                 delete obj.ptr;
@@ -430,7 +430,7 @@ void CommandManager::handleCrash()
         obj.ptr->stopPreview(obj.devicehandle);
         obj.ptr->close(obj.devicehandle);
 
-        int count = virtualdevmgrobj_map_.count(it->first);
+        unsigned long count = virtualdevmgrobj_map_.count(it->first);
         if (count == 1)
         {
             delete obj.ptr;
@@ -459,7 +459,7 @@ void CommandManager::release(int deviceid)
             obj.ptr->stopPreview(obj.devicehandle);
             obj.ptr->close(obj.devicehandle);
 
-            int count = virtualdevmgrobj_map_.count(it->first);
+            unsigned long count = virtualdevmgrobj_map_.count(it->first);
             if (count == 1)
             {
                 delete obj.ptr;

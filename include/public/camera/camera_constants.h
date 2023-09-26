@@ -134,7 +134,6 @@
 #define CONST_PARAM_NAME_REGISTER "register"
 
 const int n_invalid_id  = -1;
-const int frame_count   = 8;
 const int extra_buffer  = 1024;
 const int n_invalid_pid = -1;
 const int n_invalid_sig = -1;

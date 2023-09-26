@@ -80,10 +80,10 @@ extern "C"
         void createFourCCPixelFormatMap();
         void createCameraPixelFormatMap();
         void createCameraParamMap();
-        unsigned long getFourCCPixelFormat(camera_pixel_format_t);
-        camera_pixel_format_t getCameraPixelFormat(unsigned long);
+        unsigned int getFourCCPixelFormat(camera_pixel_format_t);
+        camera_pixel_format_t getCameraPixelFormat(unsigned int);
 
-        static int xioctl(int, int, void *);
+        static int xioctl(int, unsigned long, void *);
 
         // member variables
         stream_format_t stream_format_;
@@ -92,8 +92,8 @@ extern "C"
         int fd_;
         int dmafd_[CONST_MAX_BUFFER_NUM];
         int io_mode_;
-        std::map<camera_pixel_format_t, unsigned long> fourcc_format_;
-        std::map<unsigned long, camera_pixel_format_t> camera_format_;
+        std::map<camera_pixel_format_t, unsigned int> fourcc_format_;
+        std::map<unsigned int, camera_pixel_format_t> camera_format_;
         std::map<int, unsigned int> camera_param_map_;
     };
 

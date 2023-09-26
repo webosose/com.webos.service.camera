@@ -21,7 +21,7 @@
 static bool updateDeviceListCb(std::string deviceType, const void *deviceList)
 {
     return DeviceManager::getInstance().updateDeviceList(
-        deviceType, *((std::vector<DEVICE_LIST_T> *)deviceList));
+        deviceType, *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
 }
 
 Notifier::~Notifier()
@@ -42,14 +42,13 @@ void Notifier::addNotifiers(GMainLoop *loop)
         IFeaturePtr pFeature = pPluginFactory_->createFeature(f.c_str());
         if (pFeature)
         {
-            void *pInterface = nullptr;
-            if (pFeature->queryInterface(f.c_str(), &pInterface))
+            INotifier *pNotifier = nullptr;
+            if (pFeature->queryInterface(f.c_str(), reinterpret_cast<void **>(&pNotifier)))
             {
                 pFeatureList_.push_back(std::move(pFeature));
-                notifierMap_[f.c_str()] = static_cast<INotifier *>(pInterface);
-                INotifier *noti         = notifierMap_[f.c_str()];
-                noti->setLSHandle(lshandle_);
-                registerCallback(noti, updateDeviceListCb, loop);
+                notifierMap_[f] = pNotifier;
+                pNotifier->setLSHandle(lshandle_);
+                registerCallback(pNotifier, updateDeviceListCb, loop);
                 PLOGI("Notifier \'%s\' instance created and ready : OK!", f.c_str());
             }
         }

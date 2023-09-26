@@ -36,7 +36,7 @@ private:
     EventNotification event_obj;
     std::shared_ptr<AddOn> pAddon_;
 
-    int getId(std::string);
+    int getId(const std::string &cameraid);
     void createEventMessage(EventType, void *, int, std::string event_key);
 
     std::map<std::string, void *> clientCookieMap_;

@@ -51,8 +51,8 @@ std::string GetCameraListMethod::createCameraListObjectJsonString() const
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(objreply.bGetReturnValue()));
 
-        int count = getCameraCount();
-        for (int i = 0; i < count; i++)
+        std::size_t count = getCameraCount();
+        for (std::size_t i = 0; i < count; i++)
         {
             jvalue_ref json_outdevicelistitem = jobject_create();
             jobject_put(json_outdevicelistitem, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ID),
@@ -317,10 +317,10 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
         jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
         jvalue_ref j_params    = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_WIDTH));
         jnumber_get_i32(j_params, &nWidth);
-        rcamera_params.nWidth = nWidth;
+        rcamera_params.nWidth = (nWidth > 0) ? nWidth : 0;
         j_params              = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_HEIGHT));
         jnumber_get_i32(j_params, &nHeight);
-        rcamera_params.nHeight = nHeight;
+        rcamera_params.nHeight = (nHeight > 0) ? nHeight : 0;
 
         raw_buffer strformat =
             jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FORMAT)));
@@ -684,10 +684,10 @@ void SetFormatMethod::getSetFormatObject(const char *input, const char *schemapa
         jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
         jvalue_ref jparams     = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_WIDTH));
         jnumber_get_i32(jparams, &nWidth);
-        rcameraparams.nWidth = nWidth;
+        rcameraparams.nWidth = (nWidth > 0) ? nWidth : 0;
         jparams              = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_HEIGHT));
         jnumber_get_i32(jparams, &nHeight);
-        rcameraparams.nHeight = nHeight;
+        rcameraparams.nHeight = (nHeight > 0) ? nHeight : 0;
         jparams               = jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_FPS));
         jnumber_get_i32(jparams, &rcameraparams.nFps);
         raw_buffer strformat =
@@ -1030,12 +1030,14 @@ std::string GetFormatMethod::createObjectJsonString() const
                     jboolean_create(obj_reply.bGetReturnValue()));
 
         std::string strformat = getFormatStringFromCode(rGetCameraFormat().eFormat);
+        unsigned int w        = rGetCameraFormat().nWidth;
+        unsigned int h        = rGetCameraFormat().nHeight;
         jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FORMAT),
                     jstring_create(strformat.c_str()));
         jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_WIDTH),
-                    jnumber_create_i32(rGetCameraFormat().nWidth));
+                    jnumber_create_i32((w <= INT_MAX) ? w : 0));
         jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_HEIGHT),
-                    jnumber_create_i32(rGetCameraFormat().nHeight));
+                    jnumber_create_i32((h <= INT_MAX) ? h : 0));
         jobject_put(json_outobjparams, J_CSTR_TO_JVAL(CONST_PARAM_NAME_FPS),
                     jnumber_create_i32(rGetCameraFormat().nFps));
         if (b_issubscribed_ == true)

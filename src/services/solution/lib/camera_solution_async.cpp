@@ -29,7 +29,7 @@ struct PerformanceControl
     int64_t timeScale_{10000};
     double targetFPS_{3.0f};
     double avrFPS_{0.0f};
-    uint32_t frameCount_{0};
+    size_t frameCount_{0};
     int64_t prevClk_{0};
     std::list<int64_t> lstDur_;
 
@@ -58,15 +58,22 @@ struct PerformanceControl
     void calculateFPS(void)
     {
         if (timeMultiple_ > 0)
-            g_usleep(timeScale_ * timeMultiple_);
+        {
+            long usleep_time = timeScale_ * timeMultiple_;
+            g_usleep((usleep_time > 0) ? (unsigned long)usleep_time : 0);
+        }
 
-        uint32_t adj = abs(avrFPS_ - 0.0) < 1e-9 ? 0 : avrFPS_ > 1 ? 27 / (int)avrFPS_ : 27;
+        int adj_int      = (abs(avrFPS_ - 0.0) < 1e-9) ? 0 : (avrFPS_ > 1 ? 27 / (int)avrFPS_ : 27);
+        size_t adj       = (adj_int > 0) ? adj_int : 0;
+        size_t adj_check = (adj < 30) ? 30 - adj : 0;
 
-        if (frameCount_ < (30 - adj))
+        if (frameCount_ < adj_check)
             return;
 
-        uint64_t totalDur = std::accumulate(lstDur_.begin(), lstDur_.end(), 0);
-        long avrDur       = totalDur / (frameCount_ - 1);
+        int tot_dur_int   = std::accumulate(lstDur_.begin(), lstDur_.end(), 0);
+        size_t totalDur   = (tot_dur_int > 0) ? (size_t)tot_dur_int : 0;
+        size_t ave_dur_ul = totalDur / (frameCount_ - 1);
+        long avrDur       = (ave_dur_ul > LONG_MAX) ? LONG_MAX : (long)ave_dur_ul;
         avrFPS_           = 1000000.0f / avrDur;
 
         if (avrFPS_ > targetFPS_)

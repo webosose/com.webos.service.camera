@@ -66,10 +66,10 @@ void EventNotification::subscriptionReply(LSHandle *lsHandle, std::string key,
 
 int EventNotification::getSubscribeCount(LSHandle *lsHandle, std::string key)
 {
-    int ret = -1;
-    ret     = LSSubscriptionGetHandleSubscribersCount(lsHandle, key.c_str());
-    PLOGI("cnt:%d, key:%s", ret, key.c_str());
-    return ret;
+    unsigned int ret = 0;
+    ret              = LSSubscriptionGetHandleSubscribersCount(lsHandle, key.c_str());
+    PLOGI("cnt:%u, key:%s", ret, key.c_str());
+    return ((ret <= INT_MAX) ? ret : 0);
 }
 
 bool EventNotification::getJsonString(json &json_outobj, std::string key, EventType etype,
@@ -217,8 +217,15 @@ std::string EventNotification::getEventKeyWithId(int dev_handle, std::string key
 std::string EventNotification::getCameraIdFromKey(std::string key)
 {
     std::string str_reply;
-    int split_pos = key.find("_");
-    str_reply     = key.substr(split_pos + 1);
+    auto split_pos = key.find("_");
+    if (split_pos != key.npos)
+    {
+        if (split_pos + 1 < SIZE_MAX)
+        {
+            str_reply = key.substr(split_pos + 1);
+        }
+    }
+
     return str_reply;
 }
 

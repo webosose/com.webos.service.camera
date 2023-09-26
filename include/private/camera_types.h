@@ -172,7 +172,7 @@ typedef struct
 } camera_memory_source_t;
 
 void getFormatString(int, char *);
-char *getTypeString(device_t);
+const char *getTypeString(device_t);
 int getRandomNumber();
 std::string getErrorString(DEVICE_RETURN_CODE_T);
 void convertFormatToCode(std::string, camera_format_t *);

@@ -55,7 +55,10 @@ int32_t CameraSolutionManager::getMetaSizeHint(void)
     int32_t size{0};
     for (auto &i : lstSolution_)
     {
-        size += i->getMetaSizeHint();
+        if (size < INT32_MAX - i->getMetaSizeHint())
+        {
+            size += i->getMetaSizeHint();
+        }
     }
 
     return size;
@@ -139,7 +142,10 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const SolutionN
         {
             if (s == i->getSolutionStr())
             {
-                candidateSolutionCnt++;
+                if (candidateSolutionCnt < UINT32_MAX)
+                {
+                    candidateSolutionCnt++;
+                }
                 PLOGI("candidate enabled solutionName %s", s.c_str());
             }
         }
@@ -184,7 +190,10 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::disableCameraSolution(const Solution
         {
             if (s == i->getSolutionStr())
             {
-                candidateSolutionCnt++;
+                if (candidateSolutionCnt < UINT_MAX)
+                {
+                    candidateSolutionCnt++;
+                }
                 PLOGI("candidate disabled solutionName %s", s.c_str());
             }
         }

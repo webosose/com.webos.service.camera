@@ -46,12 +46,14 @@ void Process::start(const std::string &cmd)
         std::istringstream iss(cmd);
         std::vector<std::string> tokens{std::istream_iterator<std::string>{iss},
                                         std::istream_iterator<std::string>{}};
-        char **argv = new char *[tokens.size() + 1];
+        size_t tokens_size = (tokens.size() < (SIZE_MAX)) ? tokens.size() + 1 : tokens.size();
+        char **argv = new char *[(tokens_size < (SIZE_MAX / sizeof(char *))) ? tokens_size : 0];
         size_t v    = 0;
         for (const auto &token : tokens)
         {
-            argv[v] = new char[token.size() + 1];
-            strncpy(argv[v++], token.c_str(), token.size() + 1);
+            size_t token_size = (token.size() < SIZE_MAX) ? token.size() + 1 : token.size();
+            argv[v]           = new char[token_size];
+            strncpy(argv[(v < SIZE_MAX) ? v++ : v], token.c_str(), token_size);
         }
         argv[v] = nullptr;
         execv(argv[0], argv);

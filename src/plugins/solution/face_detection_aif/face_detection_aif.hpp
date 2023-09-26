@@ -17,6 +17,7 @@
 
 #include "camera_solution_async.h"
 #include <aif/facade/EdgeAIVision.h>
+#include <cstdint>
 
 using namespace aif;
 
@@ -44,7 +45,11 @@ class FaceDetectionAIF : public CameraSolutionAsync
             if (!pImage_ && outHeight_ && outWidth_ && outChannels_)
                 pImage_ = new uint8_t[outWidth_ * outHeight_ * outChannels_];
         }
-        uint8_t *getLine(uint32_t lineNumber) { return pImage_ + lineNumber * outStride_; }
+        uint8_t *getLine(uint32_t lineNumber)
+        {
+            uint32_t check = (lineNumber < UINT32_MAX / outStride_) ? lineNumber * outStride_ : 0;
+            return pImage_ + check;
+        }
     };
 
     EdgeAIVision::DetectorType type = EdgeAIVision::DetectorType::FACE;

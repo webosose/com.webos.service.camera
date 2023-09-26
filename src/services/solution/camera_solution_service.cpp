@@ -122,12 +122,14 @@ bool CameraSolutionService::init(LSMessage &message)
 
     if (parsed.hasKey(CONST_PARAM_NAME_WIDTH))
     {
-        streamFormat_.stream_width = parsed[CONST_PARAM_NAME_WIDTH].asNumber<int>();
+        int w                      = parsed[CONST_PARAM_NAME_WIDTH].asNumber<int>();
+        streamFormat_.stream_width = (w > 0) ? w : 0;
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_HEIGHT))
     {
-        streamFormat_.stream_height = parsed[CONST_PARAM_NAME_HEIGHT].asNumber<int>();
+        int h                       = parsed[CONST_PARAM_NAME_HEIGHT].asNumber<int>();
+        streamFormat_.stream_height = (h > 0) ? h : 0;
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_FPS))
@@ -137,7 +139,8 @@ bool CameraSolutionService::init(LSMessage &message)
 
     if (parsed.hasKey(CONST_PARAM_NAME_BUFFERSIZE))
     {
-        streamFormat_.buffer_size = parsed[CONST_PARAM_NAME_BUFFERSIZE].asNumber<int>();
+        int sz_buf                = parsed[CONST_PARAM_NAME_BUFFERSIZE].asNumber<int>();
+        streamFormat_.buffer_size = (sz_buf > 0) ? sz_buf : 0;
     }
 
     if (parsed.hasKey(CONST_PARAM_NAME_SHMKEY))
