@@ -51,6 +51,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str())
   LS_CATEGORY_METHOD(setFormat)
   LS_CATEGORY_METHOD(startCapture)
   LS_CATEGORY_METHOD(stopCapture)
+  LS_CATEGORY_METHOD(capture)
   LS_CATEGORY_METHOD(startCamera)
   LS_CATEGORY_METHOD(stopCamera)
   LS_CATEGORY_METHOD(startPreview)
@@ -640,6 +641,64 @@ bool CameraService::stopCapture(LSMessage &message)
 
   // create json string now for reply
   std::string output_reply = obj_stopcapture.createObjectJsonString();
+  PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
+
+  LS::Message request(&message);
+  request.respond(output_reply.c_str());
+
+  return true;
+}
+
+bool CameraService::capture(LSMessage &message)
+{
+  auto *payload = LSMessageGetPayload(&message);
+  PMLOG_INFO(CONST_MODULE_LUNA, "payload %s", payload);
+  DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+  const int max_capture = 30;
+
+  CaptureMethod obj_capture;
+  obj_capture.getCaptureObject(payload, captureSchema);
+
+  int ndevhandle = obj_capture.getDeviceHandle();
+  std::vector<std::string> capturedFileNames;
+
+  if (n_invalid_id == ndevhandle)
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "DEVICE_ERROR_JSON_PARSING");
+    err_id = DEVICE_ERROR_JSON_PARSING;
+    obj_capture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+  }
+  else
+  {
+    PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
+    PMLOG_INFO(CONST_MODULE_LUNA, "nImage : %d\n", obj_capture.getnImage());
+    PMLOG_INFO(CONST_MODULE_LUNA, "path: %s\n", obj_capture.getImagePath().c_str());
+
+    if(obj_capture.getnImage() > 0 && obj_capture.getnImage() <= max_capture)
+    {
+      // capture image here
+      err_id = CommandManager::getInstance().capture(
+          ndevhandle, obj_capture.getnImage(), obj_capture.getImagePath(), capturedFileNames);
+    }
+    else
+    {
+      err_id = DEVICE_ERROR_OUT_OF_PARAM_RANGE;
+    }
+
+    if (DEVICE_OK != err_id)
+    {
+      PMLOG_DEBUG("err_id != DEVICE_OK\n");
+      obj_capture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+    }
+    else
+    {
+      PMLOG_DEBUG("err_id == DEVICE_OK\n");
+      obj_capture.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+    }
+  }
+
+  // create json string now for reply
+  std::string output_reply = obj_capture.createCaptureObjectJsonString(capturedFileNames);
   PMLOG_INFO(CONST_MODULE_LUNA, "output_reply %s\n", output_reply.c_str());
 
   LS::Message request(&message);

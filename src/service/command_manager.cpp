@@ -321,6 +321,23 @@ DEVICE_RETURN_CODE_T CommandManager::captureImage(int devhandle, int ncount, CAM
     return DEVICE_ERROR_UNKNOWN;
 }
 
+DEVICE_RETURN_CODE_T CommandManager::capture(int devhandle, int ncount, const std::string& imagepath, std::vector<std::string> &capturedFiles)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+
+  if (n_invalid_id == devhandle)
+    return DEVICE_ERROR_WRONG_PARAM;
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    // capture image
+    return ptr->capture(devhandle, ncount, imagepath, capturedFiles);
+  }
+  else
+    return DEVICE_ERROR_UNKNOWN;
+}
+
 DEVICE_RETURN_CODE_T CommandManager::getFormat(int devhandle, CAMERA_FORMAT *oformat)
 {
   PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);

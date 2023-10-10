@@ -66,6 +66,7 @@ public:
   bool stopPreview(LSMessage &);
   bool startCapture(LSMessage &);
   bool stopCapture(LSMessage &);
+  bool capture(LSMessage &);
   bool getEventNotification(LSMessage &);
   bool getFd(LSMessage &);
   bool getSolutions(LSMessage &message);

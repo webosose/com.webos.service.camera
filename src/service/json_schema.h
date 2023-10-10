@@ -229,6 +229,32 @@ const char *startCaptureSchema = "{ \
   } \
 }";
 
+const char *captureSchema = "{ \
+  \"type\": \"object\", \
+  \"title\": \"The Root Schema\", \
+  \"required\": [ \
+    \"handle\" \
+  ], \
+  \"properties\": { \
+    \"handle\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Handle Schema\", \
+      \"default\": 0 \
+    }, \
+    \"nimage\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Capture Count Schema\", \
+      \"default\": 1 \
+    }, \
+    \"path\": { \
+      \"type\": \"string\", \
+      \"title\": \"The Path Schema\", \
+      \"default\": \"\", \
+      \"pattern\": \"^(.*)$\" \
+    } \
+  } \
+}";
+
 const char *startCameraSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \

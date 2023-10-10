@@ -272,6 +272,38 @@ private:
   MethodReply objreply_;
 };
 
+class CaptureMethod
+{
+public:
+  CaptureMethod();
+  ~CaptureMethod() {}
+
+  void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+  int getDeviceHandle() const { return n_devicehandle_; }
+
+  int getnImage() const { return n_image_; }
+
+  void setImagePath(const std::string& path) { str_path_ = path; }
+  std::string getImagePath() const { return str_path_; }
+
+  void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+  {
+    objreply_.setReturnValue(returnvalue);
+    objreply_.setErrorCode(errorcode);
+    objreply_.setErrorText(errortext);
+  }
+  MethodReply getMethodReply() const { return objreply_; }
+
+  void getCaptureObject(const char *, const char *);
+  std::string createCaptureObjectJsonString(std::vector<std::string> &capturedFiles) const;
+
+private:
+  int n_devicehandle_;
+  int n_image_;
+  std::string str_path_;
+  MethodReply objreply_;
+};
+
 class StopCameraPreviewCaptureCloseMethod
 {
 public:
