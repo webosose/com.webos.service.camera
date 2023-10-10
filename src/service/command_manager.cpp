@@ -207,8 +207,8 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
     return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, std::string disptype,
-                                                  int *pkey, LSHandle *sh, const char *subskey)
+DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, std::string memtype,
+                                                 int *pkey, LSHandle *sh, const char *subskey)
 {
   PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
 
@@ -218,7 +218,40 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string mem
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start preview
-    return ptr->startPreview(devhandle, memtype, disptype, pkey, sh, subskey);
+    return ptr->startCamera(devhandle, memtype, pkey, sh, subskey);
+  else
+    return DEVICE_ERROR_UNKNOWN;
+}
+
+DEVICE_RETURN_CODE_T CommandManager::stopCamera(int devhandle)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+
+  if (n_invalid_id == devhandle)
+    return DEVICE_ERROR_WRONG_PARAM;
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+    // stop preview
+    return ptr->stopCamera(devhandle);
+  else
+    return DEVICE_ERROR_UNKNOWN;
+}
+
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle,
+                                                  std::string memtype, int *pkey,
+                                                  std::string disptype, std::string *media_id,
+                                                  LSHandle *sh, const char *subskey)
+{
+  PMLOG_INFO(CONST_MODULE_CM, "devhandle : %d\n", devhandle);
+
+  if (n_invalid_id == devhandle)
+    return DEVICE_ERROR_WRONG_PARAM;
+
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+    // start preview
+    return ptr->startPreview(devhandle, memtype, pkey, disptype, media_id, sh, subskey);
   else
     return DEVICE_ERROR_UNKNOWN;
 }
@@ -487,5 +520,18 @@ CommandManager::disableCameraSolution(int devhandle, const std::vector<std::stri
   else
   {
     return DEVICE_ERROR_UNKNOWN;
+  }
+}
+
+CameraDeviceState CommandManager::getDeviceState(int devhandle)
+{
+  VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+  if (nullptr != ptr)
+  {
+    return ptr->getDeviceState(devhandle);
+  }
+  else
+  {
+    return CameraDeviceState::CAM_DEVICE_STATE_CLOSE;
   }
 }

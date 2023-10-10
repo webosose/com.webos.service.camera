@@ -172,6 +172,61 @@ std::string OpenMethod::createOpenObjectJsonString() const
   return str_reply;
 }
 
+void StartCameraMethod::getStartCameraObject(const char *input, const char *schemapath)
+{
+  jvalue_ref j_obj;
+  int retval = deSerialize(input, schemapath, j_obj);
+
+  if (0 == retval)
+  {
+    int n_devicehandle = n_invalid_id;
+    jvalue_ref jnum = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
+    jnumber_get_i32(jnum, &n_devicehandle);
+    setDeviceHandle(n_devicehandle);
+
+    jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
+    raw_buffer type =
+        jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TYPE)));
+    raw_buffer source =
+        jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
+
+    camera_memory_source_t r_cams_source;
+    r_cams_source.str_memorysource = (source.m_str) ? source.m_str : "";
+    r_cams_source.str_memorytype = (type.m_str) ? type.m_str : "";
+    setMemParams(r_cams_source);
+  }
+  else
+  {
+    setDeviceHandle(n_invalid_id);
+  }
+  j_release(&j_obj);
+}
+
+std::string StartCameraMethod::createStartCameraObjectJsonString() const
+{
+  jvalue_ref json_outobj = jobject_create();
+  std::string str_reply;
+
+  MethodReply obj_reply = getMethodReply();
+
+  if (obj_reply.bGetReturnValue())
+  {
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                jboolean_create(obj_reply.bGetReturnValue()));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_DEVICE_KEY), jnumber_create_i32(getKeyValue()));
+  }
+  else
+  {
+    createJsonStringFailure(obj_reply, json_outobj);
+  }
+
+  const char* strvalue = jvalue_stringify(json_outobj);
+  str_reply = (strvalue) ? strvalue : "";
+  j_release(&json_outobj);
+
+  return str_reply;
+}
+
 void StartPreviewMethod::getStartPreviewObject(const char *input, const char *schemapath)
 {
   jvalue_ref j_obj;
@@ -220,6 +275,8 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                 jboolean_create(obj_reply.bGetReturnValue()));
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_DEVICE_KEY), jnumber_create_i32(getKeyValue()));
+    jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MEDIA_ID),
+                jstring_create(getMediaIdValue().c_str()));
   }
   else
   {
@@ -233,7 +290,7 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
   return str_reply;
 }
 
-void StopPreviewCaptureCloseMethod::getObject(const char *input, const char *schemapath)
+void StopCameraPreviewCaptureCloseMethod::getObject(const char *input, const char *schemapath)
 {
   jvalue_ref j_obj;
   int retVal = deSerialize(input, schemapath, j_obj);
@@ -256,7 +313,7 @@ void StopPreviewCaptureCloseMethod::getObject(const char *input, const char *sch
   j_release(&j_obj);
 }
 
-std::string StopPreviewCaptureCloseMethod::createObjectJsonString() const
+std::string StopCameraPreviewCaptureCloseMethod::createObjectJsonString() const
 {
   jvalue_ref json_outobj = jobject_create();
   std::string str_reply;

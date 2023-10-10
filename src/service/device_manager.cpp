@@ -376,10 +376,19 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
         if (iter->second.isDeviceOpen && iter->second.handleList.size() > 0)
         {
           PMLOG_INFO(CONST_MODULE_DM, "start cleaning the unplugged device!");
+          CameraDeviceState state = CameraDeviceState::CAM_DEVICE_STATE_CLOSE;
           CommandManager::getInstance().requestPreviewCancel(iter->first);
           for (int i = 0 ; i<iter->second.handleList.size() ; i++)
           {
-            CommandManager::getInstance().stopPreview(iter->second.handleList[i]);
+            state = CommandManager::getInstance().getDeviceState(iter->second.handleList[i]);
+            if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
+            {
+              CommandManager::getInstance().stopCamera(iter->second.handleList[i]);
+            }
+            else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+            {
+              CommandManager::getInstance().stopPreview(iter->second.handleList[i]);
+            }
             CommandManager::getInstance().close(iter->second.handleList[i]);
           }
           PMLOG_INFO(CONST_MODULE_DM, "end cleaning the unplugged device!");

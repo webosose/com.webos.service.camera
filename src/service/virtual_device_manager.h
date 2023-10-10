@@ -36,7 +36,7 @@ public:
   DeviceStateMap() :
     ndeviceid_(0),
     shmemtype(0),
-    ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_UNKNOWN) { };
+    ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE) { };
 };
 
 class VirtualDeviceManager
@@ -49,15 +49,16 @@ private:
   int shmkey_;
   int poshmkey_;
   int shmusrptrkey_;
-  std::vector<int> npreviewhandle_;
+  std::vector<int> nstreaminghandle_;
+  std::map<int, std::string> previewdisplay_map_;
   std::vector<int> ncapturehandle_;
   CAMERA_FORMAT sformat_;
+
+  // for render preview
+  PreviewDisplayControl *display_control_;
+
   // for multi obj
   DeviceControl objdevicecontrol_;
-
-  // for preview display
-  std::map<int, std::string> previewdisplay_map_;
-  PreviewDisplayControl *display_control_;
 
   bool checkDeviceOpen(int);
   bool checkAppPriorityMap();
@@ -68,14 +69,16 @@ private:
   void updateFormat(CAMERA_FORMAT &,int);
   DEVICE_RETURN_CODE_T openDevice(int, int *);
 
-  bool startPreviewDisplay(int, std::string, std::string, int);
-  void stopPreviewDisplay(int);
+  std::string startPreviewDisplay(int, std::string, std::string, int);
+  bool stopPreviewDisplay(int);
 
 public:
   VirtualDeviceManager();
   DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T startPreview(int, std::string, std::string, int *, LSHandle*, const char*);
+  DEVICE_RETURN_CODE_T startCamera(int, std::string, int *, LSHandle *, const char*);
+  DEVICE_RETURN_CODE_T stopCamera(int);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, std::string, std::string*, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&,
                                     const std::string&);
@@ -99,6 +102,8 @@ public:
   void requestPreviewCancel();
 
   void setDisplayControl(PreviewDisplayControl*);
+
+  CameraDeviceState getDeviceState(int);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/
