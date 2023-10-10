@@ -102,6 +102,7 @@ typedef enum
 #ifdef DAC_ENABLED
     DEVICE_ERROR_DAC_POLICY_VIOLATION,
 #endif
+    DEVICE_ERROR_INVALID_STATE = 200,
 
     // Define new DEVICE_ERROR_* from here
     // DEVICE_ERROR_*,

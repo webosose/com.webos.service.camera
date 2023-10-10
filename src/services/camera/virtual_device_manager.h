@@ -74,6 +74,7 @@ public:
     DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                       int);
     DEVICE_RETURN_CODE_T stopCapture(int, bool request = true);
+    DEVICE_RETURN_CODE_T capture(int, int, const std::string &, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);

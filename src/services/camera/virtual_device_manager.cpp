@@ -638,6 +638,36 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle, bool reque
     }
 }
 
+DEVICE_RETURN_CODE_T VirtualDeviceManager::capture(int devhandle, int ncount,
+                                                   const std::string &imagepath,
+                                                   std::vector<std::string> &capturedFiles)
+{
+    PLOGI("devhandle : %d ncount : %d \n", devhandle, ncount);
+
+    // get device id for virtual device handle
+    DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    int deviceid                = obj_devstate.ndeviceid_;
+    PLOGI("deviceid : %d \n", deviceid);
+
+    if (DeviceManager::getInstance().isDeviceOpen(deviceid))
+    {
+        // check if device state is preview then only allow to capture
+        if (CameraDeviceState::CAM_DEVICE_STATE_PREVIEW != obj_devstate.ecamstate_)
+        {
+            PLOGE("Invalid camera state : %d \n", (int)obj_devstate.ecamstate_);
+            return DEVICE_ERROR_INVALID_STATE;
+        }
+
+        // capture number of images specified by ncount
+        return objcamerahalproxy_.capture(ncount, imagepath, capturedFiles);
+    }
+    else
+    {
+        PLOGE("Device not open\n");
+        return DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
+    }
+}
+
 DEVICE_RETURN_CODE_T VirtualDeviceManager::getProperty(int devhandle,
                                                        CAMERA_PROPERTIES_T *devproperty)
 {

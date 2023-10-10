@@ -36,6 +36,7 @@ CameraHalService::CameraHalService(const char *service_name)
     LS_CATEGORY_METHOD(stopPreview)
     LS_CATEGORY_METHOD(startCapture)
     LS_CATEGORY_METHOD(stopCapture)
+    LS_CATEGORY_METHOD(capture)
     LS_CATEGORY_METHOD(getDeviceProperty)
     LS_CATEGORY_METHOD(setDeviceProperty)
     LS_CATEGORY_METHOD(setFormat)
@@ -384,6 +385,59 @@ bool CameraHalService::stopCapture(LSMessage &message)
     LS::Message request(&message);
     request.respond(jvalue_stringify(json_outobj));
     PLOGI("response message : %s", jvalue_stringify(json_outobj));
+
+    return true;
+}
+
+bool CameraHalService::capture(LSMessage &message)
+{
+    std::string imagepath;
+    int ncount             = 1;
+    jvalue_ref json_outobj = jobject_create();
+
+    auto *payload = LSMessageGetPayload(&message);
+    PLOGI("payload %s", payload);
+
+    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
+
+    if (parsed.hasKey(CONST_PARAM_NAME_IMAGE_PATH))
+    {
+        imagepath = parsed[CONST_PARAM_NAME_IMAGE_PATH].asString();
+    }
+
+    if (parsed.hasKey(CONST_PARAM_NAME_NCOUNT))
+    {
+        ncount = parsed[CONST_PARAM_NAME_NCOUNT].asNumber<int>();
+    }
+
+    std::vector<std::string> capturedFiles;
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->capture(ncount, imagepath, capturedFiles);
+
+    if (ret == DEVICE_OK)
+    {
+        jvalue_ref json_file_names_array = jarray_create(0);
+        for (const auto &capturedFile : capturedFiles)
+        {
+            jarray_append(json_file_names_array, jstring_create(capturedFile.c_str()));
+        }
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_IMAGE_PATH),
+                    json_file_names_array);
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(true));
+    }
+    else
+    {
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
+                    jboolean_create(false));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
+                    jnumber_create_i32(static_cast<int32_t>(ret)));
+    }
+
+    LS::Message request(&message);
+    request.respond(jvalue_stringify(json_outobj));
+    PLOGI("response message : %s", jvalue_stringify(json_outobj));
+
+    j_release(&json_outobj);
 
     return true;
 }

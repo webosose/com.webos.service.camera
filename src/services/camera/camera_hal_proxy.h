@@ -65,6 +65,8 @@ public:
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT sformat, const std::string &imagepath,
                                       const std::string &mode, int ncount, const int devHandle = 0);
     DEVICE_RETURN_CODE_T stopCapture(const int devHandle);
+    DEVICE_RETURN_CODE_T capture(int ncount, const std::string &imagepath,
+                                 std::vector<std::string> &capturedFiles);
     DEVICE_RETURN_CODE_T createHal(std::string subsystem);
     DEVICE_RETURN_CODE_T destroyHal();
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string strdevicenode, std::string strdevicetype,

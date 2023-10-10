@@ -47,6 +47,7 @@ CameraService::CameraService() : LS::Handle(LS::registerService(cstr_uricamerama
     LS_CATEGORY_METHOD(setFormat)
     LS_CATEGORY_METHOD(startCapture)
     LS_CATEGORY_METHOD(stopCapture)
+    LS_CATEGORY_METHOD(capture)
     LS_CATEGORY_METHOD(startPreview)
     LS_CATEGORY_METHOD(stopPreview)
     LS_CATEGORY_METHOD(getEventNotification)
@@ -504,6 +505,65 @@ bool CameraService::stopCapture(LSMessage &message)
     obj_stopcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_stopcapture.createObjectJsonString();
+    PLOGI("output_reply %s\n", output_reply.c_str());
+
+    LS::Message request(&message);
+    request.respond(output_reply.c_str());
+
+    return true;
+}
+
+bool CameraService::capture(LSMessage &message)
+{
+    auto *payload = LSMessageGetPayload(&message);
+    PLOGI("payload %s", payload);
+    DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    const int max_capture       = 30;
+
+    CaptureMethod obj_capture;
+    obj_capture.getCaptureObject(payload, captureSchema);
+
+    int ndevhandle = obj_capture.getDeviceHandle();
+    std::vector<std::string> capturedFileNames;
+
+    if (n_invalid_id == ndevhandle)
+    {
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
+        err_id = DEVICE_ERROR_JSON_PARSING;
+        obj_capture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+    }
+    else
+    {
+        PLOGI("ndevhandle %d\n", ndevhandle);
+        PLOGI("nImage : %d\n", obj_capture.getnImage());
+        PLOGI("path: %s\n", obj_capture.getImagePath().c_str());
+
+        if (obj_capture.getnImage() > 0 && obj_capture.getnImage() <= max_capture)
+        {
+            // capture image here
+            err_id = CommandManager::getInstance().capture(
+                ndevhandle, obj_capture.getnImage(), obj_capture.getImagePath(), capturedFileNames);
+        }
+        else
+        {
+            err_id = DEVICE_ERROR_OUT_OF_PARAM_RANGE;
+        }
+
+        if (DEVICE_OK != err_id)
+        {
+            PLOGD("err_id != DEVICE_OK\n");
+            obj_capture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                       getErrorString(err_id));
+        }
+        else
+        {
+            PLOGD("err_id == DEVICE_OK\n");
+            obj_capture.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+        }
+    }
+
+    // create json string now for reply
+    std::string output_reply = obj_capture.createCaptureObjectJsonString(capturedFileNames);
     PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
