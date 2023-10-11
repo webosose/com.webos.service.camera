@@ -167,24 +167,25 @@ int V4l2CameraPlugin::getFormat(void *stream_format)
 int V4l2CameraPlugin::setBuffer(int num_buffer, int io_mode, void **usrbufs)
 {
   int retVal = CAMERA_ERROR_NONE;
+  unsigned int count = (num_buffer >= 0) ? num_buffer : 0;
   io_mode_ = io_mode;
-  n_buffers_ = num_buffer;
+  n_buffers_ = count;
 
   switch (io_mode)
   {
   case IOMODE_MMAP:
   {
-    retVal = requestMmapBuffers(num_buffer);
+    retVal = requestMmapBuffers(count);
     break;
   }
   case IOMODE_USERPTR:
   {
-    retVal = requestUserptrBuffers(num_buffer, (buffer_t **)usrbufs);
+    retVal = requestUserptrBuffers(count, (buffer_t **)usrbufs);
     break;
   }
   case IOMODE_DMABUF:
   {
-    retVal = requestDmabuffers(num_buffer);
+    retVal = requestDmabuffers(count);
     break;
   }
   default:
@@ -664,31 +665,22 @@ camera_format_t V4l2CameraPlugin::getCameraFormatProperty(struct v4l2_fmtdesc fo
     return format_;
 }
 
-int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
+int V4l2CameraPlugin::requestMmapBuffers(unsigned int num_buffer)
 {
-  struct v4l2_requestbuffers req;
+    if (CAMERA_ERROR_NONE !=
+        requestBuffersToV4l2(num_buffer, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_MEMORY_MMAP))
+    {
+        return CAMERA_ERROR_UNKNOWN;
+    }
 
-  CLEAR(req);
-
-  req.count = num_buffer;
-  req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  req.memory = V4L2_MEMORY_MMAP;
-
-  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_REQBUFS failed %d, %s", errno,
-                 strerror(errno));
-    return CAMERA_ERROR_UNKNOWN;
-  }
-
-  buffers_ = (buffer_t *)calloc(req.count, sizeof(*buffers_));
+  buffers_ = (buffer_t *)calloc(num_buffer, sizeof(*buffers_));
   if (!buffers_)
   {
     HAL_LOG_INFO(CONST_MODULE_HAL, "Out of memory");
     return CAMERA_ERROR_UNKNOWN;
   }
 
-  for (n_buffers_ = 0; n_buffers_ < req.count; ++n_buffers_)
+  for (n_buffers_ = 0; n_buffers_ < num_buffer; ++n_buffers_)
   {
     struct v4l2_buffer buf;
     CLEAR(buf);
@@ -718,25 +710,18 @@ int V4l2CameraPlugin::requestMmapBuffers(int num_buffer)
   return CAMERA_ERROR_NONE;
 }
 
-int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
+int V4l2CameraPlugin::requestUserptrBuffers(unsigned int num_buffer, buffer_t **usrbufs)
 {
-    struct v4l2_requestbuffers req;
     stream_format_t stream_format;
     int retVal = CAMERA_ERROR_NONE;
 
-    CLEAR(req);
-
-    req.count  = num_buffer;
-    req.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    req.memory = V4L2_MEMORY_USERPTR;
-
-    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
+    if (CAMERA_ERROR_NONE !=
+        requestBuffersToV4l2(num_buffer, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_MEMORY_USERPTR))
     {
-        HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_REQBUFS failed %d, %s", errno, strerror(errno));
         return CAMERA_ERROR_UNKNOWN;
     }
 
-    buffers_ = (buffer_t *)calloc(req.count, sizeof(*buffers_));
+    buffers_ = (buffer_t *)calloc(num_buffer, sizeof(*buffers_));
     if (!buffers_)
     {
         HAL_LOG_INFO(CONST_MODULE_HAL, "out of memory");
@@ -749,7 +734,7 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
         return retVal;
     }
 
-    for (n_buffers_ = 0; n_buffers_ < req.count; ++n_buffers_)
+    for (n_buffers_ = 0; n_buffers_ < num_buffer; ++n_buffers_)
     {
         // assign buffers pushed by the user to user pointer buffers
         buffers_[n_buffers_].length = (*usrbufs)[n_buffers_].length;
@@ -761,19 +746,20 @@ int V4l2CameraPlugin::requestUserptrBuffers(int num_buffer, buffer_t **usrbufs)
 
 int V4l2CameraPlugin::releaseMmapBuffers()
 {
-  for (unsigned int i = 0; i < n_buffers_; ++i)
-  {
-    if (CAMERA_ERROR_UNKNOWN == munmap(buffers_[i].start, buffers_[i].length))
+    for (unsigned int i = 0; i < n_buffers_; ++i)
     {
-      HAL_LOG_INFO(CONST_MODULE_HAL, "munmap failed %d, %s", errno,
-                   strerror(errno));
-      return CAMERA_ERROR_UNKNOWN;
+        if (CAMERA_ERROR_UNKNOWN == munmap(buffers_[i].start, buffers_[i].length))
+        {
+            HAL_LOG_INFO(CONST_MODULE_HAL, "munmap failed %d, %s", errno, strerror(errno));
+            return CAMERA_ERROR_UNKNOWN;
+        }
+        buffers_[i].start = NULL;
     }
-    buffers_[i].start = NULL;
-  }
-  free(buffers_);
-  buffers_ = NULL;
-  return CAMERA_ERROR_NONE;
+    free(buffers_);
+    buffers_ = NULL;
+
+    // request buffers to 0
+    return requestBuffersToV4l2(0, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_MEMORY_MMAP);
 }
 
 int V4l2CameraPlugin::releaseUserptrBuffers()
@@ -784,17 +770,20 @@ int V4l2CameraPlugin::releaseUserptrBuffers()
         buffers_ = nullptr;
     }
 
-    return CAMERA_ERROR_NONE;
+    // request buffers to 0
+    return requestBuffersToV4l2(0, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_MEMORY_USERPTR);
 }
 
 int V4l2CameraPlugin::releaseDmaBuffersFd()
 {
-  for (unsigned int i = 0; i < n_buffers_; ++i)
-  {
-    close(dmafd_[i]);
-    dmafd_[i] = -1;
-  }
-  return CAMERA_ERROR_NONE;
+    for (unsigned int i = 0; i < n_buffers_; ++i)
+    {
+        close(dmafd_[i]);
+        dmafd_[i] = -1;
+    }
+
+    // request buffers to 0
+    return requestBuffersToV4l2(0, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_MEMORY_MMAP);
 }
 
 int V4l2CameraPlugin::captureDataMmapMode()
@@ -858,24 +847,9 @@ int V4l2CameraPlugin::captureDataUserptrMode()
   return CAMERA_ERROR_NONE;
 }
 
-int V4l2CameraPlugin::requestDmabuffers(int num_buffer)
+int V4l2CameraPlugin::requestDmabuffers(unsigned int num_buffer)
 {
-  struct v4l2_requestbuffers req;
-
-  CLEAR(req);
-
-  req.count = num_buffer;
-  req.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  req.memory = V4L2_MEMORY_MMAP;
-
-  if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
-  {
-    HAL_LOG_INFO(CONST_MODULE_HAL, "VIDIOC_REQBUFS failed %d, %s", errno,
-                 strerror(errno));
-    return CAMERA_ERROR_UNKNOWN;
-  }
-
-  return CAMERA_ERROR_NONE;
+  return requestBuffersToV4l2(num_buffer, V4L2_BUF_TYPE_VIDEO_CAPTURE, V4L2_MEMORY_MMAP);
 }
 
 int V4l2CameraPlugin::captureDataDmaMode()
@@ -932,6 +906,26 @@ int V4l2CameraPlugin::getBufferFd(int *bufFd, int *count)
     *count = *count + 1;
   }
   return CAMERA_ERROR_NONE;
+}
+
+int V4l2CameraPlugin::requestBuffersToV4l2(unsigned int count, unsigned int type,
+                                           unsigned int memory)
+{
+    int retVal = CAMERA_ERROR_NONE;
+    struct v4l2_requestbuffers req;
+    CLEAR(req);
+
+    req.count  = count;
+    req.type   = type;
+    req.memory = memory;
+
+    if (CAMERA_ERROR_NONE != xioctl(fd_, VIDIOC_REQBUFS, &req))
+    {
+        HAL_LOG_INFO(CONST_MODULE_HAL, "requestBuffersToZero failed %d, %s", errno,
+                     strerror(errno));
+        return CAMERA_ERROR_UNKNOWN;
+    }
+    return retVal;
 }
 
 void V4l2CameraPlugin::createFourCCPixelFormatMap()
