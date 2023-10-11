@@ -544,7 +544,7 @@ std::string GetSetPropertiesMethod::createGetPropertiesObjectJsonString() const
       for(auto const &it : str_params_)
       {
         int param_enum = getParamNumFromString(it);
-        if(param_enum != -1)
+        if(param_enum >= 0)
         {
           if( obj.stGetData.data[param_enum][QUERY_VALUE] != CONST_PARAM_DEFAULT_VALUE )
           {

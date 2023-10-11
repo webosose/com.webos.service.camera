@@ -267,7 +267,6 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem,int u
     if( fstat (shm_fd , &sb) == -1)
     {
         DEBUG_PRINT("Failed to get size of shared memory \n");
-        return PSHMEM_FAILED;
         munmap(pSharedmem, shmemSize);
         shm_unlink(poshm_name);
         close(shm_fd);
