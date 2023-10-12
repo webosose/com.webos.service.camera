@@ -1,6 +1,12 @@
 {
-    "allowedNames": ["com.webos.service.camera2"],
-        "camera.query": ["dev"],
-        "camera.operation": ["dev"]
+    "camera.query": {
+      "trust": "dev",
+      "description": "query camera",
+      "privacy": false
+    },
+    "camera.operation": {
+      "trust": "dev",
+      "description": "operate camera",
+      "privacy": true
+    }
 }
-

@@ -150,20 +150,20 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
         // create file to save data based on format
         int result = -1;
         if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02ld.yuv",
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.yuv",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              (tmnow.tv_usec / 10000));
+                              (intmax_t)(tmnow.tv_usec / 10000));
         else if (epixelformat_ == CAMERA_PIXEL_FORMAT_JPEG)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02ld.jpeg",
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.jpeg",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              (tmnow.tv_usec / 10000));
+                              (intmax_t)(tmnow.tv_usec / 10000));
         else if (epixelformat_ == CAMERA_PIXEL_FORMAT_H264)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02ld.h264",
+            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.h264",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              (tmnow.tv_usec / 10000));
+                              (intmax_t)(tmnow.tv_usec / 10000));
 
         if (result >= 0 && result < 100)
         {

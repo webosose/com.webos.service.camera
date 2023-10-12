@@ -9,11 +9,22 @@
     "permissions": [
         {
             "service": "com.webos.service.camera2",
-            "outbound": ["*"]
+            "outbound": [
+                "com.webos.service.pdm",
+                "com.webos.service.appcasting",
+                "com.webos.service.audio"
+            ]
         },
         {
             "service": "com.webos.service.camera2.*",
-            "outbound": ["*"]
+            "outbound": [
+                "com.webos.service.pdm",
+                "com.webos.applicationManager",
+                "com.webos.settingsservice",
+                "com.webos.service.config",
+                "com.webos.notification",
+                "com.webos.camerahal.*"
+            ]
         }
     ]
 }
