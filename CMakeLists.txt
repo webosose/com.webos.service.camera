@@ -49,7 +49,6 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -lrt -Werror=return-type -
 include_directories(${CMAKE_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/files/)
 include_directories(${CMAKE_SOURCE_DIR}/files/sysbus/)
-include_directories(${CMAKE_SOURCE_DIR}/files/systemd/)
 
 include_directories(${CMAKE_SOURCE_DIR}/src/include)
 
@@ -206,8 +205,6 @@ if (HAL_GTEST)
 endif()
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})
-webos_build_system_bus_files()
-webos_build_configured_file(files/systemd/com.webos.service.camera.service SYSCONFDIR systemd/system)
 
 set(SHMEM_TEST TRUE CACHE BOOL "Set to TRUE to enable shared memory synchronization test compilation")
 if (SHMEM_TEST)
