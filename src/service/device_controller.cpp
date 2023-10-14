@@ -340,7 +340,14 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, std::size_t 
     PMLOG_INFO(CONST_MODULE_DC, "path : fopen failed\n");
     return DEVICE_ERROR_CANNOT_WRITE;
   }
-  fwrite((unsigned char *)p, 1, size, fp);
+
+  std::size_t bytes_written = fwrite((unsigned char *)p, 1, size, fp);
+  if (bytes_written != size)
+  {
+      PMLOG_ERROR(CONST_MODULE_DC, "Error writing to file");
+      fclose(fp);
+      return DEVICE_ERROR_FAIL_TO_WRITE_FILE;
+  }
 
   capturedFiles.push_back(path);
   fclose(fp);
@@ -379,9 +386,13 @@ DeviceControl::pollForCapturedImage(void *handle, int ncount,
         }
 
         // write captured image to /tmp only if capture request is made
-        if (DEVICE_ERROR_CANNOT_WRITE ==
-            writeImageToFile(frame_buffer.start, frame_buffer.length, capturedFiles))
-            return DEVICE_ERROR_CANNOT_WRITE;
+        DEVICE_RETURN_CODE_T writeResult =
+            writeImageToFile(frame_buffer.start, frame_buffer.length, capturedFiles);
+        if (writeResult != DEVICE_OK)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "Write error");
+            return writeResult;
+        }
 
         retval = camera_hal_if_release_buffer(handle, &frame_buffer);
         if (retval != CAMERA_ERROR_NONE)
