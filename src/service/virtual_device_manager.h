@@ -22,6 +22,7 @@
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
 #include "device_controller.h"
+#include "preview_display_control.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -35,7 +36,7 @@ public:
   DeviceStateMap() :
     ndeviceid_(0),
     shmemtype(0),
-    ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_UNKNOWN) { };
+    ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE) { };
 };
 
 class VirtualDeviceManager
@@ -48,9 +49,14 @@ private:
   int shmkey_;
   int poshmkey_;
   int shmusrptrkey_;
-  std::vector<int> npreviewhandle_;
+  std::vector<int> nstreaminghandle_;
+  std::map<int, std::string> previewdisplay_map_;
   std::vector<int> ncapturehandle_;
   CAMERA_FORMAT sformat_;
+
+  // for render preview
+  PreviewDisplayControl *display_control_;
+
   // for multi obj
   DeviceControl objdevicecontrol_;
 
@@ -63,16 +69,22 @@ private:
   void updateFormat(CAMERA_FORMAT &,int);
   DEVICE_RETURN_CODE_T openDevice(int, int *);
 
+  std::string startPreviewDisplay(int, std::string, std::string, int);
+  bool stopPreviewDisplay(int);
+
 public:
   VirtualDeviceManager();
   DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
-  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle*, const char*);
+  DEVICE_RETURN_CODE_T startCamera(int, std::string, int *, LSHandle *, const char*);
+  DEVICE_RETURN_CODE_T stopCamera(int);
+  DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, std::string, std::string*, LSHandle*, const char*);
   DEVICE_RETURN_CODE_T stopPreview(int);
   DEVICE_RETURN_CODE_T captureImage(int, int, CAMERA_FORMAT, const std::string&,
                                     const std::string&);
   DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string&);
   DEVICE_RETURN_CODE_T stopCapture(int);
+  DEVICE_RETURN_CODE_T capture(int, int, const std::string&, std::vector<std::string> &);
   DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
   DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
@@ -89,6 +101,10 @@ public:
   bool isRegisteredClient(int);
 
   void requestPreviewCancel();
+
+  void setDisplayControl(PreviewDisplayControl*);
+
+  CameraDeviceState getDeviceState(int);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

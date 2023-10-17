@@ -2,6 +2,10 @@
     "com.webos.service.camera2": [
         "physicaldevice.query",
         "notifications"
+    ],
+    "com.webos.service.camera2.display": [
+        "media.operation",
+        "media.query"
     ]
 }
 

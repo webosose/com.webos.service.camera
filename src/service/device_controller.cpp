@@ -279,6 +279,135 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(void *handle, int ncoun
     return DEVICE_OK;
 }
 
+DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, std::size_t size,
+                                                     std::vector<std::string> &capturedFiles) const
+{
+  FILE *fp;
+  char image_name[100] = {};
+
+  auto path = str_imagepath_;
+  if (path.empty())
+    path = "/tmp/";
+
+  // find the file extension to check if file name is provided or path is provided
+  std::size_t position = path.find_last_of(".");
+  std::string extension = path.substr(position + 1);
+
+  if ((extension == "yuv") || (extension == "jpeg") || (extension == "h264") || (extension == "nv12"))
+  {
+    if (cstr_burst == str_capturemode_)
+    {
+      path.insert(position, std::to_string(n_imagecount_));
+      n_imagecount_++;
+    }
+  }
+  else
+  {
+    // check if specified location ends with '/' else add
+    char ch = path.back();
+    if (ch != '/')
+      path += "/";
+
+    time_t t = time(NULL);
+    tm *timePtr = localtime(&t);
+    if (timePtr == NULL) {
+        PMLOG_ERROR(CONST_MODULE_DC, "failed to get local time");
+        return DEVICE_ERROR_FAIL_TO_OPEN_FILE;
+    }
+    struct timeval tmnow;
+    gettimeofday(&tmnow, NULL);
+
+    // create file to save data based on format
+    if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV || epixelformat_ == CAMERA_PIXEL_FORMAT_NV12)
+      snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.yuv", timePtr->tm_mday,
+               (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
+               (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
+    else if (epixelformat_ == CAMERA_PIXEL_FORMAT_JPEG)
+      snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.jpeg", timePtr->tm_mday,
+               (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
+               (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
+    else if (epixelformat_ == CAMERA_PIXEL_FORMAT_H264)
+      snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.h264", timePtr->tm_mday,
+               (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
+               (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
+    path = path + image_name;
+  }
+
+  PMLOG_INFO(CONST_MODULE_DC, "path : %s\n", path.c_str());
+
+  if (NULL == (fp = fopen(path.c_str(), "w")))
+  {
+    PMLOG_INFO(CONST_MODULE_DC, "path : fopen failed\n");
+    return DEVICE_ERROR_CANNOT_WRITE;
+  }
+
+  std::size_t bytes_written = fwrite((unsigned char *)p, 1, size, fp);
+  if (bytes_written != size)
+  {
+      PMLOG_ERROR(CONST_MODULE_DC, "Error writing to file");
+      fclose(fp);
+      return DEVICE_ERROR_FAIL_TO_WRITE_FILE;
+  }
+
+  capturedFiles.push_back(path);
+  fclose(fp);
+  return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T
+DeviceControl::pollForCapturedImage(void *handle, int ncount,
+                                    std::vector<std::string> &capturedFiles) const
+{
+    int retval;
+
+    buffer_t frame_buffer = {0};
+
+    for (int i = 1; i <= ncount; i++)
+    {
+        retval = camera_hal_if_get_buffer(handle, &frame_buffer);
+        if (CAMERA_ERROR_NONE != retval)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_buffer failed \n");
+            return DEVICE_ERROR_UNKNOWN;
+        }
+        PMLOG_INFO(CONST_MODULE_DC, "buffer start : %p \n", frame_buffer.start);
+        PMLOG_INFO(CONST_MODULE_DC, "buffer length : %lu \n", frame_buffer.length);
+
+        if (frame_buffer.start == nullptr)
+        {
+            PMLOG_INFO(CONST_MODULE_DC, "no valid memory on frame buffer ptr");
+            return DEVICE_ERROR_OUT_OF_MEMORY;
+        }
+
+        //[Camera Solution Manager] processing for capture
+        if (pCameraSolution != nullptr)
+        {
+            pCameraSolution->processCapture(frame_buffer);
+        }
+
+        // write captured image to /tmp only if capture request is made
+        DEVICE_RETURN_CODE_T writeResult =
+            writeImageToFile(frame_buffer.start, frame_buffer.length, capturedFiles);
+        if (writeResult != DEVICE_OK)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "Write error");
+            return writeResult;
+        }
+
+        retval = camera_hal_if_release_buffer(handle, &frame_buffer);
+        if (retval != CAMERA_ERROR_NONE)
+        {
+            PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_release_buffer failed \n");
+            return DEVICE_ERROR_UNKNOWN;
+        }
+    }
+
+    if (cstr_burst == str_capturemode_)
+        n_imagecount_ = 0;
+
+    return DEVICE_OK;
+}
+
 camera_pixel_format_t DeviceControl::getPixelFormat(camera_format_t eformat)
 {
   // convert CAMERA_FORMAT_T to camera_pixel_format_t
@@ -802,6 +931,18 @@ DEVICE_RETURN_CODE_T DeviceControl::captureImage(void *handle, int ncount, CAMER
   }
 
   return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::capture(void *handle, int ncount,
+                                            const std::string& imagepath,
+                                            std::vector<std::string> &capturedFiles)
+{
+  PMLOG_INFO(CONST_MODULE_DC, "started ncount : %d \n", ncount);
+
+  str_imagepath_   = imagepath;
+  str_capturemode_ = (ncount == 1) ? cstr_oneshot : cstr_burst;
+
+  return pollForCapturedImage(handle, ncount, capturedFiles);
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::createHandle(void **handle, std::string subsystem)

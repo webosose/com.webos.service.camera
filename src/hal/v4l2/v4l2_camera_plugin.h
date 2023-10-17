@@ -58,16 +58,17 @@ extern "C"
     int getV4l2Property(struct v4l2_queryctrl, int *);
     camera_format_t getCameraFormatProperty(struct v4l2_fmtdesc);
 
-    int requestMmapBuffers(int);
-    int requestUserptrBuffers(int, buffer_t **);
+    int requestMmapBuffers(unsigned int);
+    int requestUserptrBuffers(unsigned int, buffer_t **);
     int releaseMmapBuffers();
     int releaseUserptrBuffers();
     int captureDataMmapMode();
     int captureDataUserptrMode();
 
-    int requestDmabuffers(int);
+    int requestDmabuffers(unsigned int);
     int captureDataDmaMode();
     int releaseDmaBuffersFd();
+    int requestBuffersToV4l2(unsigned int count, unsigned int type, unsigned int memory);
 
     void createFourCCPixelFormatMap();
     void createCameraPixelFormatMap();

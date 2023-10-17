@@ -34,6 +34,7 @@
 #define CONST_MODULE_PDMCLIENT "PDMClient"
 #define CONST_MODULE_SHM "SHM_API"
 #define CONST_MODULE_SM "SolutionManager"
+#define CONST_MODULE_DPY "PreviewDisplayControl"
 
 #define CONST_DEVICE_NAME_CAMERA "camera"
 #define CONST_DEVICE_HANDLE "handle"
@@ -109,7 +110,7 @@
 #define CONST_PARAM_NAME_RESOLUTION "resolution"
 #define CONST_PARAM_NAME_FORMATINFO "formatInfo"
 #define CONST_PARAM_NAME_PROPERTIESINFO "propertiesInfo"
-#define CONST_EVENT_KEY_PREVIEW_FAULT "EventPreviewFault"
+#define CONST_EVENT_KEY_STREAMING_FAULT "EventStreamingFault"
 #define CONST_EVENT_KEY_CAMERA_LIST "EventCameraList"
 #define CONST_EVENT_KEY_FORMAT "EventFormat"
 #define CONST_EVENT_KEY_PROPERTIES "EventProperties"
@@ -131,6 +132,8 @@
 #define CONST_PARAM_NAME_SOLUTION "solutions"
 #define CONST_PARAM_NAME_SUBSCRIBED "subscribed"
 #define CONST_EVENT_KEY_FORMAT "EventFormat"
+#define CONST_PARAM_NAME_WINDOW_ID "windowId"
+#define CONST_PARAM_NAME_MEDIA_ID "mediaId"
 
 const int n_invalid_id = -1;
 const int frame_count = 8;

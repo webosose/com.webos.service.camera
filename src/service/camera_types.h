@@ -113,6 +113,8 @@ typedef enum
     DEVICE_ERROR_SOMETHING_IS_NOT_SET,
     DEVICE_ERROR_TOO_MANY_REQUEST,
     DEVICE_ERROR_TIMEOUT,
+    DEVICE_ERROR_INVALID_WINDOW_ID,
+    DEVICE_ERROR_INVALID_STATE = 200,
 
     // Define new DEVICE_ERROR_* from here
     // DEVICE_ERROR_*,
@@ -168,9 +170,10 @@ enum class EventType
 
 enum class CameraDeviceState
 {
-  CAM_DEVICE_STATE_UNKNOWN = 0,
+  CAM_DEVICE_STATE_CLOSE = 0,
   CAM_DEVICE_STATE_OPEN,
-  CAM_DEVICE_STATE_PREVIEW
+  CAM_DEVICE_STATE_STREAMING,
+  CAM_DEVICE_STATE_PREVIEW,
 };
 
 /*Structures*/
@@ -216,7 +219,10 @@ typedef struct
   std::string str_memorysource;
 } camera_memory_source_t;
 
-
+typedef struct
+{
+  std::string str_window_id;
+} camera_display_source_t;
 
 static inline PmLogContext getCameraLunaPmLogContext()
 {
