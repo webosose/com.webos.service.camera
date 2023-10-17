@@ -7,6 +7,6 @@
     "camera.operation": {
       "trust": "dev",
       "description": "operate camera",
-      "privacy": true
+      "privacy": false
     }
 }
