@@ -26,7 +26,6 @@
 #include <json_utils.h>
 #include <nlohmann/json.hpp>
 #include <pbnjson.h>
-#include <poll.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <system_error>
@@ -78,15 +77,13 @@ struct MemoryListener : public CameraSolutionEvent
     json jsonResult_;
 };
 
-int DeviceControl::n_imagecount_ = 0;
-
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
       b_issystemvruning(false), b_issystemvruning_mmap(false), p_cam_hal(nullptr), shmemfd_(-1),
-      usrpbufs_(nullptr), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG), tMutex(),
-      tCondVar(), h_shmsystem_(nullptr), h_shmposix_(nullptr), str_imagepath_(cstr_empty),
-      str_capturemode_(cstr_oneshot), str_memtype_(""), str_shmemname_(""), cancel_preview_(false),
-      buf_size_(0), sh_(nullptr), subskey_(""), camera_id_(-1)
+      usrpbufs_(nullptr), capture_format_(), tMutex(), tCondVar(), h_shmsystem_(nullptr),
+      h_shmposix_(nullptr), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot),
+      str_memtype_(""), str_shmemname_(""), cancel_preview_(false), buf_size_(0), sh_(nullptr),
+      subskey_(""), camera_id_(-1)
 {
     pCameraSolution = std::make_shared<CameraSolutionManager>();
     pMemoryListener = std::make_shared<MemoryListener>();
@@ -96,7 +93,7 @@ DeviceControl::DeviceControl()
     }
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) const
+DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, int cnt) const
 {
     FILE *fp;
     char image_name[100] = {};
@@ -118,11 +115,9 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
 
     if ((extension == "yuv") || (extension == "jpeg") || (extension == "h264"))
     {
-        if ((cstr_burst == str_capturemode_ || cstr_continuous == str_capturemode_) &&
-            n_imagecount_ < INT_MAX)
+        if (cstr_burst == str_capturemode_ || cstr_continuous == str_capturemode_)
         {
-            path.insert(position, std::to_string(n_imagecount_));
-            n_imagecount_++;
+            path.insert(position, std::to_string(cnt));
         }
     }
     else
@@ -149,17 +144,17 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
 
         // create file to save data based on format
         int result = -1;
-        if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV)
+        if (capture_format_.eFormat == CAMERA_FORMAT_YUV)
             result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.yuv",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
                               (intmax_t)(tmnow.tv_usec / 10000));
-        else if (epixelformat_ == CAMERA_PIXEL_FORMAT_JPEG)
+        else if (capture_format_.eFormat == CAMERA_FORMAT_JPEG)
             result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.jpeg",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
                               (intmax_t)(tmnow.tv_usec / 10000));
-        else if (epixelformat_ == CAMERA_PIXEL_FORMAT_H264)
+        else if (capture_format_.eFormat == CAMERA_FORMAT_H264ES)
             result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.h264",
                               timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
                               (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
@@ -200,100 +195,58 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size) co
     return ret;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::checkFormat(CAMERA_FORMAT sformat)
+DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 {
-    PLOGI("checkFormat for device\n");
+    SHMEM_HANDLE h_shm = b_isposixruning ? h_shmposix_ : h_shmsystem_;
 
-    // get current saved format for device
-    stream_format_t streamformat;
-    auto retval = p_cam_hal->getFormat(&streamformat);
-    if (retval != CAMERA_ERROR_NONE)
+    if (h_shm == nullptr)
     {
-        PLOGE("getFormat failed");
+        PLOGE("shared memory handle is null");
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    PLOGI("stream_format_t pixel_format : %d \n", streamformat.pixel_format);
-
-    // save pixel format for saving captured image
-    epixelformat_ = streamformat.pixel_format;
-
-    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
-    auto enewformat          = getPixelFormat(sformat.eFormat);
-    // error handling
-    if (enewformat == CAMERA_PIXEL_FORMAT_MAX)
-        return DEVICE_ERROR_UNSUPPORTED_FORMAT;
-
-    // check if saved format and format for capture is same or not
-    // if not then stop v4l2 device, set format again and start capture
-    if ((streamformat.stream_height != sformat.nHeight) ||
-        (streamformat.stream_width != sformat.nWidth) || (streamformat.pixel_format != enewformat))
-    {
-        PLOGI("Stored format and new format are different\n");
-        // stream off, unmap and destroy previous allocated buffers
-        // close and again open device to set format again
-        int memtype = -1;
-        if (str_memtype_ == kMemtypeShmem || str_memtype_ == kMemtypeShmemMmap)
-            memtype = SHMEM_SYSTEMV;
-        else
-            memtype = SHMEM_POSIX;
-        stopPreview(memtype);
-        close();
-        open(strdevicenode_, camera_id_, payload_);
-
-        // set format again
-        stream_format_t newstreamformat = {CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
-        newstreamformat.stream_height   = sformat.nHeight;
-        newstreamformat.stream_width    = sformat.nWidth;
-        newstreamformat.pixel_format    = getPixelFormat(sformat.eFormat);
-        // error handling
-        if (newstreamformat.pixel_format == CAMERA_PIXEL_FORMAT_MAX)
-            return DEVICE_ERROR_UNSUPPORTED_FORMAT;
-
-        retval = p_cam_hal->setFormat(&newstreamformat);
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("setFormat failed");
-
-            // if set format fails then reset format to preview format
-            retval = p_cam_hal->setFormat(&streamformat);
-            if (retval != CAMERA_ERROR_NONE)
-            {
-                PLOGE("setFormat with preview format failed");
-            }
-
-            // save pixel format for saving captured image
-            epixelformat_ = streamformat.pixel_format;
-        }
-        else
-            // save pixel format for saving captured image
-            epixelformat_ = newstreamformat.pixel_format;
-
-        // allocate buffers and stream on again
-        int key = 0;
-        ret     = startPreview(str_memtype_, &key, sh_, subskey_.c_str());
-    }
-
-    return ret;
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(int ncount) const
-{
-    int retval;
     buffer_t frame_buffer = {0};
+    int read_index        = -1;
+    int write_index       = -1;
+    int nCaptured         = 0;
 
-    for (int i = 1; i <= ncount; i++)
+    const unsigned int sleep_us       = 10000; // 10ms
+    const unsigned int max_iterations = 1000;
+
+    while ((nCaptured++ < ncount) || b_iscontinuous_capture_)
     {
-        /** TODO:
-         * We should use buffers in shared memory
-         * instead of direct access to the camera device.
-         */
-        retval = p_cam_hal->getBuffer(&frame_buffer);
-        if (CAMERA_ERROR_NONE != retval)
+        unsigned int cnt = 0;
+        while (cnt < max_iterations) // 10s
         {
-            PLOGE("getBuffer failed");
-            return DEVICE_ERROR_UNKNOWN;
+            write_index = b_isposixruning ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm)
+                                          : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
+            if (read_index != write_index)
+            {
+                break;
+            }
+            usleep(sleep_us);
+            cnt++;
         }
+        if (read_index == write_index)
+        {
+            PLOGE("same write_index=%d", write_index);
+        }
+        read_index = write_index;
+
+        int len                    = 0;
+        unsigned char *sh_mem_addr = NULL;
+        if (b_isposixruning)
+        {
+            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm, &sh_mem_addr, &len);
+        }
+        else
+        {
+            IPCSharedMemory::getInstance().ReadShmem(h_shm, &sh_mem_addr, &len);
+        }
+
+        frame_buffer.start  = sh_mem_addr;
+        frame_buffer.length = (len > 0) ? len : 0;
+
         PLOGI("buffer start : %p \n", frame_buffer.start);
         PLOGI("buffer length : %lu \n", frame_buffer.length);
 
@@ -310,19 +263,13 @@ DEVICE_RETURN_CODE_T DeviceControl::pollForCapturedImage(int ncount) const
         }
 
         // write captured image to /tmp only if startCapture request is made
-        if (DEVICE_ERROR_CANNOT_WRITE == writeImageToFile(frame_buffer.start, frame_buffer.length))
-            return DEVICE_ERROR_CANNOT_WRITE;
-
-        retval = p_cam_hal->releaseBuffer(&frame_buffer);
-        if (retval != CAMERA_ERROR_NONE)
+        if (DEVICE_ERROR_CANNOT_WRITE ==
+            writeImageToFile(frame_buffer.start, frame_buffer.length, nCaptured))
         {
-            PLOGE("releaseBuffer failed");
-            return DEVICE_ERROR_UNKNOWN;
+            PLOGE("file write error");
+            return DEVICE_ERROR_CANNOT_WRITE;
         }
     }
-
-    if (cstr_burst == str_capturemode_)
-        n_imagecount_ = 0;
 
     return DEVICE_OK;
 }
@@ -352,19 +299,8 @@ void DeviceControl::captureThread()
 
     pthread_setname_np(pthread_self(), "capture_thread");
 
-    // run capture thread until stopCapture received
-    while (b_iscontinuous_capture_)
-    {
-        auto ret = captureImage(1, informat_, str_imagepath_, cstr_continuous);
-        if (ret != DEVICE_OK)
-        {
-            PLOGE("captureImage failed \n");
-            break;
-        }
-    }
-    // set continuous capture to false
-    b_iscontinuous_capture_ = false;
-    n_imagecount_           = 0;
+    b_iscontinuous_capture_ = true;
+    saveShmemory();
     PLOGI("ended\n");
     return;
 }
@@ -786,24 +722,21 @@ DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
                                                  const std::string &imagepath,
                                                  const std::string &mode, int ncount)
 {
-    PLOGI("started !\n");
+    PLOGI("mode = %s, ncount = %d", mode.c_str(), ncount);
 
-    if (mode == cstr_continuous)
+    str_imagepath_   = imagepath;
+    str_capturemode_ = mode;
+
+    if (str_capturemode_ == cstr_continuous)
     {
-        informat_.nHeight       = sformat.nHeight;
-        informat_.nWidth        = sformat.nWidth;
-        informat_.eFormat       = sformat.eFormat;
-        b_iscontinuous_capture_ = true;
-        str_imagepath_          = imagepath;
-
         // create thread that will continuously capture images until stopcapture received
         tidCapture = std::thread{[this]() { this->captureThread(); }};
-
         return DEVICE_OK;
     }
     else
     {
-        return captureImage(ncount, sformat, imagepath, mode);
+        //[TODO] Move to captureThread to prevent LSCall timeout in burst mode.
+        return saveShmemory(ncount);
     }
 }
 
@@ -819,37 +752,6 @@ DEVICE_RETURN_CODE_T DeviceControl::stopCapture()
     }
     else
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
-
-    return DEVICE_OK;
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::captureImage(int ncount, CAMERA_FORMAT sformat,
-                                                 const std::string &imagepath,
-                                                 const std::string &mode)
-{
-    PLOGI("started ncount : %d \n", ncount);
-
-    // update image locstion if there is a change
-    if (str_imagepath_ != imagepath)
-        str_imagepath_ = imagepath;
-
-    if (str_capturemode_ != mode)
-        str_capturemode_ = mode;
-
-    // validate if saved format and capture image format are same or not
-    if (DEVICE_OK != checkFormat(sformat))
-    {
-        PLOGE("checkFormat failed \n");
-        return DEVICE_ERROR_UNKNOWN;
-    }
-
-    // poll for data on buffers and save captured image
-    auto retval = pollForCapturedImage(ncount);
-    if (retval != DEVICE_OK)
-    {
-        PLOGE("pollForCapturedImage failed \n");
-        return retval;
-    }
 
     return DEVICE_OK;
 }
@@ -966,6 +868,8 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(CAMERA_FORMAT sformat)
         PLOGE("setFormat failed");
         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
     }
+
+    capture_format_ = sformat;
 
     return DEVICE_OK;
 }

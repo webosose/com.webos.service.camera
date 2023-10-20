@@ -49,6 +49,7 @@ public:
     SHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char *, size_t);
     SHMEM_STATUS_T IncrementWriteIndex(SHMEM_HANDLE);
     SHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *);
+    int GetWriteIndex(SHMEM_HANDLE);
 
     SHMEM_STATUS_T OpenShmem(SHMEM_HANDLE *phShmem, key_t shmemKey);
     SHMEM_STATUS_T ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize);

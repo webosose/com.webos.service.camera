@@ -43,10 +43,8 @@ struct MemoryListener;
 class DeviceControl
 {
 private:
-    DEVICE_RETURN_CODE_T writeImageToFile(const void *, int) const;
-    DEVICE_RETURN_CODE_T checkFormat(CAMERA_FORMAT);
-    DEVICE_RETURN_CODE_T pollForCapturedImage(int) const;
-    DEVICE_RETURN_CODE_T captureImage(int, CAMERA_FORMAT, const std::string &, const std::string &);
+    DEVICE_RETURN_CODE_T writeImageToFile(const void *, int, int cnt = 0) const;
+    DEVICE_RETURN_CODE_T saveShmemory(int ncount = 0) const;
     static camera_pixel_format_t getPixelFormat(camera_format_t);
     static camera_format_t getCameraFormat(camera_pixel_format_t);
     void captureThread();
@@ -62,8 +60,7 @@ private:
     int shmemfd_;
     buffer_t *usrpbufs_;
 
-    CAMERA_FORMAT informat_;
-    camera_pixel_format_t epixelformat_;
+    CAMERA_FORMAT capture_format_;
     std::thread tidPreview;
     std::thread tidCapture;
     std::mutex tMutex;
@@ -75,8 +72,6 @@ private:
     std::string str_capturemode_;
     std::string str_memtype_;
     std::string str_shmemname_;
-
-    static int n_imagecount_;
 
     std::vector<CLIENT_INFO_T> client_pool_;
     std::mutex client_pool_mutex_;

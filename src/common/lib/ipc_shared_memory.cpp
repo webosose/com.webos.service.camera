@@ -880,3 +880,9 @@ SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSiz
 
     return SHMEM_IS_OK;
 }
+
+int IPCSharedMemory::GetWriteIndex(SHMEM_HANDLE hShmem)
+{
+    SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
+    return *shmem_buffer->write_index;
+}

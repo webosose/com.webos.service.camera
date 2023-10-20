@@ -52,6 +52,12 @@ typedef enum
     POSHMEM_COMM_MARK_TERMINATE = 0x2
 } POSHMEM_MARK_T;
 
+enum
+{
+    READ_FIRST,
+    READ_LAST
+};
+
 /* shared memory structure
  4 bytes             : write_index
  4 bytes             : read_index
@@ -615,4 +621,94 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem, int u
 
     PLOGI("CloseShmemory end");
     return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T _ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
+                              unsigned char **ppExtraData, int *pExtraSize, int readMode)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    int lread_index;
+    unsigned char *read_addr;
+    int size;
+    static bool first_read;
+
+    first_read = false;
+    if (!shmem_buffer)
+    {
+        PLOGE("shmem buffer is NULL");
+        return PSHMEM_FAILED;
+    }
+    lread_index = *shmem_buffer->write_index;
+
+    do
+    {
+        if (-1 != *shmem_buffer->write_index)
+        {
+            if (*shmem_buffer->write_index == 0)
+            {
+                if (0 == first_read)
+                {
+                    first_read = 1;
+                    continue;
+                }
+                else
+                {
+                    if (*shmem_buffer->unit_num > INT_MIN + 1)
+                    {
+                        lread_index = *shmem_buffer->unit_num - 1;
+                    }
+                }
+            }
+            else
+            {
+                lread_index = *shmem_buffer->write_index - 1;
+            }
+            size = *(int *)(shmem_buffer->length_buf + lread_index);
+
+            if ((size == 0) || (size > *shmem_buffer->unit_size))
+            {
+                PLOGE("size error(%d)!\n", size);
+                return PSHMEM_FAILED;
+            }
+
+            if (!(lread_index >= 0 && lread_index <= SHMEM_UNIT_NUM_MAX &&
+                  (*shmem_buffer->unit_size) >= 0 &&
+                  (*shmem_buffer->unit_size) <= SHMEM_UNIT_SIZE_MAX &&
+                  (*shmem_buffer->extra_size) >= 0 &&
+                  (*shmem_buffer->extra_size) <= SHMEM_EXTRA_SIZE_MAX))
+            {
+                PLOGE("size error(%d) lread_index(%d), unit_size(%d), extra_size(%d) !\n", size,
+                      lread_index, *shmem_buffer->unit_size, *shmem_buffer->extra_size);
+                return PSHMEM_FAILED;
+            }
+
+            read_addr = shmem_buffer->data_buf + (lread_index) * (*shmem_buffer->unit_size);
+            *ppData   = read_addr;
+
+            *pSize = size;
+
+            if (NULL != ppExtraData && NULL != pExtraSize)
+            {
+                *ppExtraData =
+                    shmem_buffer->extra_buf + (lread_index) * (*shmem_buffer->extra_size);
+                *pExtraSize = *shmem_buffer->extra_size;
+            }
+        }
+
+        break;
+    } while (1);
+
+    return PSHMEM_IS_OK;
+}
+
+PSHMEM_STATUS_T IPCPosixSharedMemory::ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData,
+                                                   int *pSize)
+{
+    return _ReadShmemory(hShmem, ppData, pSize, NULL, NULL, READ_FIRST);
+}
+
+int IPCPosixSharedMemory::GetWriteIndex(SHMEM_HANDLE hShmem)
+{
+    POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
+    return *shmem_buffer->write_index;
 }
