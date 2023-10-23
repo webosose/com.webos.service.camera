@@ -76,7 +76,7 @@ int DeviceControl::n_imagecount_ = 0;
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
       b_issystemvruning(false), b_issystemvruning_mmap(false), cam_handle_(NULL), shmemfd_(-1),
-      usrpbufs_(nullptr), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG), tMutex(),
+      usrpbufs_(nullptr), informat_(), epixelformat_(CAMERA_PIXEL_FORMAT_JPEG), capture_format_(), tMutex(),
       tCondVar(), h_shmsystem_(nullptr), h_shmposix_(nullptr), str_imagepath_(cstr_empty),
       str_capturemode_(cstr_oneshot), str_memtype_(""), str_shmemname_(""), cancel_preview_(false),
       buf_size_(0), sh_(nullptr), subskey_(""), camera_id_(-1)
@@ -318,15 +318,15 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, std::size_t 
     gettimeofday(&tmnow, NULL);
 
     // create file to save data based on format
-    if (epixelformat_ == CAMERA_PIXEL_FORMAT_YUYV || epixelformat_ == CAMERA_PIXEL_FORMAT_NV12)
+     if (capture_format_.eFormat == CAMERA_FORMAT_YUV || capture_format_.eFormat == CAMERA_FORMAT_NV12)
       snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.yuv", timePtr->tm_mday,
                (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
                (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
-    else if (epixelformat_ == CAMERA_PIXEL_FORMAT_JPEG)
+    else if (capture_format_.eFormat == CAMERA_FORMAT_JPEG)
       snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.jpeg", timePtr->tm_mday,
                (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
                (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
-    else if (epixelformat_ == CAMERA_PIXEL_FORMAT_H264)
+    else if (capture_format_.eFormat == CAMERA_FORMAT_H264ES)
       snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02d.h264", timePtr->tm_mday,
                (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
                (timePtr->tm_min), (timePtr->tm_sec), ((int)tmnow.tv_usec) / 10000);
@@ -941,6 +941,7 @@ DEVICE_RETURN_CODE_T DeviceControl::capture(void *handle, int ncount,
 
   str_imagepath_   = imagepath;
   str_capturemode_ = (ncount == 1) ? cstr_oneshot : cstr_burst;
+  getFormat(handle, &capture_format_);
 
   return pollForCapturedImage(handle, ncount, capturedFiles);
 }
