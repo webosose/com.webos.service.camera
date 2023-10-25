@@ -109,12 +109,23 @@ void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, L
     sh_           = sh;
 
     startThread();
+
+    setEnableValue(preRun_);
+    preRun_ = false;
 }
 
 void CameraSolutionProxy::setEnableValue(bool enableValue)
 {
-    PLOGI("enableValue %d", enableValue);
-    pushJob(enableValue);
+    if (checkAlive())
+    {
+        PLOGI("enableValue %d", enableValue);
+        pushJob(enableValue);
+    }
+    else
+    {
+        preRun_ = enableValue;
+        PLOGI("preRun_ %d", preRun_);
+    }
 }
 
 void CameraSolutionProxy::processing(bool enableValue)
@@ -167,6 +178,7 @@ void CameraSolutionProxy::release()
 {
     PLOGI("");
 
+    preRun_ = enableStatus_;
     stopThread();
     processing(false);
     unsubscribe();
