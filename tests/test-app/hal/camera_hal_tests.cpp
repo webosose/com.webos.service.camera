@@ -1,4 +1,4 @@
-// Copyright (c) 2019-2021 LG Electronics, Inc.
+// Copyright (c) 2019-2023 LG Electronics, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const char *subsystem = "/usr/lib/camera/libhal-v4l2.so.1";
+const char *subsystem = WEBOS_INSTALL_LIBDIR "/camera/libhal-v4l2.so.1";
 const char *devname   = "/dev/video0";
 
 static unsigned int random_value = 0;
