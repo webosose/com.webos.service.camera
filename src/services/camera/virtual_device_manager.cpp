@@ -532,7 +532,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::continuousCapture(int devhandle, CAME
         {
             // start capture
             DEVICE_RETURN_CODE_T ret =
-                objcamerahalproxy_.startCapture(sformat, imagepath, cstr_continuous, 0);
+                objcamerahalproxy_.startCapture(sformat, imagepath, cstr_continuous, 0, devhandle);
             if (DEVICE_OK == ret)
             {
                 bcaptureinprogress_ = true;
@@ -568,7 +568,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCapture(int devhandle, CAMERA_FO
         return singleCapture(devhandle, sformat, imagepath, mode, ncount);
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle, bool request)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -605,7 +605,11 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle)
             if (position != ncapturehandle_.end())
             {
                 // stop capture
-                DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopCapture();
+                DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+
+                if (request)
+                    objcamerahalproxy_.stopCapture(devhandle);
+
                 // reset capture parameters for camera device
                 if (DEVICE_OK == ret)
                 {

@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <sys/time.h>
 #include <system_error>
+#include <filesystem>
 
 #define FRAME_COUNT 8
 
@@ -99,6 +100,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
     char image_name[100] = {};
 
     auto path = str_imagepath_;
+
     if (path.empty())
         path = "/tmp/";
 
@@ -171,7 +173,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
         }
     }
 
-    PLOGI("path : %s\n", path.c_str());
+    PLOGD("path : %s\n", path.c_str());
 
     if (NULL == (fp = fopen(path.c_str(), "w")))
     {
@@ -210,12 +212,15 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
     int write_index       = -1;
     int nCaptured         = 0;
 
+    DEVICE_RETURN_CODE_T ret;
+
     const unsigned int sleep_us       = 10000; // 10ms
     const unsigned int max_iterations = 1000;
 
     while ((nCaptured++ < ncount) || b_iscontinuous_capture_)
     {
         unsigned int cnt = 0;
+
         while (cnt < max_iterations) // 10s
         {
             write_index = b_isposixruning ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm)
@@ -247,8 +252,8 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
         frame_buffer.start  = sh_mem_addr;
         frame_buffer.length = (len > 0) ? len : 0;
 
-        PLOGI("buffer start : %p \n", frame_buffer.start);
-        PLOGI("buffer length : %lu \n", frame_buffer.length);
+        PLOGD("buffer start : %p \n", frame_buffer.start);
+        PLOGD("buffer length : %lu \n", frame_buffer.length);
 
         if (frame_buffer.start == nullptr)
         {
@@ -263,11 +268,11 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
         }
 
         // write captured image to /tmp only if startCapture request is made
-        if (DEVICE_ERROR_CANNOT_WRITE ==
-            writeImageToFile(frame_buffer.start, frame_buffer.length, nCaptured))
+        ret = writeImageToFile(frame_buffer.start, frame_buffer.length, nCaptured);
+        if (ret != DEVICE_OK)
         {
             PLOGE("file write error");
-            return DEVICE_ERROR_CANNOT_WRITE;
+            return ret;
         }
     }
 
@@ -300,7 +305,9 @@ void DeviceControl::captureThread()
     pthread_setname_np(pthread_self(), "capture_thread");
 
     b_iscontinuous_capture_ = true;
+
     saveShmemory();
+
     PLOGI("ended\n");
     return;
 }
@@ -331,14 +338,14 @@ void DeviceControl::previewThread()
         {
             PLOGE("getBuffer failed");
 
-            notifyDeviceFault_();
+            notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
             break;
         }
 
         if (frame_buffer.start == nullptr)
         {
             PLOGE("no valid frame buffer obtained");
-            notifyDeviceFault_();
+            notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
             break;
         }
 
@@ -397,7 +404,7 @@ void DeviceControl::previewThread()
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("releaseBuffer failed");
-            notifyDeviceFault_();
+            notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
             break;
         }
 
@@ -718,6 +725,28 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
     return DEVICE_OK;
 }
 
+static bool storageMonitorCb(const DEVICE_RETURN_CODE_T errorCode, void* ptr)
+{
+    DeviceControl* device = (DeviceControl*)ptr;
+    if (device)
+        device->notifyStorageError(errorCode);
+
+    return true;
+}
+
+bool DeviceControl::notifyStorageError(const DEVICE_RETURN_CODE_T ret)
+{
+    if (b_iscontinuous_capture_) {
+        PLOGE("Storage reaches the threshold limit. error code %d", (int)ret);
+        if (ret != DEVICE_OK)
+            notifyDeviceFault_(EventType::EVENT_TYPE_CAPTURE_FAULT, ret);
+
+        stopCapture();
+    }
+
+    return true;
+}
+
 DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
                                                  const std::string &imagepath,
                                                  const std::string &mode, int ncount)
@@ -728,17 +757,41 @@ DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
     str_capturemode_ = mode;
     getFormat(&capture_format_);
 
+    if (str_imagepath_.empty())
+        str_imagepath_ = "/tmp/";
+
+    std::filesystem::path directory = str_imagepath_;
+    if (!std::filesystem::is_directory(directory))
+        return DEVICE_ERROR_CANNOT_WRITE;
+
+    if (!StorageMonitor::isEnoughSpaceAvailable(str_imagepath_))
+    {
+        return DEVICE_ERROR_FAIL_TO_WRITE_FILE;
+    }
+
+    storageMonitor_.setPath(str_imagepath_);
+    storageMonitor_.registerCallback(storageMonitorCb, this);
+
+    storageMonitor_.startMonitor();
+
+    if (str_capturemode_ == cstr_burst && ncount > MAX_NO_OF_IMAGES_IN_BURST_MODE)
+        ncount = MAX_NO_OF_IMAGES_IN_BURST_MODE;
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+
     if (str_capturemode_ == cstr_continuous)
     {
         // create thread that will continuously capture images until stopcapture received
         tidCapture = std::thread{[this]() { this->captureThread(); }};
-        return DEVICE_OK;
     }
     else
     {
         //[TODO] Move to captureThread to prevent LSCall timeout in burst mode.
-        return saveShmemory(ncount);
+        ret = saveShmemory(ncount);
+
+        storageMonitor_.stopMonitor();
     }
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::stopCapture()
@@ -749,6 +802,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopCapture()
     if (b_iscontinuous_capture_)
     {
         b_iscontinuous_capture_ = false;
+        storageMonitor_.stopMonitor();
         tidCapture.join();
     }
     else
@@ -1025,7 +1079,7 @@ void DeviceControl::broadcast_()
 
 void DeviceControl::requestPreviewCancel() { cancel_preview_ = true; }
 
-void DeviceControl::notifyDeviceFault_()
+void DeviceControl::notifyDeviceFault_(EventType eventType, DEVICE_RETURN_CODE_T error)
 {
     unsigned int num_subscribers = 0;
     std::string reply;
@@ -1036,14 +1090,19 @@ void DeviceControl::notifyDeviceFault_()
     {
         num_subscribers = LSSubscriptionGetHandleSubscribersCount(sh_, subskey_.c_str());
         int fd          = halFd_;
+        auto event_name = getEventNotificationString(eventType);
 
-        PLOGI("[fd : %d] notifying device fault ... num_subscribers = %u\n", fd, num_subscribers);
+        PLOGI("[fd : %d] notifying %s... num_subscribers = %u\n", fd, event_name.c_str(), num_subscribers);
 
         if (num_subscribers > 0)
         {
-            reply = "{\"returnValue\": true, \"eventType\": \"" +
-                    getEventNotificationString(EventType::EVENT_TYPE_PREVIEW_FAULT) +
-                    "\", \"id\": \"camera" + std::to_string(camera_id_) + "\"}";
+            reply = "{\"returnValue\": true, \"eventType\": \"" + event_name +
+                    "\", \"id\": \"camera" + std::to_string(camera_id_) + "\"";
+            if (error != DEVICE_OK) {
+                reply += ", \"errorCode\": "   + std::to_string((int)error);
+                reply += ", \"errorText\": \"" + getErrorString(error)      + "\"";
+            }
+            reply += "}";
             if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))
             {
                 LSErrorPrint(&lserror, stderr);
@@ -1051,7 +1110,7 @@ void DeviceControl::notifyDeviceFault_()
                 PLOGI("[fd : %d] subscription reply failed\n", fd);
                 return;
             }
-            PLOGI("[fd : %d] notified device preview event !!\n", fd);
+            PLOGI("[fd : %d] notified %s !!\n", fd, event_name.c_str());
         }
     }
     LSErrorFree(&lserror);

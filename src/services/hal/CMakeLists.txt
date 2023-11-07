@@ -47,6 +47,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/hal/device_controller.cpp
     ${CMAKE_SOURCE_DIR}/src/services/hal/camera_solution_manager.cpp
     ${CMAKE_SOURCE_DIR}/src/services/hal/camera_solution_proxy.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/hal/storage_monitor.cpp
     )
 
 # common

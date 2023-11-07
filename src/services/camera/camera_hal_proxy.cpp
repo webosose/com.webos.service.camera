@@ -23,6 +23,7 @@
 #include "process.h"
 #include <ios>
 #include <system_error>
+#include "command_manager.h"
 
 const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
 
@@ -37,32 +38,49 @@ static bool cameraHalServiceCb(const char *msg, void *data)
         return false;
     }
 
+    CameraHalProxy *client = (CameraHalProxy *)data;
+
+    LSError lserror;
+    LSErrorInit(&lserror);
+
+    std::string event_key;
     std::string event_type = get_optional<std::string>(j, CONST_PARAM_NAME_EVENT).value_or("");
+
     if (event_type == getEventNotificationString(EventType::EVENT_TYPE_PREVIEW_FAULT))
     {
-        CameraHalProxy *client = (CameraHalProxy *)data;
-
-        unsigned int num_subscribers =
-            LSSubscriptionGetHandleSubscribersCount(client->sh_, client->subsKey_.c_str());
-        PLOGI("num_subscribers : %u", num_subscribers);
-        if (num_subscribers > 0)
-        {
-            LSError lserror;
-            LSErrorInit(&lserror);
-
-            PLOGI("notifying preview fault :  %s", msg);
-            if (!LSSubscriptionReply(client->sh_, client->subsKey_.c_str(), msg, &lserror))
-            {
-                LSErrorPrint(&lserror, stderr);
-                LSErrorFree(&lserror);
-                PLOGI("subscription reply failed");
-                return false;
-            }
-            PLOGI("notified preview fault event !!");
-
-            LSErrorFree(&lserror);
-        }
+        event_key = client->subsKey_;
     }
+    else if (event_type == getEventNotificationString(EventType::EVENT_TYPE_CAPTURE_FAULT))
+    {
+        event_key = CONST_EVENT_KEY_CAPTURE_FAULT;
+        for (const auto& handle : client->devHandles_)
+            CommandManager::getInstance().stopCapture(handle, false);
+        client->devHandles_.clear();
+    }
+    else
+    {
+        PLOGE("Invalid event %s", event_type.c_str());
+        LSErrorFree(&lserror);
+        return false;
+    }
+
+    unsigned int num_subscribers =
+        LSSubscriptionGetHandleSubscribersCount(client->sh_, event_key.c_str());
+    PLOGI("num_subscribers : %u", num_subscribers);
+    if (num_subscribers > 0)
+    {
+        PLOGI("notifying %s : %s", event_type.c_str(), msg);
+        if (!LSSubscriptionReply(client->sh_, event_key.c_str(), msg, &lserror))
+        {
+            LSErrorPrint(&lserror, stderr);
+            LSErrorFree(&lserror);
+            PLOGI("subscription reply failed");
+            return false;
+        }
+        PLOGI("notified %s event !!", event_type.c_str());
+    }
+
+    LSErrorFree(&lserror);
 
     return true;
 }
@@ -186,7 +204,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
                                                   const std::string &imagepath,
-                                                  const std::string &mode, int ncount)
+                                                  const std::string &mode, int ncount,
+                                                  const int devHandle)
 {
     PLOGI("");
 
@@ -198,12 +217,21 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
     jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
     jin[CONST_PARAM_NAME_MODE]       = mode;
 
+    if (devHandle) {
+        auto itr = std::find(devHandles_.begin(), devHandles_.end(), devHandle);
+        if (itr == devHandles_.end())
+            devHandles_.push_back(devHandle);
+    }
+
     return luna_call_sync(__func__, to_string(jin));
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture()
+DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture(const int devHandle)
 {
     PLOGI("");
+    auto itr = std::find(devHandles_.begin(), devHandles_.end(), devHandle);
+    if (itr != devHandles_.end())
+        devHandles_.erase(itr);
     return luna_call_sync(__func__, "{}");
 }
 

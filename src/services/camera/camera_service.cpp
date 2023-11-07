@@ -832,6 +832,9 @@ bool CameraService::getEventNotification(LSMessage &message)
     {
         bool return_val =
             event_obj.addSubscription(this->get(), CONST_EVENT_KEY_PREVIEW_FAULT, message);
+        return_val =
+            event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAPTURE_FAULT, message);
+
         obj_jsonparser.setSubcribed(return_val);
         obj_jsonparser.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
     }

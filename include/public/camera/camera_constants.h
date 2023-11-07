@@ -106,6 +106,7 @@
 #define CONST_EVENT_KEY_CAMERA_LIST "EventCameraList"
 #define CONST_EVENT_KEY_FORMAT "EventFormat"
 #define CONST_EVENT_KEY_PROPERTIES "EventProperties"
+#define CONST_EVENT_KEY_CAPTURE_FAULT "EventCaptureFault"
 #define CONST_PARAM_NAME_FPS "fps"
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
@@ -153,6 +154,7 @@ const std::string cstr_continuous      = "MODE_CONTINUOUS";
 const std::string cstr_connect         = "device_connect";
 const std::string cstr_disconnect      = "device_disconnect";
 const std::string cstr_previewfault    = "preview_fault";
+const std::string cstr_capturefault    = "capture_fault";
 const std::string cstr_uricameramain   = "com.webos.service.camera2";
 const std::string cstr_uricamearhal    = "com.webos.camerahal.";
 

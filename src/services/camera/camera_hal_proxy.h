@@ -22,6 +22,7 @@
 #include <nlohmann/json.hpp>
 #include <string>
 #include <thread>
+#include <vector>
 
 #define COMMAND_TIMEOUT 2700      // ms
 #define COMMAND_TIMEOUT_LONG 9700 // ms
@@ -62,8 +63,8 @@ public:
                                       const char *subskey);
     DEVICE_RETURN_CODE_T stopPreview(int memtype);
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT sformat, const std::string &imagepath,
-                                      const std::string &mode, int ncount);
-    DEVICE_RETURN_CODE_T stopCapture();
+                                      const std::string &mode, int ncount, const int devHandle = 0);
+    DEVICE_RETURN_CODE_T stopCapture(const int devHandle);
     DEVICE_RETURN_CODE_T createHal(std::string subsystem);
     DEVICE_RETURN_CODE_T destroyHal();
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string strdevicenode, std::string strdevicetype,
@@ -91,6 +92,7 @@ public:
     bool unsubscribe();
     LSHandle *sh_{nullptr};
     std::string subsKey_;
+    std::vector<int> devHandles_; /* used to stop capture from callback */
 };
 
 #endif // __CAMERA_HAL_PROXY__

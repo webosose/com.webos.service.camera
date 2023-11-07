@@ -78,6 +78,7 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_SOMETHING_IS_NOT_SET, "Some property is not set"},
     {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
     {DEVICE_ERROR_TIMEOUT, "Request timeout"},
+    {DEVICE_ERROR_FAIL_TO_WRITE_FILE, "Fail to write file"},
 };
 
 std::map<EventType, std::string> g_event_string = {
@@ -85,7 +86,8 @@ std::map<EventType, std::string> g_event_string = {
     {EventType::EVENT_TYPE_PROPERTIES, cstr_properties},
     {EventType::EVENT_TYPE_CONNECT, cstr_connect},
     {EventType::EVENT_TYPE_DISCONNECT, cstr_disconnect},
-    {EventType::EVENT_TYPE_PREVIEW_FAULT, cstr_previewfault}};
+    {EventType::EVENT_TYPE_PREVIEW_FAULT, cstr_previewfault},
+    {EventType::EVENT_TYPE_CAPTURE_FAULT, cstr_capturefault}};
 
 std::map<camera_format_t, std::string> g_format_string = {
     {CAMERA_FORMAT_UNDEFINED, "Unsupported format"},

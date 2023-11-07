@@ -252,7 +252,7 @@ DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT s
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle)
+DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle, bool request)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -262,7 +262,7 @@ DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle)
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // stop capture
-        return ptr->stopCapture(devhandle);
+        return ptr->stopCapture(devhandle, request);
     else
         return DEVICE_ERROR_UNKNOWN;
 }

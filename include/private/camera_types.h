@@ -26,6 +26,8 @@
 
 #define CHECK_BIT_POS(x, p) ((x) & (0x01 << (p - 1)))
 #define MAX_DEVICE_COUNT 10
+#define MEMORY_SPACE_THRESHOLD 10UL
+#define MAX_NO_OF_IMAGES_IN_BURST_MODE 10
 
 const std::string kMemtypeShmemMmap = "sharedmemory_mmap";
 const std::string kMemtypeShmem     = "sharedmemory";
@@ -133,6 +135,7 @@ enum class EventType
     EVENT_TYPE_CONNECT,
     EVENT_TYPE_DISCONNECT,
     EVENT_TYPE_PREVIEW_FAULT,
+    EVENT_TYPE_CAPTURE_FAULT,
 };
 
 enum class CameraDeviceState

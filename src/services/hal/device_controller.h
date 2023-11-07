@@ -30,6 +30,7 @@
 #include <thread>
 #include <unistd.h>
 #include <vector>
+#include "storage_monitor.h"
 
 typedef struct
 {
@@ -47,6 +48,7 @@ private:
     DEVICE_RETURN_CODE_T saveShmemory(int ncount = 0) const;
     static camera_pixel_format_t getPixelFormat(camera_format_t);
     static camera_format_t getCameraFormat(camera_pixel_format_t);
+
     void captureThread();
     void previewThread();
 
@@ -83,7 +85,9 @@ private:
     LSHandle *sh_;
     std::string subskey_;
     int camera_id_;
-    void notifyDeviceFault_();
+    void notifyDeviceFault_(EventType eventType, DEVICE_RETURN_CODE_T error=DEVICE_OK);
+
+    StorageMonitor storageMonitor_;
 
     std::string deviceType_{"unknown"};
     std::string payload_{""};
@@ -117,6 +121,8 @@ public:
     bool isRegisteredClient(int devhandle);
 
     void requestPreviewCancel();
+
+    bool notifyStorageError(const DEVICE_RETURN_CODE_T);
 
     //[Camera Solution Manager] integration start
     DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(std::vector<std::string> &);
