@@ -69,6 +69,7 @@ void from_json(const json &j, VideoDevice &v)
     v.devInfo.strVendorID    = get_optional<std::string>(j, "vendorID").value_or("");
     v.devInfo.strProductID   = get_optional<std::string>(j, "productID").value_or("");
     v.devInfo.nPortNum       = get_optional<int>(j, "usbPortNum").value_or(0);
+    v.devInfo.strDeviceType  = get_optional<std::string>(j, "deviceType").value_or("");
     v.devInfo.strHostControllerInterface =
         get_optional<std::string>(j, "hostControllerInterface").value_or("");
     v.devInfo.isPowerOnConnect = get_optional<bool>(j, "isPowerOnConnect").value_or(false);
@@ -182,12 +183,18 @@ bool PDMClient::getDeviceListCallback(const char *message)
     }
 
     std::vector<DEVICE_LIST_T> devList;
-    for (auto jDevice : jPayload["videoDeviceList"])
+    for (auto& jDevice : jPayload["videoDeviceList"])
     {
-        VideoDevice device           = jDevice;
+        const VideoDevice& device = jDevice;
+
+        if (device.devInfo.strDeviceType.empty())
+            continue;
+
         unsigned long subdeviceCount = device.subDeviceList.size();
-        for (auto subdevice : device.subDeviceList)
+        for (auto& subdevice : device.subDeviceList)
         {
+            if (subdevice->devPath.find("/dev/video") == std::string::npos)
+                continue;
             DEVICE_LIST_T devInfo;
             devInfo               = device.devInfo;
             devInfo.strDeviceNode = subdevice->devPath;
