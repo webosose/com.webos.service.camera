@@ -42,6 +42,7 @@ private:
     std::map<std::string, void *> clientCookieMap_;
 
     bool addClientWatcher(LSHandle *handle, LSMessage *message, int ndevice_handle);
+    DEVICE_RETURN_CODE_T validateClient(LSMessage *message, int ndevice_handle);
 
 public:
     CameraService();

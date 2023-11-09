@@ -257,15 +257,13 @@ bool CameraService::close(LSMessage &message)
 
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
+    std::string pid_msg;
+
     int ndevhandle = obj_close.getDeviceHandle();
-    // camera id validation check
-    if (n_invalid_id == ndevhandle)
-    {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
-    }
-    else
+
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
     {
         int n_client_pid = obj_close.getClientProcessId();
         if (n_client_pid > 0)
@@ -273,59 +271,42 @@ bool CameraService::close(LSMessage &message)
             PLOGI("Try to unregister the client of pid %d\n", n_client_pid);
 
             // First try remove the client pid from the client pid pool if the pid is valid.
-            std::string pid_msg;
             DEVICE_RETURN_CODE_T ret = CommandManager::getInstance().unregisterClientPid(
                 ndevhandle, n_client_pid, pid_msg);
             PLOGI("%s, ret = %d", pid_msg.c_str(), ret);
 
             // Even if pid unregistration failed, however, there is no problem in order to proceed
             // to close()!
-            PLOGI("ndevhandle %d\n", ndevhandle);
-            err_id = CommandManager::getInstance().close(ndevhandle);
-            if (DEVICE_OK != err_id)
-            {
-                PLOGD("err_id != DEVICE_OK\n");
-                obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                         getErrorString(err_id) + "\npid :: " + pid_msg);
-            }
-            else
-            {
-                PLOGD("err_id == DEVICE_OK\n");
-                obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                         getErrorString(err_id) + "\npid :: " + pid_msg);
-            }
         }
         else // handles the exception in which the pid is not input but the pid has been registered
              // when open.
         {
-            PLOGI("ndevhandle %d\n", ndevhandle);
-
             if (CommandManager::getInstance().isRegisteredClientPid(ndevhandle))
             {
                 err_id = DEVICE_ERROR_CLIENT_PID_IS_MISSING;
-                obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                         getErrorString(err_id));
-            }
-            else
-            {
-                // close device here
-                err_id = CommandManager::getInstance().close(ndevhandle);
-
-                if (DEVICE_OK != err_id)
-                {
-                    PLOGD("err_id != DEVICE_OK\n");
-                    obj_close.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                             getErrorString(err_id));
-                }
-                else
-                {
-                    PLOGD("err_id == DEVICE_OK\n");
-                    obj_close.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                             getErrorString(err_id));
-                }
             }
         }
     }
+
+    // close the device if there is no error on previous checks
+    if (err_id == DEVICE_OK) {
+       // close device here
+       err_id = CommandManager::getInstance().close(ndevhandle);
+
+       if (DEVICE_OK != err_id)
+       {
+           PLOGD("err_id != DEVICE_OK\n");
+       }
+       else
+       {
+           PLOGD("err_id == DEVICE_OK\n");
+       }
+    }
+
+    std::string errorMsg = getErrorString(err_id);
+    if (pid_msg.length() > 0)
+        errorMsg = errorMsg + "\n pid :: " + pid_msg;
+    obj_close.setMethodReply(err_id == DEVICE_OK, (int)err_id, std::move(errorMsg));
 
     // create json string now for reply
     std::string output_reply = obj_close.createObjectJsonString();
@@ -348,16 +329,11 @@ bool CameraService::startPreview(LSMessage &message)
     obj_startpreview.getStartPreviewObject(payload, startPreviewSchema);
 
     int ndevhandle = obj_startpreview.getDeviceHandle();
-    if (n_invalid_id == ndevhandle)
+
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
     {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                        getErrorString(err_id));
-    }
-    else
-    {
-        PLOGI("startPreview() ndevhandle : %d", ndevhandle);
         // start preview here
         int key = 0;
 
@@ -373,14 +349,10 @@ bool CameraService::startPreview(LSMessage &message)
             if (DEVICE_OK != err_id)
             {
                 PLOGD("err_id != DEVICE_OK\n");
-                obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                                getErrorString(err_id));
             }
             else
             {
                 PLOGD("err_id == DEVICE_OK\n");
-                obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                                getErrorString(err_id));
                 obj_startpreview.setKeyValue(key);
             }
         }
@@ -388,10 +360,10 @@ bool CameraService::startPreview(LSMessage &message)
         {
             PLOGI("startPreview() memory type is not supported\n");
             err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
-            obj_startpreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                            getErrorString(err_id));
         }
     }
+
+    obj_startpreview.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
 
     // create json string now for reply
     std::string output_reply = obj_startpreview.createStartPreviewObjectJsonString();
@@ -413,33 +385,25 @@ bool CameraService::stopPreview(LSMessage &message)
 
     int ndevhandle = obj_stoppreview.getDeviceHandle();
 
-    if (n_invalid_id == ndevhandle)
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
     {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                       getErrorString(err_id));
-    }
-    else
-    {
-        PLOGI("ndevhandle %d\n", ndevhandle);
         // stop preview here
         err_id = CommandManager::getInstance().stopPreview(ndevhandle);
 
         if (DEVICE_OK != err_id)
         {
             PLOGD("err_id != DEVICE_OK\n");
-            obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                           getErrorString(err_id));
         }
         else
         {
             PLOGD("err_id == DEVICE_OK\n");
-            obj_stoppreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                           getErrorString(err_id));
         }
     }
 
+    obj_stoppreview.setMethodReply(err_id == DEVICE_OK, (int)err_id,
+                                           getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_stoppreview.createObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -461,14 +425,9 @@ bool CameraService::startCapture(LSMessage &message)
 
     int ndevhandle = obj_startcapture.getDeviceHandle();
 
-    if (n_invalid_id == ndevhandle)
-    {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        obj_startcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                        getErrorString(err_id));
-    }
-    else
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
     {
         if ((CAMERA_FORMAT_JPEG != obj_startcapture.rGetParams().eFormat) &&
             (CAMERA_FORMAT_YUV != obj_startcapture.rGetParams().eFormat))
@@ -489,17 +448,15 @@ bool CameraService::startCapture(LSMessage &message)
         if (DEVICE_OK != err_id)
         {
             PLOGD("err_id != DEVICE_OK\n");
-            obj_startcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                            getErrorString(err_id));
         }
         else
         {
             PLOGD("err_id == DEVICE_OK\n");
-            obj_startcapture.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                            getErrorString(err_id));
         }
     }
 
+    obj_startcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id,
+                                            getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_startcapture.createStartCaptureObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -521,33 +478,25 @@ bool CameraService::stopCapture(LSMessage &message)
 
     int ndevhandle = obj_stopcapture.getDeviceHandle();
 
-    if (n_invalid_id == ndevhandle)
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
     {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        obj_stopcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                       getErrorString(err_id));
-    }
-    else
-    {
-        PLOGI("ndevhandle %d\n", ndevhandle);
         // stop capture here
         err_id = CommandManager::getInstance().stopCapture(ndevhandle);
 
         if (DEVICE_OK != err_id)
         {
             PLOGD("err_id != DEVICE_OK\n");
-            obj_stopcapture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                           getErrorString(err_id));
         }
         else
         {
             PLOGD("err_id == DEVICE_OK\n");
-            obj_stopcapture.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                           getErrorString(err_id));
         }
     }
 
+    obj_stopcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id,
+                                           getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_stopcapture.createObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -713,8 +662,9 @@ bool CameraService::getProperties(LSMessage &message)
 
         if (n_invalid_id != ndevhandle)
         {
-            PLOGI("ndevhandle %d\n", ndevhandle);
+            err_id = validateClient(&message, ndevhandle);
 
+            if (err_id == DEVICE_OK) {
             // get properties here
             CAMERA_PROPERTIES_T dev_property;
             err_id = CommandManager::getInstance().getProperty(ndevhandle, &dev_property);
@@ -722,26 +672,23 @@ bool CameraService::getProperties(LSMessage &message)
             if (DEVICE_OK != err_id)
             {
                 PLOGD("err_id != DEVICE_OK\n");
-                obj_getproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                                 getErrorString(err_id));
             }
             else
             {
                 PLOGD("err_id == DEVICE_OK\n");
-                obj_getproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                                 getErrorString(err_id));
                 obj_getproperties.setCameraProperties(dev_property);
+            }
             }
         }
         else
         {
             PLOGI("DEVICE_ERROR_DEVICE_IS_NOT_OPENED");
             err_id = DEVICE_ERROR_DEVICE_IS_NOT_OPENED;
-            obj_getproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                             getErrorString(err_id));
         }
     }
 
+    obj_getproperties.setMethodReply(err_id == DEVICE_OK, (int)err_id,
+                                             getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_getproperties.createGetPropertiesObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -763,22 +710,15 @@ bool CameraService::setProperties(LSMessage &message)
 
     int ndevhandle = objsetproperties.getDeviceHandle();
 
-    if (n_invalid_id == ndevhandle)
-    {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                        getErrorString(err_id));
-    }
-    else
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
     {
         // check params object is empty or not
         if (objsetproperties.isParamsEmpty(payload, setPropertiesSchema))
         {
             PLOGI("Params object is empty\n");
             err_id = DEVICE_ERROR_WRONG_PARAM;
-            objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                            getErrorString(err_id));
         }
         else
         {
@@ -797,14 +737,10 @@ bool CameraService::setProperties(LSMessage &message)
             if (DEVICE_OK != err_id)
             {
                 PLOGD("err_id != DEVICE_OK\n");
-                objsetproperties.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                                getErrorString(err_id));
             }
             else
             {
                 PLOGD("err_id == DEVICE_OK\n");
-                objsetproperties.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                                getErrorString(err_id));
                 // check if new properties are different from saved properties
                 auto *p_olddata = static_cast<void *>(&old_property);
                 createEventMessage(EventType::EVENT_TYPE_PROPERTIES, p_olddata, ndevhandle,
@@ -813,6 +749,8 @@ bool CameraService::setProperties(LSMessage &message)
         }
     }
 
+    objsetproperties.setMethodReply(err_id == DEVICE_OK, (int)err_id,
+                                                getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = objsetproperties.createSetPropertiesObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -833,14 +771,10 @@ bool CameraService::setFormat(LSMessage &message)
     objsetformat.getSetFormatObject(payload, setFormatSchema);
 
     int ndevhandle = objsetformat.getDeviceHandle();
-    // camera id validation check
-    if (n_invalid_id == ndevhandle)
-    {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        objsetformat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
-    }
-    else
+
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
     {
         // get saved format of the device
         CAMERA_FORMAT savedformat;
@@ -857,14 +791,10 @@ bool CameraService::setFormat(LSMessage &message)
         if (DEVICE_OK != err_id)
         {
             PLOGD("err_id != DEVICE_OK\n");
-            objsetformat.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                        getErrorString(err_id));
         }
         else
         {
             PLOGD("err_id == DEVICE_OK\n");
-            objsetformat.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                        getErrorString(err_id));
             // check if new format settings are different from saved format settings
             // get saved format of the device
             auto *p_olddata = static_cast<void *>(&savedformat);
@@ -872,6 +802,7 @@ bool CameraService::setFormat(LSMessage &message)
         }
     }
 
+    objsetformat.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = objsetformat.createSetFormatObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -917,6 +848,7 @@ bool CameraService::getFd(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
+
     LS::Message request(&message);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
@@ -926,16 +858,10 @@ bool CameraService::getFd(LSMessage &message)
 
     int ndevhandle = obj_getfd.getDeviceHandle();
 
-    if (n_invalid_id == ndevhandle)
-    {
-        PLOGI("DEVICE_ERROR_JSON_PARSING");
-        err_id = DEVICE_ERROR_JSON_PARSING;
-        obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
-    }
-    else
-    {
-        PLOGI("ndevhandle %d\n", ndevhandle);
+    err_id = validateClient(&message, ndevhandle);
 
+    if (err_id == DEVICE_OK)
+    {
         err_id = CommandManager::getInstance().getFd(ndevhandle, &shmfd);
 
         if (err_id == DEVICE_OK)
@@ -951,12 +877,8 @@ bool CameraService::getFd(LSMessage &message)
             request.respond(std::move(response_payload));
             return true;
         }
-        else
-        {
-            PLOGI("CameraService:: %s", getErrorString(err_id).c_str());
-            obj_getfd.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
-        }
     }
+    obj_getfd.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_getfd.createObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -1045,6 +967,17 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
     return true;
 }
 
+DEVICE_RETURN_CODE_T CameraService::validateClient(LSMessage* message, int ndevice_handle)
+{
+    auto client_id    = LSMessageGetSender(message);
+
+    // camera id validation check
+    if (ndevice_handle == n_invalid_id)
+        return DEVICE_ERROR_JSON_PARSING;
+
+    return CommandManager::getInstance().checkDeviceClient(ndevice_handle, client_id);
+}
+
 //[Camera Solution Manager] NEW APIs for Solution Manager - start
 bool CameraService::getSolutions(LSMessage &message)
 {
@@ -1076,6 +1009,9 @@ bool CameraService::getSolutions(LSMessage &message)
     {
         err_id = DEVICE_ERROR_PARAM_IS_MISSING;
     }
+
+    if (err_id == DEVICE_OK && ndevhandle != n_invalid_id)
+        err_id = validateClient(&message, ndevhandle);
 
     if (err_id != DEVICE_OK)
     {
@@ -1152,6 +1088,9 @@ bool CameraService::setSolutions(LSMessage &message)
     {
         err_id = DEVICE_ERROR_PARAM_IS_MISSING;
     }
+
+    if (err_id == DEVICE_OK && ndevhandle != n_invalid_id)
+        err_id = validateClient(&message, ndevhandle);
 
     if (err_id != DEVICE_OK)
     {

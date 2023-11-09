@@ -384,6 +384,26 @@ bool CommandManager::setClientDevice(int devhandle, std::string clientName)
     return false;
 }
 
+DEVICE_RETURN_CODE_T CommandManager::checkDeviceClient(int devhandle, std::string clientID)
+{
+    std::multimap<std::string, Device>::iterator it;
+    for (it = virtualdevmgrobj_map_.begin(); it != virtualdevmgrobj_map_.end(); ++it)
+    {
+        if (devhandle == it->second.devicehandle)
+        {
+            // if device is opened from luna-send, the client won't be in watcher list
+            if (it->second.clientName.length() == 0)
+                return DEVICE_OK;
+
+            if (clientID == it->second.clientName)
+                return DEVICE_OK;
+            else
+                return DEVICE_ERROR_HANDLE_NOT_EXIST;
+        }
+    }
+    return DEVICE_ERROR_HANDLE_NOT_EXIST;
+}
+
 void CommandManager::closeClientDevice(std::string clientName)
 {
     PLOGI("clientName : %s", clientName.c_str());

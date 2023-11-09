@@ -78,6 +78,7 @@ public:
     bool isRegisteredClientPid(int);
 
     bool setClientDevice(int, std::string);
+    DEVICE_RETURN_CODE_T checkDeviceClient(int, std::string);
     void closeClientDevice(std::string);
 
     void handleCrash();
