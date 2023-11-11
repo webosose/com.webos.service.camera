@@ -281,6 +281,8 @@ extern "C"
       return retVal;
     }
 
+    const std::lock_guard<std::mutex> lock(camera_handle->lock);
+
     // check if camera is in STREAMING state
     if (camera_handle->current_state != CAMERA_HAL_STATE_STREAMING)
     {
@@ -489,6 +491,7 @@ extern "C"
     camera_handle_t *camera_handle = (camera_handle_t *)h;
     if (camera_handle)
     {
+      const std::lock_guard<std::mutex> lock(camera_handle->lock);
       *fd = camera_handle->fd;
     }
     return CAMERA_ERROR_NONE;

@@ -83,7 +83,7 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
   if (nullptr != obj.ptr)
   {
     // open device and return devicehandle
-    DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, apppriority);
+    DEVICE_RETURN_CODE_T ret = obj.ptr->open(deviceid, devicehandle, std::move(apppriority));
     if (DEVICE_OK == ret)
     {
       PMLOG_INFO(CONST_MODULE_CM, "devicehandle : %d \n", *devicehandle);
@@ -218,7 +218,7 @@ DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, std::string memt
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start preview
-    return ptr->startCamera(devhandle, memtype, pkey, sh, subskey);
+    return ptr->startCamera(devhandle, std::move(memtype), pkey, sh, subskey);
   else
     return DEVICE_ERROR_UNKNOWN;
 }
@@ -251,7 +251,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle,
   VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
   if (nullptr != ptr)
     // start preview
-    return ptr->startPreview(devhandle, memtype, pkey, disptype, media_id, sh, subskey);
+    return ptr->startPreview(devhandle, std::move(memtype), pkey, std::move(disptype), media_id, sh, subskey);
   else
     return DEVICE_ERROR_UNKNOWN;
 }

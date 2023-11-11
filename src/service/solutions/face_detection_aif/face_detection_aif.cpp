@@ -71,7 +71,7 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
     PMLOG_INFO(LOG_TAG, "");
     solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
 
-    std::lock_guard<std::mutex> lock(mtxAi_);
+    std::lock_guard<std::mutex> lock(mtxJob_);
     ai.startup();
 
     std::string param = "{ \
@@ -92,10 +92,10 @@ void FaceDetectionAIF::initialize(stream_format_t streamFormat)
 void FaceDetectionAIF::release(void)
 {
     PMLOG_INFO(LOG_TAG, "");
-    mtxAi_.lock();
+    mtxJob_.lock();
     ai.deleteDetector(type);
     ai.shutdown();
-    mtxAi_.unlock();
+    mtxJob_.unlock();
     CameraSolutionAsync::release();
     PMLOG_INFO(LOG_TAG, "");
 }
@@ -111,6 +111,8 @@ void FaceDetectionAIF::processing(void)
             break;
         if (!detectFace())
             break;
+
+        std::lock_guard<std::mutex> lock(mtxJob_);
 
         jvalue_ref jsonOutObj    = jobject_create();
         jvalue_ref jsonFaceArray = jarray_create(nullptr);
@@ -186,7 +188,7 @@ void FaceDetectionAIF::postProcessing(void)
 
 bool FaceDetectionAIF::detectFace(void)
 {
-    std::lock_guard<std::mutex> lock(mtxAi_);
+    std::lock_guard<std::mutex> lock(mtxJob_);
     ai.detect(type,
               Mat(Size(oDecodedImage_.outWidth_, oDecodedImage_.outHeight_), CV_8UC3,
                   oDecodedImage_.pImage_),
@@ -206,6 +208,7 @@ bool FaceDetectionAIF::decodeJpeg(void)
     cinfo.err = jpeg_std_error(&jerr);
     jpeg_create_decompress(&cinfo);
 
+    std::lock_guard<std::mutex> lock(mtxJob_);
     auto &buf = queueJob_.front();
 
     jpeg_mem_src(&cinfo, buf->data_, buf->size_);

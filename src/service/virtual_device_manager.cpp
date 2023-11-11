@@ -122,7 +122,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
   PMLOG_INFO(CONST_MODULE_VDM, "handle : %p \n", handle);
 
   // open the camera here
-  ret = objdevicecontrol_.open(handle, devnode, devid);
+  ret = objdevicecontrol_.open(handle, std::move(devnode), devid);
   if (DEVICE_OK != ret)
     PMLOG_INFO(CONST_MODULE_VDM, "Failed to open device\n");
   else
@@ -510,7 +510,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle,
                     poshmkey_ = *pkey;
                 }
 
-                *pmedia = startPreviewDisplay(devhandle, windowid, memtype, *pkey);
+                *pmedia = startPreviewDisplay(devhandle, std::move(windowid), std::move(memtype), *pkey);
                 if (!(*pmedia).empty())
                 {
                     // update state of device to preview
@@ -548,7 +548,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle,
                 shmempreview_count_[SHMEM_POSIX]++;
             }
 
-            *pmedia = startPreviewDisplay(devhandle, windowid, memtype, *pkey);
+            *pmedia = startPreviewDisplay(devhandle, std::move(windowid), std::move(memtype), *pkey);
             if (!(*pmedia).empty())
             {
                 // update state of device to preview
@@ -1160,7 +1160,7 @@ std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string wi
                               + std::to_string(CommandManager::getInstance().getCameraId(handle));
         CAMERA_FORMAT camera_format;
         getFormat(handle, &camera_format);
-        media_id = display_control_->load(camera_id, window_id, camera_format, mem_type, key, handle);
+        media_id = display_control_->load(std::move(camera_id), std::move(window_id), camera_format, std::move(mem_type), key, handle);
         if (!media_id.empty())
         {
             // We do not check the result because uMediaServer always returns SUCCESS.

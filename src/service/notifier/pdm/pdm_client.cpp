@@ -189,7 +189,7 @@ static bool deviceStateCb(LSHandle *lsHandle, LSMessage *message, void *user_dat
                     // devPath
                     std::vector<std::string> str_devPaths;
                     getDevPaths(jin_array_obj, str_devPaths);
-                    for (auto str_devPath : str_devPaths)
+                    for (const auto & str_devPath : str_devPaths)
                     {
                         PMLOG_INFO(CONST_MODULE_PDMCLIENT, "devPath : %s \n", str_devPath.c_str());
                         strncpy(dev_info_[camcount].strDeviceNode, str_devPath.c_str(), CONST_MAX_STRING_LENGTH - 1);

@@ -53,7 +53,7 @@ LgSolutionErrorValue loadSolutionList(pbnjson::JValue &json)
         return SOLUTION_MANAGER_PARSING_ERROR;
     }
 
-    json = obj_supportedSolution;
+    json = std::move(obj_supportedSolution);
     return SOLUTION_MANAGER_NO_ERROR;
 }
 
@@ -93,7 +93,7 @@ solution_params_t getSolutionInfo(const pbnjson::JValue &json, const std::string
 
             auto sParams = slist["params"];
 
-            solutionParams_.name = solutionName;
+            solutionParams_.name = std::move(solutionName);
 
             if (sParams.hasKey("support"))
             {
@@ -170,7 +170,7 @@ CameraSolutionManager::CameraSolutionManager(void)
     {
         lstSolution_.push_back(std::make_unique<FaceDetectionAIF>());
         auto &i = lstSolution_.back();
-        i->getSolutionParams(solutionParams_);
+        i->getSolutionParams(std::move(solutionParams_));
     }
 #endif
 }

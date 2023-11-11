@@ -36,7 +36,7 @@ int DeviceManager::findDevNum(int ndevicehandle)
   if (ndevicehandle == n_invalid_id)
     return nDeviceID;
 
-  for (auto iter : deviceMap_)
+  for (const auto & iter : deviceMap_)
   {
     PMLOG_DEBUG("iter.second.nDevIndex : %d", iter.second.nDevIndex);
     PMLOG_DEBUG("iter.second.nDeviceID : %d", iter.second.nDeviceID);
@@ -181,7 +181,7 @@ bool DeviceManager::eraseVirtualHandle(int deviceId, int virtualHandle)
 
   // find devid
   int devid = 0;
-  for (auto iter : deviceMap_)
+  for (const auto & iter : deviceMap_)
   {
     PMLOG_INFO(CONST_MODULE_DM, "first: %d, nDeviceID: %d", iter.first, iter.second.nDeviceID);
     if (iter.second.nDeviceID == deviceId)
@@ -217,7 +217,7 @@ bool DeviceManager::eraseVirtualHandle(int deviceId, int virtualHandle)
 
 DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
-    for (auto list : deviceMap_)
+    for (const auto & list : deviceMap_)
         idList.push_back(list.first);
     return DEVICE_OK;
 }
@@ -270,7 +270,7 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
   for (int i = 1 ; i <= MAX_DEVICE_COUNT ; i++ )
   {
     bool idx_avaible = true;
-    for (auto iter : deviceMap_)
+    for (const auto & iter : deviceMap_)
     {
       if (iter.first == i)
       {
@@ -309,7 +309,7 @@ bool DeviceManager::addDevice(DEVICE_LIST_T *pList)
 
   PMLOG_INFO(CONST_MODULE_DM, "devStatus.stList.strDeviceNode : %s \n",
               devStatus.stList.strDeviceNode);
-  deviceMap_[devidx] = devStatus;
+  deviceMap_[devidx] = std::move(devStatus);
   PMLOG_INFO(CONST_MODULE_DM, "devidx : %d, deviceMap_.size : %zd \n", devidx, deviceMap_.size());
   return true;
 }
@@ -341,7 +341,7 @@ DEVICE_RETURN_CODE_T DeviceManager::updateList(DEVICE_LIST_T *pList, int nDevCou
     {
       int id = 0;
       // find exist device
-      for (auto iter : deviceMap_)
+      for (const auto & iter : deviceMap_)
       {
         if ( strcmp(iter.second.stList.strDeviceNode, pList[i].strDeviceNode) == 0 )
         {
@@ -435,7 +435,7 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int ndev_id, camera_device_info_t *p
 
   if(!deviceMap_[ncam_id].isDeviceInfoSaved)
   {
-      ret = DeviceControl::getDeviceInfo(strdevicenode, p_info);
+      ret = DeviceControl::getDeviceInfo(std::move(strdevicenode), p_info);
 
       if (DEVICE_OK != ret)
       {

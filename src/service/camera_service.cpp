@@ -179,7 +179,7 @@ bool CameraService::open(LSMessage &message)
     int ndevice_handle = n_invalid_id;
 
     // open camera device and save fd
-    err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_priority);
+    err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, std::move(app_priority));
     if (DEVICE_OK != err_id)
     {
       PMLOG_DEBUG("err_id != DEVICE_OK\n");
@@ -476,7 +476,7 @@ bool CameraService::startPreview(LSMessage &message)
                 obj_startpreview.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
                                                 getErrorString(err_id));
                 obj_startpreview.setKeyValue(key);
-                obj_startpreview.setMediaIdValue(media_id);
+                obj_startpreview.setMediaIdValue(std::move(media_id));
             }
         }
         else
@@ -570,8 +570,8 @@ bool CameraService::startCapture(LSMessage &message)
     else
     {
       PMLOG_INFO(CONST_MODULE_LUNA, "ndevhandle %d\n", ndevhandle);
-	  PMLOG_INFO(CONST_MODULE_LUNA, "nImage : %d\n", obj_startcapture.getnImage());
-	  PMLOG_INFO(CONST_MODULE_LUNA, "path: %s\n", obj_startcapture.getImagePath().c_str());
+      PMLOG_INFO(CONST_MODULE_LUNA, "nImage : %d\n", obj_startcapture.getnImage());
+      PMLOG_INFO(CONST_MODULE_LUNA, "path: %s\n", obj_startcapture.getImagePath().c_str());
 
       // capture image here
       if (0 != obj_startcapture.getnImage())
@@ -843,7 +843,7 @@ bool CameraService::getProperties(LSMessage &message)
         std::string event_key = CONST_EVENT_KEY_PROPERTIES;
         event_key += "_";
         event_key += obj_getproperties.getCameraId();
-        bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
+        bool bsubscribed = event_obj.addSubscription(this->get(), std::move(event_key), message);
         PMLOG_INFO(CONST_MODULE_LUNA,"bsubscribed (%d) \n", bsubscribed);
         obj_getproperties.setSubcribed(bsubscribed);
 
@@ -943,7 +943,7 @@ bool CameraService::setProperties(LSMessage &message)
         // check if new properties are different from saved properties
         auto *p_olddata = static_cast<void *>(&old_property);
         createEventMessage(EventType::EVENT_TYPE_PROPERTIES, p_olddata, ndevhandle,
-                           event_key);
+                           std::move(event_key));
       }
     }
   }
@@ -1001,7 +1001,7 @@ bool CameraService::setFormat(LSMessage &message)
       // check if new format settings are different from saved format settings
       // get saved format of the device
       auto *p_olddata = static_cast<void *>(&savedformat);
-      createEventMessage(EventType::EVENT_TYPE_FORMAT, p_olddata, ndevhandle, event_key);
+      createEventMessage(EventType::EVENT_TYPE_FORMAT, p_olddata, ndevhandle, std::move(event_key));
     }
   }
 
@@ -1154,7 +1154,6 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
   }
 
   PMLOG_INFO(CONST_MODULE_LUNA, "unique_client_id: %s\n", unique_client_id);
-
   cameraHandleMap.insert(std::make_pair(ndevice_handle, unique_client_id));
 
   if (cameraHandleInfo.find(unique_client_id) != cameraHandleInfo.end()) {
@@ -1305,7 +1304,7 @@ bool CameraService::getSolutions(LSMessage &message)
   }
 
   std::string output_reply =
-      obj_getsolutions.createObjectJsonString(supportedSolutionList, enabledSolutionList);
+      obj_getsolutions.createObjectJsonString(std::move(supportedSolutionList), std::move(enabledSolutionList));
 
   LS::Message request(&message);
   request.respond(output_reply.c_str());
@@ -1485,7 +1484,7 @@ bool CameraService::getFormat(LSMessage &message)
         std::string event_key = CONST_EVENT_KEY_FORMAT;
         event_key += "_";
         event_key += obj_getFormat.getCameraId();
-        bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
+        bool bsubscribed = event_obj.addSubscription(this->get(), std::move(event_key), message);
         PMLOG_INFO(CONST_MODULE_LUNA,"bsubscribed (%d) \n", bsubscribed);
         obj_getFormat.setSubcribed(bsubscribed);
 

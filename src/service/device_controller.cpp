@@ -656,7 +656,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
         }
 
         shmemfd_ = *pkey;
-        str_shmemname_ = shmname;
+        str_shmemname_ = std::move(shmname);
     }
 
     //[Camera Solution Manager] initialization

@@ -206,10 +206,10 @@ void CameraSolutionAsync::notify(void) { cv_.notify_all(); }
 CameraSolutionAsync::WaitResult CameraSolutionAsync::wait(void)
 {
     WaitResult res = OK;
+    std::unique_lock<std::mutex> lock(m_);
     try
     {
-        std::unique_lock<std::mutex> lock(m_);
-        auto status = cv_.wait_for(lock, 1s);
+        std::cv_status status = (std::cv_status) cv_.wait_for(lock, 1s, []{PMLOG_INFO(LOG_TAG, "Checking condition..."); return false;});
         if (status == std::cv_status::timeout)
         {
             PMLOG_INFO(LOG_TAG, "Timeout to wait for Feed");
@@ -232,9 +232,9 @@ void CameraSolutionAsync::setAlive(bool bAlive) { bAlive_ = bAlive; }
 
 void CameraSolutionAsync::pushJob(buffer_t inBuf)
 {
+    std::lock_guard<std::mutex> lg(mtxJob_);
     if (queueJob_.empty())
     {
-        std::lock_guard<std::mutex> lg(mtxJob_);
         queueJob_.push(std::make_unique<Buffer>((uint8_t *)inBuf.start, inBuf.length));
         notify();
     }

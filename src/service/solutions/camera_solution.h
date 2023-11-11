@@ -55,7 +55,7 @@ public:
     virtual void setEnableValue(bool enableValue) { enableStatus_ = enableValue; };
     virtual Property getProperty() { return solutionProperty_; };
     virtual bool isEnabled(void) { return enableStatus_; };
-    virtual void getSolutionParams(solution_params_t params) { solutionParams = params; };
+    virtual void getSolutionParams(solution_params_t params) { solutionParams = std::move(params); };
     virtual std::string getSolutionStr(void) { return solutionParams.name; };
     // interfce - need to override
     virtual void processForSnapshot(buffer_t inBuf) = 0;

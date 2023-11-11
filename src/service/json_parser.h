@@ -203,7 +203,7 @@ public:
   void setKeyValue(int key) { n_keyvalue_ = key; }
   int getKeyValue() const { return n_keyvalue_; }
 
-  void setMediaIdValue(std::string media_id) { media_id_ = media_id; }
+  void setMediaIdValue(std::string media_id) { media_id_ = std::move(media_id); }
   std::string getMediaIdValue() const { return media_id_; }
 
   void setMethodReply(bool returnvalue, int errorcode, std::string errortext)

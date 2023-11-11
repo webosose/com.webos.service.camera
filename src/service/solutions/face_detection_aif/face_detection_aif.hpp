@@ -70,5 +70,4 @@ private:
 private:
     RawImage oDecodedImage_;
     std::string output;
-    std::mutex mtxAi_;
 };

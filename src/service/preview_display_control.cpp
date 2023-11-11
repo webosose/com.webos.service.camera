@@ -194,7 +194,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     }
     else
     {
-        outformat = informat;
+        outformat = std::move(informat);
     }
 
     std::string payload = LOAD_PAYLOAD_HEAD
@@ -214,7 +214,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
 
     PMLOG_INFO(CONST_MODULE_DPY, "payload : %s", payload.c_str());
 
-    if (!call("luna://com.webos.media/load", payload, cbHandleResponseMsg))
+    if (!call("luna://com.webos.media/load", std::move(payload), cbHandleResponseMsg))
     {
         PMLOG_INFO(CONST_MODULE_DPY, "fail to call com.webos.media/load()");
         bResult_ = false;
@@ -238,7 +238,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
 bool PreviewDisplayControl::play(std::string mediaId)
 {
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
-    if (!call("luna://com.webos.media/play", payload, cbHandleResponseMsg))
+    if (!call("luna://com.webos.media/play", std::move(payload), cbHandleResponseMsg))
     {
         PMLOG_INFO(CONST_MODULE_DPY, "fail to call com.webos.media/play()");
         bResult_ = false;
@@ -259,7 +259,7 @@ bool PreviewDisplayControl::unload(std::string mediaId)
     getPid(mediaId);
 
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
-    if (!call("luna://com.webos.media/unload", payload, cbHandleResponseMsg))
+    if (!call("luna://com.webos.media/unload", std::move(payload), cbHandleResponseMsg))
     {
         PMLOG_INFO(CONST_MODULE_DPY, "fail to call com.webos.media/unload()");
         bResult_ = false;
@@ -283,7 +283,7 @@ int PreviewDisplayControl::getPid(std::string mediaId)
     PMLOG_INFO(CONST_MODULE_DPY, "mediaId: %s", mediaId.c_str());
     int pid = -1;
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
-    if (!call("luna://com.webos.media/getActivePipelines", payload, cbHandleResponseMsg))
+    if (!call("luna://com.webos.media/getActivePipelines", std::move(payload), cbHandleResponseMsg))
     {
         bResult_ = false;
         return pid;

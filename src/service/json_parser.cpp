@@ -109,7 +109,7 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
       jnum = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_CLIENT_SIGNAL_NUM));
       jnumber_get_i32(jnum, &n_client_sig);
       if ((SIGHUP <= n_client_sig && n_client_sig <= SIGSYS) &&
-	      (n_client_sig != SIGKILL && n_client_sig != SIGSTOP))
+          (n_client_sig != SIGKILL && n_client_sig != SIGSTOP))
 
       {
         setClientSignal(n_client_sig);
@@ -193,7 +193,7 @@ void StartCameraMethod::getStartCameraObject(const char *input, const char *sche
     camera_memory_source_t r_cams_source;
     r_cams_source.str_memorysource = (source.m_str) ? source.m_str : "";
     r_cams_source.str_memorytype = (type.m_str) ? type.m_str : "";
-    setMemParams(r_cams_source);
+    setMemParams(std::move(r_cams_source));
   }
   else
   {
@@ -250,11 +250,11 @@ void StartPreviewMethod::getStartPreviewObject(const char *input, const char *sc
     camera_memory_source_t r_cams_source;
     r_cams_source.str_memorysource = (source.m_str) ? source.m_str : "";
     r_cams_source.str_memorytype = (type.m_str) ? type.m_str : "";
-    setMemParams(r_cams_source);
+    setMemParams(std::move(r_cams_source));
 
     camera_display_source_t r_dpy_source;
     r_dpy_source.str_window_id = (display.m_str) ? display.m_str : "";
-    setDpyParams(r_dpy_source);
+    setDpyParams(std::move(r_dpy_source));
   }
   else
   {
@@ -377,7 +377,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
     std::string format = strformat.m_str;
 
     camera_format_t nformat;
-    convertFormatToCode(format, &nformat);
+    convertFormatToCode(std::move(format), &nformat);
     rcamera_params.eFormat = nformat;
 
     setCameraParams(rcamera_params);
@@ -805,7 +805,7 @@ void SetFormatMethod::getSetFormatObject(const char *input, const char *schemapa
     std::string format = strformat.m_str;
 
     camera_format_t eformat;
-    convertFormatToCode(format, &eformat);
+    convertFormatToCode(std::move(format), &eformat);
     rcameraparams.eFormat = eformat;
 
     setCameraFormat(rcameraparams);
@@ -946,7 +946,7 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
 
     if (supportedSolutionList.size() > 0)
     {
-      for (auto supportedSolution : supportedSolutionList)
+      for (const auto & supportedSolution : supportedSolutionList)
       {
         bool isEnabled               = false;
         jvalue_ref json_solution_obj = jobject_create();
@@ -954,7 +954,7 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
         jobject_put(json_solution_obj, J_CSTR_TO_JVAL("name"),
                     jstring_create(supportedSolution.c_str()));
 
-        for (auto enabledSolution : enabledSolutionList)
+        for (const auto & enabledSolution : enabledSolutionList)
         {
           if (enabledSolution == supportedSolution)
           {
