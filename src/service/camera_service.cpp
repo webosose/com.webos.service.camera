@@ -1188,9 +1188,20 @@ bool CameraService::addClientWatcher(LSHandle* handle, LSMessage* message, int n
                          "disconnect erase HandleMap service_name: %s, ndevice_handle %d\n",
                          name.c_str(), it->first);
 
-              if (CommandManager::getInstance().stopPreview(it->first) != DEVICE_OK)
+              CameraDeviceState state = CommandManager::getInstance().getDeviceState(it->first);
+              if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
               {
-                  PMLOG_INFO(CONST_MODULE_LUNA, "stoppreview err_id != DEVICE_OK\n");
+                if (CommandManager::getInstance().stopCamera(it->first) != DEVICE_OK)
+                {
+                    PMLOG_INFO(CONST_MODULE_LUNA, "stoppreview err_id != DEVICE_OK\n");
+                }
+              }
+              else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+              {
+                if (CommandManager::getInstance().stopPreview(it->first) != DEVICE_OK)
+                {
+                    PMLOG_INFO(CONST_MODULE_LUNA, "stoppreview err_id != DEVICE_OK\n");
+                }
               }
               if (CommandManager::getInstance().close(it->first) != DEVICE_OK)
               {
