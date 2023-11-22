@@ -27,10 +27,17 @@
 #include <sys/sem.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include <string>
+#include <random>
+#include <algorithm>
+#include <unordered_set>
+#include <stdexcept>
+#include <iomanip>
 // constants
 
 #define CAMSHKEY 7010
+#define SIGNED_INT_MAX 2147483647
+#define TEN_DIGIT_START_VALUE 1000000000
 #define SHMEM_HEADER_SIZE ((int)(6 * sizeof(int)))
 #define SHMEM_LENGTH_SIZE ((int)sizeof(int))
 #define SHMEM_UNIT_SIZE_MAX 66355200 // 7680*4320*2
@@ -87,6 +94,8 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
                           int extraSize, int nOpenMode);
 SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
                           unsigned char **ppExtraData, int *pExtraSize, int readMode);
+
+key_t getShmemKey(void);
 
 enum
 {
@@ -162,6 +171,39 @@ union semun
 //         LENGTH(sizeof(int) * unit_num) + DATA(meta_size * unit_num) +
 //         EXTRA_SZ(sizeof(int)) + EXTRA_BUF(extra_size * unit_num))
 
+unsigned long long random10()
+{
+    static std::string digits = "0123456789" ;
+    static std::mt19937 rng( std::random_device{}() ) ;
+
+    std::shuffle( digits.begin(), digits.end(), rng ) ;
+    return std::stoull(digits) ;
+}
+
+key_t getShmemKey()
+{
+    int mode = 0666;
+    key_t shmemKey = 0;
+    unsigned long long randomLongValue = 0;
+    static std::unordered_set< unsigned long long > history;
+
+    for (int count = CAMSHKEY; count < 0xFFFF; count++)
+    {
+        randomLongValue = random10() ;
+        if( history.insert(randomLongValue).second )
+        {
+            if(randomLongValue > TEN_DIGIT_START_VALUE && randomLongValue < SIGNED_INT_MAX)
+            {
+                shmemKey = (key_t) randomLongValue;
+                PLOGI("random key generation value =%llu", randomLongValue);
+                if (shmget(shmemKey, 0, mode) == -1)
+                    break;
+            }
+        }
+    }
+    return shmemKey;
+}
+
 SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pShmemKey,
                                                int unitSize, int metaSize, int unitNum,
                                                int extraSize)
@@ -177,14 +219,9 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     PLOGI("hShmem = %p, pKey = %p, unitSize=%d, metaSize=%d, unitNum=%d\n", *phShmem, pShmemKey,
           unitSize, metaSize, unitNum);
 
-    key_t shmemKey;
     int shmemMode = 0666;
-    for (shmemKey = CAMSHKEY; shmemKey < 0xFFFF; shmemKey++)
-    {
-        pShmemBuffer->shmem_id = shmget((key_t)shmemKey, 0, shmemMode);
-        if ((pShmemBuffer->shmem_id == -1) && (errno == ENOENT))
-            break;
-    }
+    key_t shmemKey = getShmemKey();
+
     *pShmemKey    = shmemKey;
     int shmemSize = 0;
     if (unitSize >= 0 && unitSize <= SHMEM_UNIT_SIZE_MAX && metaSize >= 0 &&
@@ -640,12 +677,7 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
 
     if (nOpenMode == MODE_CREATE)
     {
-        for (shmemKey = CAMSHKEY; shmemKey < 0xFFFF; shmemKey++)
-        {
-            pShmemBuffer->shmem_id = shmget((key_t)shmemKey, 0, 0666);
-            if (pShmemBuffer->shmem_id == -1 && errno == ENOENT)
-                break;
-        }
+        shmemKey = getShmemKey();
         *pShmemKey = shmemKey;
 
         if (unitSize >= 0 && unitSize <= SHMEM_UNIT_SIZE_MAX && unitNum >= 0 &&
