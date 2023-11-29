@@ -68,6 +68,7 @@ private:
 
     CAMERA_FORMAT informat_;
     camera_pixel_format_t epixelformat_;
+    CAMERA_FORMAT capture_format_;
     std::thread tidPreview;
     std::thread tidCapture;
     std::mutex tMutex;
