@@ -32,7 +32,7 @@ struct CameraSolutionEvent;
 class CameraSolutionProxy
 {
     Property solutionProperty_{LG_SOLUTION_NONE};
-    bool supportStatus_{false};
+    bool preRun_{false};
     bool enableStatus_{false};
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
     std::string solution_name_;
@@ -50,6 +50,7 @@ class CameraSolutionProxy
     void *cookie{nullptr};
     std::string uid_;
 
+    bool job_ready{false};
     std::condition_variable cv_;
     std::mutex m_;
     std::mutex mtxJob_;
@@ -87,7 +88,7 @@ public:
     void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
     void setEnableValue(bool enableValue);
     Property getProperty(void) { return solutionProperty_; }
-    bool isEnabled(void) { return enableStatus_; };
+    bool isEnabled(void) { return bAlive_ ? enableStatus_ : preRun_; };
 
     std::string getSolutionStr(void) { return solution_name_; };
     void processForSnapshot(buffer_t inBuf){};

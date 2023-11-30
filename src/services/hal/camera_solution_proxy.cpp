@@ -109,12 +109,23 @@ void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, L
     sh_           = sh;
 
     startThread();
+
+    setEnableValue(preRun_);
+    preRun_ = false;
 }
 
 void CameraSolutionProxy::setEnableValue(bool enableValue)
 {
-    PLOGI("enableValue %d", enableValue);
-    pushJob(enableValue);
+    if (checkAlive())
+    {
+        PLOGI("enableValue %d", enableValue);
+        pushJob(enableValue);
+    }
+    else
+    {
+        preRun_ = enableValue;
+        PLOGI("preRun_ %d", preRun_);
+    }
 }
 
 void CameraSolutionProxy::processing(bool enableValue)
@@ -167,6 +178,7 @@ void CameraSolutionProxy::release()
 {
     PLOGI("");
 
+    preRun_ = enableStatus_;
     stopThread();
     processing(false);
     unsubscribe();
@@ -431,7 +443,11 @@ void CameraSolutionProxy::stopThread()
     }
 }
 
-void CameraSolutionProxy::notify(void) { cv_.notify_all(); }
+void CameraSolutionProxy::notify(void)
+{
+    job_ready = true;
+    cv_.notify_all();
+}
 
 bool CameraSolutionProxy::wait()
 {
@@ -439,7 +455,8 @@ bool CameraSolutionProxy::wait()
     try
     {
         std::unique_lock<std::mutex> lock(m_);
-        cv_.wait(lock);
+        cv_.wait(lock, [this] { return job_ready; });
+        job_ready = false;
     }
     catch (std::system_error &e)
     {

@@ -726,6 +726,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
 
     str_imagepath_   = imagepath;
     str_capturemode_ = mode;
+    getFormat(&capture_format_);
 
     if (str_capturemode_ == cstr_continuous)
     {
@@ -868,8 +869,6 @@ DEVICE_RETURN_CODE_T DeviceControl::setFormat(CAMERA_FORMAT sformat)
         PLOGE("setFormat failed");
         return DEVICE_ERROR_UNSUPPORTED_FORMAT;
     }
-
-    capture_format_ = sformat;
 
     return DEVICE_OK;
 }
