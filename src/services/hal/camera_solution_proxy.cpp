@@ -443,7 +443,11 @@ void CameraSolutionProxy::stopThread()
     }
 }
 
-void CameraSolutionProxy::notify(void) { cv_.notify_all(); }
+void CameraSolutionProxy::notify(void)
+{
+    job_ready = true;
+    cv_.notify_all();
+}
 
 bool CameraSolutionProxy::wait()
 {
@@ -451,7 +455,8 @@ bool CameraSolutionProxy::wait()
     try
     {
         std::unique_lock<std::mutex> lock(m_);
-        cv_.wait(lock);
+        cv_.wait(lock, [this] { return job_ready; });
+        job_ready = false;
     }
     catch (std::system_error &e)
     {

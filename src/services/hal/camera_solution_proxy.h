@@ -50,6 +50,7 @@ class CameraSolutionProxy
     void *cookie{nullptr};
     std::string uid_;
 
+    bool job_ready{false};
     std::condition_variable cv_;
     std::mutex m_;
     std::mutex mtxJob_;
