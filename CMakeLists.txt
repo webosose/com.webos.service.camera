@@ -62,5 +62,3 @@ add_subdirectory(src/services)
 add_subdirectory(tests)
 
 webos_build_system_bus_files()
-webos_build_configured_file(files/systemd/camera-registry.service SYSCONFDIR systemd/system)
-webos_build_configured_file(files/systemd/camera-registry.sh SYSCONFDIR systemd/system/scripts)
