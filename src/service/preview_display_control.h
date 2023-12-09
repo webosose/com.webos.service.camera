@@ -16,7 +16,7 @@ private:
     int done_;
     bool bResult_;
 
-    void acquireLSConnection();
+    void acquireLSConnection(const std::string &wid);
     void releaseLSConnection();
     bool call(std::string uri, std::string payload, bool (*cb)(LSHandle*, LSMessage*, void*));
 
@@ -26,7 +26,7 @@ private:
     static bool cbHandleResponseMsg(LSHandle*, LSMessage*, void*);
 
 public:
-    PreviewDisplayControl();
+    PreviewDisplayControl(const std::string &wid);
     ~PreviewDisplayControl();
     std::string load(std::string cameraId, std::string windowId,
                      CAMERA_FORMAT cameraFormat, std::string memType,

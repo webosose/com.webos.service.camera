@@ -69,10 +69,6 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
   if (it == virtualdevmgrobj_map_.end())
   {
     obj.ptr = new VirtualDeviceManager;
-    if (obj.ptr)
-    {
-      obj.ptr->setDisplayControl(&display_control_);
-    }
     PMLOG_INFO(CONST_MODULE_CM, "ptr : %p \n", obj.ptr);
   }
   else

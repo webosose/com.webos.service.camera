@@ -7,7 +7,7 @@
 #define LOAD_PAYLOAD_HEAD "{\"uri\":\"camera://com.webos.service.camera2/7010\",\"payload\":\
 {\"option\":{\"appId\":\"com.webos.app.mediaevents-test\", \"windowId\":\""
 
-const char *display_client_service_name = "com.webos.service.camera2.display";
+const char *display_client_service_name = "com.webos.service.camera2.display-";
 const std::string window_id_str = "_Window_Id_";
 
 static pbnjson::JValue convertStringToJson(const char *rawData)
@@ -22,19 +22,21 @@ static pbnjson::JValue convertStringToJson(const char *rawData)
     return parser.getDom();
 }
 
-PreviewDisplayControl::PreviewDisplayControl() :
+PreviewDisplayControl::PreviewDisplayControl(const std::string &wid) :
     sh_(nullptr),
     loop_(nullptr),
     reply_from_server_(""),
     done_(0),
     bResult_(true)
 {
-    acquireLSConnection();
+    PMLOG_INFO(CONST_MODULE_DPY, "");
+    acquireLSConnection(wid);
 }
 
 PreviewDisplayControl::~PreviewDisplayControl()
 {
     releaseLSConnection();
+    PMLOG_INFO(CONST_MODULE_DPY, "");
 }
 
 bool PreviewDisplayControl::isValidWindowId(std::string windowId)
@@ -73,14 +75,16 @@ bool PreviewDisplayControl::isValidWindowId(std::string windowId)
     return false;
 }
 
-void PreviewDisplayControl::acquireLSConnection()
+void PreviewDisplayControl::acquireLSConnection(const std::string &wid)
 {
     if (!sh_)
     {
         LSError lserror;
         LSErrorInit(&lserror);
 
-        name_ = display_client_service_name;
+        // _Window_Id_XX
+        name_ = display_client_service_name + wid.substr(11);
+        PMLOG_INFO(CONST_MODULE_DPY, "%s", name_.c_str());
         if (!LSRegister(name_.c_str(), &sh_, &lserror))
         {
             LSErrorPrint(&lserror, stderr);
@@ -118,6 +122,7 @@ void PreviewDisplayControl::releaseLSConnection()
     {
         LSError lserror;
         LSErrorInit(&lserror);
+        PMLOG_INFO(CONST_MODULE_DPY, "%s", name_.c_str());
         if (!LSUnregister(sh_, &lserror))
         {
             LSErrorPrint(&lserror, stderr);

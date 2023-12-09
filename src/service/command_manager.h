@@ -38,8 +38,6 @@ class CommandManager
 {
 private:
   std::multimap<std::string, Device> virtualdevmgrobj_map_;
-  PreviewDisplayControl display_control_;
-
   VirtualDeviceManager *getVirtualDeviceMgrObj(int);
   void removeVirtualDevMgrObj(int);
 

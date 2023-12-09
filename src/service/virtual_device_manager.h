@@ -22,7 +22,6 @@
  ------------------------------------------------------------------------------*/
 #include "camera_types.h"
 #include "device_controller.h"
-#include "preview_display_control.h"
 #include <map>
 #include <string>
 #include <vector>
@@ -39,6 +38,7 @@ public:
     ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE) { };
 };
 
+class PreviewDisplayControl;
 class VirtualDeviceManager
 {
 private:
@@ -50,12 +50,16 @@ private:
   int poshmkey_;
   int shmusrptrkey_;
   std::vector<int> nstreaminghandle_;
-  std::map<int, std::string> previewdisplay_map_;
   std::vector<int> ncapturehandle_;
   CAMERA_FORMAT sformat_;
 
   // for render preview
-  PreviewDisplayControl *display_control_;
+  struct UMSControl {
+    int handle;
+    std::string mediaId;
+    std::shared_ptr<PreviewDisplayControl> display_control;
+  };
+  std::vector<UMSControl> ums_controls;
 
   // for multi obj
   DeviceControl objdevicecontrol_;
@@ -74,6 +78,7 @@ private:
 
 public:
   VirtualDeviceManager();
+  ~VirtualDeviceManager();
   DEVICE_RETURN_CODE_T open(int, int *, std::string);
   DEVICE_RETURN_CODE_T close(int);
   DEVICE_RETURN_CODE_T startCamera(int, std::string, int *, LSHandle *, const char*);
@@ -101,8 +106,6 @@ public:
   bool isRegisteredClient(int);
 
   void requestPreviewCancel();
-
-  void setDisplayControl(PreviewDisplayControl*);
 
   CameraDeviceState getDeviceState(int);
 };

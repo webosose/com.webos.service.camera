@@ -22,18 +22,21 @@
 #include "constants.h"
 #include "device_manager.h"
 #include "command_manager.h"
-
+#include "preview_display_control.h"
 #include <fstream>
 #include <algorithm>
-
 #include <unistd.h>
-
 
 VirtualDeviceManager::VirtualDeviceManager()
     : virtualhandle_map_(), handlepriority_map_(), shmempreview_count_(),
-      bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), shmusrptrkey_(0), sformat_(),
-      display_control_(nullptr)
+      bcaptureinprogress_(false), shmkey_(0), poshmkey_(0), shmusrptrkey_(0), sformat_()
 {
+    PMLOG_INFO(CONST_MODULE_VDM, "");
+}
+
+VirtualDeviceManager::~VirtualDeviceManager()
+{
+    PMLOG_INFO(CONST_MODULE_VDM, "");
 }
 
 bool VirtualDeviceManager::checkDeviceOpen(int devhandle)
@@ -514,7 +517,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle,
                 if (!(*pmedia).empty())
                 {
                     // update state of device to preview
-                    previewdisplay_map_[devhandle] = *pmedia;
                     obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
                     virtualhandle_map_[devhandle] = obj_devstate;
                 }
@@ -552,7 +554,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle,
             if (!(*pmedia).empty())
             {
                 // update state of device to preview
-                previewdisplay_map_[devhandle] = *pmedia;
                 obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_PREVIEW;
                 virtualhandle_map_[devhandle] = obj_devstate;
             }
@@ -593,15 +594,11 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
       return DEVICE_ERROR_INVALID_STATE;
     }
 
-    int size = previewdisplay_map_.size();
-    PMLOG_INFO(CONST_MODULE_VDM, "size : %d \n", size);
     if (1 < shmempreview_count_[memtype])
     {
       // remove the handle from display map since stopPreview is called
       if (stopPreviewDisplay(devhandle))
       {
-        previewdisplay_map_.erase(devhandle);
-
         // update state of device to open
         obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
         obj_devstate.shmemtype = SHMEME_UNKNOWN;
@@ -628,9 +625,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
         // reset preview parameters for camera device
         if (DEVICE_OK == ret)
         {
-          // postpone removal of the handle from map until we actually stopped device itself.
-          previewdisplay_map_.erase(devhandle);
-
           // update state of device to open
           obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
           obj_devstate.shmemtype = SHMEME_UNKNOWN;
@@ -1153,44 +1147,36 @@ std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string wi
                                                std::string mem_type, int key)
 {
     std::string media_id = "";
-    if (display_control_)
+    auto pdc = std::make_shared<PreviewDisplayControl>(window_id);
+    if (pdc)
     {
-
         std::string camera_id = "camera"
                               + std::to_string(CommandManager::getInstance().getCameraId(handle));
         CAMERA_FORMAT camera_format;
         getFormat(handle, &camera_format);
-        media_id = display_control_->load(std::move(camera_id), std::move(window_id), camera_format, std::move(mem_type), key, handle);
+        media_id = pdc->load(std::move(camera_id), std::move(window_id), camera_format, std::move(mem_type), key, handle);
         if (!media_id.empty())
         {
             // We do not check the result because uMediaServer always returns SUCCESS.
-            display_control_->play(media_id);
+            pdc->play(media_id);
         }
     }
+
+    ums_controls.push_back({handle, media_id, std::move(pdc)});
     return media_id;
 }
 
 bool VirtualDeviceManager::stopPreviewDisplay(int handle)
 {
-    if (display_control_)
+    for (auto it = ums_controls.begin(); it != ums_controls.end(); ++it)
     {
-        std::map<int, std::string>::iterator it;
-        for (it = previewdisplay_map_.begin(); it != previewdisplay_map_.end(); ++it)
-        {
-            if (handle == it->first)
-            {
-                // Intentionally do not check the result not to corrupt camera state when objcontrol_.stopPreview() fails.
-                display_control_->unload(it->second);
-                return true;
-            }
+        if (it->handle == handle) {
+            it->display_control->unload(it->mediaId);
+            ums_controls.erase(it);
+            return true;
         }
     }
     return false;
-}
-
-void VirtualDeviceManager::setDisplayControl(PreviewDisplayControl *dpy_control)
-{
-    display_control_ = dpy_control;
 }
 
 CameraDeviceState VirtualDeviceManager::getDeviceState(int devhandle)
