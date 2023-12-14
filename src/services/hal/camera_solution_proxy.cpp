@@ -389,7 +389,10 @@ void CameraSolutionProxy::run()
         }
         if (checkAlive())
         {
-            processing(queueJob_.front());
+            {
+                std::lock_guard<std::mutex> lg(mtxJob_);
+                processing(queueJob_.front());
+            }
             popJob();
         }
     }
@@ -469,9 +472,9 @@ bool CameraSolutionProxy::wait()
 
 void CameraSolutionProxy::pushJob(int inValue)
 {
+    std::lock_guard<std::mutex> lg(mtxJob_);
     if (queueJob_.empty())
     {
-        std::lock_guard<std::mutex> lg(mtxJob_);
         queueJob_.push(inValue);
         notify();
     }

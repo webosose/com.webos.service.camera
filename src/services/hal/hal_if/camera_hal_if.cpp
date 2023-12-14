@@ -491,6 +491,7 @@ extern "C"
         camera_handle_t *camera_handle = (camera_handle_t *)h;
         if (camera_handle)
         {
+            const std::lock_guard<std::mutex> lock(camera_handle->lock);
             *fd = camera_handle->fd;
         }
         return CAMERA_ERROR_NONE;
