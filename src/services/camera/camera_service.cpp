@@ -35,9 +35,7 @@ struct sigaction sigact_service_crash;
 void signal_handler_service_crash(int sig);
 void install_handler_service_crash();
 
-const std::string service = "com.webos.service.camera2";
-
-CameraService::CameraService() : LS::Handle(LS::registerService(service.c_str()))
+CameraService::CameraService() : LS::Handle(LS::registerService(cstr_uricameramain.c_str()))
 {
     LS_CATEGORY_BEGIN(CameraService, "/")
     LS_CATEGORY_METHOD(open)

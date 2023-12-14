@@ -90,7 +90,7 @@ CameraHalProxy::CameraHalProxy() : state_(State::INIT)
     pthread_setname_np(loopThread_->native_handle(), "halproxy_luna");
 
     std::string guid         = GenerateUniqueID()();
-    std::string service_name = CameraHalProcessName + "." + guid;
+    std::string service_name = cstr_uricameramain + "." + guid;
     luna_client              = std::make_unique<LunaClient>(service_name.c_str(), c);
     g_main_context_unref(c);
 

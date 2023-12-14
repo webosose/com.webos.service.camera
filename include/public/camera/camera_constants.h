@@ -153,6 +153,7 @@ const std::string cstr_continuous      = "MODE_CONTINUOUS";
 const std::string cstr_connect         = "device_connect";
 const std::string cstr_disconnect      = "device_disconnect";
 const std::string cstr_previewfault    = "preview_fault";
+const std::string cstr_uricameramain   = "com.webos.service.camera2";
 const std::string cstr_uricamearhal    = "com.webos.camerahal.";
 
 #endif /*CAMERA_CONST_H_*/
