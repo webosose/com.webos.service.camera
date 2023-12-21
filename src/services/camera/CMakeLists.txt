@@ -22,6 +22,9 @@ webos_add_compiler_flags(ALL ${PBNJSON_CPP_CFLAGS})
 
 include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/appcast)
 include_directories(${CMAKE_SOURCE_DIR}/src/plugins/notifier/pdm)
+if(DAC_IMPLEMENTATION)
+    include_directories(${CMAKE_SOURCE_DIR}/src/security)
+endif()
 
 #service
 include_directories(${CMAKE_SOURCE_DIR}/src/services/camera)
@@ -48,6 +51,14 @@ set (SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/common/camera_types.cpp
     ${CMAKE_SOURCE_DIR}/src/services/common/process.cpp
     )
+
+# DAC
+if(DAC_IMPLEMENTATION)
+    set (SRC_LIST
+        ${SRC_LIST}
+        ${CMAKE_SOURCE_DIR}/src/security/camera_dac_policy.cpp
+    )
+endif()
 
 add_executable(${PROJECT_NAME}
                ${SRC_LIST})

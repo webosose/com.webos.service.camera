@@ -133,6 +133,7 @@
 #define CONST_PARAM_NAME_ENABLE "enable"
 #define CONST_PARAM_NAME_METASIZE_HINT "metaSizeHint"
 #define CONST_PARAM_NAME_REGISTER "register"
+#define CONST_CLIENT_USERID "uid"
 
 const int n_invalid_id  = -1;
 const int extra_buffer  = 1024;
@@ -157,5 +158,8 @@ const std::string cstr_previewfault    = "preview_fault";
 const std::string cstr_capturefault    = "capture_fault";
 const std::string cstr_uricameramain   = "com.webos.service.camera2";
 const std::string cstr_uricamearhal    = "com.webos.camerahal.";
+#ifdef DAC_ENABLED
+const std::string cstr_capturedir = "/media/internal/DCIM/Camera/";
+#endif
 
 #endif /*CAMERA_CONST_H_*/

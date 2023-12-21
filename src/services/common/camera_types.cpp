@@ -79,6 +79,9 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
     {DEVICE_ERROR_TIMEOUT, "Request timeout"},
     {DEVICE_ERROR_FAIL_TO_WRITE_FILE, "Fail to write file"},
+#ifdef DAC_ENABLED
+    {DEVICE_ERROR_DAC_POLICY_VIOLATION, "DAC policy violation"},
+#endif
 };
 
 std::map<EventType, std::string> g_event_string = {

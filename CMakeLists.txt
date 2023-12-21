@@ -27,6 +27,9 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 webos_add_compiler_flags(ALL -Wall -funwind-tables)
 webos_add_compiler_flags(ALL -Wall -rdynamic)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt -Werror -Wno-psabi")
+if(DAC_IMPLEMENTATION)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lrt -lacl -Werror -Wno-psabi")
+endif()
 
 # Use WEBOS_INSTALL_LIBDIR instead of the hardcoded path
 add_compile_definitions(WEBOS_INSTALL_LIBDIR="${WEBOS_INSTALL_LIBDIR}")
@@ -45,6 +48,10 @@ webos_add_compiler_flags(ALL ${LS2++_CFLAGS})
 pkg_check_modules(PMLOGLIB REQUIRED PmLogLib)
 include_directories(${PMLOGLIB_INCLUDE_DIRS})
 webos_add_compiler_flags(ALL ${PMLOGLIB_CFLAGS_OTHER})
+
+if(DAC_IMPLEMENTATION)
+    add_definitions(-DDAC_ENABLED)
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include/public)
 include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)

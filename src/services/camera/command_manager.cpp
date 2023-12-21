@@ -22,6 +22,9 @@
 #include "addon.h"
 #include "camera_constants.h"
 #include "device_manager.h"
+#ifdef DAC_ENABLED
+#include "camera_dac_policy.h"
+#endif
 
 VirtualDeviceManager *CommandManager::getVirtualDeviceMgrObj(int devhandle)
 {
@@ -235,18 +238,29 @@ DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle)
 
 DEVICE_RETURN_CODE_T CommandManager::startCapture(int devhandle, CAMERA_FORMAT sformat,
                                                   const std::string &imagepath,
-                                                  const std::string &mode, int ncount)
+                                                  const std::string &mode, int ncount, int userid)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
 
+    std::string capture_path = imagepath;
+#if DAC_ENABLED
+    if (!CameraDacPolicy::getInstance().checkCredential(userid, capture_path))
+    {
+        return DEVICE_ERROR_DAC_POLICY_VIOLATION;
+    }
+    PLOGI("capture_path: %s", capture_path.c_str());
+
+    CameraDacPolicy::getInstance().apply(userid);
+#endif
+
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
     {
         // capture image
-        return ptr->startCapture(devhandle, sformat, imagepath, mode, ncount);
+        return ptr->startCapture(devhandle, sformat, capture_path, mode, ncount);
     }
     else
         return DEVICE_ERROR_UNKNOWN;

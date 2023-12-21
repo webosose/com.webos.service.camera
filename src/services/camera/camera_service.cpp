@@ -440,10 +440,12 @@ bool CameraService::startCapture(LSMessage &message)
             PLOGI("path: %s\n", obj_startcapture.getImagePath().c_str());
             PLOGI("mode: %s\n", obj_startcapture.strGetCaptureMode().c_str());
             PLOGI("nImage : %d\n", obj_startcapture.getnImage());
+            PLOGI("uid : %d\n", obj_startcapture.getUserId());
 
             err_id = CommandManager::getInstance().startCapture(
                 ndevhandle, obj_startcapture.rGetParams(), obj_startcapture.getImagePath(),
-                obj_startcapture.strGetCaptureMode(), obj_startcapture.getnImage());
+                obj_startcapture.strGetCaptureMode(), obj_startcapture.getnImage(),
+                obj_startcapture.getUserId());
         }
         if (DEVICE_OK != err_id)
         {

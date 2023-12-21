@@ -230,6 +230,11 @@ const char *startCaptureSchema = "{ \
           \"default\": 1 \
         } \
       } \
+    }, \
+    \"uid\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The UID of Capture Requestor Schema\", \
+      \"default\": -1 \
     } \
   } \
 }";
