@@ -3,3 +3,4 @@ resources
 oe-logs
 oe-workdir
 .vscode
+include/public/camera/plugin/plugin_factory.hpp
