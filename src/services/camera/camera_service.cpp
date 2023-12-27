@@ -434,6 +434,10 @@ bool CameraService::startCapture(LSMessage &message)
         {
             err_id = DEVICE_ERROR_UNSUPPORTED_FORMAT;
         }
+        else if (obj_startcapture.strGetCaptureMode() == cstr_burst && obj_startcapture.getnImage() < 1)
+        {
+            err_id = DEVICE_ERROR_JSON_PARSING;
+        }
         else
         {
             PLOGI("ndevhandle %d\n", ndevhandle);
