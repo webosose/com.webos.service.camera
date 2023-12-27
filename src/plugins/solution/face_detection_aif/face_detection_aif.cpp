@@ -55,6 +55,7 @@ void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *ls
     EdgeAIVision::getInstance().startup();
 
     // clang-format off
+#ifdef PLATFORM_O22
     std::string param = json{
         {
             "param",
@@ -76,6 +77,28 @@ void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *ls
                 }
             }
         }}.dump();
+#else
+    std::string param = json{
+        {
+            "param",
+            {
+                {
+                    "autoDelegate",
+                    {
+                        {"policy", "CPU_ONLY"}
+                    }
+                },
+                {
+                    "modelParam",
+                    {
+                        {"scoreThreshold", 0.7},
+                        {"nmsThreshold", 0.3},
+                        {"topK", 5000}
+                    }
+                }
+            }
+        }}.dump();
+#endif
     // clang-format on
 
     if (access(AIF_PARAM_FILE, F_OK) == 0)
