@@ -96,9 +96,6 @@ DeviceControl::DeviceControl()
 
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, int cnt) const
 {
-    FILE *fp;
-    char image_name[100] = {};
-
     auto path = str_imagepath_;
 
     if (path.empty())
@@ -145,36 +142,39 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
         gettimeofday(&tmnow, NULL);
 
         // create file to save data based on format
-        int result = -1;
-        if (capture_format_.eFormat == CAMERA_FORMAT_YUV)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.yuv",
-                              timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
-                              (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              (intmax_t)(tmnow.tv_usec / 10000));
-        else if (capture_format_.eFormat == CAMERA_FORMAT_JPEG)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.jpeg",
-                              timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
-                              (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              (intmax_t)(tmnow.tv_usec / 10000));
-        else if (capture_format_.eFormat == CAMERA_FORMAT_H264ES)
-            result = snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd.h264",
-                              timePtr->tm_mday, (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900,
-                              (timePtr->tm_hour), (timePtr->tm_min), (timePtr->tm_sec),
-                              (intmax_t)(tmnow.tv_usec / 10000));
+        char image_name[100] = {};
+        int result =
+            snprintf(image_name, 100, "Picture%02d%02d%02d-%02d%02d%02d%02jd", timePtr->tm_mday,
+                     (timePtr->tm_mon) + 1, (timePtr->tm_year) + 1900, (timePtr->tm_hour),
+                     (timePtr->tm_min), (timePtr->tm_sec), (intmax_t)(tmnow.tv_usec / 10000));
 
         if (result >= 0 && result < 100)
         {
-            path = path + image_name;
+            path += image_name;
         }
         else
         {
             PLOGE("snprintf encountered an error or the formatted string was truncated.");
             return DEVICE_ERROR_UNKNOWN;
         }
+
+        if (cstr_burst == str_capturemode_)
+        {
+            path += '_' + std::to_string(cnt) + '.';
+        }
+
+        std::string ext;
+        if (capture_format_.eFormat == CAMERA_FORMAT_YUV)
+            path += "yuv";
+        else if (capture_format_.eFormat == CAMERA_FORMAT_JPEG)
+            path += "jpeg";
+        else if (capture_format_.eFormat == CAMERA_FORMAT_H264ES)
+            path += "h264";
     }
 
     PLOGD("path : %s\n", path.c_str());
 
+    FILE *fp;
     if (NULL == (fp = fopen(path.c_str(), "w")))
     {
         PLOGE("path : fopen failed\n");
