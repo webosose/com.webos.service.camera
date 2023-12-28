@@ -17,22 +17,22 @@
 #define LOG_TAG "IPCSharedMemory"
 #include "ipc_shared_memory.h"
 #include "camera_types.h"
+#include <algorithm>
 #include <errno.h>
 #include <fcntl.h>
+#include <iomanip>
+#include <random>
 #include <stdbool.h>
+#include <stdexcept>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
 #include <sys/ipc.h>
 #include <sys/sem.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <string>
-#include <random>
-#include <algorithm>
 #include <unordered_set>
-#include <stdexcept>
-#include <iomanip>
 // constants
 
 #define CAMSHKEY 7010
@@ -173,28 +173,28 @@ union semun
 
 unsigned long long random10()
 {
-    static std::string digits = "0123456789" ;
-    static std::mt19937 rng( std::random_device{}() ) ;
+    static std::string digits = "0123456789";
+    static std::mt19937 rng(std::random_device{}());
 
-    std::shuffle( digits.begin(), digits.end(), rng ) ;
-    return std::stoull(digits) ;
+    std::shuffle(digits.begin(), digits.end(), rng);
+    return std::stoull(digits);
 }
 
 key_t getShmemKey()
 {
-    int mode = 0666;
-    key_t shmemKey = 0;
+    int mode                           = 0666;
+    key_t shmemKey                     = 0;
     unsigned long long randomLongValue = 0;
-    static std::unordered_set< unsigned long long > history;
+    static std::unordered_set<unsigned long long> history;
 
     for (int count = CAMSHKEY; count < 0xFFFF; count++)
     {
-        randomLongValue = random10() ;
-        if( history.insert(randomLongValue).second )
+        randomLongValue = random10();
+        if (history.insert(randomLongValue).second)
         {
-            if(randomLongValue > TEN_DIGIT_START_VALUE && randomLongValue < SIGNED_INT_MAX)
+            if (randomLongValue > TEN_DIGIT_START_VALUE && randomLongValue < SIGNED_INT_MAX)
             {
-                shmemKey = (key_t) randomLongValue;
+                shmemKey = (key_t)randomLongValue;
                 PLOGI("random key generation value =%llu", randomLongValue);
                 if (shmget(shmemKey, 0, mode) == -1)
                     break;
@@ -219,7 +219,7 @@ SHMEM_STATUS_T IPCSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, key_t *pSh
     PLOGI("hShmem = %p, pKey = %p, unitSize=%d, metaSize=%d, unitNum=%d\n", *phShmem, pShmemKey,
           unitSize, metaSize, unitNum);
 
-    int shmemMode = 0666;
+    int shmemMode  = 0666;
     key_t shmemKey = getShmemKey();
 
     *pShmemKey    = shmemKey;
@@ -677,7 +677,7 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
 
     if (nOpenMode == MODE_CREATE)
     {
-        shmemKey = getShmemKey();
+        shmemKey   = getShmemKey();
         *pShmemKey = shmemKey;
 
         if (unitSize >= 0 && unitSize <= SHMEM_UNIT_SIZE_MAX && unitNum >= 0 &&

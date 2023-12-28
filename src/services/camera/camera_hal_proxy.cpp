@@ -16,6 +16,7 @@
 
 #define LOG_TAG "CameraHalProxy"
 #include "camera_hal_proxy.h"
+#include "command_manager.h"
 #include "generate_unique_id.h"
 #include "json_utils.h"
 #include "luna-service2/lunaservice.hpp"
@@ -23,7 +24,6 @@
 #include "process.h"
 #include <ios>
 #include <system_error>
-#include "command_manager.h"
 
 const std::string CameraHalProcessName = "com.webos.service.camera2.hal";
 
@@ -53,7 +53,7 @@ static bool cameraHalServiceCb(const char *msg, void *data)
     else if (event_type == getEventNotificationString(EventType::EVENT_TYPE_CAPTURE_FAULT))
     {
         event_key = CONST_EVENT_KEY_CAPTURE_FAULT;
-        for (const auto& handle : client->devHandles_)
+        for (const auto &handle : client->devHandles_)
             CommandManager::getInstance().stopCapture(handle, false);
         client->devHandles_.clear();
     }
@@ -217,7 +217,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
     jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
     jin[CONST_PARAM_NAME_MODE]       = mode;
 
-    if (devHandle) {
+    if (devHandle)
+    {
         auto itr = std::find(devHandles_.begin(), devHandles_.end(), devHandle);
         if (itr == devHandles_.end())
             devHandles_.push_back(devHandle);

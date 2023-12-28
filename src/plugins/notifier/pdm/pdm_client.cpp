@@ -183,15 +183,15 @@ bool PDMClient::getDeviceListCallback(const char *message)
     }
 
     std::vector<DEVICE_LIST_T> devList;
-    for (auto& jDevice : jPayload["videoDeviceList"])
+    for (auto &jDevice : jPayload["videoDeviceList"])
     {
-        const VideoDevice& device = jDevice;
+        const VideoDevice &device = jDevice;
 
         if (device.devInfo.strDeviceType.empty())
             continue;
 
         unsigned long subdeviceCount = device.subDeviceList.size();
-        for (auto& subdevice : device.subDeviceList)
+        for (auto &subdevice : device.subDeviceList)
         {
             if (subdevice->devPath.find("/dev/video") == std::string::npos)
                 continue;

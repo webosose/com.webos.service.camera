@@ -24,13 +24,13 @@
 #include "camera_types.h"
 #include "ipc_posix_shared_memory.h"
 #include "ipc_shared_memory.h"
+#include "storage_monitor.h"
 #include <condition_variable>
 #include <plugin_factory.hpp>
 #include <string>
 #include <thread>
 #include <unistd.h>
 #include <vector>
-#include "storage_monitor.h"
 
 typedef struct
 {
@@ -85,7 +85,7 @@ private:
     LSHandle *sh_;
     std::string subskey_;
     int camera_id_;
-    void notifyDeviceFault_(EventType eventType, DEVICE_RETURN_CODE_T error=DEVICE_OK);
+    void notifyDeviceFault_(EventType eventType, DEVICE_RETURN_CODE_T error = DEVICE_OK);
 
     StorageMonitor storageMonitor_;
 

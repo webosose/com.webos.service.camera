@@ -289,18 +289,19 @@ bool CameraService::close(LSMessage &message)
     }
 
     // close the device if there is no error on previous checks
-    if (err_id == DEVICE_OK) {
-       // close device here
-       err_id = CommandManager::getInstance().close(ndevhandle);
+    if (err_id == DEVICE_OK)
+    {
+        // close device here
+        err_id = CommandManager::getInstance().close(ndevhandle);
 
-       if (DEVICE_OK != err_id)
-       {
-           PLOGD("err_id != DEVICE_OK\n");
-       }
-       else
-       {
-           PLOGD("err_id == DEVICE_OK\n");
-       }
+        if (DEVICE_OK != err_id)
+        {
+            PLOGD("err_id != DEVICE_OK\n");
+        }
+        else
+        {
+            PLOGD("err_id == DEVICE_OK\n");
+        }
     }
 
     std::string errorMsg = getErrorString(err_id);
@@ -402,8 +403,7 @@ bool CameraService::stopPreview(LSMessage &message)
         }
     }
 
-    obj_stoppreview.setMethodReply(err_id == DEVICE_OK, (int)err_id,
-                                           getErrorString(err_id));
+    obj_stoppreview.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_stoppreview.createObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -434,7 +434,8 @@ bool CameraService::startCapture(LSMessage &message)
         {
             err_id = DEVICE_ERROR_UNSUPPORTED_FORMAT;
         }
-        else if (obj_startcapture.strGetCaptureMode() == cstr_burst && obj_startcapture.getnImage() < 1)
+        else if (obj_startcapture.strGetCaptureMode() == cstr_burst &&
+                 obj_startcapture.getnImage() < 1)
         {
             err_id = DEVICE_ERROR_JSON_PARSING;
         }
@@ -461,8 +462,7 @@ bool CameraService::startCapture(LSMessage &message)
         }
     }
 
-    obj_startcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id,
-                                            getErrorString(err_id));
+    obj_startcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_startcapture.createStartCaptureObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -501,8 +501,7 @@ bool CameraService::stopCapture(LSMessage &message)
         }
     }
 
-    obj_stopcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id,
-                                           getErrorString(err_id));
+    obj_stopcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_stopcapture.createObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -670,20 +669,21 @@ bool CameraService::getProperties(LSMessage &message)
         {
             err_id = validateClient(&message, ndevhandle);
 
-            if (err_id == DEVICE_OK) {
-            // get properties here
-            CAMERA_PROPERTIES_T dev_property;
-            err_id = CommandManager::getInstance().getProperty(ndevhandle, &dev_property);
+            if (err_id == DEVICE_OK)
+            {
+                // get properties here
+                CAMERA_PROPERTIES_T dev_property;
+                err_id = CommandManager::getInstance().getProperty(ndevhandle, &dev_property);
 
-            if (DEVICE_OK != err_id)
-            {
-                PLOGD("err_id != DEVICE_OK\n");
-            }
-            else
-            {
-                PLOGD("err_id == DEVICE_OK\n");
-                obj_getproperties.setCameraProperties(dev_property);
-            }
+                if (DEVICE_OK != err_id)
+                {
+                    PLOGD("err_id != DEVICE_OK\n");
+                }
+                else
+                {
+                    PLOGD("err_id == DEVICE_OK\n");
+                    obj_getproperties.setCameraProperties(dev_property);
+                }
             }
         }
         else
@@ -693,8 +693,7 @@ bool CameraService::getProperties(LSMessage &message)
         }
     }
 
-    obj_getproperties.setMethodReply(err_id == DEVICE_OK, (int)err_id,
-                                             getErrorString(err_id));
+    obj_getproperties.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_getproperties.createGetPropertiesObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -755,8 +754,7 @@ bool CameraService::setProperties(LSMessage &message)
         }
     }
 
-    objsetproperties.setMethodReply(err_id == DEVICE_OK, (int)err_id,
-                                                getErrorString(err_id));
+    objsetproperties.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = objsetproperties.createSetPropertiesObjectJsonString();
     PLOGI("output_reply %s\n", output_reply.c_str());
@@ -838,8 +836,7 @@ bool CameraService::getEventNotification(LSMessage &message)
     {
         bool return_val =
             event_obj.addSubscription(this->get(), CONST_EVENT_KEY_PREVIEW_FAULT, message);
-        return_val =
-            event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAPTURE_FAULT, message);
+        return_val = event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAPTURE_FAULT, message);
 
         obj_jsonparser.setSubcribed(return_val);
         obj_jsonparser.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
@@ -976,9 +973,9 @@ bool CameraService::addClientWatcher(LSHandle *handle, LSMessage *message, int n
     return true;
 }
 
-DEVICE_RETURN_CODE_T CameraService::validateClient(LSMessage* message, int ndevice_handle)
+DEVICE_RETURN_CODE_T CameraService::validateClient(LSMessage *message, int ndevice_handle)
 {
-    auto client_id    = LSMessageGetSender(message);
+    auto client_id = LSMessageGetSender(message);
 
     // camera id validation check
     if (ndevice_handle == n_invalid_id)

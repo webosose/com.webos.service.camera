@@ -20,15 +20,16 @@
 /*-----------------------------------------------------------------------------
  (File Inclusions)
  ----------------------------------------------------------------------------*/
+#include "camera_types.h"
+#include <condition_variable>
+#include <functional>
 #include <string>
 #include <thread>
-#include <functional>
-#include <condition_variable>
-#include "camera_types.h"
 
-class StorageMonitor {
+class StorageMonitor
+{
 public:
-    using HandlerCb = std::function<bool(const DEVICE_RETURN_CODE_T, void*)>;
+    using HandlerCb = std::function<bool(const DEVICE_RETURN_CODE_T, void *)>;
 
 private:
     std::string path_;
@@ -40,7 +41,7 @@ private:
 
     bool monitoring_;
 
-    void* deviceControl_;
+    void *deviceControl_;
     HandlerCb callback_;
 
 private:
@@ -54,7 +55,11 @@ public:
     bool monitorInProgress();
 
     void setPath(std::string path) { path_ = std::move(path); }
-    void registerCallback(HandlerCb callback, void* dev) { callback_ = std::move(callback); deviceControl_ = dev;}
+    void registerCallback(HandlerCb callback, void *dev)
+    {
+        callback_      = std::move(callback);
+        deviceControl_ = dev;
+    }
 
     bool startMonitor();
     bool stopMonitor();

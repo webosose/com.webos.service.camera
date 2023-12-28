@@ -23,13 +23,13 @@
 #include <algorithm>
 #include <ctime>
 #include <errno.h>
+#include <filesystem>
 #include <json_utils.h>
 #include <nlohmann/json.hpp>
 #include <pbnjson.h>
 #include <signal.h>
 #include <sys/time.h>
 #include <system_error>
-#include <filesystem>
 
 #define FRAME_COUNT 8
 
@@ -725,9 +725,9 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
     return DEVICE_OK;
 }
 
-static bool storageMonitorCb(const DEVICE_RETURN_CODE_T errorCode, void* ptr)
+static bool storageMonitorCb(const DEVICE_RETURN_CODE_T errorCode, void *ptr)
 {
-    DeviceControl* device = (DeviceControl*)ptr;
+    DeviceControl *device = (DeviceControl *)ptr;
     if (device)
         device->notifyStorageError(errorCode);
 
@@ -736,7 +736,8 @@ static bool storageMonitorCb(const DEVICE_RETURN_CODE_T errorCode, void* ptr)
 
 bool DeviceControl::notifyStorageError(const DEVICE_RETURN_CODE_T ret)
 {
-    if (b_iscontinuous_capture_) {
+    if (b_iscontinuous_capture_)
+    {
         PLOGE("Storage reaches the threshold limit. error code %d", (int)ret);
         if (ret != DEVICE_OK)
             notifyDeviceFault_(EventType::EVENT_TYPE_CAPTURE_FAULT, ret);
@@ -1092,15 +1093,17 @@ void DeviceControl::notifyDeviceFault_(EventType eventType, DEVICE_RETURN_CODE_T
         int fd          = halFd_;
         auto event_name = getEventNotificationString(eventType);
 
-        PLOGI("[fd : %d] notifying %s... num_subscribers = %u\n", fd, event_name.c_str(), num_subscribers);
+        PLOGI("[fd : %d] notifying %s... num_subscribers = %u\n", fd, event_name.c_str(),
+              num_subscribers);
 
         if (num_subscribers > 0)
         {
             reply = "{\"returnValue\": true, \"eventType\": \"" + event_name +
                     "\", \"id\": \"camera" + std::to_string(camera_id_) + "\"";
-            if (error != DEVICE_OK) {
-                reply += ", \"errorCode\": "   + std::to_string((int)error);
-                reply += ", \"errorText\": \"" + getErrorString(error)      + "\"";
+            if (error != DEVICE_OK)
+            {
+                reply += ", \"errorCode\": " + std::to_string((int)error);
+                reply += ", \"errorText\": \"" + getErrorString(error) + "\"";
             }
             reply += "}";
             if (!LSSubscriptionReply(sh_, subskey_.c_str(), reply.c_str(), &lserror))

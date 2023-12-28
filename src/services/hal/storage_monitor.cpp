@@ -18,21 +18,17 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "storage_monitor.h"
-#include <sys/statvfs.h>
 #include <chrono>
+#include <sys/statvfs.h>
 
 using namespace std::chrono_literals;
 
 StorageMonitor::StorageMonitor()
-    : path_(""), monitoring_(false),
-      deviceControl_(nullptr), callback_(nullptr)
+    : path_(""), monitoring_(false), deviceControl_(nullptr), callback_(nullptr)
 {
 }
 
-StorageMonitor::~StorageMonitor()
-{
-    stopMonitor();
-}
+StorageMonitor::~StorageMonitor() { stopMonitor(); }
 
 bool StorageMonitor::monitorInProgress()
 {
@@ -43,8 +39,10 @@ bool StorageMonitor::monitorInProgress()
 void StorageMonitor::run()
 {
     PLOGI("Monitoring thread started");
-    do {
-        if (!isEnoughSpaceAvailable(path_) && callback_) {
+    do
+    {
+        if (!isEnoughSpaceAvailable(path_) && callback_)
+        {
             callback_(DEVICE_ERROR_FAIL_TO_WRITE_FILE, deviceControl_);
         }
         {
@@ -78,7 +76,8 @@ bool StorageMonitor::stopMonitor()
         return true;
 
     monitoring_ = false;
-    if (tidMonitor_.joinable()) {
+    if (tidMonitor_.joinable())
+    {
         tidMonitor_.join();
     }
     callback_      = nullptr;
@@ -96,7 +95,7 @@ bool StorageMonitor::isEnoughSpaceAvailable(std::string path)
     if (path.empty())
         return false;
 
-    if (statvfs(path.c_str(), &fiData) < 0 )
+    if (statvfs(path.c_str(), &fiData) < 0)
     {
         PLOGE("Failed to stat! : %s", path.c_str());
         return false;
@@ -111,7 +110,7 @@ bool StorageMonitor::isEnoughSpaceAvailable(std::string path)
     freeSpace = (f_bavail * 100 / f_blocks) * f_bsize / f_frsize;
 
     PLOGI("free space limit %lu", freeSpace);
-    if(freeSpace < MEMORY_SPACE_THRESHOLD)
+    if (freeSpace < MEMORY_SPACE_THRESHOLD)
         return false;
 
     return true;
