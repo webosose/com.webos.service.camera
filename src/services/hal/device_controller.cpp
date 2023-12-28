@@ -160,16 +160,16 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
 
         if (cstr_burst == str_capturemode_)
         {
-            path += '_' + std::to_string(cnt) + '.';
+            path += '_' + std::to_string(cnt);
         }
 
         std::string ext;
         if (capture_format_.eFormat == CAMERA_FORMAT_YUV)
-            path += "yuv";
+            path += ".yuv";
         else if (capture_format_.eFormat == CAMERA_FORMAT_JPEG)
-            path += "jpeg";
+            path += ".jpeg";
         else if (capture_format_.eFormat == CAMERA_FORMAT_H264ES)
-            path += "h264";
+            path += ".h264";
     }
 
     PLOGD("path : %s\n", path.c_str());
