@@ -167,7 +167,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == close_device(camera_handle))
+    if (CAMERA_ERROR_NONE != close_device(camera_handle))
     {
       retVal = CAMERA_ERROR_DEVICE_CLOSE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "close_device failed");
@@ -201,7 +201,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == set_format(camera_handle, stream_format))
+    if (CAMERA_ERROR_NONE != set_format(camera_handle, stream_format))
     {
       retVal = CAMERA_ERROR_SET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL, "set_format failed");
@@ -231,7 +231,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == get_format(camera_handle, stream_format))
+    if (CAMERA_ERROR_NONE != get_format(camera_handle, stream_format))
     {
       retVal = CAMERA_ERROR_GET_FORMAT;
       HAL_LOG_INFO(CONST_MODULE_HAL, "get_format failed");
@@ -261,7 +261,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == set_buffer(camera_handle, NoBuffer, IOMode, usrpbufs))
+    if (CAMERA_ERROR_NONE != set_buffer(camera_handle, NoBuffer, IOMode, usrpbufs))
     {
       retVal = CAMERA_ERROR_SET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "set_buffer failed ");
@@ -291,7 +291,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == get_buffer(camera_handle, buf))
+    if (CAMERA_ERROR_NONE != get_buffer(camera_handle, buf))
     {
       retVal = CAMERA_ERROR_GET_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "get_buffer failed");
@@ -321,7 +321,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == release_buffer(camera_handle, buf))
+    if (CAMERA_ERROR_NONE != release_buffer(camera_handle, buf))
     {
       retVal = CAMERA_ERROR_RELEASE_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "release_buffer failed");
@@ -351,7 +351,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == destroy_buffer(camera_handle))
+    if (CAMERA_ERROR_NONE != destroy_buffer(camera_handle))
     {
       retVal = CAMERA_ERROR_DESTROY_BUFFER;
       HAL_LOG_INFO(CONST_MODULE_HAL, "destroy_buffer failed");
@@ -381,7 +381,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == start_capture(camera_handle))
+    if (CAMERA_ERROR_NONE != start_capture(camera_handle))
     {
       retVal = CAMERA_ERROR_START_CAPTURE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "start_capture failed");
@@ -415,7 +415,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == stop_capture(camera_handle))
+    if (CAMERA_ERROR_NONE != stop_capture(camera_handle))
     {
       retVal = CAMERA_ERROR_STOP_CAPTURE;
       HAL_LOG_INFO(CONST_MODULE_HAL, "stop_capture failed");
@@ -449,7 +449,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == set_properties(camera_handle, cam_in_params))
+    if (CAMERA_ERROR_NONE != set_properties(camera_handle, cam_in_params))
     {
       retVal = CAMERA_ERROR_SET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "set_properties failed");
@@ -478,7 +478,7 @@ extern "C"
       return retVal;
     }
 
-    if (CAMERA_ERROR_UNKNOWN == get_properties(camera_handle, cam_out_params))
+    if (CAMERA_ERROR_NONE != get_properties(camera_handle, cam_out_params))
     {
       retVal = CAMERA_ERROR_GET_PROPERTIES;
       HAL_LOG_INFO(CONST_MODULE_HAL, "get_properties failed");
@@ -510,7 +510,7 @@ extern "C"
     camera_handle_t *camera_handle = (camera_handle_t *)handle;
 
     retVal = get_info(camera_handle, caminfo, devicenode);
-    if (CAMERA_ERROR_UNKNOWN == retVal)
+    if (CAMERA_ERROR_NONE != retVal)
     {
       retVal = CAMERA_ERROR_GET_INFO;
       HAL_LOG_INFO(CONST_MODULE_HAL, "get_info failed");
@@ -529,10 +529,10 @@ extern "C"
       const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
       retVal = get_buffer_fd(camera_handle, bufFd, count);
-      if (retVal == CAMERA_ERROR_UNKNOWN)
+      if (retVal != CAMERA_ERROR_NONE)
       {
         retVal = CAMERA_ERROR_GET_BUFFER_FD;
-        HAL_LOG_INFO(CONST_MODULE_HAL, "CAMERA_ERROR_UNKNOWN failed ");
+        HAL_LOG_INFO(CONST_MODULE_HAL, "get_buffer_fd failed ");
       }
     }
     else
@@ -553,7 +553,7 @@ extern "C"
       const std::lock_guard<std::mutex> lock(camera_handle->lock);
 
       retVal = destroy_dma_fd(camera_handle);
-      if (retVal == CAMERA_ERROR_UNKNOWN)
+      if (retVal != CAMERA_ERROR_NONE)
       {
         retVal = CAMERA_ERROR_GET_BUFFER_FD;
         HAL_LOG_INFO(CONST_MODULE_HAL, "camera_hal_if_destroy_dmafd failed \n");

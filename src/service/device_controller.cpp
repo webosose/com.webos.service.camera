@@ -618,7 +618,13 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(void *handle, std::string memty
 
     // get current saved format for device
     stream_format_t streamformat;
-    camera_hal_if_get_format(handle, &streamformat);
+    auto ret = camera_hal_if_get_format(handle, &streamformat);
+    if (ret != CAMERA_ERROR_NONE)
+    {
+        PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_format failed");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
     PMLOG_INFO(CONST_MODULE_DC, "Driver set width : %d height : %d", streamformat.stream_width,
                streamformat.stream_height);
 
@@ -1035,7 +1041,8 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceProperty(void *handle, CAMERA_PROPE
 
   if (CAMERA_ERROR_NONE != camera_hal_if_get_properties(handle, &out_params))
   {
-    return DEVICE_ERROR_UNKNOWN;
+      PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_properties failed");
+      return DEVICE_ERROR_UNKNOWN;
   }
 
   //update stGetData
@@ -1062,7 +1069,12 @@ DEVICE_RETURN_CODE_T DeviceControl::setDeviceProperty(void *handle, CAMERA_PROPE
     in_params.stGetData.data[i][QUERY_VALUE] = inparams->stGetData.data[i][QUERY_VALUE];
   }
 
-  camera_hal_if_set_properties(handle, &in_params);
+  auto ret = camera_hal_if_set_properties(handle, &in_params);
+  if(ret != CAMERA_ERROR_NONE)
+  {
+      PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_set_properties failed");
+      return DEVICE_ERROR_UNKNOWN;
+  }
 
   return DEVICE_OK;
 }
@@ -1092,7 +1104,13 @@ DEVICE_RETURN_CODE_T DeviceControl::getFormat(void *handle, CAMERA_FORMAT *pform
 {
   // get current saved format for device
   stream_format_t streamformat;
-  camera_hal_if_get_format(handle, &streamformat);
+  auto ret = camera_hal_if_get_format(handle, &streamformat);
+  if(ret != CAMERA_ERROR_NONE)
+  {
+      PMLOG_ERROR(CONST_MODULE_DC, "camera_hal_if_get_format failed");
+      return DEVICE_ERROR_UNKNOWN;
+  }
+
   pformat->nHeight = streamformat.stream_height;
   pformat->nWidth = streamformat.stream_width;
   pformat->eFormat = getCameraFormat(streamformat.pixel_format);
