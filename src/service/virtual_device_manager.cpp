@@ -1159,10 +1159,10 @@ std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string wi
         {
             // We do not check the result because uMediaServer always returns SUCCESS.
             pdc->play(media_id);
+            ums_controls.push_back({handle, media_id, std::move(pdc)});
         }
     }
 
-    ums_controls.push_back({handle, media_id, std::move(pdc)});
     return media_id;
 }
 

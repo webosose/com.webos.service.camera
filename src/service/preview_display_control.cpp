@@ -79,6 +79,12 @@ void PreviewDisplayControl::acquireLSConnection(const std::string &wid)
 {
     if (!sh_)
     {
+        if (!isValidWindowId(wid))
+        {
+            bResult_ = false;
+            return;
+        }
+
         LSError lserror;
         LSErrorInit(&lserror);
 
