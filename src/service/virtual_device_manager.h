@@ -57,7 +57,7 @@ private:
   struct UMSControl {
     int handle;
     std::string mediaId;
-    std::shared_ptr<PreviewDisplayControl> display_control;
+    std::unique_ptr<PreviewDisplayControl> display_control;
   };
   std::vector<UMSControl> ums_controls;
 

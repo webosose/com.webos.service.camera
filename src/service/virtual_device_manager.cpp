@@ -1147,7 +1147,7 @@ std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string wi
                                                std::string mem_type, int key)
 {
     std::string media_id = "";
-    auto pdc = std::make_shared<PreviewDisplayControl>(window_id);
+    auto pdc = std::make_unique<PreviewDisplayControl>(window_id);
     if (pdc)
     {
         std::string camera_id = "camera"
