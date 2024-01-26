@@ -116,7 +116,10 @@ bool CameraDacPolicy::getAcl(const char *file, int *owner_uid, int *owner_gid)
     *owner_uid = st.st_uid;
     *owner_gid = st.st_gid;
 
-    logAclText(acl_text);
+    if (acl_text)
+    {
+        logAclText(acl_text);
+    }
 
     return true;
 }
@@ -348,7 +351,10 @@ bool CameraDacPolicy::apply(int uid)
     std::string str_capture_dir = str_camera_dir + "/" + str_uid;
     if (access(str_capture_dir.c_str(), F_OK) == -1)
     {
-        mkdir(str_capture_dir.c_str(), 0700);
+        if (0 != mkdir(str_capture_dir.c_str(), 0700))
+        {
+            return false;
+        }
     }
 
     std::string dcim_rule_text;
