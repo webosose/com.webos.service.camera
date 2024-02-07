@@ -1,0 +1,7 @@
+{
+    "allowedNames": [
+        "com.webos.camerasolution.*"
+    ],
+    "camerasolution.query": ["dev"],
+    "camerasolution.operation": ["dev"]
+}

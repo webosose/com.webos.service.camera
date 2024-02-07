@@ -1,0 +1,30 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/com.webos.service.camera2",
+    "type": "regular",
+    "trustLevel": "oem",
+    "allowedNames": [
+        "com.webos.service.camera2",
+        "com.webos.service.camera2.*"
+    ],
+    "permissions": [
+        {
+            "service": "com.webos.service.camera2",
+            "outbound": [
+                "com.webos.service.pdm",
+                "com.webos.service.appcasting",
+                "com.webos.service.audio"
+            ]
+        },
+        {
+            "service": "com.webos.service.camera2.*",
+            "outbound": [
+                "com.webos.service.pdm",
+                "com.webos.applicationManager",
+                "com.webos.settingsservice",
+                "com.webos.service.config",
+                "com.webos.notification",
+                "com.webos.camerahal.*"
+            ]
+        }
+    ]
+}
