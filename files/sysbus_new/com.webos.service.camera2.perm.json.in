@@ -1,0 +1,11 @@
+{
+    "com.webos.service.camera2": [
+        "physicaldevice.query"
+    ],
+    "com.webos.service.camera2.*": [
+        "activity.query",
+        "physicaldevice.devutility",
+        "camerahal.query",
+        "camerahal.operation"
+    ]
+}
