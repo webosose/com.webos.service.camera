@@ -53,53 +53,57 @@ testcase:
 
     std::string getcameralist =
         "luna-send -n 1 -f luna://com.webos.service.camera2/getCameraList '{}'";
-    std::string getinfo = "luna-send -n 1 -f "
-                          "luna://com.webos.service.camera2/getInfo '{\"id\": "
-                          "\"";
-    std::string open  = "luna-send -n 1 -f luna://com.webos.service.camera2/open '{\"id\": \"";
-    std::string close = "luna-send -n 1 -f "
-                        "luna://com.webos.service.camera2/close '{\"handle\":";
-    std::string getproperties = "luna-send -n 1 -f "
-                                "luna://com.webos.service.camera2/"
-                                "getProperties '{\"handle\":";
-    std::string setproperties = "luna-send -n 1 -f "
-                                "luna://com.webos.service.camera2/"
-                                "setProperties '{\"handle\":";
-    std::string setformat = "luna-send -n 1 -f "
-                            "luna://com.webos.service.camera2/setFormat "
-                            "'{\"handle\":";
-    std::string startpreview = "luna-send -n 1 -f "
-                               "luna://com.webos.service.camera2/startPreview "
-                               "'{\"handle\":";
-    std::string stoppreview = "luna-send -n 1 -f "
-                              "luna://com.webos.service.camera2/stopPreview "
-                              "'{\"handle\":";
-    std::string startcapture = "luna-send -n 1 -f "
-                               "luna://com.webos.service.camera2/startCapture "
-                               "'{\"handle\":";
-    std::string stopcapture = "luna-send -n 1 -f "
-                              "luna://com.webos.service.camera2/stopCapture "
-                              "'{\"handle\":";
+    std::string getinfo = "luna-send -n 1 -f luna://com.webos.service.camera2/getInfo '{\"id\": \"";
+    std::string open    = "luna-send -n 1 -f luna://com.webos.service.camera2/open '{\"id\": \"";
+    std::string close   = "luna-send -n 1 -f luna://com.webos.service.camera2/close '{\"handle\":";
+    std::string getproperties = "luna-send -n 1 -f luna://com.webos.service.camera2/getProperties "
+                                "'{\"id\": \"";
+    std::string setproperties = "luna-send -n 1 -f luna://com.webos.service.camera2/setProperties "
+                                "'{\"handle\":";
+    std::string setformat     = "luna-send -n 1 -f luna://com.webos.service.camera2/setFormat "
+                                "'{\"handle\":";
+    std::string startcamera   = "luna-send -n 1 -f luna://com.webos.service.camera2/startCamera "
+                                "'{\"handle\":";
+    std::string stopcamera    = "luna-send -n 1 -f luna://com.webos.service.camera2/stopCamera "
+                                "'{\"handle\":";
+    std::string startpreview  = "luna-send -n 1 -f luna://com.webos.service.camera2/startPreview "
+                                "'{\"handle\":";
+    std::string stoppreview   = "luna-send -n 1 -f luna://com.webos.service.camera2/stopPreview "
+                                "'{\"handle\":";
+    std::string capture       = "luna-send -n 1 -f luna://com.webos.service.camera2/capture "
+                                "'{\"handle\":";
+    std::string getSolutions  = "luna-send -n 1 -f luna://com.webos.service.camera2/getSolutions "
+                                "'{\"handle\":";
+    std::string setSolutions  = "luna-send -n 1 -f luna://com.webos.service.camera2/setSolutions "
+                                "'{\"handle\":";
+    std::string startcapture  = "luna-send -n 1 -f luna://com.webos.service.camera2/startCapture "
+                                "'{\"handle\":";
+    std::string stopcapture   = "luna-send -n 1 -f luna://com.webos.service.camera2/stopCapture "
+                                "'{\"handle\":";
 
     std::cout << "List of test cases : " << std::endl;
     std::cout << "1. GetCameraList" << std::endl << "2. GetInfo" << std::endl;
     std::cout << "3. Open" << std::endl << "4. close" << std::endl;
     std::cout << "5. GetProperties" << std::endl << "6. SetProperties" << std::endl;
     std::cout << "7. SetFormat" << std::endl;
-    std::cout << "8. StartPreview" << std::endl << "9. StopPreview" << std::endl;
-    std::cout << "10. StartCapture" << std::endl << "11. StopCapture" << std::endl;
+    std::cout << "8. StartCamera" << std::endl << "9. StopCamera" << std::endl;
+    std::cout << "10. StarPreview" << std::endl << "11. StopPreview" << std::endl;
+    std::cout << "12. Capture" << std::endl;
+    std::cout << "13. GetSolutions" << std::endl << "14. SetSolutions" << std::endl;
+    std::cout << "15. StartCapture" << std::endl << "16. StopCapture" << std::endl; /* Deprecated */
+
     std::cout << "Enter choice" << std::endl;
 
     std::cin >> choice;
 
-    if (choice == 1)
+    if (choice == 1) /* GetCameraList */
     {
         std::cout << getcameralist << std::endl;
         std::string output = getCommandOutput(getcameralist);
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 2)
+    else if (choice == 2) /* GetInfo */
     {
         std::cout << "Enter camera id received in getCameraList API" << std::endl;
         std::string id;
@@ -110,7 +114,7 @@ testcase:
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 3)
+    else if (choice == 3) /* Open */
     {
         std::cout << "Enter camera id received in getCameraList API" << std::endl;
         std::string id;
@@ -121,7 +125,7 @@ testcase:
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 4)
+    else if (choice == 4) /* close */
     {
         int handle;
         std::cout << "Enter handle to close : " << std::endl;
@@ -132,18 +136,18 @@ testcase:
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 5)
+    else if (choice == 5) /* GetProperties */
     {
-        int handle;
-        std::cout << "Enter handle to getProperties : " << std::endl;
-        std::cin >> handle;
-        getproperties = getproperties + getStringFromNumber(handle) + "}'";
+        std::cout << "Enter camera id to getProperties : " << std::endl;
+        std::string id;
+        std::cin >> id;
+        getproperties = getproperties + id + "\"}'";
         std::cout << getproperties << std::endl;
         std::string output = getCommandOutput(getproperties);
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 6)
+    else if (choice == 6) /* SetProperties */
     {
         int handle;
         std::cout << "Enter handle to set properties of device : " << std::endl;
@@ -155,7 +159,7 @@ testcase:
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 7)
+    else if (choice == 7) /* SetFormat */
     {
         int handle;
         std::cout << "Enter handle to setformat : " << std::endl;
@@ -169,28 +173,59 @@ testcase:
         std::cout << "Enter format : " << std::endl;
         std::string format;
         std::cin >> format;
+        std::cout << "Enter fps : " << std::endl;
+        int fps;
+        std::cin >> fps;
+
         setformat = setformat + getStringFromNumber(handle) +
                     ",\"params\":{\"width\":" + getStringFromNumber(width) +
                     ",\"height\":" + getStringFromNumber(height) + ",\"format\":\"" + format +
-                    "\"}}'";
+                    "\",\"fps\":" + getStringFromNumber(fps) + "}}'";
         std::cout << setformat << std::endl;
         std::string output = getCommandOutput(setformat);
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 8)
+    else if (choice == 8) /* StartCamera */
+    {
+        int handle;
+        std::cout << "Enter handle to start camera : " << std::endl;
+        std::cin >> handle;
+        startcamera = startcamera + getStringFromNumber(handle) +
+                      ", \"params\": {\"type\":\"sharedmemory\",\"source\":\"0\"}}'";
+        std::cout << startcamera << std::endl;
+        std::string output = getCommandOutput(startcamera);
+        std::cout << output << std::endl;
+        goto testcase;
+    }
+    else if (choice == 9) /* StopCamera */
+    {
+        int handle;
+        std::cout << "Enter handle to stop camera: " << std::endl;
+        std::cin >> handle;
+        stopcamera = stopcamera + getStringFromNumber(handle) + "}'";
+        std::cout << stopcamera << std::endl;
+        std::string output = getCommandOutput(stopcamera);
+        std::cout << output << std::endl;
+        goto testcase;
+    }
+    else if (choice == 10) /* StartPreview */
     {
         int handle;
         std::cout << "Enter handle to start preview : " << std::endl;
         std::cin >> handle;
-        startpreview = startpreview + getStringFromNumber(handle) +
-                       ", \"params\": {\"type\":\"sharedmemory\",\"source\":\"0\"}}'";
+        std::cout << "Enter Window_Id (using camera_window_manager_exporter ex._Window_Id_1): "
+                  << std::endl;
+        std::string windowId;
+        std::cin >> windowId;
+        startpreview = startpreview + getStringFromNumber(handle) + ",\"windowId\": \"" + windowId +
+                       "\", \"params\": {\"type\":\"sharedmemory\",\"source\":\"0\"}}'";
         std::cout << startpreview << std::endl;
         std::string output = getCommandOutput(startpreview);
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 9)
+    else if (choice == 11) /* StopPreview */
     {
         int handle;
         std::cout << "Enter handle to stop preview: " << std::endl;
@@ -201,7 +236,51 @@ testcase:
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 10)
+    else if (choice == 12) /* capture */
+    {
+        int handle;
+        std::cout << "Enter handle to capture : " << std::endl;
+        std::cin >> handle;
+        std::cout << "Enter nImage : " << std::endl;
+        int nImage;
+        std::cin >> nImage;
+        capture = capture + getStringFromNumber(handle) +
+                  ",\"nimage\":" + getStringFromNumber(nImage) + "}'";
+        std::cout << capture << std::endl;
+        std::string output = getCommandOutput(capture);
+        std::cout << output << std::endl;
+        goto testcase;
+    }
+    else if (choice == 13) /* GetSolutions */
+    {
+        int handle;
+        std::cout << "Enter handle to getSolutions : " << std::endl;
+        std::cin >> handle;
+        getSolutions = getSolutions + getStringFromNumber(handle) + "}'";
+        std::cout << getSolutions << std::endl;
+        std::string output = getCommandOutput(getSolutions);
+        std::cout << output << std::endl;
+        goto testcase;
+    }
+    else if (choice == 14) /* SetSolutions */
+    {
+        int handle;
+        std::cout << "Enter handle to setSolutions : " << std::endl;
+        std::cin >> handle;
+        std::cout << "Enter Solution name : " << std::endl;
+        std::string solution;
+        std::cin >> solution;
+        std::cout << "Enter enable (true or false) : " << std::endl;
+        std::string enable;
+        std::cin >> enable;
+        setSolutions = setSolutions + getStringFromNumber(handle) + ",\"solutions\":[{\"name\":\"" +
+                       solution + "\",\"params\":{\"enable\":" + enable + "}}]}'";
+        std::cout << setSolutions << std::endl;
+        std::string output = getCommandOutput(setSolutions);
+        std::cout << output << std::endl;
+        goto testcase;
+    }
+    else if (choice == 15) /* StartCapture Deprecated */
     {
         int handle;
         std::cout << "Enter handle to start capture : " << std::endl;
@@ -234,7 +313,7 @@ testcase:
         std::cout << output << std::endl;
         goto testcase;
     }
-    else if (choice == 11)
+    else if (choice == 16) /* StopCapture Deprecated */
     {
         int handle;
         std::cout << "Enter handle to stop capture: " << std::endl;
