@@ -21,6 +21,7 @@
 #include "device_controller.h"
 #include "camera_solution_manager.h"
 #include <algorithm>
+#include <chrono>
 #include <ctime>
 #include <errno.h>
 #include <filesystem>
@@ -127,13 +128,14 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
         if (ch != '/')
             path += "/";
 
-        time_t t = time(NULL);
-        if (t == ((time_t)-1))
+        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+        std::time_t t                             = std::chrono::system_clock::to_time_t(now);
+        if (t == static_cast<std::time_t>(-1))
         {
             PLOGE("Failed to get current time.");
             t = 0;
         }
-        tm *timePtr = localtime(&t);
+        std::tm *timePtr = std::localtime(&t);
         if (timePtr == nullptr)
         {
             PLOGE("localtime() given null ptr");
@@ -1331,15 +1333,16 @@ std::string DeviceControl::createCaptureFileName(int cnt) const
     }
     path += "Picture";
 
-    std::time_t now = std::time(nullptr);
-    if (now == static_cast<std::time_t>(-1))
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::time_t t                             = std::chrono::system_clock::to_time_t(now);
+    if (t == static_cast<std::time_t>(-1))
     {
         PLOGE("failed to get current time");
         return path;
     }
 
     std::tm timeInfo;
-    if (localtime_r(&now, &timeInfo) == nullptr)
+    if (localtime_r(&t, &timeInfo) == nullptr)
     {
         PLOGE("localtime_r() failed");
         return path;
