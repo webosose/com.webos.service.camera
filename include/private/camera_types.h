@@ -99,13 +99,14 @@ typedef enum
     DEVICE_ERROR_SOMETHING_IS_NOT_SET,
     DEVICE_ERROR_TOO_MANY_REQUEST,
     DEVICE_ERROR_TIMEOUT,
-#ifdef DAC_ENABLED
-    DEVICE_ERROR_DAC_POLICY_VIOLATION,
-#endif
+    DEVICE_ERROR_INVALID_WINDOW_ID,
     DEVICE_ERROR_INVALID_STATE = 200,
+// Define new DEVICE_ERROR_* from here
+// DEVICE_ERROR_*,
 
-    // Define new DEVICE_ERROR_* from here
-    // DEVICE_ERROR_*,
+#ifdef DAC_ENABLED
+    DEVICE_ERROR_DAC_POLICY_VIOLATION = 300,
+#endif
 
     DEVICE_ERROR_LIST_END // must be last - used to validate error type
 } DEVICE_RETURN_CODE_T;
@@ -144,9 +145,10 @@ enum class EventType
 
 enum class CameraDeviceState
 {
-    CAM_DEVICE_STATE_UNKNOWN = 0,
+    CAM_DEVICE_STATE_CLOSE = 0,
     CAM_DEVICE_STATE_OPEN,
-    CAM_DEVICE_STATE_PREVIEW
+    CAM_DEVICE_STATE_STREAMING,
+    CAM_DEVICE_STATE_PREVIEW,
 };
 
 /*Structures*/
@@ -177,6 +179,11 @@ typedef struct
     std::string str_memorytype;
     std::string str_memorysource;
 } camera_memory_source_t;
+
+typedef struct
+{
+    std::string str_window_id;
+} camera_display_source_t;
 
 void getFormatString(int, char *);
 const char *getTypeString(device_t);
