@@ -55,7 +55,7 @@ static bool cameraSolutionServiceCb(const char *msg, void *data)
     return true;
 }
 
-CameraSolutionProxy::CameraSolutionProxy(const std::string solution_name)
+CameraSolutionProxy::CameraSolutionProxy(const std::string &solution_name)
     : solution_name_(solution_name)
 {
     PLOGI("%s", solution_name_.c_str());

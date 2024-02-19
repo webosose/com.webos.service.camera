@@ -617,7 +617,7 @@ CameraHalProxy::getEnabledCameraSolutionInfo(std::vector<std::string> &solutions
     return ret;
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std::string> &solutions)
 {
     PLOGI("");
 
@@ -631,7 +631,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std:
     return luna_call_sync(__func__, to_string(jin));
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::disableCameraSolution(const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T
+CameraHalProxy::disableCameraSolution(const std::vector<std::string> &solutions)
 {
     PLOGI("");
 

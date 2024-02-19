@@ -618,7 +618,7 @@ CommandManager::getEnabledCameraSolutionInfo(int devhandle, std::vector<std::str
 }
 
 DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle,
-                                                          const std::vector<std::string> solutions)
+                                                          const std::vector<std::string> &solutions)
 {
     PLOGI("enableCameraSolutionInfo : devhandle : %d\n", devhandle);
 
@@ -633,8 +633,8 @@ DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle,
     }
 }
 
-DEVICE_RETURN_CODE_T CommandManager::disableCameraSolution(int devhandle,
-                                                           const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T
+CommandManager::disableCameraSolution(int devhandle, const std::vector<std::string> &solutions)
 {
     PLOGI("enableCameraSolutionInfo : devhandle : %d\n", devhandle);
 

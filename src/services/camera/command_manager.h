@@ -71,8 +71,8 @@ public:
     DEVICE_RETURN_CODE_T getFd(int, int *);
     DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(int, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T getEnabledCameraSolutionInfo(int, std::vector<std::string> &);
-    DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string>);
-    DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string>);
+    DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string> &);
+    DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string> &);
 
     int getCameraId(int);
     int getCameraHandle(int);

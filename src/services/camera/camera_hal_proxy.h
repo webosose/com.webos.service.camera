@@ -86,8 +86,8 @@ public:
     //[Camera Solution Manager] integration start
     DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(std::vector<std::string> &);
     DEVICE_RETURN_CODE_T getEnabledCameraSolutionInfo(std::vector<std::string> &);
-    DEVICE_RETURN_CODE_T enableCameraSolution(const std::vector<std::string>);
-    DEVICE_RETURN_CODE_T disableCameraSolution(const std::vector<std::string>);
+    DEVICE_RETURN_CODE_T enableCameraSolution(const std::vector<std::string> &);
+    DEVICE_RETURN_CODE_T disableCameraSolution(const std::vector<std::string> &);
     //[Camera Solution Manager] integration end
 
     bool subscribe();

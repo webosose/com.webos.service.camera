@@ -80,7 +80,7 @@ class CameraSolutionProxy
     void popJob();
 
 public:
-    CameraSolutionProxy(const std::string solution_name);
+    CameraSolutionProxy(const std::string &solution_name);
     ~CameraSolutionProxy();
 
     void setEventListener(CameraSolutionEvent *pEvent) { pEvent_ = pEvent; }

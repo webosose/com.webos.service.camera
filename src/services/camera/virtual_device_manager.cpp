@@ -1109,7 +1109,7 @@ VirtualDeviceManager::getEnabledCameraSolutionInfo(int devhandle,
 }
 
 DEVICE_RETURN_CODE_T
-VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std::string> solutions)
+VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std::string> &solutions)
 {
     PLOGI("VirtualDeviceManager enableCameraSolutionInfo E\n");
 
@@ -1143,7 +1143,8 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
 }
 
 DEVICE_RETURN_CODE_T
-VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std::string> solutions)
+VirtualDeviceManager::disableCameraSolution(int devhandle,
+                                            const std::vector<std::string> &solutions)
 {
     PLOGI("VirtualDeviceManager disableCameraSolutionInfo E\n");
 
