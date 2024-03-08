@@ -34,9 +34,10 @@ public:
     int shmemtype;
     CameraDeviceState ecamstate_;
     DeviceStateMap()
-        : ndeviceid_(0), shmemtype(0), ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_UNKNOWN){};
+        : ndeviceid_(0), shmemtype(0), ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE){};
 };
 
+class PreviewDisplayControl;
 class VirtualDeviceManager
 {
 private:
@@ -46,9 +47,19 @@ private:
     bool bcaptureinprogress_;
     int shmkey_;
     int poshmkey_;
-    std::vector<int> npreviewhandle_;
+    std::vector<int> nstreaminghandle_;
     std::vector<int> ncapturehandle_;
     CAMERA_FORMAT sformat_;
+
+    // for render preview
+    struct UMSControl
+    {
+        int handle;
+        std::string mediaId;
+        std::unique_ptr<PreviewDisplayControl> display_control;
+    };
+    std::vector<UMSControl> ums_controls;
+
     // for multi obj
     CameraHalProxy objcamerahalproxy_;
     std::shared_ptr<AddOn> pAddon_;
@@ -64,16 +75,23 @@ private:
     DEVICE_RETURN_CODE_T singleCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                        int);
     DEVICE_RETURN_CODE_T continuousCapture(int, CAMERA_FORMAT, const std::string &);
+    std::string startPreviewDisplay(int, std::string, std::string, int);
+    bool stopPreviewDisplay(int);
 
 public:
     VirtualDeviceManager();
+    ~VirtualDeviceManager();
     DEVICE_RETURN_CODE_T open(int, int *, std::string, std::string);
     DEVICE_RETURN_CODE_T close(int);
-    DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, LSHandle *, const char *);
+    DEVICE_RETURN_CODE_T startCamera(int, std::string, int *, LSHandle *, const char *);
+    DEVICE_RETURN_CODE_T stopCamera(int);
+    DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, std::string, std::string *,
+                                      LSHandle *, const char *);
     DEVICE_RETURN_CODE_T stopPreview(int);
     DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                       int);
     DEVICE_RETURN_CODE_T stopCapture(int, bool request = true);
+    DEVICE_RETURN_CODE_T capture(int, int, const std::string &, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
@@ -88,10 +106,12 @@ public:
 
     DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(int, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T getEnabledCameraSolutionInfo(int, std::vector<std::string> &);
-    DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string>);
-    DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string>);
+    DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string> &);
+    DEVICE_RETURN_CODE_T disableCameraSolution(int, const std::vector<std::string> &);
 
     void setAddon(std::shared_ptr<AddOn> &addon) { pAddon_ = addon; }
+
+    CameraDeviceState getDeviceState(int);
 };
 
 #endif /*VIRTUAL_DEVICE_MANAGER_H_*/

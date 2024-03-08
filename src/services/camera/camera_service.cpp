@@ -47,6 +47,9 @@ CameraService::CameraService() : LS::Handle(LS::registerService(cstr_uricamerama
     LS_CATEGORY_METHOD(setFormat)
     LS_CATEGORY_METHOD(startCapture)
     LS_CATEGORY_METHOD(stopCapture)
+    LS_CATEGORY_METHOD(capture)
+    LS_CATEGORY_METHOD(startCamera)
+    LS_CATEGORY_METHOD(stopCamera)
     LS_CATEGORY_METHOD(startPreview)
     LS_CATEGORY_METHOD(stopPreview)
     LS_CATEGORY_METHOD(getEventNotification)
@@ -252,8 +255,8 @@ bool CameraService::close(LSMessage &message)
     PLOGI("payload %s", payload);
 
     // create close class object and read data from json object after schema validation
-    StopPreviewCaptureCloseMethod obj_close;
-    obj_close.getObject(payload, stopCapturePreviewCloseSchema);
+    StopCameraPreviewCaptureCloseMethod obj_close;
+    obj_close.getObject(payload, stopCaptureCameraPreviewCloseSchema);
 
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
@@ -319,12 +322,108 @@ bool CameraService::close(LSMessage &message)
     return true;
 }
 
+bool CameraService::startCamera(LSMessage &message)
+{
+    auto *payload = LSMessageGetPayload(&message);
+    PLOGI("payload %s", payload);
+    DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    camera_memory_source_t memType;
+
+    StartCameraMethod obj_startcamera;
+    obj_startcamera.getStartCameraObject(payload, startCameraSchema);
+
+    int ndevhandle = obj_startcamera.getDeviceHandle();
+
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
+    {
+        // start preview here
+        int key = 0;
+
+        memType = obj_startcamera.rGetMemParams();
+        if (memType.str_memorytype == kMemtypeShmem ||
+            memType.str_memorytype == kMemtypeShmemMmap ||
+            memType.str_memorytype == kMemtypePosixshm)
+        {
+            err_id = CommandManager::getInstance().startCamera(ndevhandle, memType.str_memorytype,
+                                                               &key, this->get(),
+                                                               CONST_EVENT_KEY_STREAMING_FAULT);
+
+            if (DEVICE_OK != err_id)
+            {
+                PLOGD("err_id != DEVICE_OK\n");
+            }
+            else
+            {
+                PLOGD("err_id == DEVICE_OK\n");
+                obj_startcamera.setKeyValue(key);
+            }
+        }
+        else
+        {
+            PLOGI("startCamera() memory type is not supported\n");
+            err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
+        }
+    }
+
+    obj_startcamera.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
+
+    // create json string now for reply
+    std::string output_reply = obj_startcamera.createStartCameraObjectJsonString();
+    PLOGI("output_reply %s\n", output_reply.c_str());
+    LS::Message request(&message);
+    request.respond(output_reply.c_str());
+
+    return true;
+}
+
+bool CameraService::stopCamera(LSMessage &message)
+{
+    auto *payload = LSMessageGetPayload(&message);
+    PLOGI("payload %s", payload);
+    DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+
+    StopCameraPreviewCaptureCloseMethod obj_stopcamera;
+    obj_stopcamera.getObject(payload, stopCaptureCameraPreviewCloseSchema);
+
+    int ndevhandle = obj_stopcamera.getDeviceHandle();
+
+    err_id = validateClient(&message, ndevhandle);
+
+    if (err_id == DEVICE_OK)
+    {
+        // stop preview here
+        err_id = CommandManager::getInstance().stopCamera(ndevhandle);
+
+        if (DEVICE_OK != err_id)
+        {
+            PLOGD("err_id != DEVICE_OK\n");
+        }
+        else
+        {
+            PLOGD("err_id == DEVICE_OK\n");
+        }
+    }
+
+    obj_stopcamera.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
+    // create json string now for reply
+    std::string output_reply = obj_stopcamera.createObjectJsonString();
+    PLOGI("output_reply %s\n", output_reply.c_str());
+
+    LS::Message request(&message);
+    request.respond(output_reply.c_str());
+
+    return true;
+}
+
 bool CameraService::startPreview(LSMessage &message)
 {
     auto *payload = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
     camera_memory_source_t memType;
+    camera_display_source_t dispType;
 
     StartPreviewMethod obj_startpreview;
     obj_startpreview.getStartPreviewObject(payload, startPreviewSchema);
@@ -337,15 +436,17 @@ bool CameraService::startPreview(LSMessage &message)
     {
         // start preview here
         int key = 0;
+        std::string media_id;
 
-        memType = obj_startpreview.rGetParams();
+        memType  = obj_startpreview.rGetMemParams();
+        dispType = obj_startpreview.rGetDpyParams();
         if (memType.str_memorytype == kMemtypeShmem ||
             memType.str_memorytype == kMemtypeShmemMmap ||
             memType.str_memorytype == kMemtypePosixshm)
         {
-            err_id = CommandManager::getInstance().startPreview(ndevhandle, memType.str_memorytype,
-                                                                &key, this->get(),
-                                                                CONST_EVENT_KEY_PREVIEW_FAULT);
+            err_id = CommandManager::getInstance().startPreview(
+                ndevhandle, memType.str_memorytype, &key, dispType.str_window_id, &media_id,
+                this->get(), CONST_EVENT_KEY_STREAMING_FAULT);
 
             if (DEVICE_OK != err_id)
             {
@@ -355,6 +456,7 @@ bool CameraService::startPreview(LSMessage &message)
             {
                 PLOGD("err_id == DEVICE_OK\n");
                 obj_startpreview.setKeyValue(key);
+                obj_startpreview.setMediaIdValue(std::move(media_id));
             }
         }
         else
@@ -381,8 +483,8 @@ bool CameraService::stopPreview(LSMessage &message)
     PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
-    StopPreviewCaptureCloseMethod obj_stoppreview;
-    obj_stoppreview.getObject(payload, stopCapturePreviewCloseSchema);
+    StopCameraPreviewCaptureCloseMethod obj_stoppreview;
+    obj_stoppreview.getObject(payload, stopCaptureCameraPreviewCloseSchema);
 
     int ndevhandle = obj_stoppreview.getDeviceHandle();
 
@@ -479,8 +581,8 @@ bool CameraService::stopCapture(LSMessage &message)
     PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
-    StopPreviewCaptureCloseMethod obj_stopcapture;
-    obj_stopcapture.getObject(payload, stopCapturePreviewCloseSchema);
+    StopCameraPreviewCaptureCloseMethod obj_stopcapture;
+    obj_stopcapture.getObject(payload, stopCaptureCameraPreviewCloseSchema);
 
     int ndevhandle = obj_stopcapture.getDeviceHandle();
 
@@ -504,6 +606,65 @@ bool CameraService::stopCapture(LSMessage &message)
     obj_stopcapture.setMethodReply(err_id == DEVICE_OK, (int)err_id, getErrorString(err_id));
     // create json string now for reply
     std::string output_reply = obj_stopcapture.createObjectJsonString();
+    PLOGI("output_reply %s\n", output_reply.c_str());
+
+    LS::Message request(&message);
+    request.respond(output_reply.c_str());
+
+    return true;
+}
+
+bool CameraService::capture(LSMessage &message)
+{
+    auto *payload = LSMessageGetPayload(&message);
+    PLOGI("payload %s", payload);
+    DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    const int max_capture       = 30;
+
+    CaptureMethod obj_capture;
+    obj_capture.getCaptureObject(payload, captureSchema);
+
+    int ndevhandle = obj_capture.getDeviceHandle();
+    std::vector<std::string> capturedFileNames;
+
+    if (n_invalid_id == ndevhandle)
+    {
+        PLOGI("DEVICE_ERROR_JSON_PARSING");
+        err_id = DEVICE_ERROR_JSON_PARSING;
+        obj_capture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id, getErrorString(err_id));
+    }
+    else
+    {
+        PLOGI("ndevhandle %d\n", ndevhandle);
+        PLOGI("nImage : %d\n", obj_capture.getnImage());
+        PLOGI("path: %s\n", obj_capture.getImagePath().c_str());
+
+        if (obj_capture.getnImage() > 0 && obj_capture.getnImage() <= max_capture)
+        {
+            // capture image here
+            err_id = CommandManager::getInstance().capture(
+                ndevhandle, obj_capture.getnImage(), obj_capture.getImagePath(), capturedFileNames);
+        }
+        else
+        {
+            err_id = DEVICE_ERROR_OUT_OF_PARAM_RANGE;
+        }
+
+        if (DEVICE_OK != err_id)
+        {
+            PLOGD("err_id != DEVICE_OK\n");
+            obj_capture.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
+                                       getErrorString(err_id));
+        }
+        else
+        {
+            PLOGD("err_id == DEVICE_OK\n");
+            obj_capture.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id, getErrorString(err_id));
+        }
+    }
+
+    // create json string now for reply
+    std::string output_reply = obj_capture.createCaptureObjectJsonString(capturedFileNames);
     PLOGI("output_reply %s\n", output_reply.c_str());
 
     LS::Message request(&message);
@@ -835,7 +996,7 @@ bool CameraService::getEventNotification(LSMessage &message)
     else
     {
         bool return_val =
-            event_obj.addSubscription(this->get(), CONST_EVENT_KEY_PREVIEW_FAULT, message);
+            event_obj.addSubscription(this->get(), CONST_EVENT_KEY_STREAMING_FAULT, message);
         return_val = event_obj.addSubscription(this->get(), CONST_EVENT_KEY_CAPTURE_FAULT, message);
 
         obj_jsonparser.setSubcribed(return_val);

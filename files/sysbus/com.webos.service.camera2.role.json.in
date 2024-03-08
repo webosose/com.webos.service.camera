@@ -4,7 +4,8 @@
     "trustLevel": "oem",
     "allowedNames": [
         "com.webos.service.camera2",
-        "com.webos.service.camera2.*"
+        "com.webos.service.camera2.*",
+        "com.webos.service.camera2.display-*"
     ],
     "permissions": [
         {
@@ -24,6 +25,12 @@
                 "com.webos.service.config",
                 "com.webos.notification",
                 "com.webos.camerahal.*"
+            ]
+        },
+        {
+            "service": "com.webos.service.camera2.display-*",
+            "outbound": [
+                "com.webos.media"
             ]
         }
     ]

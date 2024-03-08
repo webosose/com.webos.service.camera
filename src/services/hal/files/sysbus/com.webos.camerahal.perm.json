@@ -1,5 +1,6 @@
 {
     "com.webos.camerahal.*":[
+        "private",
         "camerasolution.query",
         "camerasolution.operation"
     ]

@@ -59,10 +59,13 @@ public:
     bool getProperties(LSMessage &);
     bool setProperties(LSMessage &);
     bool setFormat(LSMessage &);
+    bool startCamera(LSMessage &);
+    bool stopCamera(LSMessage &);
     bool startPreview(LSMessage &);
     bool stopPreview(LSMessage &);
     bool startCapture(LSMessage &);
     bool stopCapture(LSMessage &);
+    bool capture(LSMessage &);
     bool getEventNotification(LSMessage &);
     bool getFd(LSMessage &);
     bool getSolutions(LSMessage &message);

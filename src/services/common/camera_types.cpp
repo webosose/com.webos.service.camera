@@ -78,6 +78,8 @@ std::map<DEVICE_RETURN_CODE_T, std::string> g_error_string = {
     {DEVICE_ERROR_SOMETHING_IS_NOT_SET, "Some property is not set"},
     {DEVICE_ERROR_TOO_MANY_REQUEST, "Too many request"},
     {DEVICE_ERROR_TIMEOUT, "Request timeout"},
+    {DEVICE_ERROR_INVALID_WINDOW_ID, "Invalid windowId"},
+    {DEVICE_ERROR_INVALID_STATE, "Invalid state"},
     {DEVICE_ERROR_FAIL_TO_WRITE_FILE, "Fail to write file"},
 #ifdef DAC_ENABLED
     {DEVICE_ERROR_DAC_POLICY_VIOLATION, "DAC policy violation"},

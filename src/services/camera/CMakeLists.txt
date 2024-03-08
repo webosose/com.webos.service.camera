@@ -43,6 +43,7 @@ set(SRC_LIST
     ${CMAKE_SOURCE_DIR}/src/services/camera/addon/addon.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/notifier/notifier.cpp
     ${CMAKE_SOURCE_DIR}/src/services/camera/camera_hal_proxy.cpp
+    ${CMAKE_SOURCE_DIR}/src/services/camera/preview_display_control.cpp
     )
 
 # common

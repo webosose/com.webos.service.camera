@@ -44,13 +44,19 @@ struct MemoryListener;
 class DeviceControl
 {
 private:
+    // deprecated
     DEVICE_RETURN_CODE_T writeImageToFile(const void *, int, int cnt = 0) const;
+    // deprecated
     DEVICE_RETURN_CODE_T saveShmemory(int ncount = 0) const;
+    DEVICE_RETURN_CODE_T writeImageToFile(const void *, unsigned long, int,
+                                          std::vector<std::string> &) const;
+    DEVICE_RETURN_CODE_T saveShmemory(int, std::vector<std::string> &) const;
     static camera_pixel_format_t getPixelFormat(camera_format_t);
     static camera_format_t getCameraFormat(camera_pixel_format_t);
 
     void captureThread();
     void previewThread();
+    std::string createCaptureFileName(int) const;
 
     bool b_iscontinuous_capture_;
     bool b_isstreamon_;
@@ -105,8 +111,11 @@ public:
     DEVICE_RETURN_CODE_T close();
     DEVICE_RETURN_CODE_T startPreview(std::string, int *, LSHandle *, const char *);
     DEVICE_RETURN_CODE_T stopPreview(int);
+    // deprecated
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT, const std::string &, const std::string &, int);
+    // deprecated
     DEVICE_RETURN_CODE_T stopCapture();
+    DEVICE_RETURN_CODE_T capture(int, const std::string &, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T createHal(std::string);
     DEVICE_RETURN_CODE_T destroyHal();
     static DEVICE_RETURN_CODE_T getDeviceInfo(std::string, std::string, camera_device_info_t *);

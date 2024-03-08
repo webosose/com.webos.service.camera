@@ -21,6 +21,7 @@
 #include "device_controller.h"
 #include "camera_solution_manager.h"
 #include <algorithm>
+#include <chrono>
 #include <ctime>
 #include <errno.h>
 #include <filesystem>
@@ -94,6 +95,7 @@ DeviceControl::DeviceControl()
     }
 }
 
+// deprecated
 DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, int cnt) const
 {
     auto path = str_imagepath_;
@@ -126,13 +128,14 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
         if (ch != '/')
             path += "/";
 
-        time_t t = time(NULL);
-        if (t == ((time_t)-1))
+        std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+        std::time_t t                             = std::chrono::system_clock::to_time_t(now);
+        if (t == static_cast<std::time_t>(-1))
         {
             PLOGE("Failed to get current time.");
             t = 0;
         }
-        tm *timePtr = localtime(&t);
+        std::tm *timePtr = std::localtime(&t);
         if (timePtr == nullptr)
         {
             PLOGE("localtime() given null ptr");
@@ -197,6 +200,7 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
     return ret;
 }
 
+// deprecated
 DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 {
     SHMEM_HANDLE h_shm = b_isposixruning ? h_shmposix_ : h_shmsystem_;
@@ -269,6 +273,119 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 
         // write captured image to /tmp only if startCapture request is made
         ret = writeImageToFile(frame_buffer.start, frame_buffer.length, nCaptured);
+        if (ret != DEVICE_OK)
+        {
+            PLOGE("file write error");
+            return ret;
+        }
+    }
+
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, unsigned long size, int cnt,
+                                                     std::vector<std::string> &capturedFiles) const
+{
+    auto capturePath = createCaptureFileName(cnt);
+
+    FILE *fp;
+    if (NULL == (fp = fopen(capturePath.c_str(), "w")))
+    {
+        PLOGE("capturePath : fopen failed");
+        return DEVICE_ERROR_CANNOT_WRITE;
+    }
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+    size_t sz                = (size > 0) ? (size_t)size : 0;
+    size_t bytes_written     = fwrite(p, 1, sz, fp);
+    if (bytes_written != sz)
+    {
+        PLOGE("Error writing data to file.");
+        ret = DEVICE_ERROR_FAIL_TO_WRITE_FILE;
+    }
+
+    capturedFiles.push_back(capturePath);
+
+    if (fclose(fp) != 0)
+    {
+        PLOGE("fclose error");
+    }
+    return ret;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
+                                                 std::vector<std::string> &capturedFiles) const
+{
+    SHMEM_HANDLE h_shm = b_isposixruning ? h_shmposix_ : h_shmsystem_;
+
+    if (h_shm == nullptr)
+    {
+        PLOGE("shared memory handle is null");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    buffer_t frame_buffer = {0};
+    int read_index        = -1;
+    int write_index       = -1;
+    int nCaptured         = 0;
+
+    DEVICE_RETURN_CODE_T ret;
+
+    const unsigned int sleep_us       = 10000; // 10ms
+    const unsigned int max_iterations = 1000;
+
+    while ((nCaptured++ < ncount) || b_iscontinuous_capture_)
+    {
+        unsigned int cnt = 0;
+
+        while (cnt < max_iterations) // 10s
+        {
+            write_index = b_isposixruning ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm)
+                                          : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
+            if (read_index != write_index)
+            {
+                break;
+            }
+            usleep(sleep_us);
+            cnt++;
+        }
+        if (read_index == write_index)
+        {
+            PLOGE("same write_index=%d", write_index);
+        }
+        read_index = write_index;
+
+        int len                    = 0;
+        unsigned char *sh_mem_addr = NULL;
+        if (b_isposixruning)
+        {
+            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm, &sh_mem_addr, &len);
+        }
+        else
+        {
+            IPCSharedMemory::getInstance().ReadShmem(h_shm, &sh_mem_addr, &len);
+        }
+
+        frame_buffer.start  = sh_mem_addr;
+        frame_buffer.length = (len > 0) ? len : 0;
+
+        PLOGD("buffer start : %p \n", frame_buffer.start);
+        PLOGD("buffer length : %lu \n", frame_buffer.length);
+
+        if (frame_buffer.start == nullptr)
+        {
+            PLOGE("no valid memory on frame buffer ptr");
+            return DEVICE_ERROR_OUT_OF_MEMORY;
+        }
+
+        //[Camera Solution Manager] processing for capture
+        if (pCameraSolution != nullptr)
+        {
+            pCameraSolution->processCapture(frame_buffer);
+        }
+
+        // write captured image to /tmp only if startCapture request is made
+        ret = writeImageToFile(frame_buffer.start, frame_buffer.length, nCaptured, capturedFiles);
         if (ret != DEVICE_OK)
         {
             PLOGE("file write error");
@@ -748,6 +865,7 @@ bool DeviceControl::notifyStorageError(const DEVICE_RETURN_CODE_T ret)
     return true;
 }
 
+// deprecated
 DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
                                                  const std::string &imagepath,
                                                  const std::string &mode, int ncount)
@@ -795,6 +913,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startCapture(CAMERA_FORMAT sformat,
     return ret;
 }
 
+// deprecated
 DEVICE_RETURN_CODE_T DeviceControl::stopCapture()
 {
     PLOGI("started !\n");
@@ -810,6 +929,44 @@ DEVICE_RETURN_CODE_T DeviceControl::stopCapture()
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
 
     return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::capture(int ncount, const std::string &imagepath,
+                                            std::vector<std::string> &capturedFiles)
+{
+    PLOGI("started ncount : %d \n", ncount);
+
+    str_imagepath_   = imagepath;
+    str_capturemode_ = (ncount == 1) ? cstr_oneshot : cstr_burst;
+    getFormat(&capture_format_);
+
+    if (str_imagepath_.empty())
+        str_imagepath_ = "/tmp/";
+
+    std::filesystem::path directory = str_imagepath_;
+    if (!std::filesystem::is_directory(directory))
+        return DEVICE_ERROR_CANNOT_WRITE;
+
+    if (!StorageMonitor::isEnoughSpaceAvailable(str_imagepath_))
+    {
+        return DEVICE_ERROR_FAIL_TO_WRITE_FILE;
+    }
+
+    storageMonitor_.setPath(str_imagepath_);
+    storageMonitor_.registerCallback(storageMonitorCb, this);
+
+    storageMonitor_.startMonitor();
+
+    if (str_capturemode_ == cstr_burst && ncount > MAX_NO_OF_IMAGES_IN_BURST_MODE)
+        ncount = MAX_NO_OF_IMAGES_IN_BURST_MODE;
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+
+    ret = saveShmemory(ncount, capturedFiles);
+
+    storageMonitor_.stopMonitor();
+
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T DeviceControl::createHal(std::string deviceType)
@@ -1162,3 +1319,60 @@ DEVICE_RETURN_CODE_T DeviceControl::disableCameraSolution(const std::vector<std:
     return DEVICE_OK;
 }
 //[Camera Solution Manager] interfaces end
+
+std::string DeviceControl::createCaptureFileName(int cnt) const
+{
+    auto path = str_imagepath_;
+
+    // check if specified location ends with '/' else add
+    if (!path.empty())
+    {
+        char ch = path.back();
+        if (ch != '/')
+            path += "/";
+    }
+    path += "Picture";
+
+    std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
+    std::time_t t                             = std::chrono::system_clock::to_time_t(now);
+    if (t == static_cast<std::time_t>(-1))
+    {
+        PLOGE("failed to get current time");
+        return path;
+    }
+
+    std::tm timeInfo;
+    if (localtime_r(&t, &timeInfo) == nullptr)
+    {
+        PLOGE("localtime_r() failed");
+        return path;
+    }
+
+    struct timeval tmnow;
+    gettimeofday(&tmnow, NULL);
+
+    // "DDMMYYYY-HHMMSSss"
+    std::ostringstream oss;
+    oss << std::setw(2) << std::setfill('0') << timeInfo.tm_mday << std::setw(2)
+        << std::setfill('0') << (timeInfo.tm_mon) + 1 << std::setw(2) << std::setfill('0')
+        << (timeInfo.tm_year) + 1900 << "-" << std::setw(2) << std::setfill('0') << timeInfo.tm_hour
+        << std::setw(2) << std::setfill('0') << timeInfo.tm_min << std::setw(2) << std::setfill('0')
+        << timeInfo.tm_sec << std::setw(2) << std::setfill('0') << tmnow.tv_usec / 10000;
+
+    path += oss.str();
+
+    if (cstr_burst == str_capturemode_)
+    {
+        path += '_' + std::to_string(cnt);
+    }
+
+    if (capture_format_.eFormat == CAMERA_FORMAT_JPEG)
+        path += ".jpeg";
+    else if (capture_format_.eFormat == CAMERA_FORMAT_YUV)
+        path += ".yuv";
+    else if (capture_format_.eFormat == CAMERA_FORMAT_H264ES)
+        path += ".h264";
+
+    PLOGD("path : %s", path.c_str());
+    return path;
+}

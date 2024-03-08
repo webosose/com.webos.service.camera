@@ -151,6 +151,47 @@ private:
     MethodReply objreply_;
 };
 
+class StartCameraMethod
+{
+public:
+    StartCameraMethod()
+    {
+        n_devicehandle_ = -1;
+        n_keyvalue_     = 0;
+    }
+    ~StartCameraMethod() {}
+
+    void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+    int getDeviceHandle() const { return n_devicehandle_; }
+
+    void setMemParams(camera_memory_source_t rin_params)
+    {
+        ro_mem_params_.str_memorysource = rin_params.str_memorysource;
+        ro_mem_params_.str_memorytype   = rin_params.str_memorytype;
+    }
+    camera_memory_source_t rGetMemParams() const { return ro_mem_params_; }
+
+    void setKeyValue(int key) { n_keyvalue_ = key; }
+    int getKeyValue() const { return n_keyvalue_; }
+
+    void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+    {
+        objreply_.setReturnValue(returnvalue);
+        objreply_.setErrorCode(errorcode);
+        objreply_.setErrorText(errortext);
+    }
+    MethodReply getMethodReply() const { return objreply_; }
+
+    void getStartCameraObject(const char *, const char *);
+    std::string createStartCameraObjectJsonString() const;
+
+private:
+    int n_devicehandle_;
+    camera_memory_source_t ro_mem_params_;
+    int n_keyvalue_;
+    MethodReply objreply_;
+};
+
 class StartPreviewMethod
 {
 public:
@@ -158,21 +199,32 @@ public:
     {
         n_devicehandle_ = -1;
         n_keyvalue_     = 0;
+        window_id_      = "";
+        media_id_       = "";
     }
     ~StartPreviewMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
 
-    void setParams(camera_memory_source_t rin_params)
+    void setMemParams(camera_memory_source_t rin_params)
     {
-        ro_params_.str_memorysource = rin_params.str_memorysource;
-        ro_params_.str_memorytype   = rin_params.str_memorytype;
+        ro_mem_params_.str_memorysource = rin_params.str_memorysource;
+        ro_mem_params_.str_memorytype   = rin_params.str_memorytype;
     }
-    camera_memory_source_t rGetParams() const { return ro_params_; }
+    camera_memory_source_t rGetMemParams() const { return ro_mem_params_; }
+
+    void setDpyParams(camera_display_source_t rin_params)
+    {
+        ro_dpy_params_.str_window_id = rin_params.str_window_id;
+    }
+    camera_display_source_t rGetDpyParams() const { return ro_dpy_params_; }
 
     void setKeyValue(int key) { n_keyvalue_ = key; }
     int getKeyValue() const { return n_keyvalue_; }
+
+    void setMediaIdValue(std::string media_id) { media_id_ = std::move(media_id); }
+    std::string getMediaIdValue() const { return media_id_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -187,8 +239,11 @@ public:
 
 private:
     int n_devicehandle_;
-    camera_memory_source_t ro_params_;
+    camera_memory_source_t ro_mem_params_;
+    camera_display_source_t ro_dpy_params_;
     int n_keyvalue_;
+    std::string window_id_;
+    std::string media_id_;
     MethodReply objreply_;
 };
 
@@ -241,15 +296,47 @@ private:
     MethodReply objreply_;
 };
 
-class StopPreviewCaptureCloseMethod
+class CaptureMethod
 {
 public:
-    StopPreviewCaptureCloseMethod()
+    CaptureMethod();
+    ~CaptureMethod() {}
+
+    void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
+    int getDeviceHandle() const { return n_devicehandle_; }
+
+    int getnImage() const { return n_image_; }
+
+    void setImagePath(const std::string &path) { str_path_ = path; }
+    std::string getImagePath() const { return str_path_; }
+
+    void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
+    {
+        objreply_.setReturnValue(returnvalue);
+        objreply_.setErrorCode(errorcode);
+        objreply_.setErrorText(errortext);
+    }
+    MethodReply getMethodReply() const { return objreply_; }
+
+    void getCaptureObject(const char *, const char *);
+    std::string createCaptureObjectJsonString(std::vector<std::string> &capturedFiles) const;
+
+private:
+    int n_devicehandle_;
+    int n_image_;
+    std::string str_path_;
+    MethodReply objreply_;
+};
+
+class StopCameraPreviewCaptureCloseMethod
+{
+public:
+    StopCameraPreviewCaptureCloseMethod()
     {
         n_devicehandle_ = -1;
         n_client_pid_   = -1;
     }
-    ~StopPreviewCaptureCloseMethod() {}
+    ~StopCameraPreviewCaptureCloseMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }

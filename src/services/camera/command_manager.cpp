@@ -205,7 +205,39 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
         return DEVICE_ERROR_UNKNOWN;
 }
 
+DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, std::string memtype, int *pkey,
+                                                 LSHandle *sh, const char *subskey)
+{
+    PLOGI("devhandle : %d\n", devhandle);
+
+    if (n_invalid_id == devhandle)
+        return DEVICE_ERROR_WRONG_PARAM;
+
+    VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+    if (nullptr != ptr)
+        // start preview
+        return ptr->startCamera(devhandle, std::move(memtype), pkey, sh, subskey);
+    else
+        return DEVICE_ERROR_UNKNOWN;
+}
+
+DEVICE_RETURN_CODE_T CommandManager::stopCamera(int devhandle)
+{
+    PLOGI("devhandle : %d\n", devhandle);
+
+    if (n_invalid_id == devhandle)
+        return DEVICE_ERROR_WRONG_PARAM;
+
+    VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+    if (nullptr != ptr)
+        // stop preview
+        return ptr->stopCamera(devhandle);
+    else
+        return DEVICE_ERROR_UNKNOWN;
+}
+
 DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey,
+                                                  std::string disptype, std::string *media_id,
                                                   LSHandle *sh, const char *subskey)
 {
     PLOGI("devhandle : %d\n", devhandle);
@@ -216,7 +248,8 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string mem
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // start preview
-        return ptr->startPreview(devhandle, memtype, pkey, sh, subskey);
+        return ptr->startPreview(devhandle, std::move(memtype), pkey, std::move(disptype), media_id,
+                                 sh, subskey);
     else
         return DEVICE_ERROR_UNKNOWN;
 }
@@ -277,6 +310,25 @@ DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle, bool request)
     if (nullptr != ptr)
         // stop capture
         return ptr->stopCapture(devhandle, request);
+    else
+        return DEVICE_ERROR_UNKNOWN;
+}
+
+DEVICE_RETURN_CODE_T CommandManager::capture(int devhandle, int ncount,
+                                             const std::string &imagepath,
+                                             std::vector<std::string> &capturedFiles)
+{
+    PLOGI("devhandle : %d\n", devhandle);
+
+    if (n_invalid_id == devhandle)
+        return DEVICE_ERROR_WRONG_PARAM;
+
+    VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+    if (nullptr != ptr)
+    {
+        // capture image
+        return ptr->capture(devhandle, ncount, imagepath, capturedFiles);
+    }
     else
         return DEVICE_ERROR_UNKNOWN;
 }
@@ -432,7 +484,15 @@ void CommandManager::closeClientDevice(std::string clientName)
 
             // send request to stop all and close the device
             obj.ptr->stopCapture(obj.devicehandle);
-            obj.ptr->stopPreview(obj.devicehandle);
+            CameraDeviceState state = getDeviceState(obj.devicehandle);
+            if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
+            {
+                obj.ptr->stopCamera(obj.devicehandle);
+            }
+            else if(state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+            {
+                obj.ptr->stopPreview(obj.devicehandle);
+            }
             obj.ptr->close(obj.devicehandle);
 
             unsigned long count = virtualdevmgrobj_map_.count(it->first);
@@ -461,7 +521,15 @@ void CommandManager::handleCrash()
 
         // send request to stop all and close the device
         obj.ptr->stopCapture(obj.devicehandle);
-        obj.ptr->stopPreview(obj.devicehandle);
+        CameraDeviceState state = getDeviceState(obj.devicehandle);
+        if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
+        {
+            obj.ptr->stopCamera(obj.devicehandle);
+        }
+        else if(state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+        {
+            obj.ptr->stopPreview(obj.devicehandle);
+        }
         obj.ptr->close(obj.devicehandle);
 
         unsigned long count = virtualdevmgrobj_map_.count(it->first);
@@ -490,7 +558,15 @@ void CommandManager::release(int deviceid)
 
             // send request to stop all and close the device
             obj.ptr->stopCapture(obj.devicehandle);
-            obj.ptr->stopPreview(obj.devicehandle);
+            CameraDeviceState state = getDeviceState(obj.devicehandle);
+            if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
+            {
+                obj.ptr->stopCamera(obj.devicehandle);
+            }
+            else if(state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+            {
+                obj.ptr->stopPreview(obj.devicehandle);
+            }
             obj.ptr->close(obj.devicehandle);
 
             unsigned long count = virtualdevmgrobj_map_.count(it->first);
@@ -542,7 +618,7 @@ CommandManager::getEnabledCameraSolutionInfo(int devhandle, std::vector<std::str
 }
 
 DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle,
-                                                          const std::vector<std::string> solutions)
+                                                          const std::vector<std::string> &solutions)
 {
     PLOGI("enableCameraSolutionInfo : devhandle : %d\n", devhandle);
 
@@ -557,8 +633,8 @@ DEVICE_RETURN_CODE_T CommandManager::enableCameraSolution(int devhandle,
     }
 }
 
-DEVICE_RETURN_CODE_T CommandManager::disableCameraSolution(int devhandle,
-                                                           const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T
+CommandManager::disableCameraSolution(int devhandle, const std::vector<std::string> &solutions)
 {
     PLOGI("enableCameraSolutionInfo : devhandle : %d\n", devhandle);
 
@@ -570,5 +646,18 @@ DEVICE_RETURN_CODE_T CommandManager::disableCameraSolution(int devhandle,
     else
     {
         return DEVICE_ERROR_UNKNOWN;
+    }
+}
+
+CameraDeviceState CommandManager::getDeviceState(int devhandle)
+{
+    VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
+    if (nullptr != ptr)
+    {
+        return ptr->getDeviceState(devhandle);
+    }
+    else
+    {
+        return CameraDeviceState::CAM_DEVICE_STATE_CLOSE;
     }
 }

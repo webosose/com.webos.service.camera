@@ -236,6 +236,30 @@ DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture(const int devHandle)
     return luna_call_sync(__func__, "{}");
 }
 
+DEVICE_RETURN_CODE_T CameraHalProxy::capture(int ncount, const std::string &imagepath,
+                                             std::vector<std::string> &capturedFiles)
+{
+    PLOGI("");
+
+    json jin;
+    jin[CONST_PARAM_NAME_NCOUNT]     = ncount;
+    jin[CONST_PARAM_NAME_IMAGE_PATH] = imagepath;
+
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
+
+    if (ret == DEVICE_OK)
+    {
+        for (auto s : jOut[CONST_PARAM_NAME_IMAGE_PATH])
+        {
+            if (!s.is_string())
+                continue;
+            capturedFiles.push_back(s);
+        }
+    }
+
+    return ret;
+}
+
 DEVICE_RETURN_CODE_T CameraHalProxy::createHal(std::string subsystem)
 {
     PLOGI("subsystem : %s", subsystem.c_str());
@@ -593,7 +617,7 @@ CameraHalProxy::getEnabledCameraSolutionInfo(std::vector<std::string> &solutions
     return ret;
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std::string> &solutions)
 {
     PLOGI("");
 
@@ -607,7 +631,8 @@ DEVICE_RETURN_CODE_T CameraHalProxy::enableCameraSolution(const std::vector<std:
     return luna_call_sync(__func__, to_string(jin));
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::disableCameraSolution(const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T
+CameraHalProxy::disableCameraSolution(const std::vector<std::string> &solutions)
 {
     PLOGI("");
 
