@@ -49,7 +49,7 @@ bool AddOn::isSupportedCamera(std::string productId, std::string vendorId)
     {
         return WhitelistChecker::isSupportedCamera(productId, vendorId);
     }
-    return plugin_->isSupportedCamera(productId, vendorId);
+    return plugin_->isSupportedCamera(std::move(productId), std::move(vendorId));
 }
 
 bool AddOn::isAppPermission(std::string appId)
@@ -58,7 +58,7 @@ bool AddOn::isAppPermission(std::string appId)
     {
         return true;
     }
-    return plugin_->isAppPermission(appId);
+    return plugin_->isAppPermission(std::move(appId));
 }
 
 bool AddOn::notifyDeviceOpened(std::string deviceKey, std::string appId, std::string appPriority)
@@ -67,7 +67,8 @@ bool AddOn::notifyDeviceOpened(std::string deviceKey, std::string appId, std::st
     {
         return false;
     }
-    return plugin_->notifyDeviceOpened(deviceKey, appId, appPriority);
+    return plugin_->notifyDeviceOpened(std::move(deviceKey), std::move(appId),
+                                       std::move(appPriority));
 }
 
 void AddOn::notifySolutionEnabled(std::string deviceKey, const std::vector<std::string> &solutions)
@@ -76,7 +77,7 @@ void AddOn::notifySolutionEnabled(std::string deviceKey, const std::vector<std::
     {
         return;
     }
-    plugin_->notifySolutionEnabled(deviceKey, solutions);
+    plugin_->notifySolutionEnabled(std::move(deviceKey), solutions);
 }
 
 void AddOn::notifySolutionDisabled(std::string deviceKey, const std::vector<std::string> &solutions)
@@ -85,7 +86,7 @@ void AddOn::notifySolutionDisabled(std::string deviceKey, const std::vector<std:
     {
         return;
     }
-    plugin_->notifySolutionDisabled(deviceKey, solutions);
+    plugin_->notifySolutionDisabled(std::move(deviceKey), solutions);
 }
 
 void AddOn::notifyDeviceAdded(const void *deviceInfo)
@@ -113,7 +114,7 @@ void AddOn::notifyDeviceListUpdated(std::string deviceType, const void *deviceLi
     {
         return;
     }
-    plugin_->notifyDeviceListUpdated(deviceType, deviceList);
+    plugin_->notifyDeviceListUpdated(std::move(deviceType), deviceList);
 }
 
 std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
@@ -122,16 +123,16 @@ std::vector<std::string> AddOn::getEnabledSolutionList(std::string deviceKey)
     {
         return std::vector<std::string>{};
     }
-    return plugin_->getEnabledSolutionList(deviceKey);
+    return plugin_->getEnabledSolutionList(std::move(deviceKey));
 }
 
 int AddOn::Service::getDeviceCounts(std::string deviceType)
 {
-    return DeviceManager::getInstance().getDeviceCounts(deviceType);
+    return DeviceManager::getInstance().getDeviceCounts(std::move(deviceType));
 }
 
 bool AddOn::Service::updateDeviceList(std::string deviceType, const void *deviceList)
 {
     return DeviceManager::getInstance().updateDeviceList(
-        deviceType, *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
+        std::move(deviceType), *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
 }

@@ -21,7 +21,7 @@
 static bool updateDeviceListCb(std::string deviceType, const void *deviceList)
 {
     return DeviceManager::getInstance().updateDeviceList(
-        deviceType, *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
+        std::move(deviceType), *static_cast<const std::vector<DEVICE_LIST_T> *>(deviceList));
 }
 
 Notifier::~Notifier()
@@ -59,7 +59,7 @@ void Notifier::registerCallback(INotifier *notifier, INotifier::handlercb update
                                 GMainLoop *loop)
 {
     if (nullptr != notifier)
-        notifier->subscribeToClient(updateDeviceList, loop);
+        notifier->subscribeToClient(std::move(updateDeviceList), loop);
 }
 
 void Notifier::setLSHandle(LSHandle *handle) { lshandle_ = handle; }

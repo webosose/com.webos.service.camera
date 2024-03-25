@@ -395,7 +395,7 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
         std::string format = strformat.m_str;
 
         camera_format_t nformat;
-        convertFormatToCode(format, &nformat);
+        convertFormatToCode(std::move(format), &nformat);
         rcamera_params.eFormat = nformat;
 
         setCameraParams(rcamera_params);
@@ -839,7 +839,7 @@ void SetFormatMethod::getSetFormatObject(const char *input, const char *schemapa
         std::string format = strformat.m_str;
 
         camera_format_t eformat;
-        convertFormatToCode(format, &eformat);
+        convertFormatToCode(std::move(format), &eformat);
         rcameraparams.eFormat = eformat;
 
         setCameraFormat(rcameraparams);
@@ -965,8 +965,8 @@ void GetSolutionsMethod::getObject(const char *input, const char *schemapath)
 }
 
 std::string
-GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSolutionList,
-                                           std::vector<std::string> enabledSolutionList) const
+GetSolutionsMethod::createObjectJsonString(std::vector<std::string> &supportedSolutionList,
+                                           std::vector<std::string> &enabledSolutionList) const
 {
     jvalue_ref json_outobj                    = jobject_create();
     jvalue_ref json_supported_solutions_array = jarray_create(0);
@@ -982,7 +982,7 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
 
         if (supportedSolutionList.size() > 0)
         {
-            for (auto supportedSolution : supportedSolutionList)
+            for (const auto &supportedSolution : supportedSolutionList)
             {
                 bool isEnabled               = false;
                 jvalue_ref json_solution_obj = jobject_create();
@@ -990,7 +990,7 @@ GetSolutionsMethod::createObjectJsonString(std::vector<std::string> supportedSol
                 jobject_put(json_solution_obj, J_CSTR_TO_JVAL("name"),
                             jstring_create(supportedSolution.c_str()));
 
-                for (auto enabledSolution : enabledSolutionList)
+                for (const auto &enabledSolution : enabledSolutionList)
                 {
                     if (enabledSolution == supportedSolution)
                     {

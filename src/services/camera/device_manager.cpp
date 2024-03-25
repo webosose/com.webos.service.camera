@@ -103,7 +103,7 @@ std::string DeviceManager::getDeviceKey(int deviceid)
 int DeviceManager::getDeviceCounts(std::string type)
 {
     int count = 0;
-    for (auto iter : deviceMap_)
+    for (const auto &iter : deviceMap_)
     {
         if (iter.second.stList.strDeviceType == type && count < INT_MAX)
         {
@@ -126,7 +126,7 @@ bool DeviceManager::getDeviceUserData(int deviceid, std::string &userData)
 
 DEVICE_RETURN_CODE_T DeviceManager::getDeviceIdList(std::vector<int> &idList)
 {
-    for (auto list : deviceMap_)
+    for (const auto &list : deviceMap_)
         idList.push_back(list.first);
     return DEVICE_OK;
 }
@@ -162,7 +162,7 @@ int DeviceManager::addDevice(const DEVICE_LIST_T &deviceInfo)
     if (deviceid == 0)
         return 0;
 
-    deviceMap_[deviceid] = devStatus;
+    deviceMap_[deviceid] = std::move(devStatus);
     PLOGI("deviceid : %d, deviceMap_.size : %zd \n", deviceid, deviceMap_.size());
 
     // Push platform-specific device private data associated with this device */
@@ -258,7 +258,8 @@ bool DeviceManager::updateDeviceList(std::string deviceType,
     }
 
     if (pAddon_ && pAddon_->hasImplementation())
-        pAddon_->notifyDeviceListUpdated(deviceType, static_cast<const void *>(&deviceList));
+        pAddon_->notifyDeviceListUpdated(std::move(deviceType),
+                                         static_cast<const void *>(&deviceList));
     return true;
 }
 
@@ -279,7 +280,8 @@ DEVICE_RETURN_CODE_T DeviceManager::getInfo(int deviceid, camera_device_info_t *
         std::string deviceType = getDeviceType(deviceid);
         PLOGI("deviceType : %s", deviceType.c_str());
 
-        ret = CameraHalProxy::getDeviceInfo(strdevicenode, deviceType, p_info);
+        ret =
+            CameraHalProxy::getDeviceInfo(std::move(strdevicenode), std::move(deviceType), p_info);
 
         if (DEVICE_OK != ret)
         {

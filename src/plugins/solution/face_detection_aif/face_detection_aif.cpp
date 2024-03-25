@@ -166,7 +166,7 @@ void FaceDetectionAIF::processing(void)
             if (jfaces != nullptr && jfaces.is_array())
             {
                 PLOGI("Detected face count : %zd", jfaces.size());
-                for (auto jface : jfaces)
+                for (const auto &jface : jfaces)
                 {
                     if (!jface.contains("region") || !jface.contains("score"))
                         continue;
@@ -190,14 +190,14 @@ void FaceDetectionAIF::processing(void)
             }
         }
         json jout;
-        jout["faces"]                      = joutfaces;
+        jout["faces"]                      = std::move(joutfaces);
         jout[CONST_PARAM_NAME_RETURNVALUE] = true;
         std::string strOutput              = jout.dump();
 
         if (pEvent_ && getMetaSizeHint() > 0)
             (pEvent_.load())->onDone(strOutput.c_str());
 
-        sendReply(strOutput);
+        sendReply(std::move(strOutput));
     } while (0);
 }
 
@@ -210,7 +210,7 @@ void FaceDetectionAIF::postProcessing(void)
     if (pEvent_ && getMetaSizeHint() > 0)
         (pEvent_.load())->onDone(strOutput.c_str());
 
-    sendReply(strOutput);
+    sendReply(std::move(strOutput));
 }
 
 bool FaceDetectionAIF::detectFace(void)

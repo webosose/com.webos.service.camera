@@ -77,7 +77,7 @@ bool CameraHalService::createHal(LSMessage &message)
     }
 
     pDeviceControl           = std::make_unique<DeviceControl>();
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHal(device_type);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->createHal(std::move(device_type));
 
     if (ret == DEVICE_OK)
     {
@@ -160,7 +160,8 @@ bool CameraHalService::open(LSMessage &message)
         payload_ = parsed[CONST_PARAM_NAME_PAYLOAD].asString();
     }
 
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->open(devicenode, ndev_id, payload_);
+    DEVICE_RETURN_CODE_T ret =
+        pDeviceControl->open(std::move(devicenode), ndev_id, std::move(payload_));
 
     if (ret == DEVICE_OK)
     {
@@ -231,7 +232,7 @@ bool CameraHalService::startPreview(LSMessage &message)
     PLOGI("memtype(%s)", memtype.c_str());
 
     DEVICE_RETURN_CODE_T ret =
-        pDeviceControl->startPreview(memtype, &pkey, this->get(), SUBSCRIPTION_KEY);
+        pDeviceControl->startPreview(std::move(memtype), &pkey, this->get(), SUBSCRIPTION_KEY);
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHMKEY), jnumber_create_i32(pkey));
@@ -696,7 +697,7 @@ bool CameraHalService::getDeviceInfo(LSMessage &message)
     PLOGI("device_type(%s)", device_type.c_str());
 
     DEVICE_RETURN_CODE_T ret =
-        DeviceControl::getDeviceInfo(strdevicenode, device_type, &cameraInfo);
+        DeviceControl::getDeviceInfo(std::move(strdevicenode), std::move(device_type), &cameraInfo);
     if (ret == DEVICE_OK)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_DEVICE_TYPE),
@@ -900,7 +901,7 @@ bool CameraHalService::getSupportedCameraSolutionInfo(LSMessage &message)
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getSupportedCameraSolutionInfo(solutionsInfo);
     if (ret == DEVICE_OK)
     {
-        for (auto solution : solutionsInfo)
+        for (const auto &solution : solutionsInfo)
         {
             jarray_append(json_solutions_array, jstring_create(solution.c_str()));
         }
@@ -938,7 +939,7 @@ bool CameraHalService::getEnabledCameraSolutionInfo(LSMessage &message)
     DEVICE_RETURN_CODE_T ret = pDeviceControl->getEnabledCameraSolutionInfo(solutionsInfo);
     if (ret == DEVICE_OK)
     {
-        for (auto solution : solutionsInfo)
+        for (const auto &solution : solutionsInfo)
         {
             jarray_append(json_solutions_array, jstring_create(solution.c_str()));
         }

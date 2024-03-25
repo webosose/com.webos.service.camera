@@ -537,8 +537,8 @@ public:
     MethodReply getMethodReply() const { return objreply_; }
 
     void getObject(const char *, const char *);
-    std::string createObjectJsonString(std::vector<std::string> supportedSolutionList,
-                                       std::vector<std::string> enabledSolutionList) const;
+    std::string createObjectJsonString(std::vector<std::string> &supportedSolutionList,
+                                       std::vector<std::string> &enabledSolutionList) const;
 
 private:
     int n_devicehandle_;

@@ -187,7 +187,8 @@ bool CameraService::open(LSMessage &message)
         int ndevice_handle = n_invalid_id;
 
         // open camera device and save fd
-        err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, app_id, app_priority);
+        err_id = CommandManager::getInstance().open(ndev_id, &ndevice_handle, std::move(app_id),
+                                                    std::move(app_priority));
         if (DEVICE_OK != err_id)
         {
             PLOGE("err_id != DEVICE_OK\n");
@@ -819,7 +820,7 @@ bool CameraService::getProperties(LSMessage &message)
         std::string event_key = CONST_EVENT_KEY_PROPERTIES;
         event_key += "_";
         event_key += obj_getproperties.getCameraId();
-        bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
+        bool bsubscribed = event_obj.addSubscription(this->get(), std::move(event_key), message);
         PLOGI("bsubscribed (%d) \n", bsubscribed);
         obj_getproperties.setSubcribed(bsubscribed);
 
@@ -910,7 +911,7 @@ bool CameraService::setProperties(LSMessage &message)
                 // check if new properties are different from saved properties
                 auto *p_olddata = static_cast<void *>(&old_property);
                 createEventMessage(EventType::EVENT_TYPE_PROPERTIES, p_olddata, ndevhandle,
-                                   event_key);
+                                   std::move(event_key));
             }
         }
     }
@@ -963,7 +964,8 @@ bool CameraService::setFormat(LSMessage &message)
             // check if new format settings are different from saved format settings
             // get saved format of the device
             auto *p_olddata = static_cast<void *>(&savedformat);
-            createEventMessage(EventType::EVENT_TYPE_FORMAT, p_olddata, ndevhandle, event_key);
+            createEventMessage(EventType::EVENT_TYPE_FORMAT, p_olddata, ndevhandle,
+                               std::move(event_key));
         }
     }
 
@@ -1405,7 +1407,7 @@ bool CameraService::getFormat(LSMessage &message)
         std::string event_key = CONST_EVENT_KEY_FORMAT;
         event_key += "_";
         event_key += obj_getFormat.getCameraId();
-        bool bsubscribed = event_obj.addSubscription(this->get(), event_key, message);
+        bool bsubscribed = event_obj.addSubscription(this->get(), std::move(event_key), message);
         PLOGI("bsubscribed (%d) \n", bsubscribed);
         obj_getFormat.setSubcribed(bsubscribed);
 

@@ -36,13 +36,13 @@ bool EventNotification::addSubscription(LSHandle *lsHandle, std::string key, LSM
             LSErrorFree(&error);
             return false;
         }
-        (void)getSubscribeCount(lsHandle, key);
+        (void)getSubscribeCount(lsHandle, std::move(key));
         LSErrorFree(&error);
         return true;
     }
     else
     {
-        (void)getSubscribeCount(lsHandle, key);
+        (void)getSubscribeCount(lsHandle, std::move(key));
     }
 
     LSErrorFree(&error);
@@ -99,7 +99,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
                 json_outobjparams[CONST_PARAM_NAME_FPS]    = cur_format->nFps;
                 json_outobjparams[CONST_PARAM_NAME_FORMAT] =
                     getFormatStringFromCode(cur_format->eFormat);
-                json_outobj[CONST_PARAM_NAME_PARAMS] = json_outobjparams;
+                json_outobj[CONST_PARAM_NAME_PARAMS] = std::move(json_outobjparams);
             }
         }
         else
@@ -113,7 +113,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
     case EventType::EVENT_TYPE_PROPERTIES:
     {
         // camera id
-        json_outobj[CONST_PARAM_NAME_ID] = getCameraIdFromKey(key);
+        json_outobj[CONST_PARAM_NAME_ID] = getCameraIdFromKey(std::move(key));
 
         if (p_cur_data != nullptr && p_old_data != nullptr)
         {
@@ -141,7 +141,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
                         json_outobjparams[getParamString(i)] = json_propertyobj;
                     }
                 }
-                json_outobj[CONST_PARAM_NAME_PARAMS] = json_outobjparams;
+                json_outobj[CONST_PARAM_NAME_PARAMS] = std::move(json_outobjparams);
             }
         }
         else
@@ -172,7 +172,7 @@ bool EventNotification::getJsonString(json &json_outobj, std::string key, EventT
             deviceListObj[CONST_PARAM_NAME_ID] = CONST_DEVICE_NAME_CAMERA + std::to_string(it);
             deviceListArr.push_back(deviceListObj);
         }
-        json_outobj[CONST_PARAM_NAME_DEVICE_LIST] = deviceListArr;
+        json_outobj[CONST_PARAM_NAME_DEVICE_LIST] = std::move(deviceListArr);
 
         break;
     }
@@ -199,7 +199,7 @@ void EventNotification::eventReply(LSHandle *lsHandle, std::string key, EventTyp
             getJsonString(json_outobj, key, etype, p_cur_data, p_old_data);
         str_reply = json_outobj.dump();
 
-        subscriptionReply(lsHandle, key, str_reply);
+        subscriptionReply(lsHandle, std::move(key), str_reply);
         PLOGI("str_reply %s", str_reply.c_str());
     }
 }
@@ -246,11 +246,11 @@ void EventNotification::removeSubscription(LSHandle *lsHandle, int camera_id)
     key_format += key_camera;
     key_properties += key_camera;
 
-    std::vector<std::string> key_list{key_format, key_properties};
+    std::vector<std::string> key_list{std::move(key_format), std::move(key_properties)};
 
     json_outobj[CONST_PARAM_NAME_RETURNVALUE] = false;
     json_outobj[CONST_PARAM_NAME_SUBSCRIBED]  = false;
-    json_outobj[CONST_PARAM_NAME_ID]          = getCameraIdFromKey(key_camera);
+    json_outobj[CONST_PARAM_NAME_ID]          = getCameraIdFromKey(std::move(key_camera));
     json_outobj[CONST_PARAM_NAME_ERROR_CODE]  = DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED;
     json_outobj[CONST_PARAM_NAME_ERROR_TEXT] =
         getErrorString(DEVICE_ERROR_SUBSCIRPTION_FAIL_DEVICE_DISCONNETED);
