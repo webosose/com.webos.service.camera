@@ -29,7 +29,7 @@ int dumpFrame(unsigned char *inputY, unsigned char *inputUV, int width, int heig
 AutoContrast::AutoContrast(void)
 {
     PLOGI("");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
+    solutionProperty_ = LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT;
 }
 
 AutoContrast::~AutoContrast(void)

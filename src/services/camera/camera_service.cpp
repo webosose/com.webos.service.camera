@@ -32,7 +32,7 @@
 #include <string>
 
 struct sigaction sigact_service_crash;
-void signal_handler_service_crash(int sig);
+extern "C" void signal_handler_service_crash(int sig);
 void install_handler_service_crash();
 
 CameraService::CameraService() : LS::Handle(LS::registerService(cstr_uricameramain.c_str()))
@@ -1474,7 +1474,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void signal_handler_service_crash(int sig)
+extern "C" void signal_handler_service_crash(int sig)
 {
     PLOGI("signal(%d) received !!\n", sig);
 

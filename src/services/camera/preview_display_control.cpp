@@ -40,29 +40,38 @@ PreviewDisplayControl::~PreviewDisplayControl()
 bool PreviewDisplayControl::isValidWindowId(std::string windowId)
 {
     std::stringstream strStream;
-    int num   = 0;
-    int digit = -1;
-    int end   = -1;
-    int begin = -1;
+    int num      = 0;
+    int digit    = -1;
+    size_t end   = std::string::npos;
+    size_t begin = std::string::npos;
 
     begin = windowId.find(window_id_str);
     if (begin != 0)
     {
         PLOGI("Invalid windowId value");
-        bResult_ = false;
         return false;
     }
 
     begin = window_id_str.length();
     end   = windowId.length();
 
-    for (int index = begin; index < end; index++)
+    for (size_t index = begin; index < end; index++)
     {
-        if (isdigit(windowId[index]))
+        if (isdigit(static_cast<unsigned char>(windowId[index])))
         {
             strStream << windowId[index];
             strStream >> digit;
+            if (!strStream)
+            {
+                PLOGI("Error: conversion from string to number failed");
+                return false;
+            }
             strStream.clear();
+            if (num > INT_MAX / 10)
+            {
+                PLOGI("Potential overflow detected");
+                return false;
+            }
             num = digit + num * 10;
         }
     }
@@ -296,7 +305,7 @@ int PreviewDisplayControl::getPid(std::string mediaId)
     }
 
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
-    for (ssize_t i = 0; i < parsed.arraySize(); i++)
+    for (int i = 0; i < parsed.arraySize(); i++)
     {
         if (parsed[i]["mediaId"].asString() == mediaId)
         {

@@ -90,7 +90,7 @@ bool CameraSolutionService::create(LSMessage &message)
     if (ret == false)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
-                    jnumber_create_i32(err_code));
+                    jnumber_create_i32(static_cast<int32_t>(err_code)));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_TEXT),
                     jstring_create(ErrorManager::GetErrorText(err_code).c_str()));
     }
@@ -192,7 +192,7 @@ bool CameraSolutionService::enable(LSMessage &message)
     if (ret == false)
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
-                    jnumber_create_i32(err_code));
+                    jnumber_create_i32(static_cast<int32_t>(err_code)));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_TEXT),
                     jstring_create(ErrorManager::GetErrorText(err_code).c_str()));
     }
@@ -243,7 +243,7 @@ bool CameraSolutionService::subscribe(LSMessage &message)
     {
         ErrorCode err_code = FAIL_TO_SUBSCRIBE;
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_CODE),
-                    jnumber_create_i32(err_code));
+                    jnumber_create_i32(static_cast<int32_t>(err_code)));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_ERROR_TEXT),
                     jstring_create(ErrorManager::GetErrorText(err_code).c_str()));
     }

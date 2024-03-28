@@ -49,7 +49,7 @@ std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTI
 void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
     PLOGI("");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
+    solutionProperty_ = LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT;
 
     std::lock_guard<std::mutex> lock(mtxAi_);
     EdgeAIVision::getInstance().startup();

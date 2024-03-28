@@ -13,9 +13,7 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-
-#ifndef __CAMERA_SOLUTION_PROXY__
-#define __CAMERA_SOLUTION_PROXY__
+#pragma once
 
 #include "camera_hal_types.h"
 #include "camera_solution.h"
@@ -31,7 +29,7 @@ class Process;
 struct CameraSolutionEvent;
 class CameraSolutionProxy
 {
-    Property solutionProperty_{LG_SOLUTION_NONE};
+    int solutionProperty_ = LG_SOLUTION_NONE;
     bool preRun_{false};
     bool enableStatus_{false};
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
@@ -87,7 +85,7 @@ public:
     int32_t getMetaSizeHint(void);
     void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
     void setEnableValue(bool enableValue);
-    Property getProperty(void) { return solutionProperty_; }
+    int getProperty(void) { return solutionProperty_; }
     bool isEnabled(void) { return bAlive_ ? enableStatus_ : preRun_; };
 
     std::string getSolutionStr(void) { return solution_name_; };
@@ -97,5 +95,3 @@ public:
 
     std::atomic<CameraSolutionEvent *> pEvent_{nullptr};
 };
-
-#endif // __CAMERA_SOLUTION_PROXY__

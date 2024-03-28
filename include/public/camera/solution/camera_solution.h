@@ -57,7 +57,7 @@ public:
     virtual void release(void)                         = 0;
 
 protected:
-    Property solutionProperty_{LG_SOLUTION_NONE};
+    int solutionProperty_ = LG_SOLUTION_NONE;
     bool supportStatus_{false};
     bool enableStatus_{false};
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};

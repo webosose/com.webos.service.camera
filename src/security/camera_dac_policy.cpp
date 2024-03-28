@@ -50,7 +50,7 @@ void AclRule::log(void)
     PLOGI("other::%s", other_perm.c_str());
 }
 
-std::vector<std::string> CameraDacPolicy::split(std::string str, char delim)
+std::vector<std::string> CameraDacPolicy::split(const std::string &str, char delim)
 {
     std::istringstream iss(str);
     std::string token;
@@ -129,7 +129,7 @@ bool CameraDacPolicy::setAcl(const char *rule, const char *file)
     acl_t acl;
 
     acl = acl_from_text(rule);
-    if (!acl)
+    if (acl == NULL)
     {
         PLOGE("%s: %s\n", rule, strerror(errno));
         return false;
@@ -155,6 +155,12 @@ bool CameraDacPolicy::setAcl(const char *rule, const char *file)
 
 bool CameraDacPolicy::getCurrentRule(const char *dir, AclRule &rule)
 {
+    if (dir == nullptr)
+    {
+        PLOGI("dir is nullptr");
+        return false;
+    }
+
     rule.init();
 
     if (!getAcl(dir, &rule.owner_uid, &rule.owner_gid))
@@ -214,7 +220,7 @@ bool CameraDacPolicy::getCurrentRule(const char *dir, AclRule &rule)
     return true;
 }
 
-void CameraDacPolicy::createTextRule(AclRule r, std::string &text)
+void CameraDacPolicy::createTextRule(const AclRule &r, std::string &text)
 {
     text = "";
     if (!r.base_user_perm.empty())
@@ -254,14 +260,14 @@ void CameraDacPolicy::createCaptureTextRule(int uid, std::string &text)
 bool CameraDacPolicy::prepare(int uid)
 {
     const char *uname = getUsername(uid);
-    if (!uname)
+    if (uname == nullptr)
     {
         return false;
     }
     std::string str_uname = uname;
 
     auto it = std::find_if(dcim_rule_.acl_user_perms.begin(), dcim_rule_.acl_user_perms.end(),
-                           [=](const AclEntry &p) { return p.uname == uname; });
+                           [=](const AclEntry &p) { return p.uname == str_uname; });
     if (it == dcim_rule_.acl_user_perms.end())
     {
         // Add ACL for this new client.
@@ -280,7 +286,7 @@ bool CameraDacPolicy::prepare(int uid)
     }
 
     it = std::find_if(dcim_rule_.acl_group_perms.begin(), dcim_rule_.acl_group_perms.end(),
-                      [=](const AclEntry &p) { return p.uname == uname; });
+                      [=](const AclEntry &p) { return p.uname == str_uname; });
     if (it != dcim_rule_.acl_group_perms.end())
     {
         // we apply DAC not using ACL_GROUP but using ACL_USER entry.
@@ -292,7 +298,7 @@ bool CameraDacPolicy::prepare(int uid)
     }
 
     it = std::find_if(camera_rule_.acl_user_perms.begin(), camera_rule_.acl_user_perms.end(),
-                      [=](const AclEntry &p) { return p.uname == uname; });
+                      [=](const AclEntry &p) { return p.uname == str_uname; });
     if (it == camera_rule_.acl_user_perms.end())
     {
         camera_rule_.acl_user_perms.push_back({uname, "r-x"});
@@ -310,7 +316,7 @@ bool CameraDacPolicy::prepare(int uid)
     }
 
     it = std::find_if(camera_rule_.acl_group_perms.begin(), camera_rule_.acl_group_perms.end(),
-                      [=](const AclEntry &p) { return p.uname == uname; });
+                      [=](const AclEntry &p) { return p.uname == str_uname; });
     if (it != camera_rule_.acl_group_perms.end())
     {
         // we apply DAC using ACL_USER entry only.
@@ -349,9 +355,10 @@ bool CameraDacPolicy::apply(int uid)
 
     std::string str_uid         = std::to_string(uid);
     std::string str_capture_dir = str_camera_dir + "/" + str_uid;
-    if (access(str_capture_dir.c_str(), F_OK) == -1)
+
+    if (mkdir(str_capture_dir.c_str(), 0700) != 0)
     {
-        if (0 != mkdir(str_capture_dir.c_str(), 0700))
+        if (errno != EEXIST)
         {
             return false;
         }

@@ -90,10 +90,10 @@ typedef struct
     unsigned char *extra_buf;
 } SHMEM_COMM_T;
 
-SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
-                          int extraSize, int nOpenMode);
-SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-                          unsigned char **ppExtraData, int *pExtraSize, int readMode);
+SHMEM_STATUS_T openShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
+                         int extraSize, int nOpenMode);
+SHMEM_STATUS_T readShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
+                         unsigned char **ppExtraData, int *pExtraSize, int readMode);
 
 key_t getShmemKey(void);
 
@@ -116,7 +116,7 @@ union semun
     int val;
     struct semid_ds *buf;
     unsigned short *array;
-    struct seminfo *__buf;
+    struct seminfo *__buf; /* buffer for IPC_INFO (Linux-specific) */
 };
 
 //  << Shmem shape : frame_count : 8, extra_size : sizeof(int)) >>
@@ -637,7 +637,7 @@ SHMEM_STATUS_T IPCSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem)
 
 SHMEM_STATUS_T IPCSharedMemory::OpenShmem(SHMEM_HANDLE *phShmem, key_t shmemKey)
 {
-    return _OpenShmem(phShmem, &shmemKey, 0, 0, 0, MODE_OPEN);
+    return openShmem(phShmem, &shmemKey, 0, 0, 0, MODE_OPEN);
 }
 
 static int resetShmem(SHMEM_COMM_T *shmem_buffer)
@@ -654,8 +654,8 @@ static int resetShmem(SHMEM_COMM_T *shmem_buffer)
     return semctl(shmem_buffer->sema_id, 0, SETVAL, se);
 }
 
-SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
-                          int extraSize, int nOpenMode)
+SHMEM_STATUS_T openShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize, int unitNum,
+                         int extraSize, int nOpenMode)
 {
     SHMEM_COMM_T *pShmemBuffer;
     unsigned char *pSharedmem;
@@ -832,11 +832,11 @@ SHMEM_STATUS_T _OpenShmem(SHMEM_HANDLE *phShmem, key_t *pShmemKey, int unitSize,
 
 SHMEM_STATUS_T IPCSharedMemory::ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize)
 {
-    return _ReadShmem(hShmem, ppData, pSize, NULL, NULL, READ_FIRST);
+    return readShmem(hShmem, ppData, pSize, NULL, NULL, READ_FIRST);
 }
 
-SHMEM_STATUS_T _ReadShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-                          unsigned char **ppExtraData, int *pExtraSize, int readMode)
+SHMEM_STATUS_T readShmem(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
+                         unsigned char **ppExtraData, int *pExtraSize, int readMode)
 {
     SHMEM_COMM_T *shmem_buffer = (SHMEM_COMM_T *)hShmem;
     int lread_index;
