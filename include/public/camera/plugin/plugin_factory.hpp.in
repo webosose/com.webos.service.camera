@@ -23,7 +23,7 @@ struct PluginInfo
 
     PluginInfo(IPlugin *pPlugin, std::string strPath)
     {
-        strPath_ = strPath;
+        strPath_ = std::move(strPath);
         if (pPlugin->getName() != nullptr)
             strName_ = pPlugin->getName();
         if (pPlugin->getDescription() != nullptr)
@@ -36,8 +36,9 @@ struct PluginInfo
             strOrganization_ = pPlugin->getOrganization();
         for (size_t i = 0; i < pPlugin->getFeatureCount(); ++i)
         {
-            if (pPlugin->getFeatureName(i) != nullptr)
-                lstFeatures_.emplace_back(pPlugin->getFeatureName(i));
+            const char* featureName = pPlugin->getFeatureName(i);
+            if (featureName != nullptr)
+                lstFeatures_.emplace_back(featureName);
         }
     }
 

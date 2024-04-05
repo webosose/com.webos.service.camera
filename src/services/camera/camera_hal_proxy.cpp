@@ -249,7 +249,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::capture(int ncount, const std::string &imag
 
     if (ret == DEVICE_OK)
     {
-        for (auto s : jOut[CONST_PARAM_NAME_IMAGE_PATH])
+        for (const auto &s : jOut[CONST_PARAM_NAME_IMAGE_PATH])
         {
             if (!s.is_string())
                 continue;
@@ -586,7 +586,7 @@ CameraHalProxy::getSupportedCameraSolutionInfo(std::vector<std::string> &solutio
 
     if (ret == DEVICE_OK)
     {
-        for (auto s : jOut[CONST_PARAM_NAME_SOLUTIONS])
+        for (const auto &s : jOut[CONST_PARAM_NAME_SOLUTIONS])
         {
             if (!s.is_string())
                 continue;
@@ -606,7 +606,7 @@ CameraHalProxy::getEnabledCameraSolutionInfo(std::vector<std::string> &solutions
 
     if (ret == DEVICE_OK)
     {
-        for (auto s : jOut[CONST_PARAM_NAME_SOLUTIONS])
+        for (const auto &s : jOut[CONST_PARAM_NAME_SOLUTIONS])
         {
             if (!s.is_string())
                 continue;

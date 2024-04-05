@@ -13,9 +13,7 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-
-#ifndef __PROCESS__
-#define __PROCESS__
+#pragma once
 
 #include <glib.h>
 #include <string>
@@ -32,5 +30,3 @@ public:
     Process(const std::string &cmd);
     ~Process();
 };
-
-#endif // __PROCESS__

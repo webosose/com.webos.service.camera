@@ -98,7 +98,7 @@ void VirtualDeviceManager::removeHandlePriorityObj(int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
 {
     std::string deviceType   = DeviceManager::getInstance().getDeviceType(devid);
-    DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHal(deviceType);
+    DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.createHal(std::move(deviceType));
     if (DEVICE_OK != ret)
     {
         PLOGI("Failed to create handle\n");
@@ -114,7 +114,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::openDevice(int devid, int *devhandle)
     DeviceManager::getInstance().getDeviceUserData(devid, payload);
 
     // open the camera here
-    ret = objcamerahalproxy_.open(devnode, devid, payload);
+    ret = objcamerahalproxy_.open(std::move(devnode), devid, std::move(payload));
     if (DEVICE_OK != ret)
         PLOGI("Failed to open device\n");
     else
@@ -312,7 +312,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::strin
                 {
                     std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
                     ret                   = objcamerahalproxy_.enableCameraSolution(
-                                          pAddon_->getEnabledSolutionList(deviceKey));
+                                          pAddon_->getEnabledSolutionList(std::move(deviceKey)));
                     if (DEVICE_OK != ret)
                         PLOGI("Failed to enable camera solution\n");
                 }
@@ -530,7 +530,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                 {
                     std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
                     ret                   = objcamerahalproxy_.enableCameraSolution(
-                                          pAddon_->getEnabledSolutionList(deviceKey));
+                                          pAddon_->getEnabledSolutionList(std::move(deviceKey)));
                     if (DEVICE_OK != ret)
                         PLOGI("Failed to enable camera solution\n");
                 }
@@ -1129,7 +1129,7 @@ VirtualDeviceManager::enableCameraSolution(int devhandle, const std::vector<std:
             if (pAddon_ && pAddon_->hasImplementation())
             {
                 std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
-                pAddon_->notifySolutionEnabled(deviceKey, solutions);
+                pAddon_->notifySolutionEnabled(std::move(deviceKey), solutions);
             }
         }
 
@@ -1165,7 +1165,7 @@ VirtualDeviceManager::disableCameraSolution(int devhandle,
             if (pAddon_ && pAddon_->hasImplementation())
             {
                 std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
-                pAddon_->notifySolutionDisabled(deviceKey, solutions);
+                pAddon_->notifySolutionDisabled(std::move(deviceKey), solutions);
             }
         }
 
@@ -1181,6 +1181,9 @@ VirtualDeviceManager::disableCameraSolution(int devhandle,
 std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
                                                       std::string mem_type, int key)
 {
+    std::string priority = getAppPriority(handle);
+    PLOGI("priority : %s", priority.c_str());
+
     std::string media_id = "";
     auto pdc             = std::make_unique<PreviewDisplayControl>(window_id);
     if (pdc)
@@ -1190,7 +1193,7 @@ std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string wi
         CAMERA_FORMAT camera_format;
         getFormat(handle, &camera_format);
         media_id = pdc->load(std::move(camera_id), std::move(window_id), camera_format,
-                             std::move(mem_type), key, handle);
+                             std::move(mem_type), key, handle, (cstr_primary == priority));
         if (!media_id.empty())
         {
             // We do not check the result because uMediaServer always returns SUCCESS.

@@ -26,7 +26,7 @@
 #include <map>
 #include <vector>
 
-typedef struct _DEVICE_STATUS
+typedef struct DEVICE_STATUS_
 {
     bool isDeviceOpen;    // open or close
     DEVICE_LIST_T stList; // name, id, node ...

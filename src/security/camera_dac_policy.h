@@ -48,14 +48,14 @@ private:
     AclRule dcim_rule_;
     AclRule camera_rule_;
 
-    std::vector<std::string> split(std::string str, char delim);
+    std::vector<std::string> split(const std::string &str, char delim);
     const char *getUsername(int uid);
 
     bool getAcl(const char *file, int *owner_id, int *group_id);
     bool setAcl(const char *rule, const char *file);
     void logAclText(const char *acltext);
     bool getCurrentRule(const char *dir, AclRule &rule);
-    void createTextRule(AclRule r, std::string &text);
+    void createTextRule(const AclRule &r, std::string &text);
     void createCaptureTextRule(int uid, std::string &text);
     bool prepare(int uid);
 

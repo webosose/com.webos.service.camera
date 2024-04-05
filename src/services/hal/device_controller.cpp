@@ -629,7 +629,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         }
 
         shmemfd_       = *pkey;
-        str_shmemname_ = shmname;
+        str_shmemname_ = std::move(shmname);
     }
 
     //[Camera Solution Manager] initialization
@@ -1003,7 +1003,7 @@ DEVICE_RETURN_CODE_T DeviceControl::getDeviceInfo(std::string strdevicenode, std
     void *pInterface = nullptr;
     if (pFeature && pFeature->queryInterface(deviceType.c_str(), &pInterface))
     {
-        static_cast<IHal *>(pInterface)->getInfo(pinfo, strdevicenode);
+        static_cast<IHal *>(pInterface)->getInfo(pinfo, std::move(strdevicenode));
         return DEVICE_OK;
     }
     return DEVICE_ERROR_UNKNOWN;
@@ -1297,7 +1297,7 @@ DeviceControl::getEnabledCameraSolutionInfo(std::vector<std::string> &solutionsI
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::enableCameraSolution(const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T DeviceControl::enableCameraSolution(const std::vector<std::string> &solutions)
 {
     PLOGI("");
 
@@ -1308,7 +1308,7 @@ DEVICE_RETURN_CODE_T DeviceControl::enableCameraSolution(const std::vector<std::
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::disableCameraSolution(const std::vector<std::string> solutions)
+DEVICE_RETURN_CODE_T DeviceControl::disableCameraSolution(const std::vector<std::string> &solutions)
 {
     PLOGI("");
 

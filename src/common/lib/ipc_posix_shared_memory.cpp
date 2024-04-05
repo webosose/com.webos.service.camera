@@ -623,8 +623,8 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem, int u
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T _ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
-                              unsigned char **ppExtraData, int *pExtraSize, int readMode)
+PSHMEM_STATUS_T readShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
+                             unsigned char **ppExtraData, int *pExtraSize, int readMode)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
     int lread_index;
@@ -704,7 +704,7 @@ PSHMEM_STATUS_T _ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *
 PSHMEM_STATUS_T IPCPosixSharedMemory::ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData,
                                                    int *pSize)
 {
-    return _ReadShmemory(hShmem, ppData, pSize, NULL, NULL, READ_FIRST);
+    return readShmemory(hShmem, ppData, pSize, NULL, NULL, READ_FIRST);
 }
 
 int IPCPosixSharedMemory::GetWriteIndex(SHMEM_HANDLE hShmem)

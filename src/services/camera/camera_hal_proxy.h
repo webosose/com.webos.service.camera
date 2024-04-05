@@ -13,9 +13,7 @@
 // limitations under the License.
 //
 // SPDX-License-Identifier: Apache-2.0
-
-#ifndef __CAMERA_HAL_PROXY__
-#define __CAMERA_HAL_PROXY__
+#pragma once
 
 #include "camera_types.h"
 #include <memory>
@@ -96,5 +94,3 @@ public:
     std::string subsKey_;
     std::vector<int> devHandles_; /* used to stop capture from callback */
 };
-
-#endif // __CAMERA_HAL_PROXY__

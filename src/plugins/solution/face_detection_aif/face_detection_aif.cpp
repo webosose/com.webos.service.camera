@@ -49,7 +49,7 @@ std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTI
 void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *lsHandle)
 {
     PLOGI("");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
+    solutionProperty_ = LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT;
 
     std::lock_guard<std::mutex> lock(mtxAi_);
     EdgeAIVision::getInstance().startup();
@@ -166,7 +166,7 @@ void FaceDetectionAIF::processing(void)
             if (jfaces != nullptr && jfaces.is_array())
             {
                 PLOGI("Detected face count : %zd", jfaces.size());
-                for (auto jface : jfaces)
+                for (const auto &jface : jfaces)
                 {
                     if (!jface.contains("region") || !jface.contains("score"))
                         continue;
@@ -190,14 +190,14 @@ void FaceDetectionAIF::processing(void)
             }
         }
         json jout;
-        jout["faces"]                      = joutfaces;
+        jout["faces"]                      = std::move(joutfaces);
         jout[CONST_PARAM_NAME_RETURNVALUE] = true;
         std::string strOutput              = jout.dump();
 
         if (pEvent_ && getMetaSizeHint() > 0)
             (pEvent_.load())->onDone(strOutput.c_str());
 
-        sendReply(strOutput);
+        sendReply(std::move(strOutput));
     } while (0);
 }
 
@@ -210,7 +210,7 @@ void FaceDetectionAIF::postProcessing(void)
     if (pEvent_ && getMetaSizeHint() > 0)
         (pEvent_.load())->onDone(strOutput.c_str());
 
-    sendReply(strOutput);
+    sendReply(std::move(strOutput));
 }
 
 bool FaceDetectionAIF::detectFace(void)

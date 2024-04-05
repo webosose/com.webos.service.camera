@@ -20,7 +20,7 @@
 Dummy::Dummy(void)
 {
     PLOGI("");
-    solutionProperty_ = Property(LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT);
+    solutionProperty_ = LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT;
 }
 
 Dummy::~Dummy(void)

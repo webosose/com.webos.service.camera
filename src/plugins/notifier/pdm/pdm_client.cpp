@@ -101,7 +101,7 @@ PDMClient::~PDMClient() { PLOGI(""); }
 void PDMClient::subscribeToClient(handlercb cb, void *mainLoop)
 {
     PLOGI("");
-    this->updateDeviceList = cb;
+    this->updateDeviceList = std::move(cb);
 
     if (!lunaClient_)
         return;

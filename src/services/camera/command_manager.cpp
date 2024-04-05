@@ -96,7 +96,8 @@ DEVICE_RETURN_CODE_T CommandManager::open(int deviceid, int *devicehandle, std::
             if (pAddon_ && pAddon_->hasImplementation())
             {
                 std::string deviceKey = DeviceManager::getInstance().getDeviceKey(deviceid);
-                bool res              = pAddon_->notifyDeviceOpened(deviceKey, appId, apppriority);
+                bool res = pAddon_->notifyDeviceOpened(std::move(deviceKey), std::move(appId),
+                                                       std::move(apppriority));
                 PLOGI("AddOn::notifyDeviceOpened = %d ", res);
             }
         }
@@ -489,7 +490,7 @@ void CommandManager::closeClientDevice(std::string clientName)
             {
                 obj.ptr->stopCamera(obj.devicehandle);
             }
-            else if(state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+            else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
             {
                 obj.ptr->stopPreview(obj.devicehandle);
             }
@@ -526,7 +527,7 @@ void CommandManager::handleCrash()
         {
             obj.ptr->stopCamera(obj.devicehandle);
         }
-        else if(state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+        else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
         {
             obj.ptr->stopPreview(obj.devicehandle);
         }
@@ -563,7 +564,7 @@ void CommandManager::release(int deviceid)
             {
                 obj.ptr->stopCamera(obj.devicehandle);
             }
-            else if(state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+            else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
             {
                 obj.ptr->stopPreview(obj.devicehandle);
             }
