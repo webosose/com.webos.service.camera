@@ -180,7 +180,7 @@ bool PreviewDisplayControl::cbHandleResponseMsg(LSHandle *sh, LSMessage *msg, vo
 
 std::string PreviewDisplayControl::load(std::string camera_id, std::string windowId,
                                         CAMERA_FORMAT cameraFormat, std::string memType,
-                                        int key, int handle)
+                                        int key, int handle, bool primary)
 {
     std::string media_id = "";
 
@@ -221,6 +221,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
         payload +=  "\"handle\":" + std::to_string(handle) + ",";
     }
 
+    payload += "\"primary\":" + std::string(primary ? "true" : "false") + ",";
     payload += "\"cameraId\":\"" + camera_id + "\"}},\"type\":\"camera\"}";
 
     PMLOG_INFO(CONST_MODULE_DPY, "payload : %s", payload.c_str());

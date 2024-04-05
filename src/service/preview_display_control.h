@@ -30,7 +30,7 @@ public:
     ~PreviewDisplayControl();
     std::string load(std::string cameraId, std::string windowId,
                      CAMERA_FORMAT cameraFormat, std::string memType,
-                     int key, int handle);
+                     int key, int handle, bool primary);
     bool play(std::string mediaId);
     bool unload(std::string mediaId);
     bool getControlStatus();

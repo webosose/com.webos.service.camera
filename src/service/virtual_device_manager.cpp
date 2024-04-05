@@ -1146,6 +1146,9 @@ VirtualDeviceManager::disableCameraSolution(int devhandle, const std::vector<std
 std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
                                                std::string mem_type, int key)
 {
+    std::string priority = getAppPriority(handle);
+    PMLOG_INFO(CONST_MODULE_VDM, "priority : %s", priority.c_str());
+
     std::string media_id = "";
     auto pdc = std::make_unique<PreviewDisplayControl>(window_id);
     if (pdc)
@@ -1154,7 +1157,8 @@ std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string wi
                               + std::to_string(CommandManager::getInstance().getCameraId(handle));
         CAMERA_FORMAT camera_format;
         getFormat(handle, &camera_format);
-        media_id = pdc->load(std::move(camera_id), std::move(window_id), camera_format, std::move(mem_type), key, handle);
+        media_id = pdc->load(std::move(camera_id), std::move(window_id), camera_format,
+                             std::move(mem_type), key, handle, (cstr_primary == priority));
         if (!media_id.empty())
         {
             // We do not check the result because uMediaServer always returns SUCCESS.
