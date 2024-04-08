@@ -33,7 +33,7 @@ typedef enum
     PSHMEM_ERROR_UNLINK_FAIL    = -6
 } PSHMEM_STATUS_T;
 
-typedef void *SHMEM_HANDLE;
+typedef void *PSHMEM_HANDLE;
 
 class IPCPosixSharedMemory
 {
@@ -43,17 +43,17 @@ public:
         static IPCPosixSharedMemory sharedMemoryInstance;
         return sharedMemoryInstance;
     }
-    PSHMEM_STATUS_T CreateShmemory(SHMEM_HANDLE *, int, int, int, int, int *, std::string *);
-    PSHMEM_STATUS_T WriteShmemory(SHMEM_HANDLE, unsigned char *, int, const char *, int,
+    PSHMEM_STATUS_T CreateShmemory(PSHMEM_HANDLE *, int, int, int, int, int *, std::string *);
+    PSHMEM_STATUS_T WriteShmemory(PSHMEM_HANDLE, unsigned char *, int, const char *, int,
                                   unsigned char *, int);
-    PSHMEM_STATUS_T GetShmemoryBufferInfo(SHMEM_HANDLE, int, buffer_t[], buffer_t[]);
-    PSHMEM_STATUS_T WriteHeader(SHMEM_HANDLE, int, size_t);
-    PSHMEM_STATUS_T WriteMeta(SHMEM_HANDLE, const char *, size_t);
-    PSHMEM_STATUS_T WriteExtra(SHMEM_HANDLE, unsigned char *, size_t);
-    PSHMEM_STATUS_T IncrementWriteIndex(SHMEM_HANDLE);
-    PSHMEM_STATUS_T CloseShmemory(SHMEM_HANDLE *, int, int, int, int, std::string, int);
-    PSHMEM_STATUS_T ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize);
-    int GetWriteIndex(SHMEM_HANDLE);
+    PSHMEM_STATUS_T GetShmemoryBufferInfo(PSHMEM_HANDLE, int, buffer_t[], buffer_t[]);
+    PSHMEM_STATUS_T WriteHeader(PSHMEM_HANDLE, int, size_t);
+    PSHMEM_STATUS_T WriteMeta(PSHMEM_HANDLE, const char *, size_t);
+    PSHMEM_STATUS_T WriteExtra(PSHMEM_HANDLE, unsigned char *, size_t);
+    PSHMEM_STATUS_T IncrementWriteIndex(PSHMEM_HANDLE);
+    PSHMEM_STATUS_T CloseShmemory(PSHMEM_HANDLE *, int, int, int, int, std::string, int);
+    PSHMEM_STATUS_T ReadShmemory(PSHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize);
+    int GetWriteIndex(PSHMEM_HANDLE);
 
     IPCPosixSharedMemory(IPCPosixSharedMemory const &) = delete;
     void operator=(IPCPosixSharedMemory const &)       = delete;

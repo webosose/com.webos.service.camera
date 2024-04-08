@@ -42,7 +42,6 @@ private:
     LSHandle *lshandle_{nullptr};
     std::shared_ptr<AddOn> pAddon_;
 
-    int findDevNum(int);
     bool isDeviceIdValid(int deviceid);
 
 public:

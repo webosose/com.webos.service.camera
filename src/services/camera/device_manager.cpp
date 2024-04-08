@@ -54,8 +54,9 @@ bool DeviceManager::isDeviceOpen(int deviceid)
         return CONST_PARAM_VALUE_FALSE;
     }
 
-    PLOGD("deviceMap_[%d].isDeviceOpen : %d", deviceid, deviceMap_[deviceid].isDeviceOpen);
-    if (deviceMap_[deviceid].isDeviceOpen)
+    bool isDeviceOpen = deviceMap_[deviceid].isDeviceOpen;
+    PLOGD("deviceMap_[%d].isDeviceOpen : %d", deviceid, isDeviceOpen);
+    if (isDeviceOpen)
     {
         PLOGI("deviceid %d is open!!", deviceid);
         return CONST_PARAM_VALUE_TRUE;

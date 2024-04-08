@@ -130,75 +130,72 @@ void FaceDetectionAIF::release(void)
 
 void FaceDetectionAIF::processing(void)
 {
-    do
+    if (streamFormat_.pixel_format != CAMERA_PIXEL_FORMAT_JPEG)
+        return;
+
+    if (!decodeJpeg())
+        return;
+    if (!detectFace())
+        return;
+
+    /*
     {
-        if (streamFormat_.pixel_format != CAMERA_PIXEL_FORMAT_JPEG)
-            break;
-
-        if (!decodeJpeg())
-            break;
-        if (!detectFace())
-            break;
-
-        /*
+        "faces": [
         {
-          "faces": [
-            {
-              "score" 0.7765,
-              "region":[0.4437,0.5496,0.2013,0.2013],
-              "lefteye":[0.501,0.6329],
-              "righteye":[0.5936,0.6522],
-              "nosetip":[0.5324,0.7263],
-              "mouth":[0.5458,0.7388],
-              "leftear":[0.4869,0.5744],
-              "rightear":[0.687,0.5901]
-            }
-          ],
-          "returnCode": 0
+            "score" 0.7765,
+            "region":[0.4437,0.5496,0.2013,0.2013],
+            "lefteye":[0.501,0.6329],
+            "righteye":[0.5936,0.6522],
+            "nosetip":[0.5324,0.7263],
+            "mouth":[0.5458,0.7388],
+            "leftear":[0.4869,0.5744],
+            "rightear":[0.687,0.5901]
         }
-        */
+        ],
+        "returnCode": 0
+    }
+    */
 
-        json joutfaces = json::array();
-        json jresult   = json::parse(output, nullptr, false);
-        if (!jresult.is_discarded())
+    json joutfaces = json::array();
+    json jresult   = json::parse(output, nullptr, false);
+    if (!jresult.is_discarded())
+    {
+        json jfaces = get_optional<json>(jresult, "faces").value_or(nullptr);
+        if (jfaces != nullptr && jfaces.is_array())
         {
-            json jfaces = get_optional<json>(jresult, "faces").value_or(nullptr);
-            if (jfaces != nullptr && jfaces.is_array())
+            PLOGI("Detected face count : %zd", jfaces.size());
+            for (const auto &jface : jfaces)
             {
-                PLOGI("Detected face count : %zd", jfaces.size());
-                for (const auto &jface : jfaces)
-                {
-                    if (!jface.contains("region") || !jface.contains("score"))
-                        continue;
+                if (!jface.contains("region") || !jface.contains("score"))
+                    continue;
 
-                    auto score  = get_optional<double>(jface, "score").value_or(0);
-                    auto region = get_optional<std::vector<double>>(jface, "region")
-                                      .value_or(std::vector<double>{});
-                    if (region.size() == 4)
-                    {
-                        // Since the face detection result is normalized between 0 and 1,
-                        // the box size must be calculated using the original frame size
-                        json joutface = json::object();
-                        joutface["x"] = static_cast<int>(region[0] * oDecodedImage_.srcWidth_);
-                        joutface["y"] = static_cast<int>(region[1] * oDecodedImage_.srcHeight_);
-                        joutface["w"] = static_cast<int>(region[2] * oDecodedImage_.srcWidth_);
-                        joutface["h"] = static_cast<int>(region[3] * oDecodedImage_.srcHeight_);
-                        joutface["confidence"] = static_cast<int>(round(score * 100));
-                        joutfaces.push_back(joutface);
-                    }
+                auto score  = get_optional<double>(jface, "score").value_or(0);
+                auto region = get_optional<std::vector<double>>(jface, "region")
+                                  .value_or(std::vector<double>{});
+                if (region.size() == 4)
+                {
+                    // Since the face detection result is normalized between 0 and 1,
+                    // the box size must be calculated using the original frame size
+                    json joutface = json::object();
+                    joutface["x"] = static_cast<int>(region[0] * oDecodedImage_.srcWidth_);
+                    joutface["y"] = static_cast<int>(region[1] * oDecodedImage_.srcHeight_);
+                    joutface["w"] = static_cast<int>(region[2] * oDecodedImage_.srcWidth_);
+                    joutface["h"] = static_cast<int>(region[3] * oDecodedImage_.srcHeight_);
+                    joutface["confidence"] = static_cast<int>(round(score * 100));
+                    joutfaces.push_back(joutface);
                 }
             }
         }
-        json jout;
-        jout["faces"]                      = std::move(joutfaces);
-        jout[CONST_PARAM_NAME_RETURNVALUE] = true;
-        std::string strOutput              = jout.dump();
+    }
+    json jout;
+    jout["faces"]                      = std::move(joutfaces);
+    jout[CONST_PARAM_NAME_RETURNVALUE] = true;
+    std::string strOutput              = jout.dump();
 
-        if (pEvent_ && getMetaSizeHint() > 0)
-            (pEvent_.load())->onDone(strOutput.c_str());
+    if (pEvent_ && getMetaSizeHint() > 0)
+        (pEvent_.load())->onDone(strOutput.c_str());
 
-        sendReply(std::move(strOutput));
-    } while (0);
+    sendReply(std::move(strOutput));
 }
 
 void FaceDetectionAIF::postProcessing(void)

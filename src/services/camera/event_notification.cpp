@@ -195,8 +195,8 @@ void EventNotification::eventReply(LSHandle *lsHandle, std::string key, EventTyp
         json json_outobj;
         std::string str_reply;
 
-        json_outobj[CONST_PARAM_NAME_RETURNVALUE] =
-            getJsonString(json_outobj, key, etype, p_cur_data, p_old_data);
+        auto jsonString = getJsonString(json_outobj, key, etype, p_cur_data, p_old_data);
+        json_outobj[CONST_PARAM_NAME_RETURNVALUE]= jsonString;
         str_reply = json_outobj.dump();
 
         subscriptionReply(lsHandle, std::move(key), str_reply);
