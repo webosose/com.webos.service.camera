@@ -22,8 +22,8 @@
 #include <thread>
 #include <vector>
 
-#define COMMAND_TIMEOUT 2700      // ms
-#define COMMAND_TIMEOUT_LONG 9700 // ms
+#define COMMAND_TIMEOUT 4000       // ms
+#define COMMAND_TIMEOUT_LONG 12000 // ms
 
 class LunaClient;
 class Process;
