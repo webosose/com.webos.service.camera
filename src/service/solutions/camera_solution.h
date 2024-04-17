@@ -66,7 +66,7 @@ protected:
     Property solutionProperty_{LG_SOLUTION_NONE};
     bool supportStatus_{false};
     bool enableStatus_{false};
-    stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
+    stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_MAX, 0, 0, 0, 0};
     std::atomic<CameraSolutionEvent *> pEvent_{nullptr};
     solution_params_t solutionParams{"", "", "", false, false};
 };

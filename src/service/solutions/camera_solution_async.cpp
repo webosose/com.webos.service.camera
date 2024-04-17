@@ -108,7 +108,14 @@ CameraSolutionAsync::Buffer::~Buffer(void)
 
 CameraSolutionAsync::CameraSolutionAsync(void) {}
 
-CameraSolutionAsync::~CameraSolutionAsync(void) { PMLOG_INFO(LOG_TAG, ""); }
+CameraSolutionAsync::~CameraSolutionAsync(void)
+{
+    PMLOG_INFO(LOG_TAG, "");
+    if (enableStatus_ == true)
+    {
+        stopThread();
+    }
+}
 
 void CameraSolutionAsync::release()
 {
@@ -127,6 +134,7 @@ void CameraSolutionAsync::setEnableValue(bool enableValue)
     else
     {
         stopThread();
+        postProcessing();
     }
 }
 
@@ -158,7 +166,6 @@ void CameraSolutionAsync::run(void)
             popJob();
         }
     }
-    postProcessing();
 }
 
 void CameraSolutionAsync::startThread(void)
