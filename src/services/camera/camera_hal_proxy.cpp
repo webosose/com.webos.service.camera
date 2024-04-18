@@ -224,7 +224,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
             devHandles_.push_back(devHandle);
     }
 
-    return luna_call_sync(__func__, to_string(jin));
+    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::stopCapture(const int devHandle)
