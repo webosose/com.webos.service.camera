@@ -8,7 +8,8 @@
             "service": "com.webos.service.camera2",
             "outbound": [
                 "com.webos.service.pdm",
-                "com.webos.notification"
+                "com.webos.notification",
+                "com.webos.app.camera-*"
             ]
         },
         {
