@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        CameraSolutionService CameraSolutionService(serviceName.c_str());
+        CameraSolutionService cameraSolutionServiceInstance(serviceName.c_str());
     }
     catch (LS::Error &err)
     {
@@ -296,6 +296,11 @@ int main(int argc, char *argv[])
     catch (const std::ios::failure &e)
     {
         PLOGE("Caught a std::ios::failure meaning %s", e.what());
+        return 1;
+    }
+    catch (...)
+    {
+        PLOGE("An unknown exception occurred.");
         return 1;
     }
 

@@ -23,7 +23,11 @@ static inline PmLogContext getCameraLunaPmLogContext()
         {
             str = "camera";
         }
-        PmLogGetContext(str.c_str(), &usLogContext);
+        PmLogErr err = PmLogGetContext(str.c_str(), &usLogContext);
+        if (err != kPmLogErr_None)
+        {
+            usLogContext = kPmLogGlobalContext; // <<default>>
+        }
     }
     return usLogContext;
 }

@@ -1134,7 +1134,7 @@ int main(int argc, char *argv[])
 
     try
     {
-        CameraHalService CameraHalService(serviceName.c_str());
+        CameraHalService cameraHalServiceInstance(serviceName.c_str());
     }
     catch (LS::Error &err)
     {
@@ -1149,6 +1149,11 @@ int main(int argc, char *argv[])
     catch (const std::logic_error &e)
     {
         PLOGE("Caught a std::logic_error meaning %s", e.what());
+        return 1;
+    }
+    catch (...)
+    {
+        PLOGE("An unknown exception occurred.");
         return 1;
     }
 

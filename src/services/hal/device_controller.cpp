@@ -203,12 +203,26 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
 // deprecated
 DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 {
-    SHMEM_HANDLE h_shm = b_isposixruning ? h_shmposix_ : h_shmsystem_;
+    PSHMEM_HANDLE h_shm_posix = nullptr;
+    SHMEM_HANDLE h_shm        = nullptr;
 
-    if (h_shm == nullptr)
+    if (b_isposixruning)
     {
-        PLOGE("shared memory handle is null");
-        return DEVICE_ERROR_UNKNOWN;
+        h_shm_posix = h_shmposix_;
+        if (h_shm_posix == nullptr)
+        {
+            PLOGE("posix shared memory handle is null");
+            return DEVICE_ERROR_UNKNOWN;
+        }
+    }
+    else
+    {
+        h_shm = h_shmsystem_;
+        if (h_shm == nullptr)
+        {
+            PLOGE("shared memory handle is null");
+            return DEVICE_ERROR_UNKNOWN;
+        }
     }
 
     buffer_t frame_buffer = {0};
@@ -227,8 +241,9 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 
         while (cnt < max_iterations) // 10s
         {
-            write_index = b_isposixruning ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm)
-                                          : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
+            write_index = b_isposixruning
+                              ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm_posix)
+                              : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
             if (read_index != write_index)
             {
                 break;
@@ -246,7 +261,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
         unsigned char *sh_mem_addr = NULL;
         if (b_isposixruning)
         {
-            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm, &sh_mem_addr, &len);
+            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm_posix, &sh_mem_addr, &len);
         }
         else
         {
@@ -316,12 +331,26 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, unsigned lon
 DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
                                                  std::vector<std::string> &capturedFiles) const
 {
-    SHMEM_HANDLE h_shm = b_isposixruning ? h_shmposix_ : h_shmsystem_;
+    PSHMEM_HANDLE h_shm_posix = nullptr;
+    SHMEM_HANDLE h_shm        = nullptr;
 
-    if (h_shm == nullptr)
+    if (b_isposixruning)
     {
-        PLOGE("shared memory handle is null");
-        return DEVICE_ERROR_UNKNOWN;
+        h_shm_posix = h_shmposix_;
+        if (h_shm_posix == nullptr)
+        {
+            PLOGE("posix shared memory handle is null");
+            return DEVICE_ERROR_UNKNOWN;
+        }
+    }
+    else
+    {
+        h_shm = h_shmsystem_;
+        if (h_shm == nullptr)
+        {
+            PLOGE("shared memory handle is null");
+            return DEVICE_ERROR_UNKNOWN;
+        }
     }
 
     buffer_t frame_buffer = {0};
@@ -340,8 +369,9 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
 
         while (cnt < max_iterations) // 10s
         {
-            write_index = b_isposixruning ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm)
-                                          : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
+            write_index = b_isposixruning
+                              ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm_posix)
+                              : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
             if (read_index != write_index)
             {
                 break;
@@ -359,7 +389,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
         unsigned char *sh_mem_addr = NULL;
         if (b_isposixruning)
         {
-            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm, &sh_mem_addr, &len);
+            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm_posix, &sh_mem_addr, &len);
         }
         else
         {
@@ -439,11 +469,12 @@ void DeviceControl::previewThread()
     // lock so that if stop preview is called, first this cycle should complete
     std::lock_guard<std::mutex> guard(tMutex);
 
-    int debug_counter  = 0;
-    int debug_interval = 100; // frames
-    auto tic           = std::chrono::steady_clock::now();
+    int debug_counter   = 0;
+    int debug_interval  = 100; // frames
+    auto tic            = std::chrono::steady_clock::now();
+    bool error_occurred = false;
 
-    while (b_isstreamon_)
+    while (b_isstreamon_ && !error_occurred)
     {
         // keep writing data to shared memory
         unsigned int timestamp = 0;
@@ -456,14 +487,16 @@ void DeviceControl::previewThread()
             PLOGE("getBuffer failed");
 
             notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
-            break;
+            error_occurred = true;
+            continue;
         }
 
         if (frame_buffer.start == nullptr)
         {
             PLOGE("no valid frame buffer obtained");
             notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
-            break;
+            error_occurred = true;
+            continue;
         }
 
         //[Camera Solution Manager] process for preview
@@ -522,7 +555,8 @@ void DeviceControl::previewThread()
         {
             PLOGE("releaseBuffer failed");
             notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
-            break;
+            error_occurred = true;
+            continue;
         }
 
         if (++debug_counter >= debug_interval)

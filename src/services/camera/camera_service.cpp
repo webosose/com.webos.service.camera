@@ -33,7 +33,7 @@
 
 struct sigaction sigact_service_crash;
 extern "C" void signal_handler_service_crash(int sig);
-void install_handler_service_crash();
+bool install_handler_service_crash();
 
 CameraService::CameraService() : LS::Handle(LS::registerService(cstr_uricameramain.c_str()))
 {
@@ -1449,10 +1449,13 @@ bool CameraService::getFormat(LSMessage &message)
 
 int main(int argc, char *argv[])
 {
-    install_handler_service_crash();
-
     try
     {
+        if (!install_handler_service_crash())
+        {
+            return 1;
+        }
+
         CameraService camerasrv;
     }
     catch (LS::Error &err)
@@ -1470,7 +1473,11 @@ int main(int argc, char *argv[])
         std::cerr << err.what() << std::endl;
         return 1;
     }
-
+    catch (...)
+    {
+        std::cerr << "An unknown exception occurred." << std::endl;
+        return 1;
+    }
     return 0;
 }
 
@@ -1482,8 +1489,9 @@ extern "C" void signal_handler_service_crash(int sig)
     exit(1);
 }
 
-void install_handler_service_crash()
+bool install_handler_service_crash() noexcept(true)
 {
+    bool ret                        = true;
     sigact_service_crash.sa_handler = signal_handler_service_crash;
     sigfillset(&sigact_service_crash.sa_mask);
     sigact_service_crash.sa_flags = SA_RESTART;
@@ -1496,6 +1504,8 @@ void install_handler_service_crash()
         if (sigaction(i, &sigact_service_crash, NULL) == -1)
         {
             PLOGE("install signal handler for signal %d :: FAIL\n", i);
+            ret = false;
         }
     }
+    return ret;
 }

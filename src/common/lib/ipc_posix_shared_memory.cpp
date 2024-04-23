@@ -148,11 +148,11 @@ typedef struct
 //         LENGTH(sizeof(int) * unit_num) + DATA(meta_size * unit_num) +
 //         EXTRA_SZ(sizeof(int)) + EXTRA_BUF(extra_size * unit_num))
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int unitSize,
+PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(PSHMEM_HANDLE *phShmem, int unitSize,
                                                      int metaSize, int unitNum, int extraSize,
                                                      int *fd, std::string *shmemname)
 {
-    *phShmem                     = (SHMEM_HANDLE)calloc(1, sizeof(POSHMEM_COMM_T));
+    *phShmem                     = (PSHMEM_HANDLE)calloc(1, sizeof(POSHMEM_COMM_T));
     POSHMEM_COMM_T *pShmemBuffer = (POSHMEM_COMM_T *)*phShmem;
     if (pShmemBuffer == nullptr)
     {
@@ -345,7 +345,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CreateShmemory(SHMEM_HANDLE *phShmem, int 
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigned char *pData,
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteShmemory(PSHMEM_HANDLE hShmem, unsigned char *pData,
                                                     int dataSize, const char *pMeta, int metaSize,
                                                     unsigned char *pExtraData, int extraDataSize)
 {
@@ -426,7 +426,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteShmemory(SHMEM_HANDLE hShmem, unsigne
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem, int numBuffers,
+PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(PSHMEM_HANDLE hShmem, int numBuffers,
                                                             buffer_t pBufs[], buffer_t pBufsExt[])
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
@@ -467,7 +467,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::GetShmemoryBufferInfo(SHMEM_HANDLE hShmem,
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index,
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(PSHMEM_HANDLE hShmem, int index,
                                                   size_t bytesWritten)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
@@ -489,7 +489,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteHeader(SHMEM_HANDLE hShmem, int index
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, const char *pMeta,
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(PSHMEM_HANDLE hShmem, const char *pMeta,
                                                 size_t metaSize)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
@@ -521,7 +521,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteMeta(SHMEM_HANDLE hShmem, const char 
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned char *extraData,
+PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(PSHMEM_HANDLE hShmem, unsigned char *extraData,
                                                  size_t extraBytes)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
@@ -553,7 +553,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::WriteExtra(SHMEM_HANDLE hShmem, unsigned c
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
+PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(PSHMEM_HANDLE hShmem)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
     if (!shmem_buffer)
@@ -573,7 +573,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::IncrementWriteIndex(SHMEM_HANDLE hShmem)
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem, int unitNum,
+PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(PSHMEM_HANDLE *phShmem, int unitNum,
                                                     int unitSize, int metaSize, int extraSize,
                                                     std::string shmemname, int shmemfd)
 {
@@ -623,7 +623,7 @@ PSHMEM_STATUS_T IPCPosixSharedMemory::CloseShmemory(SHMEM_HANDLE *phShmem, int u
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T readShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
+PSHMEM_STATUS_T readShmemory(PSHMEM_HANDLE hShmem, unsigned char **ppData, int *pSize,
                              unsigned char **ppExtraData, int *pExtraSize, int readMode)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
@@ -701,13 +701,13 @@ PSHMEM_STATUS_T readShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData, int *p
     return PSHMEM_IS_OK;
 }
 
-PSHMEM_STATUS_T IPCPosixSharedMemory::ReadShmemory(SHMEM_HANDLE hShmem, unsigned char **ppData,
+PSHMEM_STATUS_T IPCPosixSharedMemory::ReadShmemory(PSHMEM_HANDLE hShmem, unsigned char **ppData,
                                                    int *pSize)
 {
     return readShmemory(hShmem, ppData, pSize, NULL, NULL, READ_FIRST);
 }
 
-int IPCPosixSharedMemory::GetWriteIndex(SHMEM_HANDLE hShmem)
+int IPCPosixSharedMemory::GetWriteIndex(PSHMEM_HANDLE hShmem)
 {
     POSHMEM_COMM_T *shmem_buffer = (POSHMEM_COMM_T *)hShmem;
     return *shmem_buffer->write_index;
