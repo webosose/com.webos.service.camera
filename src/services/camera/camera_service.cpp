@@ -33,7 +33,7 @@
 
 struct sigaction sigact_service_crash;
 extern "C" void signal_handler_service_crash(int sig);
-bool install_handler_service_crash();
+bool install_handler_service_crash() noexcept;
 
 CameraService::CameraService() : LS::Handle(LS::registerService(cstr_uricameramain.c_str()))
 {
@@ -1489,7 +1489,7 @@ extern "C" void signal_handler_service_crash(int sig)
     exit(1);
 }
 
-bool install_handler_service_crash() noexcept(true)
+bool install_handler_service_crash() noexcept
 {
     bool ret                        = true;
     sigact_service_crash.sa_handler = signal_handler_service_crash;
