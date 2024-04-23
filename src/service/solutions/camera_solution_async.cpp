@@ -214,20 +214,12 @@ CameraSolutionAsync::WaitResult CameraSolutionAsync::wait(void)
 {
     WaitResult res = OK;
     std::unique_lock<std::mutex> lock(m_);
-    try
+
+    std::cv_status status = (std::cv_status) cv_.wait_for(lock, 1s, []{PMLOG_INFO(LOG_TAG, "Checking condition..."); return false;});
+    if (status == std::cv_status::timeout)
     {
-        std::cv_status status = (std::cv_status) cv_.wait_for(lock, 1s, []{PMLOG_INFO(LOG_TAG, "Checking condition..."); return false;});
-        if (status == std::cv_status::timeout)
-        {
-            PMLOG_INFO(LOG_TAG, "Timeout to wait for Feed");
-            res = TIMEOUT;
-        }
-    }
-    catch (std::system_error &e)
-    {
-        PMLOG_INFO(LOG_TAG, "Caught a system_error with code %d meaning %s", e.code().value(),
-                   e.what());
-        res = ERROR;
+        PMLOG_INFO(LOG_TAG, "Timeout to wait for Feed");
+        res = TIMEOUT;
     }
 
     return res;
