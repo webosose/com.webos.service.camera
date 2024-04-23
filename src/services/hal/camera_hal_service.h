@@ -59,3 +59,5 @@ public:
     bool disableCameraSolution(LSMessage &message);
     bool subscribe(LSMessage &);
 };
+
+std::string parseHalServiceName(int argc, char *argv[]) noexcept;
