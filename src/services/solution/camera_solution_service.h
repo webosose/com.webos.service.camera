@@ -47,3 +47,5 @@ public:
 private:
     SHMEM_HANDLE hShm{nullptr};
 };
+
+std::string parseSolutionServiceName(int argc, char *argv[]) noexcept;

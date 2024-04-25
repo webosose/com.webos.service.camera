@@ -255,9 +255,8 @@ bool CameraSolutionService::subscribe(LSMessage &message)
     return ret;
 }
 
-int main(int argc, char *argv[])
+std::string parseSolutionServiceName(int argc, char *argv[]) noexcept
 {
-    PLOGI("start");
     int c;
     std::string serviceName;
 
@@ -277,15 +276,22 @@ int main(int argc, char *argv[])
             break;
         }
     }
-
     if (serviceName.empty())
     {
         PLOGI("service name is not specified");
-        return 1;
     }
+    return serviceName;
+}
 
+int main(int argc, char *argv[])
+{
     try
     {
+        std::string serviceName = parseSolutionServiceName(argc, argv);
+        if (serviceName.empty())
+        {
+            return 1;
+        }
         CameraSolutionService cameraSolutionServiceInstance(serviceName.c_str());
     }
     catch (LS::Error &err)
@@ -293,17 +299,15 @@ int main(int argc, char *argv[])
         LSErrorPrint(err, stdout);
         return 1;
     }
-    catch (const std::ios::failure &e)
+    catch (const std::ios::failure &err)
     {
-        PLOGE("Caught a std::ios::failure meaning %s", e.what());
+        std::cerr << err.what() << std::endl;
         return 1;
     }
     catch (...)
     {
-        PLOGE("An unknown exception occurred.");
+        std::cerr << "An unknown exception occurred." << std::endl;
         return 1;
     }
-
-    PLOGI("end");
     return 0;
 }
