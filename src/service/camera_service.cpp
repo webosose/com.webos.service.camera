@@ -1554,7 +1554,7 @@ void install_handler_service_crash()
     sigact_service_crash.sa_flags = SA_RESTART;
     for (int i = SIGHUP; i <= SIGSYS; i++)
     {
-        if (i == SIGKILL || i == SIGSTOP)
+        if (i == SIGKILL || i == SIGSTOP || i == SIGCHLD || i == SIGURG || i == SIGCONT)
         {
             continue;
         }
