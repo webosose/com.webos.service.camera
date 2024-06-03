@@ -1,0 +1,6 @@
+{
+    "com.webos.camerahal.*":[
+        "camerasolution.query",
+        "camerasolution.operation"
+    ]
+}

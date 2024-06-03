@@ -1,0 +1,4 @@
+[D-BUS Service]
+Name=com.webos.service.camera2
+Exec=@WEBOS_INSTALL_SBINDIR@/com.webos.service.camera2
+Type=static

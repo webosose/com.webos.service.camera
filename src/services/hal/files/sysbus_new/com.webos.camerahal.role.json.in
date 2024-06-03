@@ -1,0 +1,18 @@
+{
+    "exeName":"@WEBOS_INSTALL_SBINDIR@/com.webos.service.camera2.hal",
+    "type": "regular",
+    "trustLevel": "oem",
+    "allowedNames": [
+        "com.webos.camerahal.*"
+    ],
+    "permissions": [
+        {
+            "service":"com.webos.camerahal.*",
+            "inbound":["com.webos.service.camera2.*"],
+            "outbound":[
+                "com.webos.service.camera2.*",
+                "com.webos.camerasolution.*"
+            ]
+        }
+    ]
+}
