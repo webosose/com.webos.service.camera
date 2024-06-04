@@ -18,6 +18,11 @@ project(notifier-pdm CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
+# PDM Sub Device Grouping
+if(PDM_SUB_DEVICE_GROUPING)
+  add_definitions(-DPDM_SUB_DEVICE_GROUPING)
+endif()
+
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/pdm_client.cpp)
 
 add_library(${PROJECT_NAME} SHARED ${SRC})
