@@ -99,7 +99,7 @@ extern "C"
         return CAMERA_ERROR_NONE;
     }
 
-    int camera_hal_if_open_device(void *h, const char *dev, const char *payload)
+    int camera_hal_if_open_device(void *h, const char *dev)
     {
         int retVal = CAMERA_ERROR_NONE;
 
@@ -130,7 +130,7 @@ extern "C"
             return retVal;
         }
 
-        camera_handle->fd = open_device(camera_handle, dev, payload);
+        camera_handle->fd = open_device(camera_handle, dev, "");
         HAL_LOG_INFO(CONST_MODULE_HAL, "fd : %d ", camera_handle->fd);
 
         if (camera_handle->fd == CAMERA_ERROR_UNKNOWN)
