@@ -1,0 +1,7 @@
+{
+    "allowedNames": [
+        "com.webos.camerahal.*"
+    ],
+    "camerahal.query": ["dev"],
+    "camerahal.operation": ["dev"]
+}
