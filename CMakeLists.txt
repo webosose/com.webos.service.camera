@@ -53,10 +53,6 @@ if(DAC_IMPLEMENTATION)
     add_definitions(-DDAC_ENABLED)
 endif()
 
-if(USE_G_CAMERA)
-    add_definitions(-DUSE_TYPE_G_CAMERA)
-endif()
-
 include_directories(${CMAKE_SOURCE_DIR}/include/public)
 include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)
 include_directories(${CMAKE_SOURCE_DIR}/include/public/camera/plugin)

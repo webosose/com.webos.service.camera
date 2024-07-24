@@ -224,11 +224,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     }
 
     payload += "\"primary\":" + std::string(primary ? "true" : "false") + ",";
-#ifdef USE_TYPE_G_CAMERA
-    payload += "\"cameraId\":\"" + camera_id + "\"}},\"type\":\"g-camera\"}";
-#else
     payload += "\"cameraId\":\"" + camera_id + "\"}},\"type\":\"camera\"}";
-#endif
 
     PLOGI("payload : %s", payload.c_str());
 
