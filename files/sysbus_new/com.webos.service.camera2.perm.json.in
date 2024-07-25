@@ -9,7 +9,6 @@
         "camerahal.operation"
     ],
     "com.webos.service.camera2.display-*": [
-        "media.operation",
-        "media.query"
+        "camerapipeline.operation"
     ]
 }

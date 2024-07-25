@@ -1,13 +1,13 @@
 #define LOG_TAG "PreviewDisplayControl"
 #include "preview_display_control.h"
 #include "camera_constants.h"
+#include "generate_unique_id.h"
+#include "process.h"
 #include <luna-service2/lunaservice.hpp>
 #include <pbnjson.hpp>
 #include <sstream>
 
-#define LOAD_PAYLOAD_HEAD                                                                          \
-    "{\"uri\":\"camera://com.webos.service.camera2/7010\",\"payload\":\
-{\"option\":{\"appId\":\"com.webos.app.mediaevents-test\", \"windowId\":\""
+#define LOAD_PAYLOAD_HEAD "{\"appId\":\"com.webos.app.mediaevents-test\", \"windowId\":\""
 
 const char *display_client_service_name = "com.webos.service.camera2.display-";
 const std::string window_id_str         = "_Window_Id_";
@@ -211,6 +211,12 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
         outformat = std::move(informat);
     }
 
+    // Create camera pipeline
+    std::string guid = GenerateUniqueID()();
+    std::string uid  = "com.webos.pipeline." + guid;
+    std::string cmd  = "/usr/sbin/g-camera-pipeline -s" + uid + " -u";
+    pipeline_process = std::make_unique<Process>(cmd);
+
     std::string payload =
         LOAD_PAYLOAD_HEAD + windowId +
         "\", \"videoDisplayMode\":\"Textured\",\"width\":" + std::to_string(cameraFormat.nWidth) +
@@ -224,13 +230,17 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     }
 
     payload += "\"primary\":" + std::string(primary ? "true" : "false") + ",";
-    payload += "\"cameraId\":\"" + camera_id + "\"}},\"type\":\"camera\"}";
+    payload += "\"cameraId\":\"" + camera_id + "\"}";
 
     PLOGI("payload : %s", payload.c_str());
 
-    if (!call("luna://com.webos.media/load", std::move(payload), cbHandleResponseMsg))
+    // send message for load
+    pipeline_uri    = "luna://" + uid + "/";
+    std::string uri = pipeline_uri + __func__;
+
+    if (!call(uri.c_str(), std::move(payload), cbHandleResponseMsg))
     {
-        PLOGI("fail to call com.webos.media/load()");
+        PLOGE("fail to call load()");
         return media_id;
     }
 
@@ -242,7 +252,11 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     }
 
     media_id = parsed["mediaId"].asString();
+    media_id = "test";
     PLOGI("mediaId = %s ", media_id.c_str());
+
+    pid = parsed["pid"].asNumber<int32_t>();
+    PLOGI("pid = %d", pid);
 
     return media_id;
 }
@@ -267,12 +281,13 @@ bool PreviewDisplayControl::unload(std::string mediaId)
 {
     PLOGI("unload() starts.");
 
-    getPid(mediaId);
+    // send message
+    std::string uri = pipeline_uri + __func__;
 
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
-    if (!call("luna://com.webos.media/unload", std::move(payload), cbHandleResponseMsg))
+    if (!call(uri.c_str(), std::move(payload), cbHandleResponseMsg))
     {
-        PLOGI("fail to call com.webos.media/unload()");
+        PLOGE("fail to call unload()");
         return false;
     }
 
@@ -281,29 +296,4 @@ bool PreviewDisplayControl::unload(std::string mediaId)
     PLOGI("returnValue : %d ", result);
 
     return result;
-}
-
-int PreviewDisplayControl::getPid(std::string mediaId)
-{
-    PLOGI("mediaId: %s", mediaId.c_str());
-    int pid             = -1;
-    std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
-    if (!call("luna://com.webos.media/getActivePipelines", std::move(payload), cbHandleResponseMsg))
-    {
-        return pid;
-    }
-
-    pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
-    for (int i = 0; i < parsed.arraySize(); i++)
-    {
-        if (parsed[i]["mediaId"].asString() == mediaId)
-        {
-            pid = parsed[i]["pid"].asNumber<int32_t>();
-            break;
-        }
-    }
-
-    PLOGI("g-camera-pipeline PID = %d", pid);
-
-    return pid;
 }

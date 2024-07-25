@@ -955,8 +955,10 @@ std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string wi
                              std::move(mem_type), key, handle, (cstr_primary == priority));
         if (!media_id.empty())
         {
-            // We do not check the result because uMediaServer always returns SUCCESS.
-            pdc->play(media_id);
+            std::string outmsg;
+            registerClient(pdc->getPid(), 10, handle, outmsg);
+            PLOGI("outmsg : %s", outmsg.c_str());
+
             ums_controls.push_back({handle, media_id, std::move(pdc)});
         }
     }
@@ -971,6 +973,11 @@ bool VirtualDeviceManager::stopPreviewDisplay(int handle)
         if (it->handle == handle)
         {
             it->display_control->unload(it->mediaId);
+
+            std::string outmsg;
+            unregisterClient(it->display_control->getPid(), outmsg);
+            PLOGI("outmsg : %s", outmsg.c_str());
+
             ums_controls.erase(it);
             return true;
         }
