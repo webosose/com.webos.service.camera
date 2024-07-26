@@ -190,7 +190,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
 
     if (!isValidWindowId(windowId))
     {
-        PLOGI("Invalid windowId value");
+        PLOGE("Invalid windowId value");
         return media_id;
     }
 
@@ -247,7 +247,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
     if (parsed["returnValue"].asBool() == false)
     {
-        PLOGI("load() FAILED");
+        PLOGE("load() FAILED");
         return media_id;
     }
 
@@ -259,22 +259,6 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     PLOGI("pid = %d", pid);
 
     return media_id;
-}
-
-bool PreviewDisplayControl::play(std::string mediaId)
-{
-    std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
-    if (!call("luna://com.webos.media/play", std::move(payload), cbHandleResponseMsg))
-    {
-        PLOGI("fail to call com.webos.media/play()");
-        return false;
-    }
-
-    pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
-    bool result            = parsed["returnValue"].asBool();
-    PLOGI("returnValue : %d ", result);
-
-    return result;
 }
 
 bool PreviewDisplayControl::unload(std::string mediaId)
