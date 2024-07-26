@@ -14,12 +14,14 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 //
-//camera_hal_types_common.h is for common use with camsrc of g-camera-pipeline.
-//It should be written only in C style.
-//If the type is not used in camsrc, write it in camera_hal_types.h. ( ex. C++ style )
+// camera_hal_types_common.h is for common use with camsrc of g-camera-pipeline.
+// It should be written only in C style.
+// If the type is not used in camsrc, write it in camera_hal_types.h. ( ex. C++ style )
 
 #ifndef CAMERA_HAL_TYPES_COMMON
 #define CAMERA_HAL_TYPES_COMMON
+
+#include <cstddef>
 
 typedef enum
 {
