@@ -54,7 +54,7 @@ static inline PmLogContext getHALLunaPmLogContext()
         PmLogErr error = PmLogGetContext("HAL", &usLogContext);
         if (error != kPmLogErr_None)
         {
-            usLogContext = kPmLogGlobalContext;  // <<default>>
+            usLogContext = kPmLogGlobalContext; // <<default>>
         }
     }
     return usLogContext;

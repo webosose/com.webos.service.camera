@@ -17,9 +17,9 @@
 #ifndef CAMERA_HAL_TYPES
 #define CAMERA_HAL_TYPES
 
+#include "camera_hal_types_common.h"
 #include <string>
 #include <vector>
-#include "camera_hal_types_common.h"
 
 #define CONST_MAX_INDEX 300
 #define CONST_MAX_FORMAT 5
