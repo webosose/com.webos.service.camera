@@ -182,16 +182,14 @@ bool PreviewDisplayControl::cbHandleResponseMsg(LSHandle *sh, LSMessage *msg, vo
     return true;
 }
 
-std::string PreviewDisplayControl::load(std::string camera_id, std::string windowId,
-                                        CAMERA_FORMAT cameraFormat, std::string memType, int key,
-                                        int handle, bool primary)
+bool PreviewDisplayControl::load(std::string camera_id, std::string windowId,
+                                 CAMERA_FORMAT cameraFormat, std::string memType, int key,
+                                 int handle_, bool primary)
 {
-    std::string media_id = "";
-
     if (!isValidWindowId(windowId))
     {
         PLOGE("Invalid windowId value");
-        return media_id;
+        return false;
     }
 
     std::string mem_type = "shmem";
@@ -226,7 +224,7 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
 
     if (memType == kMemtypePosixshm)
     {
-        payload += "\"handle\":" + std::to_string(handle) + ",";
+        payload += "\"handle\":" + std::to_string(handle_) + ",";
     }
 
     payload += "\"primary\":" + std::string(primary ? "true" : "false") + ",";
@@ -241,34 +239,31 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     if (!call(uri.c_str(), std::move(payload), cbHandleResponseMsg))
     {
         PLOGE("fail to call load()");
-        return media_id;
+        return false;
     }
 
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
     if (parsed["returnValue"].asBool() == false)
     {
         PLOGE("load() FAILED");
-        return media_id;
+        return false;
     }
-
-    media_id = parsed["mediaId"].asString();
-    media_id = "test";
-    PLOGI("mediaId = %s ", media_id.c_str());
 
     pid = parsed["pid"].asNumber<int32_t>();
     PLOGI("pid = %d", pid);
+    handle = handle_;
 
-    return media_id;
+    return true;
 }
 
-bool PreviewDisplayControl::unload(std::string mediaId)
+bool PreviewDisplayControl::unload()
 {
     PLOGI("unload() starts.");
 
     // send message
     std::string uri = pipeline_uri + __func__;
 
-    std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
+    std::string payload = "{}";
     if (!call(uri.c_str(), std::move(payload), cbHandleResponseMsg))
     {
         PLOGE("fail to call unload()");

@@ -18,7 +18,8 @@ private:
     int done_;
     std::unique_ptr<Process> pipeline_process{nullptr};
     std::string pipeline_uri;
-    int pid = -1;
+    int pid    = -1;
+    int handle = -1;
 
     bool acquireLSConnection(const std::string &wid);
     bool releaseLSConnection();
@@ -31,10 +32,11 @@ private:
 public:
     PreviewDisplayControl(const std::string &wid);
     ~PreviewDisplayControl();
-    std::string load(std::string camera_id, std::string windowId, CAMERA_FORMAT cameraFormat,
-                     std::string memType, int key, int handle, bool primary);
-    bool unload(std::string mediaId);
+    bool load(std::string camera_id, std::string windowId, CAMERA_FORMAT cameraFormat,
+              std::string memType, int key, int handle, bool primary);
+    bool unload();
     int getPid() const { return pid; }
+    int getHandle() const { return handle; }
 };
 
 #endif /* PREVIEW_DISPLAY_CONTROL_H_ */
