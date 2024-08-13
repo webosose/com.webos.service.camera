@@ -176,9 +176,15 @@ bool PreviewDisplayControl::cbHandleResponseMsg(LSHandle *sh, LSMessage *msg, vo
 {
     PreviewDisplayControl *caller = static_cast<PreviewDisplayControl *>(ctx);
     const char *str               = LSMessageGetPayload(msg);
-    caller->reply_from_server_    = (str) ? str : "";
-    caller->done_                 = 1;
-    PLOGI("reply_from_server: %s", caller->reply_from_server_.c_str());
+    PLOGI("reply: %s", str);
+
+    // The callback may be called multiple times
+    if (caller->done_ == 0)
+    {
+        caller->reply_from_server_ = (str) ? str : "";
+        caller->done_              = 1;
+    }
+
     return true;
 }
 
