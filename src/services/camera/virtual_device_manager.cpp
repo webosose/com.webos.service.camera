@@ -265,6 +265,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::strin
 
     // get device id for virtual device handle
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    obj_devstate.shmemtype      = memtype;
     int deviceid                = obj_devstate.ndeviceid_;
     PLOGI("deviceid : %d \n", deviceid);
 
@@ -289,13 +290,11 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::strin
             {
                 if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
                 {
-                    obj_devstate.shmemtype = SHMEM_SYSTEMV;
-                    shmkey_                = *pkey;
+                    shmkey_ = *pkey;
                 }
                 else
                 {
-                    obj_devstate.shmemtype = SHMEM_POSIX;
-                    poshmkey_              = *pkey;
+                    poshmkey_ = *pkey;
                 }
                 // Add to the device handle vector that accesses shared memory
                 nstreaminghandle_.push_back(devhandle);
@@ -330,14 +329,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::strin
             // update state of device to preview
             obj_devstate.ecamstate_ = CameraDeviceState::CAM_DEVICE_STATE_STREAMING;
 
-            if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
-            {
-                obj_devstate.shmemtype = SHMEM_SYSTEMV;
-            }
-            else
-            {
-                obj_devstate.shmemtype = SHMEM_POSIX;
-            }
             virtualhandle_map_[devhandle] = obj_devstate;
             return DEVICE_OK;
         }
@@ -356,7 +347,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
     // get device id for virtual device handle
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
     int deviceid                = obj_devstate.ndeviceid_;
-    int memtype                 = obj_devstate.shmemtype;
+    std::string memtype         = obj_devstate.shmemtype;
     PLOGI("deviceid : %d \n", deviceid);
 
     // check if device is opened
@@ -369,9 +360,9 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
             return DEVICE_ERROR_INVALID_STATE;
         }
 
-        if (memtype < SHMEM_SYSTEMV || memtype > SHMEM_POSIX)
+        if (isValidMemtype(memtype) == false)
         {
-            PLOGE("Invalid memtype : %d", memtype);
+            PLOGE("Invalid memtype : %s", memtype.c_str());
             return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
         }
 
@@ -388,7 +379,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
                 nstreaminghandle_.erase(position);
                 // update state of device to open
                 obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
-                obj_devstate.shmemtype        = SHMEME_UNKNOWN;
+                obj_devstate.shmemtype        = "";
                 virtualhandle_map_[devhandle] = obj_devstate;
                 return DEVICE_OK;
             }
@@ -413,16 +404,16 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
                     nstreaminghandle_.erase(position);
                     // update state of device to open
                     obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
-                    obj_devstate.shmemtype        = SHMEME_UNKNOWN;
+                    obj_devstate.shmemtype        = "";
                     virtualhandle_map_[devhandle] = obj_devstate;
 
-                    if (memtype == SHMEM_SYSTEMV)
+                    if (memtype == kMemtypePosixshm)
                     {
-                        shmkey_ = 0;
+                        poshmkey_ = 0;
                     }
                     else
                     {
-                        poshmkey_ = 0;
+                        shmkey_ = 0;
                     }
                 }
                 objcamerahalproxy_.unsubscribe();
@@ -456,6 +447,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
 
     // get device id for virtual device handle
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
+    obj_devstate.shmemtype      = memtype;
     int deviceid                = obj_devstate.ndeviceid_;
     PLOGI("deviceid : %d \n", deviceid);
 
@@ -486,13 +478,11 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             {
                 if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
                 {
-                    obj_devstate.shmemtype = SHMEM_SYSTEMV;
-                    shmkey_                = *pkey;
+                    shmkey_ = *pkey;
                 }
                 else
                 {
-                    obj_devstate.shmemtype = SHMEM_POSIX;
-                    poshmkey_              = *pkey;
+                    poshmkey_ = *pkey;
                 }
 
                 *pmedia =
@@ -532,15 +522,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
             else
                 *pkey = poshmkey_;
 
-            if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
-            {
-                obj_devstate.shmemtype = SHMEM_SYSTEMV;
-            }
-            else
-            {
-                obj_devstate.shmemtype = SHMEM_POSIX;
-            }
-
             *pmedia =
                 startPreviewDisplay(devhandle, std::move(windowid), std::move(memtype), *pkey);
             if ((*pmedia).empty())
@@ -574,7 +555,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
     // get device id for virtual device handle
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
     int deviceid                = obj_devstate.ndeviceid_;
-    int memtype                 = obj_devstate.shmemtype;
+    std::string memtype         = obj_devstate.shmemtype;
     PLOGI("deviceid : %d \n", deviceid);
 
     // check if device is opened
@@ -587,9 +568,9 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
             return DEVICE_ERROR_INVALID_STATE;
         }
 
-        if (memtype < SHMEM_SYSTEMV || memtype > SHMEM_POSIX)
+        if (isValidMemtype(memtype) == false)
         {
-            PLOGE("Invalid memtype : %d", memtype);
+            PLOGE("Invalid memtype : %s", memtype.c_str());
             return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
         }
 
@@ -608,7 +589,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
                     nstreaminghandle_.erase(position);
                     // update state of device to open
                     obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
-                    obj_devstate.shmemtype        = SHMEME_UNKNOWN;
+                    obj_devstate.shmemtype        = "";
                     virtualhandle_map_[devhandle] = obj_devstate;
                     return DEVICE_OK;
                 }
@@ -641,7 +622,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
                         nstreaminghandle_.erase(position);
                         // update state of device to open
                         obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
-                        obj_devstate.shmemtype        = SHMEME_UNKNOWN;
+                        obj_devstate.shmemtype        = "";
                         virtualhandle_map_[devhandle] = obj_devstate;
                     }
                     else
@@ -650,13 +631,13 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
                         return DEVICE_ERROR_NODEVICE;
                     }
 
-                    if (memtype == SHMEM_SYSTEMV)
+                    if (memtype == kMemtypePosixshm)
                     {
-                        shmkey_ = 0;
+                        poshmkey_ = 0;
                     }
                     else
                     {
-                        poshmkey_ = 0;
+                        shmkey_ = 0;
                     }
                 }
                 objcamerahalproxy_.unsubscribe();
@@ -1026,7 +1007,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
     if (obj_devstate.ecamstate_ == CameraDeviceState::CAM_DEVICE_STATE_STREAMING ||
         obj_devstate.ecamstate_ == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
     {
-        if (obj_devstate.shmemtype == SHMEM_POSIX)
+        if (obj_devstate.shmemtype == kMemtypePosixshm)
         {
             DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getFd(shmfd);
             if (ret == DEVICE_OK)
