@@ -45,7 +45,6 @@ private:
     std::map<int, std::string> handlepriority_map_;
     bool bcaptureinprogress_;
     int shmkey_;
-    int poshmkey_;
     std::vector<int> nstreaminghandle_;
     std::vector<int> ncapturehandle_;
     CAMERA_FORMAT sformat_;
