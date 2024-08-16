@@ -43,7 +43,6 @@ class VirtualDeviceManager
 private:
     std::map<int, DeviceStateMap> virtualhandle_map_;
     std::map<int, std::string> handlepriority_map_;
-    int shmempreview_count_[2];
     bool bcaptureinprogress_;
     int shmkey_;
     int poshmkey_;
