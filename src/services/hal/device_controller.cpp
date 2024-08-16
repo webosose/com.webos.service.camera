@@ -784,7 +784,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
+DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
 {
     PLOGI("started !\n");
 
@@ -832,21 +832,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
         }
     }
 
-    if (memtype == SHMEM_SYSTEMV)
-    {
-        b_issystemvruning      = false;
-        b_issystemvruning_mmap = false;
-        if (h_shmsystem_ != nullptr)
-        {
-            auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-            if (retshmem != SHMEM_IS_OK)
-            {
-                PLOGE("CloseShmemory error %d \n", retshmem);
-            }
-            h_shmsystem_ = nullptr;
-        }
-    }
-    else // memtype == SHMEM_POSIX
+    if (str_memtype_ == kMemtypePosixshm)
     {
         int32_t meta_size = 0;
         if (pCameraSolution != nullptr)
@@ -864,6 +850,20 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview(int memtype)
                 PLOGE("ClosePosixShmemory error %d \n", retshmem);
             }
             h_shmposix_ = nullptr;
+        }
+    }
+    else
+    {
+        b_issystemvruning      = false;
+        b_issystemvruning_mmap = false;
+        if (h_shmsystem_ != nullptr)
+        {
+            auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+            if (retshmem != SHMEM_IS_OK)
+            {
+                PLOGE("CloseShmemory error %d \n", retshmem);
+            }
+            h_shmsystem_ = nullptr;
         }
     }
 

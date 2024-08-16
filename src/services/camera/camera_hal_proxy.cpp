@@ -192,14 +192,10 @@ DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(std::string memtype, int *pkey
     return ret;
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(int memtype)
+DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview()
 {
-    PLOGI("memtype : %d", memtype);
-
-    json jin;
-    jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
-
-    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
+    PLOGI("");
+    return luna_call_sync(__func__, "{}", COMMAND_TIMEOUT_LONG);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,

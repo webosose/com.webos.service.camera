@@ -417,7 +417,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
             if (position != nstreaminghandle_.end())
             {
                 // stop preview
-                DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopPreview(memtype);
+                DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopPreview();
                 // reset preview parameters for camera device
                 if (DEVICE_OK == ret)
                 {
@@ -513,7 +513,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                     startPreviewDisplay(devhandle, std::move(windowid), std::move(memtype), *pkey);
                 if ((*pmedia).empty())
                 {
-                    objcamerahalproxy_.stopPreview(obj_devstate.shmemtype);
+                    objcamerahalproxy_.stopPreview();
                     shmempreview_count_[obj_devstate.shmemtype]--;
                     PLOGI("Fail to preview due to invalid windowId\n");
                     return DEVICE_ERROR_INVALID_WINDOW_ID;
@@ -638,7 +638,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
             if (stopPreviewDisplay(devhandle))
             {
                 // stop preview
-                DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopPreview(memtype);
+                DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopPreview();
                 // reset preview parameters for camera device
                 if (DEVICE_OK == ret)
                 {

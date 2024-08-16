@@ -258,18 +258,11 @@ bool CameraHalService::startPreview(LSMessage &message)
 
 bool CameraHalService::stopPreview(LSMessage &message)
 {
-    int memtype            = 0;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
-    pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
-    if (parsed.hasKey(CONST_PARAM_NAME_MEMTYPE))
-    {
-        memtype = parsed[CONST_PARAM_NAME_MEMTYPE].asNumber<int>();
-    }
-
-    DEVICE_RETURN_CODE_T ret = pDeviceControl->stopPreview(memtype);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->stopPreview();
 
     if (ret == DEVICE_OK)
     {

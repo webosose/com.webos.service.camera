@@ -110,7 +110,7 @@ public:
     DEVICE_RETURN_CODE_T open(std::string, int, std::string);
     DEVICE_RETURN_CODE_T close();
     DEVICE_RETURN_CODE_T startPreview(std::string, int *, LSHandle *, const char *);
-    DEVICE_RETURN_CODE_T stopPreview(int);
+    DEVICE_RETURN_CODE_T stopPreview();
     // deprecated
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT, const std::string &, const std::string &, int);
     // deprecated
