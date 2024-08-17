@@ -357,44 +357,38 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
         return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
     }
 
+    std::vector<int>::iterator position =
+        std::find(nstreaminghandle_.begin(), nstreaminghandle_.end(), devhandle);
+    if (position == nstreaminghandle_.end())
+    {
+        PLOGE("not a streaming handle or device has already called stopCamera\n");
+        return DEVICE_ERROR_NODEVICE;
+    }
+
     unsigned long streaming_handle_size = nstreaminghandle_.size();
     PLOGI("Streaming handle size : %lu", streaming_handle_size);
 
     if (1 < streaming_handle_size)
     {
         // remove the handle from vector since stopCamera is called
-        std::vector<int>::iterator position =
-            std::find(nstreaminghandle_.begin(), nstreaminghandle_.end(), devhandle);
-        if (position == nstreaminghandle_.end())
-        {
-            PLOGE("not a streaming handle or device has already called stopCamera\n");
-            return DEVICE_ERROR_NODEVICE;
-        }
-
         nstreaminghandle_.erase(position);
+
         // update state of device to open
         obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
         obj_devstate.shmemtype        = "";
         virtualhandle_map_[devhandle] = obj_devstate;
+
         return DEVICE_OK;
     }
     else if (1 == streaming_handle_size) // Primary
     {
-        std::vector<int>::iterator position =
-            std::find(nstreaminghandle_.begin(), nstreaminghandle_.end(), devhandle);
-        if (position == nstreaminghandle_.end())
-        {
-            PLOGE("not a streaming handle or device has already called stopCamera\n");
-            return DEVICE_ERROR_NODEVICE;
-        }
-
         // stop preview
         DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.stopPreview();
-        // reset preview parameters for camera device
         if (DEVICE_OK == ret)
         {
             // remove the handle from vector since stopPreview is called
             nstreaminghandle_.erase(position);
+
             // update state of device to open
             obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
             obj_devstate.shmemtype        = "";
@@ -535,6 +529,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
         return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
     }
 
+    std::vector<int>::iterator position =
+        std::find(nstreaminghandle_.begin(), nstreaminghandle_.end(), devhandle);
+    if (position == nstreaminghandle_.end())
+    {
+        PLOGE("not a streaming handle or device has already called stopCamera\n");
+        return DEVICE_ERROR_NODEVICE;
+    }
+
     unsigned long streaming_handle_size = nstreaminghandle_.size();
     PLOGI("Streaming handle size : %lu", streaming_handle_size);
 
@@ -543,15 +545,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
         if (stopPreviewDisplay(devhandle))
         {
             // remove the handle from vector since stopCamera is called
-            std::vector<int>::iterator position =
-                std::find(nstreaminghandle_.begin(), nstreaminghandle_.end(), devhandle);
-            if (position == nstreaminghandle_.end())
-            {
-                PLOGI("not a streaming handle or device has already called stopCamera\n");
-                return DEVICE_ERROR_NODEVICE;
-            }
-
             nstreaminghandle_.erase(position);
+
             // update state of device to open
             obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
             obj_devstate.shmemtype        = "";
@@ -574,23 +569,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
             if (DEVICE_OK == ret)
             {
                 // remove the handle from vector since stopCamera is called
-                std::vector<int>::iterator position =
-                    std::find(nstreaminghandle_.begin(), nstreaminghandle_.end(), devhandle);
-                if (position != nstreaminghandle_.end())
-                {
-                    nstreaminghandle_.erase(position);
-                    // update state of device to open
-                    obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
-                    obj_devstate.shmemtype        = "";
-                    virtualhandle_map_[devhandle] = obj_devstate;
+                nstreaminghandle_.erase(position);
 
-                    shmkey_ = 0;
-                }
-                else
-                {
-                    PLOGE("not a streaming handle or device has already called stopCamera\n");
-                    return DEVICE_ERROR_NODEVICE;
-                }
+                // update state of device to open
+                obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
+                obj_devstate.shmemtype        = "";
+                virtualhandle_map_[devhandle] = obj_devstate;
+
+                shmkey_ = 0;
             }
             objcamerahalproxy_.unsubscribe();
             return ret;
@@ -746,49 +732,33 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCapture(int devhandle, bool reque
         return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
     }
 
+    std::vector<int>::iterator position =
+        std::find(ncapturehandle_.begin(), ncapturehandle_.end(), devhandle);
+    if (position == ncapturehandle_.end())
+    {
+        PLOGE("device has already stopped capture\n");
+        return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
+    }
+
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+
     if (1 == size)
     {
-        std::vector<int>::iterator position =
-            std::find(ncapturehandle_.begin(), ncapturehandle_.end(), devhandle);
-        if (position != ncapturehandle_.end())
-        {
-            // stop capture
-            DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+        // stop capture
+        if (request)
+            ret = objcamerahalproxy_.stopCapture(devhandle);
 
-            if (request)
-                objcamerahalproxy_.stopCapture(devhandle);
-
-            // reset capture parameters for camera device
-            if (DEVICE_OK == ret)
-            {
-                bcaptureinprogress_ = false;
-                // remove the handle from vector since stopPreview is called
-                ncapturehandle_.erase(position);
-            }
-            return ret;
-        }
-        else
+        // reset capture parameters for camera device
+        if (DEVICE_OK == ret)
         {
-            PLOGI("device has already stopped capture\n");
-            return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
+            bcaptureinprogress_ = false;
         }
     }
-    else // If size > 1
-    {
-        // remove the handle from vector since stopCapture is called
-        std::vector<int>::iterator position =
-            std::find(ncapturehandle_.begin(), ncapturehandle_.end(), devhandle);
-        if (position != ncapturehandle_.end())
-        {
-            ncapturehandle_.erase(position);
-            return DEVICE_OK;
-        }
-        else
-        {
-            PLOGI("device has already stopped capture\n");
-            return DEVICE_ERROR_DEVICE_IS_ALREADY_STOPPED;
-        }
-    }
+
+    // remove the handle from vector since stopPreview is called
+    ncapturehandle_.erase(position);
+
+    return ret;
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::capture(int devhandle, int ncount,
