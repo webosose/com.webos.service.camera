@@ -260,6 +260,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::string memtype,
                                                        int *pkey, LSHandle *sh, const char *subskey)
 {
+    if (isValidMemtype(memtype) == false)
+    {
+        PLOGE("Invalid memtype : %s", memtype.c_str());
+        return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
+    }
+
     PLOGI("devhandle : %d \n", devhandle);
 
     // Get device id for virtual device handle
@@ -328,7 +334,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
     // Get device id for virtual device handle
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
     int deviceid                = obj_devstate.ndeviceid_;
-    std::string memtype         = obj_devstate.shmemtype;
     PLOGI("deviceid : %d \n", deviceid);
 
     // Check if device is opened
@@ -343,12 +348,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
     {
         PLOGE("Camera State : %d \n", (int)obj_devstate.ecamstate_);
         return DEVICE_ERROR_INVALID_STATE;
-    }
-
-    if (isValidMemtype(memtype) == false)
-    {
-        PLOGE("Invalid memtype : %s", memtype.c_str());
-        return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
     }
 
     std::vector<int>::iterator position =
@@ -401,6 +400,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
                                                         std::string *pmedia, LSHandle *sh,
                                                         const char *subskey)
 {
+    if (isValidMemtype(memtype) == false)
+    {
+        PLOGE("Invalid memtype : %s", memtype.c_str());
+        return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
+    }
+
     PLOGI("devhandle : %d \n", devhandle);
 
     // get device id for virtual device handle
@@ -486,7 +491,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
     // get device id for virtual device handle
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
     int deviceid                = obj_devstate.ndeviceid_;
-    std::string memtype         = obj_devstate.shmemtype;
     PLOGI("deviceid : %d \n", deviceid);
 
     // Check if device is opened
@@ -501,12 +505,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
     {
         PLOGE("Camera State : %d \n", (int)obj_devstate.ecamstate_);
         return DEVICE_ERROR_INVALID_STATE;
-    }
-
-    if (isValidMemtype(memtype) == false)
-    {
-        PLOGE("Invalid memtype : %s", memtype.c_str());
-        return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
     }
 
     std::vector<int>::iterator position =
