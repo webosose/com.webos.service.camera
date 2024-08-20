@@ -25,7 +25,7 @@ static pbnjson::JValue convertStringToJson(const char *rawData)
 }
 
 PreviewDisplayControl::PreviewDisplayControl(const std::string &wid)
-    : sh_(nullptr), loop_(nullptr), reply_from_server_(""), done_(0), bResult_(true)
+    : sh_(nullptr), loop_(nullptr), reply_from_server_(""), done_(0)
 {
     PLOGI("");
     acquireLSConnection(wid);
@@ -82,14 +82,13 @@ bool PreviewDisplayControl::isValidWindowId(std::string windowId)
     return false;
 }
 
-void PreviewDisplayControl::acquireLSConnection(const std::string &wid)
+bool PreviewDisplayControl::acquireLSConnection(const std::string &wid)
 {
     if (!sh_)
     {
         if (!isValidWindowId(wid))
         {
-            bResult_ = false;
-            return;
+            return false;
         }
 
         LSError lserror;
@@ -102,8 +101,7 @@ void PreviewDisplayControl::acquireLSConnection(const std::string &wid)
         {
             LSErrorPrint(&lserror, stderr);
             LSErrorFree(&lserror);
-            bResult_ = false;
-            return;
+            return false;
         }
 
         loop_ = g_main_loop_new(NULL, FALSE);
@@ -114,16 +112,15 @@ void PreviewDisplayControl::acquireLSConnection(const std::string &wid)
             g_main_loop_unref(loop_);
             LSUnregister(sh_, &lserror);
             LSErrorFree(&lserror);
-            loop_    = nullptr;
-            sh_      = nullptr;
-            bResult_ = false;
-            return;
+            loop_ = nullptr;
+            sh_   = nullptr;
+            return false;
         }
     }
-    bResult_ = true;
+    return true;
 }
 
-void PreviewDisplayControl::releaseLSConnection()
+bool PreviewDisplayControl::releaseLSConnection()
 {
     if (loop_)
     {
@@ -140,13 +137,12 @@ void PreviewDisplayControl::releaseLSConnection()
         {
             LSErrorPrint(&lserror, stderr);
             LSErrorFree(&lserror);
-            bResult_ = false;
-            return;
+            return false;
         }
         LSErrorFree(&lserror);
         sh_ = nullptr;
     }
-    bResult_ = true;
+    return true;
 }
 
 bool PreviewDisplayControl::call(std::string uri, std::string payload,
@@ -195,7 +191,6 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     if (!isValidWindowId(windowId))
     {
         PLOGI("Invalid windowId value");
-        bResult_ = false;
         return media_id;
     }
 
@@ -240,7 +235,6 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     if (!call("luna://com.webos.media/load", std::move(payload), cbHandleResponseMsg))
     {
         PLOGI("fail to call com.webos.media/load()");
-        bResult_ = false;
         return media_id;
     }
 
@@ -248,10 +242,9 @@ std::string PreviewDisplayControl::load(std::string camera_id, std::string windo
     if (parsed["returnValue"].asBool() == false)
     {
         PLOGI("load() FAILED");
-        bResult_ = false;
         return media_id;
     }
-    bResult_ = true;
+
     media_id = parsed["mediaId"].asString();
     PLOGI("mediaId = %s ", media_id.c_str());
 
@@ -264,15 +257,14 @@ bool PreviewDisplayControl::play(std::string mediaId)
     if (!call("luna://com.webos.media/play", std::move(payload), cbHandleResponseMsg))
     {
         PLOGI("fail to call com.webos.media/play()");
-        bResult_ = false;
         return false;
     }
 
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
-    bResult_               = parsed["returnValue"].asBool();
-    PLOGI("returnValue : %d ", bResult_);
+    bool result            = parsed["returnValue"].asBool();
+    PLOGI("returnValue : %d ", result);
 
-    return bResult_;
+    return result;
 }
 
 bool PreviewDisplayControl::unload(std::string mediaId)
@@ -285,18 +277,15 @@ bool PreviewDisplayControl::unload(std::string mediaId)
     if (!call("luna://com.webos.media/unload", std::move(payload), cbHandleResponseMsg))
     {
         PLOGI("fail to call com.webos.media/unload()");
-        bResult_ = false;
         return false;
     }
 
     pbnjson::JValue parsed = convertStringToJson(reply_from_server_.c_str());
-    bResult_               = parsed["returnValue"].asBool();
-    PLOGI("returnValue : %d ", bResult_);
+    bool result            = parsed["returnValue"].asBool();
+    PLOGI("returnValue : %d ", result);
 
-    return bResult_;
+    return result;
 }
-
-bool PreviewDisplayControl::getControlStatus() { return bResult_; }
 
 int PreviewDisplayControl::getPid(std::string mediaId)
 {
@@ -305,7 +294,6 @@ int PreviewDisplayControl::getPid(std::string mediaId)
     std::string payload = "{\"mediaId\":\"" + mediaId + "\"}";
     if (!call("luna://com.webos.media/getActivePipelines", std::move(payload), cbHandleResponseMsg))
     {
-        bResult_ = false;
         return pid;
     }
 
