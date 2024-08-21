@@ -488,32 +488,22 @@ DEVICE_RETURN_CODE_T CommandManager::checkDeviceClient(int devhandle, std::strin
 void CommandManager::closeClientDevice(std::string clientName)
 {
     PLOGI("clientName : %s", clientName.c_str());
-    std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
+
+    auto it = virtualdevmgrobj_map_.begin();
     while (it != virtualdevmgrobj_map_.end())
     {
-        Device obj = it->second;
-        PLOGI("id = %d", obj.deviceid);
-        if (clientName == obj.clientName && nullptr != obj.ptr)
-        {
-            PLOGI("stop & close devicehandle : %d", obj.devicehandle);
+        Device &device = it->second;
 
-            // send request to stop all and close the device
-            obj.ptr->stopCapture(obj.devicehandle);
-            CameraDeviceState state = getDeviceState(obj.devicehandle);
-            if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
-            {
-                obj.ptr->stopCamera(obj.devicehandle);
-            }
-            else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
-            {
-                obj.ptr->stopPreview(obj.devicehandle);
-            }
-            obj.ptr->close(obj.devicehandle);
+        if (clientName == device.clientName && nullptr != device.ptr)
+        {
+            PLOGI("stop & close devicehandle : %d", device.devicehandle);
+
+            stopAndCloseDevice(device);
 
             unsigned long count = virtualdevmgrobj_map_.count(it->first);
             if (count == 1)
             {
-                delete obj.ptr;
+                delete device.ptr;
             }
 
             it = virtualdevmgrobj_map_.erase(it);
@@ -529,28 +519,17 @@ void CommandManager::handleCrash()
 {
     PLOGI("start freeing resources for abnormal service termination \n");
 
-    std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
+    auto it = virtualdevmgrobj_map_.begin();
     while (it != virtualdevmgrobj_map_.end())
     {
-        Device obj = it->second;
+        Device &device = it->second;
 
-        // send request to stop all and close the device
-        obj.ptr->stopCapture(obj.devicehandle);
-        CameraDeviceState state = getDeviceState(obj.devicehandle);
-        if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
-        {
-            obj.ptr->stopCamera(obj.devicehandle);
-        }
-        else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
-        {
-            obj.ptr->stopPreview(obj.devicehandle);
-        }
-        obj.ptr->close(obj.devicehandle);
+        stopAndCloseDevice(device);
 
         unsigned long count = virtualdevmgrobj_map_.count(it->first);
         if (count == 1)
         {
-            delete obj.ptr;
+            delete device.ptr;
         }
 
         it = virtualdevmgrobj_map_.erase(it);
@@ -563,31 +542,20 @@ void CommandManager::release(int deviceid)
 {
     PLOGI("deviceid : %d", deviceid);
 
-    std::multimap<std::string, Device>::iterator it = virtualdevmgrobj_map_.begin();
+    auto it = virtualdevmgrobj_map_.begin();
     while (it != virtualdevmgrobj_map_.end())
     {
-        Device obj = it->second;
-        if (deviceid == obj.deviceid)
+        Device &device = it->second;
+        if (deviceid == device.deviceid)
         {
-            obj.ptr->requestPreviewCancel();
+            device.ptr->requestPreviewCancel();
 
-            // send request to stop all and close the device
-            obj.ptr->stopCapture(obj.devicehandle);
-            CameraDeviceState state = getDeviceState(obj.devicehandle);
-            if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
-            {
-                obj.ptr->stopCamera(obj.devicehandle);
-            }
-            else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
-            {
-                obj.ptr->stopPreview(obj.devicehandle);
-            }
-            obj.ptr->close(obj.devicehandle);
+            stopAndCloseDevice(device);
 
             unsigned long count = virtualdevmgrobj_map_.count(it->first);
             if (count == 1)
             {
-                delete obj.ptr;
+                delete device.ptr;
             }
 
             it = virtualdevmgrobj_map_.erase(it);
@@ -675,4 +643,22 @@ CameraDeviceState CommandManager::getDeviceState(int devhandle)
     {
         return CameraDeviceState::CAM_DEVICE_STATE_CLOSE;
     }
+}
+
+void CommandManager::stopAndCloseDevice(Device &device)
+{
+    // send request to stop all and close the device
+    device.ptr->stopCapture(device.devicehandle);
+
+    CameraDeviceState state = getDeviceState(device.devicehandle);
+    if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
+    {
+        stopCamera(device.devicehandle);
+    }
+    else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+    {
+        stopPreview(device.devicehandle);
+    }
+
+    device.ptr->close(device.devicehandle);
 }

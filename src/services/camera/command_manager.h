@@ -42,6 +42,7 @@ private:
 
     VirtualDeviceManager *getVirtualDeviceMgrObj(int);
     void removeVirtualDevMgrObj(int);
+    void stopAndCloseDevice(Device &);
     std::shared_ptr<AddOn> pAddon_;
 
 public:
