@@ -951,8 +951,8 @@ bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id
             "camera" + std::to_string(CommandManager::getInstance().getCameraId(handle));
         CAMERA_FORMAT camera_format;
         getFormat(handle, &camera_format);
-        bool ret = pdc->load(std::move(camera_id), std::move(window_id), camera_format,
-                             std::move(mem_type), key, handle, (cstr_primary == priority));
+        bool ret = pdc->start(std::move(camera_id), std::move(window_id), camera_format,
+                              std::move(mem_type), key, handle, (cstr_primary == priority));
         if (ret)
         {
             std::string outmsg;
@@ -973,7 +973,7 @@ bool VirtualDeviceManager::stopPreviewDisplay(int handle)
     {
         if ((*it)->getHandle() == handle)
         {
-            bool ret = (*it)->unload();
+            bool ret = (*it)->stop();
 
             std::string outmsg;
             unregisterClient((*it)->getPid(), outmsg);

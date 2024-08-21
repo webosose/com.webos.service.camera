@@ -188,9 +188,9 @@ bool PreviewDisplayControl::cbHandleResponseMsg(LSHandle *sh, LSMessage *msg, vo
     return true;
 }
 
-bool PreviewDisplayControl::load(std::string camera_id, std::string windowId,
-                                 CAMERA_FORMAT cameraFormat, std::string memType, int key,
-                                 int handle_, bool primary)
+bool PreviewDisplayControl::start(std::string camera_id, std::string windowId,
+                                  CAMERA_FORMAT cameraFormat, std::string memType, int key,
+                                  int handle_, bool primary)
 {
     if (!isValidWindowId(windowId))
     {
@@ -262,7 +262,7 @@ bool PreviewDisplayControl::load(std::string camera_id, std::string windowId,
     return true;
 }
 
-bool PreviewDisplayControl::unload()
+bool PreviewDisplayControl::stop()
 {
     PLOGI("unload() starts.");
 
