@@ -29,7 +29,7 @@
 class Device
 {
 public:
-    VirtualDeviceManager *ptr;
+    std::shared_ptr<VirtualDeviceManager> ptr;
     int devicehandle;
     int deviceid;
     std::string clientName;
@@ -40,7 +40,7 @@ class CommandManager
 private:
     std::multimap<std::string, Device> virtualdevmgrobj_map_;
 
-    VirtualDeviceManager *getVirtualDeviceMgrObj(int);
+    std::shared_ptr<VirtualDeviceManager> getVirtualDeviceMgrObj(int);
     void removeVirtualDevMgrObj(int);
     void stopAndCloseDevice(Device &);
     std::shared_ptr<AddOn> pAddon_;
