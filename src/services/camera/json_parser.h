@@ -272,9 +272,6 @@ public:
     void setCaptureMode(const std::string &capturemode) { str_mode_ = capturemode; }
     std::string strGetCaptureMode() const { return str_mode_; }
 
-    void setUserId(int uid) { n_uid_ = uid; }
-    int getUserId() const { return n_uid_; }
-
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
         objreply_.setReturnValue(returnvalue);
@@ -292,7 +289,6 @@ private:
     int n_image_;
     std::string str_mode_;
     std::string str_path_;
-    int n_uid_;
     MethodReply objreply_;
 };
 
