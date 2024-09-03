@@ -133,7 +133,6 @@
 #define CONST_PARAM_NAME_ENABLE "enable"
 #define CONST_PARAM_NAME_METASIZE_HINT "metaSizeHint"
 #define CONST_PARAM_NAME_REGISTER "register"
-#define CONST_CLIENT_USERID "uid"
 #define CONST_PARAM_NAME_WINDOW_ID "windowId"
 #define CONST_PARAM_NAME_MEDIA_ID "mediaId"
 

@@ -389,12 +389,6 @@ bool CameraDacPolicy::apply(int uid)
 
 bool CameraDacPolicy::checkCredential(int uid, std::string &path)
 {
-    if (uid == -1 && (path.empty() || strstr(path.c_str(), "/tmp")))
-    {
-        PLOGI("DAC will not be installed to the capture path");
-        return true;
-    }
-
     if (!getUsername(uid))
     {
         PLOGE("Invalid uid: %d", uid);
