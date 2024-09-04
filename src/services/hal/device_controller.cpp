@@ -635,6 +635,17 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         meta_size = pCameraSolution->getMetaSizeHint();
     }
 
+    // user pointer buffer set-up.
+    if (memtype != kMemtypeShmemMmap)
+    {
+        usrpbufs_ = (buffer_t *)calloc(FRAME_COUNT, sizeof(buffer_t));
+        if (!usrpbufs_)
+        {
+            PLOGE("USERPTR buffer allocation failed \n");
+            return DEVICE_ERROR_UNKNOWN;
+        }
+    }
+
     if (memtype == kMemtypePosixshm)
     {
         std::string shmname = "";
@@ -675,15 +686,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
 
     if (memtype == kMemtypeShmem)
     {
-        // user pointer buffer set-up.
-        usrpbufs_ = (buffer_t *)calloc(FRAME_COUNT, sizeof(buffer_t));
-        if (!usrpbufs_)
-        {
-            PLOGE("USERPTR buffer allocation failed \n");
-            SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-            PLOGI("CloseShmemory %d", status);
-            return DEVICE_ERROR_UNKNOWN;
-        }
         IPCSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmsystem_, FRAME_COUNT, usrpbufs_,
                                                              nullptr);
 
@@ -727,16 +729,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
     }
     else // memtype == kMemtypePosixshm
     {
-        // user pointer buffer set-up.
-        usrpbufs_ = (buffer_t *)calloc(FRAME_COUNT, sizeof(buffer_t));
-        if (!usrpbufs_)
-        {
-            PLOGE("USERPTR buffer allocation failed \n");
-            IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, FRAME_COUNT, buf_size_,
-                                                              meta_size, sizeof(unsigned int),
-                                                              str_shmemname_, shmemfd_);
-            return DEVICE_ERROR_UNKNOWN;
-        }
         IPCPosixSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmposix_, FRAME_COUNT,
                                                                   usrpbufs_, nullptr);
 
