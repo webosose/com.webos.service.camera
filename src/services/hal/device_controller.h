@@ -60,9 +60,6 @@ private:
 
     bool b_iscontinuous_capture_;
     bool b_isstreamon_;
-    bool b_isposixruning;
-    bool b_issystemvruning;
-    bool b_issystemvruning_mmap;
 
     IHal *p_cam_hal;
     int shmemfd_;

@@ -80,8 +80,7 @@ struct MemoryListener : public CameraSolutionEvent
 };
 
 DeviceControl::DeviceControl()
-    : b_iscontinuous_capture_(false), b_isstreamon_(false), b_isposixruning(false),
-      b_issystemvruning(false), b_issystemvruning_mmap(false), p_cam_hal(nullptr), shmemfd_(-1),
+    : b_iscontinuous_capture_(false), b_isstreamon_(false), p_cam_hal(nullptr), shmemfd_(-1),
       usrpbufs_(nullptr), capture_format_(), tMutex(), tCondVar(), h_shmsystem_(nullptr),
       h_shmposix_(nullptr), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot),
       str_memtype_(""), str_shmemname_(""), cancel_preview_(false), buf_size_(0), sh_(nullptr),
@@ -206,7 +205,9 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
     PSHMEM_HANDLE h_shm_posix = nullptr;
     SHMEM_HANDLE h_shm        = nullptr;
 
-    if (b_isposixruning)
+    bool isPosixShm = (str_memtype_ == kMemtypePosixshm);
+
+    if (isPosixShm)
     {
         h_shm_posix = h_shmposix_;
         if (h_shm_posix == nullptr)
@@ -241,7 +242,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 
         while (cnt < max_iterations) // 10s
         {
-            write_index = b_isposixruning
+            write_index = isPosixShm
                               ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm_posix)
                               : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
             if (read_index != write_index)
@@ -259,7 +260,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 
         int len                    = 0;
         unsigned char *sh_mem_addr = NULL;
-        if (b_isposixruning)
+        if (isPosixShm)
         {
             IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm_posix, &sh_mem_addr, &len);
         }
@@ -334,7 +335,9 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
     PSHMEM_HANDLE h_shm_posix = nullptr;
     SHMEM_HANDLE h_shm        = nullptr;
 
-    if (b_isposixruning)
+    bool isPosixShm = (str_memtype_ == kMemtypePosixshm);
+
+    if (isPosixShm)
     {
         h_shm_posix = h_shmposix_;
         if (h_shm_posix == nullptr)
@@ -369,7 +372,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
 
         while (cnt < max_iterations) // 10s
         {
-            write_index = b_isposixruning
+            write_index = isPosixShm
                               ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm_posix)
                               : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
             if (read_index != write_index)
@@ -387,7 +390,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
 
         int len                    = 0;
         unsigned char *sh_mem_addr = NULL;
-        if (b_isposixruning)
+        if (isPosixShm)
         {
             IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm_posix, &sh_mem_addr, &len);
         }
@@ -502,7 +505,7 @@ void DeviceControl::previewThread()
         }
 
         auto meta = pMemoryListener->getResult();
-        if (b_issystemvruning)
+        if (str_memtype_ == kMemtypeShmem)
         {
             IPCSharedMemory::getInstance().WriteHeader(h_shmsystem_, frame_buffer.index,
                                                        frame_buffer.length);
@@ -515,7 +518,7 @@ void DeviceControl::previewThread()
 
             IPCSharedMemory::getInstance().IncrementWriteIndex(h_shmsystem_);
         }
-        else if (b_issystemvruning_mmap)
+        else if (str_memtype_ == kMemtypeShmemMmap)
         {
             auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(
                 h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
@@ -526,7 +529,7 @@ void DeviceControl::previewThread()
                 PLOGE("Write Shared memory error %d \n", retshmem);
             }
         }
-        else if (b_isposixruning)
+        else // str_memtype_ == kMemtypePosixshm
         {
             IPCPosixSharedMemory::getInstance().WriteHeader(h_shmposix_, frame_buffer.index,
                                                             frame_buffer.length);
@@ -632,17 +635,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         meta_size = pCameraSolution->getMetaSizeHint();
     }
 
-    if (memtype == kMemtypeShmem || memtype == kMemtypeShmemMmap)
-    {
-        auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
-            &h_shmsystem_, pkey, buf_size_, meta_size, FRAME_COUNT, sizeof(unsigned int));
-        if (retshmem != SHMEM_IS_OK)
-        {
-            PLOGE("CreateShmemory error %d \n", retshmem);
-            return DEVICE_ERROR_UNKNOWN;
-        }
-    }
-    else // memtype == kMemtypePosixshm
+    if (memtype == kMemtypePosixshm)
     {
         std::string shmname = "";
 
@@ -656,6 +649,16 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
 
         shmemfd_       = *pkey;
         str_shmemname_ = std::move(shmname);
+    }
+    else
+    {
+        auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
+            &h_shmsystem_, pkey, buf_size_, meta_size, FRAME_COUNT, sizeof(unsigned int));
+        if (retshmem != SHMEM_IS_OK)
+        {
+            PLOGE("CreateShmemory error %d \n", retshmem);
+            return DEVICE_ERROR_UNKNOWN;
+        }
     }
 
     //[Camera Solution Manager] initialization
@@ -705,8 +708,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
             PLOGI("CloseShmemory %d", status);
             return DEVICE_ERROR_UNKNOWN;
         }
-
-        b_issystemvruning = true;
     }
     else if (memtype == kMemtypeShmemMmap)
     {
@@ -723,8 +724,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
             PLOGE("startCapture failed");
             return DEVICE_ERROR_UNKNOWN;
         }
-
-        b_issystemvruning_mmap = true;
     }
     else // memtype == kMemtypePosixshm
     {
@@ -764,8 +763,6 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
                                                               str_shmemname_, shmemfd_);
             return DEVICE_ERROR_UNKNOWN;
         }
-
-        b_isposixruning = true;
     }
 
     b_isstreamon_ = true;
@@ -833,7 +830,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
         {
             meta_size = pCameraSolution->getMetaSizeHint();
         }
-        b_isposixruning = false;
+
         if (h_shmposix_ != nullptr)
         {
             auto retshmem = IPCPosixSharedMemory::getInstance().CloseShmemory(
@@ -848,8 +845,6 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
     }
     else
     {
-        b_issystemvruning      = false;
-        b_issystemvruning_mmap = false;
         if (h_shmsystem_ != nullptr)
         {
             auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
