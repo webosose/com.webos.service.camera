@@ -693,10 +693,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("setBuffer failed");
-            free(usrpbufs_);
-            usrpbufs_             = nullptr;
-            SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-            PLOGI("CloseShmemory %d", status);
+            closeShmemoryIfNeeded(meta_size);
             return DEVICE_ERROR_UNKNOWN;
         }
 
@@ -704,10 +701,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("startCapture failed");
-            free(usrpbufs_);
-            usrpbufs_             = nullptr;
-            SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-            PLOGI("CloseShmemory %d", status);
+            closeShmemoryIfNeeded(meta_size);
             return DEVICE_ERROR_UNKNOWN;
         }
     }
@@ -717,6 +711,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("setBuffer failed");
+            closeShmemoryIfNeeded(meta_size);
             return DEVICE_ERROR_UNKNOWN;
         }
 
@@ -724,6 +719,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("startCapture failed");
+            closeShmemoryIfNeeded(meta_size);
             return DEVICE_ERROR_UNKNOWN;
         }
     }
@@ -736,11 +732,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("setBuffer failed");
-            free(usrpbufs_);
-            usrpbufs_ = nullptr;
-            IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, FRAME_COUNT, buf_size_,
-                                                              meta_size, sizeof(unsigned int),
-                                                              str_shmemname_, shmemfd_);
+            closeShmemoryIfNeeded(meta_size);
             return DEVICE_ERROR_UNKNOWN;
         }
 
@@ -748,11 +740,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("startCapture failed");
-            free(usrpbufs_);
-            usrpbufs_ = nullptr;
-            IPCPosixSharedMemory::getInstance().CloseShmemory(&h_shmposix_, FRAME_COUNT, buf_size_,
-                                                              meta_size, sizeof(unsigned int),
-                                                              str_shmemname_, shmemfd_);
+            closeShmemoryIfNeeded(meta_size);
             return DEVICE_ERROR_UNKNOWN;
         }
     }
@@ -1390,4 +1378,26 @@ std::string DeviceControl::createCaptureFileName(int cnt) const
 
     PLOGD("path : %s", path.c_str());
     return path;
+}
+
+void DeviceControl::closeShmemoryIfNeeded(int meta_size)
+{
+    if (usrpbufs_)
+    {
+        free(usrpbufs_);
+        usrpbufs_ = nullptr;
+    }
+
+    if (str_memtype_ == kMemtypeShmem)
+    {
+        SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
+        PLOGI("CloseShmemory %d", status);
+    }
+    else if (str_memtype_ == kMemtypePosixshm)
+    {
+        PSHMEM_STATUS_T status = IPCPosixSharedMemory::getInstance().CloseShmemory(
+            &h_shmposix_, FRAME_COUNT, buf_size_, meta_size, sizeof(unsigned int), str_shmemname_,
+            shmemfd_);
+        PLOGI("Close Posix Shmemory %d", status);
+    }
 }

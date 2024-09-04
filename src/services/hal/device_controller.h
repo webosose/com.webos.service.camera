@@ -57,6 +57,7 @@ private:
     void captureThread();
     void previewThread();
     std::string createCaptureFileName(int) const;
+    void closeShmemoryIfNeeded(int);
 
     bool b_iscontinuous_capture_;
     bool b_isstreamon_;
