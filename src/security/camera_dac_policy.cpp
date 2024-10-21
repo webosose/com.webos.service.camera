@@ -353,8 +353,15 @@ bool CameraDacPolicy::apply(int uid)
         return false;
     }
 
-    std::string str_uid         = std::to_string(uid);
-    std::string str_capture_dir = str_camera_dir + "/" + str_uid;
+    const char *uname = getUsername(uid);
+    if (!uname)
+    {
+        PLOGE("Invalid uid: %d", uid);
+        return false;
+    }
+
+    std::string str_uname       = uname;
+    std::string str_capture_dir = str_camera_dir + "/" + str_uname;
 
     if (mkdir(str_capture_dir.c_str(), 0700) != 0)
     {
@@ -376,7 +383,7 @@ bool CameraDacPolicy::apply(int uid)
 
     std::string capture_rule_text;
     createCaptureTextRule(uid, capture_rule_text);
-    PLOGI("DCIM/Camera/%d rule = %s", uid, capture_rule_text.c_str());
+    PLOGI("DCIM/Camera/%s rule = %s", str_uname.c_str(), capture_rule_text.c_str());
     setAcl(capture_rule_text.c_str(), str_capture_dir.c_str());
 
     int dum_uid = -1, dum_gid = -1;
@@ -389,19 +396,14 @@ bool CameraDacPolicy::apply(int uid)
 
 bool CameraDacPolicy::checkCredential(int uid, std::string &path)
 {
-    if (uid == -1 && (path.empty() || strstr(path.c_str(), "/tmp")))
-    {
-        PLOGI("DAC will not be installed to the capture path");
-        return true;
-    }
-
-    if (!getUsername(uid))
+    const char *uname = getUsername(uid);
+    if (!uname)
     {
         PLOGE("Invalid uid: %d", uid);
         return false;
     }
 
-    std::string str_uid = std::to_string(uid);
+    std::string str_uname = uname;
 
     PLOGI("input path: %s", path.c_str());
 
@@ -409,13 +411,13 @@ bool CameraDacPolicy::checkCredential(int uid, std::string &path)
     {
         if (path == str_camera_dir)
         {
-            path += "/" + str_uid + "/";
+            path += "/" + str_uname + "/";
             PLOGI("Result path: %s", path.c_str());
             return true;
         }
         else if (path == (str_camera_dir + "/"))
         {
-            path += str_uid + "/";
+            path += str_uname + "/";
             PLOGI("Result path: %s", path.c_str());
             return true;
         }
@@ -423,9 +425,9 @@ bool CameraDacPolicy::checkCredential(int uid, std::string &path)
         {
             std::vector<std::string> path_hierarchy = split(path, '/');
             if (path_hierarchy.size() == 7)
-            // path should be /media/internal/DCIM/Camera/<uid>/<somefilename with extension>
+            // path should be /media/internal/DCIM/Camera/<uname>/<somefilename with extension>
             {
-                if (path_hierarchy[4] == "Camera" && path_hierarchy[5] == std::to_string(uid))
+                if (path_hierarchy[4] == "Camera" && path_hierarchy[5] == str_uname)
                 {
                     PLOGI("Result path: %s", path.c_str());
                     return true;

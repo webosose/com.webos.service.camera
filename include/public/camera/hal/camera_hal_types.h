@@ -17,6 +17,7 @@
 #ifndef CAMERA_HAL_TYPES
 #define CAMERA_HAL_TYPES
 
+#include "camera_hal_types_common.h"
 #include <string>
 #include <vector>
 
@@ -58,28 +59,6 @@ typedef enum
 
 typedef enum
 {
-    /* YUV */
-    CAMERA_PIXEL_FORMAT_NV12 = 0x0000,
-    CAMERA_PIXEL_FORMAT_NV21,
-    CAMERA_PIXEL_FORMAT_I420,
-    CAMERA_PIXEL_FORMAT_YV12,
-    CAMERA_PIXEL_FORMAT_YUYV,
-    CAMERA_PIXEL_FORMAT_UYVY,
-
-    /* RGB */
-    CAMERA_PIXEL_FORMAT_BGRA8888,
-    CAMERA_PIXEL_FORMAT_ARGB8888,
-
-    /* ENCODED */
-    CAMERA_PIXEL_FORMAT_JPEG,
-    CAMERA_PIXEL_FORMAT_H264,
-
-    /* MAX */
-    CAMERA_PIXEL_FORMAT_MAX
-} camera_pixel_format_t;
-
-typedef enum
-{
     DEVICE_TYPE_UNDEFINED = -1,
     DEVICE_TYPE_CAMERA    = 1,
     DEVICE_TYPE_MICROPHONE,
@@ -93,35 +72,6 @@ typedef enum
     CAMERA_FORMAT_H264ES    = 2,
     CAMERA_FORMAT_JPEG      = 4,
 } camera_format_t;
-
-typedef enum
-{
-    IOMODE_UNKNOWN = -1,
-    IOMODE_READ    = 0,
-    IOMODE_MMAP,
-    IOMODE_USERPTR,
-    IOMODE_DMABUF
-} io_mode_t;
-
-/*Structures*/
-
-typedef struct
-{
-    camera_pixel_format_t pixel_format;
-    unsigned int stream_width;
-    unsigned int stream_height;
-    int stream_fps;
-    unsigned int buffer_size;
-    const char *userdata;
-} stream_format_t;
-
-typedef struct
-{
-    void *start;
-    unsigned long length;
-    std::size_t index;
-    int fd;
-} buffer_t;
 
 typedef enum
 {

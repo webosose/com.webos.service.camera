@@ -92,9 +92,6 @@ int32_t CameraSolutionProxy::getMetaSizeHint(void)
     int metaSizeHint = 1024;
     // TODO : The size of the metaSizeHint should be returned by the solution.
 
-    // In case of OSE, remove the comment below.
-    // metaSizeHint = 0;
-
     PLOGI("metaSizeHint = %d", metaSizeHint);
     return metaSizeHint;
 }

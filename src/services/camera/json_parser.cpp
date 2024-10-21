@@ -362,8 +362,7 @@ std::string StopCameraPreviewCaptureCloseMethod::createObjectJsonString() const
 }
 
 StartCaptureMethod::StartCaptureMethod()
-    : n_devicehandle_(n_invalid_id), r_cameraparams_(), n_image_(0), str_path_(cstr_empty),
-      n_uid_(n_invalid_id)
+    : n_devicehandle_(n_invalid_id), r_cameraparams_(), n_image_(0), str_path_(cstr_empty)
 {
 }
 
@@ -421,13 +420,11 @@ void StartCaptureMethod::getStartCaptureObject(const char *input, const char *sc
         raw_buffer strpath =
             jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_IMAGE_PATH)));
         str_path_ = strpath.m_str ? strpath.m_str : "";
-
 #ifdef DAC_ENABLED
-        // get uid of the client who requested to capture
-        int uid         = n_invalid_id;
-        jvalue_ref juid = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_CLIENT_USERID));
-        jnumber_get_i32(juid, &uid);
-        n_uid_ = uid;
+        if (str_path_.empty())
+        {
+            str_path_ = cstr_capturedir;
+        }
 #endif
     }
     else
