@@ -317,18 +317,32 @@ DEVICE_RETURN_CODE_T CommandManager::stopCapture(int devhandle, bool request)
 
 DEVICE_RETURN_CODE_T CommandManager::capture(int devhandle, int ncount,
                                              const std::string &imagepath,
-                                             std::vector<std::string> &capturedFiles)
+                                             std::vector<std::string> &capturedFiles, int userid)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
     if (n_invalid_id == devhandle)
         return DEVICE_ERROR_WRONG_PARAM;
 
+    std::string capture_path = imagepath;
+#if DAC_ENABLED
+    if (capture_path.empty())
+        capture_path = cstr_capturedir;
+
+    if (!CameraDacPolicy::getInstance().checkCredential(userid, capture_path))
+    {
+        return DEVICE_ERROR_DAC_POLICY_VIOLATION;
+    }
+    PLOGI("capture_path: %s", capture_path.c_str());
+
+    CameraDacPolicy::getInstance().apply(userid);
+#endif
+
     VirtualDeviceManager *ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
     {
         // capture image
-        return ptr->capture(devhandle, ncount, imagepath, capturedFiles);
+        return ptr->capture(devhandle, ncount, capture_path, capturedFiles);
     }
     else
         return DEVICE_ERROR_UNKNOWN;
