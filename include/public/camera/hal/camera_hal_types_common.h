@@ -21,7 +21,7 @@
 #ifndef CAMERA_HAL_TYPES_COMMON
 #define CAMERA_HAL_TYPES_COMMON
 
-#include <cstddef>
+#include <stddef.h>
 
 typedef enum
 {
