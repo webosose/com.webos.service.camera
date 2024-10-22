@@ -18,6 +18,7 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #define LOG_TAG "CameraService"
+#define GET_CLIENT_INFO // FIXME: This is a temporary code and will be fixed. [WRR-7088]
 #include "camera_service.h"
 #include "addon.h"
 #include "camera_constants.h"
