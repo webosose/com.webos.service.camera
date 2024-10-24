@@ -306,14 +306,12 @@ int V4l2CameraPlugin::releaseBuffer(const void *inbuf)
         memset(&buf, 0, sizeof(buf));
         buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_USERPTR;
-        buf.index =
-            (in_buf->index <= ((unsigned long)SIZE_MAX)) ? ((unsigned int)in_buf->index) : 0;
+        buf.index  = in_buf->index;
+
         if (in_buf->index < n_buffers_)
         {
             buf.m.userptr = (unsigned long)buffers_[in_buf->index].start;
-            buf.length    = (buffers_[in_buf->index].length <= (unsigned long)SIZE_MAX)
-                                ? ((unsigned int)buffers_[in_buf->index].length)
-                                : 0;
+            buf.length    = (unsigned int)buffers_[in_buf->index].length;
         }
 
         if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
@@ -333,7 +331,7 @@ int V4l2CameraPlugin::releaseBuffer(const void *inbuf)
         CLEAR(buf);
         buf.type   = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
-        buf.index  = (in_buf->index <= (unsigned long)SIZE_MAX) ? ((unsigned int)in_buf->index) : 0;
+        buf.index  = in_buf->index;
 
         if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
@@ -830,9 +828,7 @@ int V4l2CameraPlugin::captureDataUserptrMode()
         buf.memory    = V4L2_MEMORY_USERPTR;
         buf.index     = i;
         buf.m.userptr = (unsigned long)buffers_[i].start;
-        buf.length    = (buffers_[i].length <= (unsigned long)SIZE_MAX)
-                            ? ((unsigned int)buffers_[i].length)
-                            : 0;
+        buf.length    = (unsigned int)buffers_[i].length;
 
         if (-1 == xioctl(fd_, VIDIOC_QBUF, &buf))
         {
