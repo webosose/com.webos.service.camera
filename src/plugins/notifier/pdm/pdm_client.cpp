@@ -132,11 +132,15 @@ bool PDMClient::registerToServiceCallback(const char *serviceName, bool connecte
     if (connected)
     {
         json jpayload;
-        jpayload["subscribe"] = true;
-        jpayload["category"]  = "Video";
-#ifdef PDM_SUB_DEVICE_GROUPING
+        jpayload["subscribe"]       = true;
+        jpayload["category"]        = "Video";
         jpayload["groupSubDevices"] = true;
+
+#ifdef USE_OLD_PDM_VERSION
+        jpayload.erase("groupSubDevices");
 #endif
+
+        PLOGI("payload : %s", jpayload.dump().c_str());
 
         // get camera service handle and register cb function with pdm
         retVal = lunaClient_->subscribe(
