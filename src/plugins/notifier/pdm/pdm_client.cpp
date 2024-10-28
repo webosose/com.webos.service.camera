@@ -136,7 +136,7 @@ bool PDMClient::registerToServiceCallback(const char *serviceName, bool connecte
         jpayload["category"]        = "Video";
         jpayload["groupSubDevices"] = true;
 
-#ifdef USE_OLD_PDM_VERSION
+#ifdef USE_PHYSICAL_DEVICE_MANAGER2
         jpayload.erase("groupSubDevices");
 #endif
 
