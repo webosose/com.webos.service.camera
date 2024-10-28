@@ -18,9 +18,9 @@ project(notifier-pdm CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# Use old PDM version
-if(USE_OLD_PDM_VERSION)
-  add_definitions(-DUSE_OLD_PDM_VERSION)
+# Use physical-device-manager2
+if(USE_PHYSICAL_DEVICE_MANAGER2)
+  add_definitions(-DUSE_PHYSICAL_DEVICE_MANAGER2)
 endif()
 
 set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/pdm_client.cpp)
