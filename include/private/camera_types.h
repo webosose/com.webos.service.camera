@@ -118,13 +118,6 @@ typedef enum
     CAMERA_TYPE_OMX       = 2,
 } CAMERA_TYPE_T;
 
-typedef enum
-{
-    SHMEME_UNKNOWN = -1,
-    SHMEM_SYSTEMV  = 0,
-    SHMEM_POSIX
-} SHMEM_TYPE_T;
-
 enum class NotifierClient
 {
     NOTIFIER_CLIENT_PDM = 0,

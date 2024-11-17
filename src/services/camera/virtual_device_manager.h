@@ -31,10 +31,10 @@ class DeviceStateMap
 {
 public:
     int ndeviceid_;
-    int shmemtype;
+    std::string shmemtype;
     CameraDeviceState ecamstate_;
     DeviceStateMap()
-        : ndeviceid_(0), shmemtype(0), ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE){};
+        : ndeviceid_(0), shmemtype(""), ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE){};
 };
 
 class PreviewDisplayControl;
@@ -43,10 +43,8 @@ class VirtualDeviceManager
 private:
     std::map<int, DeviceStateMap> virtualhandle_map_;
     std::map<int, std::string> handlepriority_map_;
-    int shmempreview_count_[2];
     bool bcaptureinprogress_;
     int shmkey_;
-    int poshmkey_;
     std::vector<int> nstreaminghandle_;
     std::vector<int> ncapturehandle_;
     CAMERA_FORMAT sformat_;
@@ -77,6 +75,11 @@ private:
     DEVICE_RETURN_CODE_T continuousCapture(int, CAMERA_FORMAT, const std::string &);
     std::string startPreviewDisplay(int, std::string, std::string, int);
     bool stopPreviewDisplay(int);
+    inline bool isValidMemtype(const std::string &memtype)
+    {
+        return (memtype == kMemtypeShmemMmap || memtype == kMemtypeShmem ||
+                memtype == kMemtypePosixshm);
+    }
 
 public:
     VirtualDeviceManager();

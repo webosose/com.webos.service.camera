@@ -57,12 +57,10 @@ private:
     void captureThread();
     void previewThread();
     std::string createCaptureFileName(int) const;
+    void closeShmemoryIfNeeded(int);
 
     bool b_iscontinuous_capture_;
     bool b_isstreamon_;
-    bool b_isposixruning;
-    bool b_issystemvruning;
-    bool b_issystemvruning_mmap;
 
     IHal *p_cam_hal;
     int shmemfd_;
@@ -110,7 +108,7 @@ public:
     DEVICE_RETURN_CODE_T open(std::string, int, std::string);
     DEVICE_RETURN_CODE_T close();
     DEVICE_RETURN_CODE_T startPreview(std::string, int *, LSHandle *, const char *);
-    DEVICE_RETURN_CODE_T stopPreview(int);
+    DEVICE_RETURN_CODE_T stopPreview();
     // deprecated
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT, const std::string &, const std::string &, int);
     // deprecated

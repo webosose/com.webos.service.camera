@@ -59,7 +59,7 @@ public:
     DEVICE_RETURN_CODE_T close();
     DEVICE_RETURN_CODE_T startPreview(std::string memtype, int *pkey, LSHandle *sh,
                                       const char *subskey);
-    DEVICE_RETURN_CODE_T stopPreview(int memtype);
+    DEVICE_RETURN_CODE_T stopPreview();
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT sformat, const std::string &imagepath,
                                       const std::string &mode, int ncount, const int devHandle = 0);
     DEVICE_RETURN_CODE_T stopCapture(const int devHandle);
