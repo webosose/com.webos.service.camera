@@ -440,7 +440,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
     if (!stopPreviewDisplay(devhandle))
     {
         PLOGE("not a previewing handle or already called stopPreview\n");
-        return DEVICE_ERROR_NODEVICE;
+        return DEVICE_ERROR_INVALID_STATE;
     }
 
     DEVICE_RETURN_CODE_T ret = stopCamera(devhandle);
