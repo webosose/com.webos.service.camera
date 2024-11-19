@@ -810,6 +810,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
         {
             meta_size = pCameraSolution->getMetaSizeHint();
         }
+
         if (h_shmposix_ != nullptr)
         {
             auto retshmem = IPCPosixSharedMemory::getInstance().CloseShmemory(
