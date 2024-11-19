@@ -14,23 +14,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera_solution CXX)
+project(luna_client CXX)
+
+pkg_check_modules(LS2++ REQUIRED luna-service2++>=3)
+include_directories(${LS2++_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${LS2++_CFLAGS})
+
+include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SRC
-    camera_solution.cpp
-    camera_solution_async.cpp)
+    ${CMAKE_CURRENT_SOURCE_DIR}/luna_client.cpp
+    )
 
 add_library(${PROJECT_NAME} SHARED ${SRC})
 
 target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
-                      ${PBNJSON_CPP_LDFLAGS}
-                      camera_common
-                      luna_client
-                      )
+                      ${GLIB2_LDFLAGS}
+                      ${LS2++_LDFLAGS}
+                     )
 
 set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR})
+webos_build_library(NAME ${PROJECT_NAME})
