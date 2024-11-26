@@ -62,10 +62,11 @@ bool CameraSharedMemoryEx::getBufferInfo(size_t *bufferCount, size_t *dataSize, 
 
 bool CameraSharedMemoryEx::read(unsigned char **ppData, size_t *pDataSize, unsigned char **ppMeta,
                                 size_t *pMetaSize, unsigned char **ppExtra, size_t *pExtraSize,
-                                unsigned char **ppSolution, size_t *pSolutionSize, int timeoutMs)
+                                unsigned char **ppSolution, size_t *pSolutionSize, int timeoutMs,
+                                bool skipSignal)
 {
     return pImpl_->read(ppData, pDataSize, ppMeta, pMetaSize, ppExtra, pExtraSize, ppSolution,
-                        pSolutionSize, timeoutMs);
+                        pSolutionSize, timeoutMs, skipSignal);
 }
 
 bool CameraSharedMemoryEx::write(const unsigned char *pData, size_t dataSize,

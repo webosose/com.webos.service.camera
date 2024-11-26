@@ -180,6 +180,8 @@ void CameraSolutionProxy::release()
     stopThread();
     processing(false);
     unsubscribe();
+
+    shmName_.clear();
 }
 
 bool CameraSolutionProxy::startProcess()
@@ -332,7 +334,7 @@ bool CameraSolutionProxy::unsubscribe()
     return ret;
 }
 
-bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload)
+bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload, int *fd)
 {
     if (process_ == nullptr)
     {
@@ -352,12 +354,14 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
 
     std::string resp;
     int64_t startClk = g_get_monotonic_time();
-    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
+    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT, fd);
     int64_t endClk = g_get_monotonic_time();
 
     (startClk > endClk) ? PLOGE("diffClk is error")
                         : PLOGI("response %s, runtime %lld", resp.c_str(),
                                 (long long int)((endClk - startClk) / 1000));
+    if (fd)
+        PLOGI("fd %d", *fd);
 
     json j = json::parse(resp);
     if (j.is_discarded())

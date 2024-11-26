@@ -63,6 +63,7 @@ protected:
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
     std::atomic<CameraSolutionEvent *> pEvent_{nullptr};
 
+    std::string name_;
     std::string shmName_;
     LSHandle *sh_{nullptr};
 };

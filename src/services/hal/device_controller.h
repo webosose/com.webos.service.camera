@@ -71,12 +71,6 @@ private:
     std::string str_imagepath_;
     std::string str_capturemode_;
 
-    std::vector<CLIENT_INFO_T> client_pool_;
-    std::mutex client_pool_mutex_;
-    void broadcast_();
-
-    bool cancel_preview_;
-
     int solutionTextSize_{0};
     int solutionBinarySize_{0};
 
@@ -101,14 +95,15 @@ private:
     std::vector<buffer_t> shmMetaBuffers_;
     std::vector<buffer_t> shmExtraBuffers_;
     std::vector<buffer_t> shmSolutionBuffers_;
-    int shmemFd_{-1};
+    int shmBufferFd_{-1};
+    std::map<int, int> shmSignalFdMap_;
 
 public:
     DeviceControl();
     DEVICE_RETURN_CODE_T open(std::string, int, std::string);
     DEVICE_RETURN_CODE_T close();
     DEVICE_RETURN_CODE_T startPreview(LSHandle *, const char *);
-    DEVICE_RETURN_CODE_T stopPreview();
+    DEVICE_RETURN_CODE_T stopPreview(bool = false);
     // deprecated
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT, const std::string &, const std::string &, int);
     // deprecated
@@ -121,13 +116,10 @@ public:
     DEVICE_RETURN_CODE_T setDeviceProperty(CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(CAMERA_FORMAT);
     DEVICE_RETURN_CODE_T getFormat(CAMERA_FORMAT *);
-    DEVICE_RETURN_CODE_T getFd(int *);
-
-    DEVICE_RETURN_CODE_T registerClient(pid_t, int, int, std::string &outmsg);
-    DEVICE_RETURN_CODE_T unregisterClient(pid_t, std::string &outmsg);
-    bool isRegisteredClient(int devhandle);
-
-    void requestPreviewCancel();
+    DEVICE_RETURN_CODE_T addClient(int id);
+    DEVICE_RETURN_CODE_T removeClient(int id);
+    DEVICE_RETURN_CODE_T getShmBufferFd(int *fd);
+    DEVICE_RETURN_CODE_T getShmSignalFd(int id, int *fd);
 
     bool notifyStorageError(const DEVICE_RETURN_CODE_T);
 
@@ -139,8 +131,8 @@ public:
     //[Camera Solution Manager] integration end
 
 private:
-    // bool updateMetaBuffer(const buffer_t &buffer, const json &videoMeta, const json &extraMeta);
-    // bool updateSolutionBuffer(const buffer_t &buffer);
+    bool updateMetaBuffer(const buffer_t &buffer, const json &videoMeta, const json &extraMeta);
+    bool updateSolutionBuffer(const buffer_t &buffer);
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/
