@@ -945,10 +945,6 @@ bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id
     PLOGI("priority : %s", priority.c_str());
 
     auto pdc = std::make_unique<PreviewDisplayControl>(window_id);
-    if (!pdc)
-    {
-        return false;
-    }
 
     std::string camera_id =
         "camera" + std::to_string(CommandManager::getInstance().getCameraId(handle));
