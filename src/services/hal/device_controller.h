@@ -21,9 +21,8 @@
  (File Inclusions)
  ----------------------------------------------------------------------------*/
 #include "camera_constants.h"
+#include "camera_shared_memory_ex.h"
 #include "camera_types.h"
-#include "ipc_posix_shared_memory.h"
-#include "ipc_shared_memory.h"
 #include "storage_monitor.h"
 #include <condition_variable>
 #include <plugin_factory.hpp>
@@ -57,34 +56,29 @@ private:
     void captureThread();
     void previewThread();
     std::string createCaptureFileName(int) const;
-    void closeShmemoryIfNeeded(int);
+    void closeShmemoryIfNeeded();
 
     bool b_iscontinuous_capture_;
     bool b_isstreamon_;
 
     IHal *p_cam_hal;
-    int shmemfd_;
-    buffer_t *usrpbufs_;
 
     CAMERA_FORMAT capture_format_;
     std::thread tidPreview;
     std::thread tidCapture;
     std::mutex tMutex;
-    std::condition_variable tCondVar;
     std::string strdevicenode_;
-    SHMEM_HANDLE h_shmsystem_;
-    PSHMEM_HANDLE h_shmposix_;
     std::string str_imagepath_;
     std::string str_capturemode_;
-    std::string str_memtype_;
-    std::string str_shmemname_;
 
     std::vector<CLIENT_INFO_T> client_pool_;
     std::mutex client_pool_mutex_;
     void broadcast_();
 
     bool cancel_preview_;
-    int buf_size_;
+
+    int solutionTextSize_{0};
+    int solutionBinarySize_{0};
 
     LSHandle *sh_;
     std::string subskey_;
@@ -93,7 +87,6 @@ private:
 
     StorageMonitor storageMonitor_;
 
-    std::string deviceType_{"unknown"};
     std::string payload_{""};
 
     std::shared_ptr<CameraSolutionManager> pCameraSolution;
@@ -103,11 +96,18 @@ private:
     IFeaturePtr pFeature_;
     int halFd_{-1};
 
+    std::unique_ptr<CameraSharedMemoryEx> shmem_;
+    buffer_t *shmDataBuffers;
+    std::vector<buffer_t> shmMetaBuffers_;
+    std::vector<buffer_t> shmExtraBuffers_;
+    std::vector<buffer_t> shmSolutionBuffers_;
+    int shmemFd_{-1};
+
 public:
     DeviceControl();
     DEVICE_RETURN_CODE_T open(std::string, int, std::string);
     DEVICE_RETURN_CODE_T close();
-    DEVICE_RETURN_CODE_T startPreview(std::string, int *, LSHandle *, const char *);
+    DEVICE_RETURN_CODE_T startPreview(LSHandle *, const char *);
     DEVICE_RETURN_CODE_T stopPreview();
     // deprecated
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT, const std::string &, const std::string &, int);
@@ -137,6 +137,10 @@ public:
     DEVICE_RETURN_CODE_T enableCameraSolution(const std::vector<std::string> &);
     DEVICE_RETURN_CODE_T disableCameraSolution(const std::vector<std::string> &);
     //[Camera Solution Manager] integration end
+
+private:
+    // bool updateMetaBuffer(const buffer_t &buffer, const json &videoMeta, const json &extraMeta);
+    // bool updateSolutionBuffer(const buffer_t &buffer);
 };
 
 #endif /*SERVICE_DEVICE_CONTROLLER_H_*/

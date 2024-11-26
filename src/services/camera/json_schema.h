@@ -264,34 +264,13 @@ const char *startCameraSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
-    \"handle\", \
-    \"params\" \
+    \"handle\" \
   ], \
   \"properties\": { \
     \"handle\": { \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
-    }, \
-    \"params\": { \
-      \"type\": \"object\", \
-      \"title\": \"The Params Schema\", \
-      \"required\": [ \
-        \"type\", \
-        \"source\" \
-      ], \
-      \"properties\": { \
-        \"type\": { \
-          \"type\": \"string\", \
-          \"title\": \"The Type Schema\", \
-          \"pattern\": \"^(.*)$\" \
-        }, \
-        \"source\": { \
-          \"type\": \"string\", \
-          \"title\": \"The Source Schema\", \
-          \"pattern\": \"^(.*)$\" \
-        } \
-      } \
     } \
   } \
 }";
@@ -301,7 +280,6 @@ const char *startPreviewSchema = "{ \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
     \"handle\", \
-    \"params\", \
     \"windowId\" \
   ], \
   \"properties\": { \
@@ -309,26 +287,6 @@ const char *startPreviewSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
-    }, \
-    \"params\": { \
-      \"type\": \"object\", \
-      \"title\": \"The Params Schema\", \
-      \"required\": [ \
-        \"type\", \
-        \"source\" \
-      ], \
-      \"properties\": { \
-        \"type\": { \
-          \"type\": \"string\", \
-          \"title\": \"The Type Schema\", \
-          \"pattern\": \"^(.*)$\" \
-        }, \
-        \"source\": { \
-          \"type\": \"string\", \
-          \"title\": \"The Source Schema\", \
-          \"pattern\": \"^(.*)$\" \
-        } \
-      } \
     }, \
     \"windowId\": { \
       \"type\": \"string\", \

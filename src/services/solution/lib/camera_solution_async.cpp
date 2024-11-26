@@ -15,8 +15,8 @@
 
 #define LOG_TAG "CameraSolutionAsync"
 #include "camera_solution_async.h"
+#include "camera_shared_memory_ex.h"
 #include "camera_types.h"
-#include "ipc_shared_memory.h"
 #include <list>
 #include <numeric>
 #include <system_error>
@@ -147,33 +147,53 @@ void CameraSolutionAsync::run(void)
 {
     PerformanceControl oPC;
     oPC.targetFPS(1.0f);
+    int shmBufferFd = -1;
 
     pthread_setname_np(pthread_self(), "solution_async");
 
-    SHMEM_HANDLE hShm  = nullptr;
-    SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().OpenShmem(&hShm, shm_key);
-    PLOGI("OpenShem %d", ret);
-
-    if (ret != SHMEM_IS_OK)
+    camShmem_ = std::make_unique<CameraSharedMemoryEx>();
+    if (!camShmem_)
     {
-        PLOGE("Fail : OpenShmem RET => %d\n", ret);
+        PLOGE("Fail to create CameraSharedMemroyEx");
+        return;
+    }
+
+    shmBufferFd = camShmem_->open(shmName_);
+    PLOGI("camShmem_->open() camShmFd(%d)", shmBufferFd);
+    if (shmBufferFd < 0)
+    {
+        PLOGE("Fail to open CameraSharedMemory");
+
+        if (camShmem_)
+            camShmem_.reset();
+
         return;
     }
 
     while (checkAlive())
     {
-        int len                    = 0;
-        unsigned char *sh_mem_addr = NULL;
-        IPCSharedMemory::getInstance().ReadShmem(hShm, &sh_mem_addr, &len);
-        if (len == 0)
+        size_t data_len          = 0;
+        unsigned char *data_addr = NULL;
+
+        bool status = camShmem_->read(&data_addr, &data_len, nullptr, nullptr, nullptr, nullptr);
+
+        PLOGD("data_len(%zu) m", data_len);
+
+        if (status == false)
+        {
+            PLOGE("shared memory read fail");
+            break;
+        }
+
+        if (data_len == 0)
         {
             g_usleep(1000);
             continue;
         }
 
         buffer_t inBuf;
-        inBuf.start  = sh_mem_addr;
-        inBuf.length = len;
+        inBuf.start  = data_addr;
+        inBuf.length = data_len;
         pushJob(inBuf);
 
         if (checkAlive())
@@ -186,12 +206,11 @@ void CameraSolutionAsync::run(void)
     }
     postProcessing();
 
-    if (hShm)
+    if (camShmem_)
     {
-        SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().CloseShmemory(&hShm);
-        PLOGI("CloseShmemory %d", ret);
-        if (ret != SHMEM_IS_OK)
-            PLOGE("CloseShmemory error %d \n", ret);
+        PLOGI("camShmem_.close");
+        camShmem_->close();
+        camShmem_.reset();
     }
 }
 

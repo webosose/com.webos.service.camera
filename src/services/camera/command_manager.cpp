@@ -201,8 +201,7 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, std::string memtype, int *pkey,
-                                                 LSHandle *sh, const char *subskey)
+DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, LSHandle *sh)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -212,7 +211,7 @@ DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, std::string memt
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // start preview
-        return ptr->startCamera(devhandle, std::move(memtype), pkey, sh, subskey);
+        return ptr->startCamera(devhandle, sh);
     else
         return DEVICE_ERROR_UNKNOWN;
 }
@@ -232,9 +231,8 @@ DEVICE_RETURN_CODE_T CommandManager::stopCamera(int devhandle)
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey,
-                                                  std::string disptype, std::string *media_id,
-                                                  LSHandle *sh, const char *subskey)
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string disptype,
+                                                  std::string *media_id, LSHandle *sh)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -244,8 +242,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string mem
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // start preview
-        return ptr->startPreview(devhandle, std::move(memtype), pkey, std::move(disptype), media_id,
-                                 sh, subskey);
+        return ptr->startPreview(devhandle, std::move(disptype), media_id, sh);
     else
         return DEVICE_ERROR_UNKNOWN;
 }

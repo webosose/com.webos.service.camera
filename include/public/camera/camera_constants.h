@@ -128,7 +128,7 @@
 #define CONST_PARAM_NAME_SUBSYSTEM "subSystem"
 #define CONST_PARAM_NAME_DEVHANDLE "devHandle"
 #define CONST_PARAM_NAME_OUTMSG "outMsg"
-#define CONST_PARAM_NAME_SHMKEY "shmKey"
+#define CONST_PARAM_NAME_SHMNAME "shmName"
 #define CONST_PARAM_NAME_BUFFERSIZE "bufferSize"
 #define CONST_PARAM_NAME_ENABLE "enable"
 #define CONST_PARAM_NAME_METASIZE_HINT "metaSizeHint"
