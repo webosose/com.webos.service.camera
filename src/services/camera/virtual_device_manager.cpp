@@ -945,26 +945,26 @@ bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id
     PLOGI("priority : %s", priority.c_str());
 
     auto pdc = std::make_unique<PreviewDisplayControl>(window_id);
-    if (pdc)
+    if (!pdc)
     {
-        std::string camera_id =
-            "camera" + std::to_string(CommandManager::getInstance().getCameraId(handle));
-        CAMERA_FORMAT camera_format;
-        getFormat(handle, &camera_format);
-        bool ret = pdc->start(std::move(camera_id), std::move(window_id), camera_format,
-                              std::move(mem_type), key, handle, (cstr_primary == priority));
-        if (ret)
-        {
-            std::string outmsg;
-            registerClient(pdc->getPid(), 10, handle, outmsg);
-            PLOGI("outmsg : %s", outmsg.c_str());
-
-            previewDisplayControls.push_back(std::move(pdc));
-        }
-        return ret;
+        return false;
     }
 
-    return false;
+    std::string camera_id =
+        "camera" + std::to_string(CommandManager::getInstance().getCameraId(handle));
+    CAMERA_FORMAT camera_format;
+    getFormat(handle, &camera_format);
+    bool ret = pdc->start(std::move(camera_id), std::move(window_id), camera_format,
+                          std::move(mem_type), key, handle, (cstr_primary == priority));
+    if (ret)
+    {
+        std::string outmsg;
+        registerClient(pdc->getPid(), 10, handle, outmsg);
+        PLOGI("outmsg : %s", outmsg.c_str());
+
+        previewDisplayControls.push_back(std::move(pdc));
+    }
+    return ret;
 }
 
 bool VirtualDeviceManager::stopPreviewDisplay(int handle)
