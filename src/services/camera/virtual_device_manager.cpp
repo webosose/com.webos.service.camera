@@ -416,13 +416,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
         return ret;
     }
 
-    *pmedia = startPreviewDisplay(devhandle, std::move(windowid), std::move(memtype), shmkey_);
-    if ((*pmedia).empty())
+    bool result = startPreviewDisplay(devhandle, std::move(windowid), std::move(memtype), shmkey_);
+    if (!result)
     {
         stopCamera(devhandle);
         PLOGE("Fail to preview due to invalid windowId\n");
         return DEVICE_ERROR_INVALID_WINDOW_ID;
     }
+    *pmedia = "undefined";
 
     // update state of device to preview
     DeviceStateMap obj_devstate   = virtualhandle_map_[devhandle];
@@ -937,42 +938,45 @@ VirtualDeviceManager::disableCameraSolution(int devhandle,
     }
 }
 
-std::string VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
-                                                      std::string mem_type, int key)
+bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
+                                               std::string mem_type, int key)
 {
     std::string priority = getAppPriority(handle);
     PLOGI("priority : %s", priority.c_str());
 
-    std::string media_id = "";
-    auto pdc             = std::make_unique<PreviewDisplayControl>(window_id);
-    if (pdc)
-    {
-        std::string camera_id =
-            "camera" + std::to_string(CommandManager::getInstance().getCameraId(handle));
-        CAMERA_FORMAT camera_format;
-        getFormat(handle, &camera_format);
-        media_id = pdc->load(std::move(camera_id), std::move(window_id), camera_format,
-                             std::move(mem_type), key, handle, (cstr_primary == priority));
-        if (!media_id.empty())
-        {
-            // We do not check the result because uMediaServer always returns SUCCESS.
-            pdc->play(media_id);
-            ums_controls.push_back({handle, media_id, std::move(pdc)});
-        }
-    }
+    auto pdc = std::make_unique<PreviewDisplayControl>(window_id);
 
-    return media_id;
+    std::string camera_id =
+        "camera" + std::to_string(CommandManager::getInstance().getCameraId(handle));
+    CAMERA_FORMAT camera_format;
+    getFormat(handle, &camera_format);
+    bool ret = pdc->start(std::move(camera_id), std::move(window_id), camera_format,
+                          std::move(mem_type), key, handle, (cstr_primary == priority));
+    if (ret)
+    {
+        std::string outmsg;
+        registerClient(pdc->getPid(), 10, handle, outmsg);
+        PLOGI("outmsg : %s", outmsg.c_str());
+
+        previewDisplayControls.push_back(std::move(pdc));
+    }
+    return ret;
 }
 
 bool VirtualDeviceManager::stopPreviewDisplay(int handle)
 {
-    for (auto it = ums_controls.begin(); it != ums_controls.end(); ++it)
+    for (auto it = previewDisplayControls.begin(); it != previewDisplayControls.end(); ++it)
     {
-        if (it->handle == handle)
+        if ((*it)->getHandle() == handle)
         {
-            it->display_control->unload(it->mediaId);
-            ums_controls.erase(it);
-            return true;
+            bool ret = (*it)->stop();
+
+            std::string outmsg;
+            unregisterClient((*it)->getPid(), outmsg);
+            PLOGI("outmsg : %s", outmsg.c_str());
+
+            previewDisplayControls.erase(it);
+            return ret;
         }
     }
     return false;

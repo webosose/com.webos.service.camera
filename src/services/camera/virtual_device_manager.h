@@ -50,13 +50,7 @@ private:
     CAMERA_FORMAT sformat_;
 
     // for render preview
-    struct UMSControl
-    {
-        int handle;
-        std::string mediaId;
-        std::unique_ptr<PreviewDisplayControl> display_control;
-    };
-    std::vector<UMSControl> ums_controls;
+    std::vector<std::unique_ptr<PreviewDisplayControl>> previewDisplayControls;
 
     // for multi obj
     CameraHalProxy objcamerahalproxy_;
@@ -73,7 +67,7 @@ private:
     DEVICE_RETURN_CODE_T singleCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                        int);
     DEVICE_RETURN_CODE_T continuousCapture(int, CAMERA_FORMAT, const std::string &);
-    std::string startPreviewDisplay(int, std::string, std::string, int);
+    bool startPreviewDisplay(int, std::string, std::string, int);
     bool stopPreviewDisplay(int);
     inline bool isValidMemtype(const std::string &memtype)
     {
