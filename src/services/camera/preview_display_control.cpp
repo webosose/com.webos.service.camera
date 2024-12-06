@@ -217,7 +217,7 @@ bool PreviewDisplayControl::start(std::string camera_id, std::string windowId,
 
     // Create camera pipeline
     std::string guid = GenerateUniqueID()();
-    std::string uid  = "com.webos.pipeline." + guid;
+    std::string uid  = "com.webos.pipeline.camera." + guid;
     std::string cmd  = "/usr/sbin/g-camera-pipeline -s" + uid + " -u";
     pipeline_process = std::make_unique<Process>(cmd);
 

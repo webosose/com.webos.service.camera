@@ -30,7 +30,7 @@
         {
             "service": "com.webos.service.camera2.display-*",
             "outbound": [
-                "com.webos.pipeline.*"
+                "com.webos.pipeline.camera.*"
             ]
         }
     ]
