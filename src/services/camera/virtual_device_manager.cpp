@@ -424,7 +424,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle, bool forceC
 }
 
 DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::string windowid,
-                                                        std::string *pmedia, LSHandle *sh)
+                                                        LSHandle *sh)
 {
     if (windowid.empty())
     {
@@ -448,7 +448,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
         PLOGE("Fail to preview due to invalid windowId\n");
         return DEVICE_ERROR_INVALID_WINDOW_ID;
     }
-    *pmedia = "undefined";
 
     // update state of device to preview
     DeviceStateMap obj_devstate   = virtualhandle_map_[devhandle];

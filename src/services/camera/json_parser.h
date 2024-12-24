@@ -170,7 +170,6 @@ public:
     {
         n_devicehandle_ = -1;
         window_id_      = "";
-        media_id_       = "";
     }
     ~StartPreviewMethod() {}
 
@@ -182,9 +181,6 @@ public:
         ro_dpy_params_.str_window_id = rin_params.str_window_id;
     }
     camera_display_source_t rGetDpyParams() const { return ro_dpy_params_; }
-
-    void setMediaIdValue(std::string media_id) { media_id_ = std::move(media_id); }
-    std::string getMediaIdValue() const { return media_id_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -201,7 +197,6 @@ private:
     int n_devicehandle_;
     camera_display_source_t ro_dpy_params_;
     std::string window_id_;
-    std::string media_id_;
     MethodReply objreply_;
 };
 
