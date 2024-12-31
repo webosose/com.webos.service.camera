@@ -104,12 +104,7 @@ private:
 class OpenMethod
 {
 public:
-    OpenMethod()
-    {
-        n_devicehandle_ = -1;
-        n_client_pid_   = -1;
-        n_client_sig_   = -1;
-    }
+    OpenMethod() { n_devicehandle_ = -1; }
     ~OpenMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
@@ -123,12 +118,6 @@ public:
 
     void setAppPriority(const std::string &priority) { str_priority_ = priority; }
     std::string getAppPriority() const { return str_priority_; }
-
-    void setClientProcessId(int pid) { n_client_pid_ = pid; }
-    int getClientProcessId() const { return n_client_pid_; }
-
-    void setClientSignal(int sig) { n_client_sig_ = sig; }
-    int getClientSignal() const { return n_client_sig_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -146,33 +135,17 @@ private:
     std::string str_devid_;
     std::string str_appid_;
     std::string str_priority_;
-    int n_client_pid_;
-    int n_client_sig_;
     MethodReply objreply_;
 };
 
 class StartCameraMethod
 {
 public:
-    StartCameraMethod()
-    {
-        n_devicehandle_ = -1;
-        n_keyvalue_     = 0;
-    }
+    StartCameraMethod() { n_devicehandle_ = -1; }
     ~StartCameraMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
-
-    void setMemParams(camera_memory_source_t rin_params)
-    {
-        ro_mem_params_.str_memorysource = rin_params.str_memorysource;
-        ro_mem_params_.str_memorytype   = rin_params.str_memorytype;
-    }
-    camera_memory_source_t rGetMemParams() const { return ro_mem_params_; }
-
-    void setKeyValue(int key) { n_keyvalue_ = key; }
-    int getKeyValue() const { return n_keyvalue_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -187,8 +160,6 @@ public:
 
 private:
     int n_devicehandle_;
-    camera_memory_source_t ro_mem_params_;
-    int n_keyvalue_;
     MethodReply objreply_;
 };
 
@@ -198,33 +169,18 @@ public:
     StartPreviewMethod()
     {
         n_devicehandle_ = -1;
-        n_keyvalue_     = 0;
         window_id_      = "";
-        media_id_       = "";
     }
     ~StartPreviewMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
 
-    void setMemParams(camera_memory_source_t rin_params)
-    {
-        ro_mem_params_.str_memorysource = rin_params.str_memorysource;
-        ro_mem_params_.str_memorytype   = rin_params.str_memorytype;
-    }
-    camera_memory_source_t rGetMemParams() const { return ro_mem_params_; }
-
     void setDpyParams(camera_display_source_t rin_params)
     {
         ro_dpy_params_.str_window_id = rin_params.str_window_id;
     }
     camera_display_source_t rGetDpyParams() const { return ro_dpy_params_; }
-
-    void setKeyValue(int key) { n_keyvalue_ = key; }
-    int getKeyValue() const { return n_keyvalue_; }
-
-    void setMediaIdValue(std::string media_id) { media_id_ = std::move(media_id); }
-    std::string getMediaIdValue() const { return media_id_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -239,11 +195,8 @@ public:
 
 private:
     int n_devicehandle_;
-    camera_memory_source_t ro_mem_params_;
     camera_display_source_t ro_dpy_params_;
-    int n_keyvalue_;
     std::string window_id_;
-    std::string media_id_;
     MethodReply objreply_;
 };
 
@@ -327,18 +280,11 @@ private:
 class StopCameraPreviewCaptureCloseMethod
 {
 public:
-    StopCameraPreviewCaptureCloseMethod()
-    {
-        n_devicehandle_ = -1;
-        n_client_pid_   = -1;
-    }
+    StopCameraPreviewCaptureCloseMethod() { n_devicehandle_ = -1; }
     ~StopCameraPreviewCaptureCloseMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
-
-    void setClientProcessId(int pid) { n_client_pid_ = pid; }
-    int getClientProcessId() const { return n_client_pid_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -353,7 +299,6 @@ public:
 
 private:
     int n_devicehandle_;
-    int n_client_pid_;
     MethodReply objreply_;
 };
 
@@ -498,6 +443,9 @@ public:
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
 
+    void setType(const std::string &type) { str_type_ = type; }
+    std::string getType() const { return str_type_; }
+
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
         objreply_.setReturnValue(returnvalue);
@@ -511,6 +459,7 @@ public:
 
 private:
     int n_devicehandle_;
+    std::string str_type_;
     MethodReply objreply_;
 };
 

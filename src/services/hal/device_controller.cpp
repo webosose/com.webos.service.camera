@@ -80,11 +80,9 @@ struct MemoryListener : public CameraSolutionEvent
 };
 
 DeviceControl::DeviceControl()
-    : b_iscontinuous_capture_(false), b_isstreamon_(false), p_cam_hal(nullptr), shmemfd_(-1),
-      usrpbufs_(nullptr), capture_format_(), tMutex(), tCondVar(), h_shmsystem_(nullptr),
-      h_shmposix_(nullptr), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot),
-      str_memtype_(""), str_shmemname_(""), cancel_preview_(false), buf_size_(0), sh_(nullptr),
-      subskey_(""), camera_id_(-1)
+    : b_iscontinuous_capture_(false), b_isstreamon_(false), p_cam_hal(nullptr), capture_format_(),
+      tMutex(), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), sh_(nullptr),
+      subskey_(""), camera_id_(-1), shmDataBuffers(nullptr)
 {
     pCameraSolution = std::make_shared<CameraSolutionManager>();
     pMemoryListener = std::make_shared<MemoryListener>();
@@ -92,6 +90,133 @@ DeviceControl::DeviceControl()
     {
         pCameraSolution->setEventListener(pMemoryListener.get());
     }
+}
+
+/* If necessary, use this according to the layout below */
+/* Currently, don't use this */
+/* meta json
+{
+    "video":
+    {
+        "timestamp": 123,
+        "orientation": 270,
+    },
+    "extra":
+    {
+        "buffer" : {
+            "colorspace" : 123123,
+            "width" : 1280,
+            "height" : 720,
+            "planes" : 1,
+            "stride" : 1280,
+            "size" : 123123,
+            "timestamp" : 123123
+        }
+    }
+}
+*/
+bool DeviceControl::updateMetaBuffer(const buffer_t &buffer, const json &videoMeta,
+                                     const json &extraMeta)
+{
+    PLOGD("start(%p), length(%ld)", buffer.start, buffer.length);
+
+    json jmeta     = json::object();
+    jmeta["video"] = videoMeta;
+    jmeta["extra"] = extraMeta;
+
+    std::string strMeta = jmeta.dump();
+    PLOGD("meta string : %s", strMeta.c_str());
+
+    if (strMeta.size() > 4096 - 1)
+    {
+        PLOGE("meta size is larger than buffer size");
+        return false;
+    }
+
+    memcpy((char *)buffer.start, strMeta.c_str(), strMeta.size() + 1);
+    return true;
+}
+
+/* If necessary, use this according to the layout below */
+/* Currently, don't use this */
+/* Currnetly use it : Solution Result:
+ * {"faces":[{"confidence":96,"h":287,"w":191,"x":141,"y":97}],"subscribed":true}
+ */
+/*
+{
+    "solutions":[
+        {
+            "name":"Solution1",
+            "data": {},
+            "binary": {
+                "offset":123,
+                "size":100
+            },
+            "timestamp":123
+        },
+        {
+            "name":"Solution2",
+            "data": {},
+            "timestamp" : 123
+        }
+    ]
+}
+*/
+bool DeviceControl::updateSolutionBuffer(const buffer_t &buffer)
+{
+    // std::lock_guard<std::mutex> lg(mtxResult_);
+
+    PLOGD("start(%p), length(%ld), txtSize(%d), binSize(%d)", buffer.start, buffer.length,
+          solutionTextSize_, solutionBinarySize_);
+
+    if (!buffer.start || !buffer.length)
+    {
+        PLOGE("buffer error! buffer.start(%p), buffer.length(%ld)", buffer.start, buffer.length);
+        return false;
+    }
+
+    // int cur_offset  = solutionTextSize_;
+    // int buffer_size = solutionTextSize_ + solutionBinarySize_;
+    // json jresult    = json::object();
+    // json jsolutions = json::array();
+    // for (const auto &[key, solution] : result_map_)
+    // {
+    //     json cur_json = solution.jResult_;
+    //     if (solution.nResult_ && cur_offset + solution.nResult_ <= buffer_size)
+    //     {
+    //         json jbinary      = json::object();
+    //         jbinary["offset"] = cur_offset;
+    //         jbinary["size"]   = solution.nResult_;
+
+    //         memcpy((char *)buffer.start + cur_offset, solution.pbResult_, solution.nResult_);
+    //         PLOGI("dest %p, src %p, nResult %d", (char *)buffer.start + cur_offset,
+    //               solution.pbResult_, solution.nResult_);
+    //         cur_offset += solution.nResult_;
+
+    //         cur_json["binary"] = jbinary;
+    //         PLOGI("binary = %s", jbinary.dump().c_str());
+    //     }
+
+    //     PLOGD("<timestamp> %u, solution %s",
+    //           get_optional<unsigned int>(cur_json, "timestamp").value_or(0),
+    //           (get_optional<std::string>(cur_json, "name").value_or("")).c_str());
+
+    //     jsolutions.push_back(cur_json);
+    // }
+    // jresult["solutions"]  = jsolutions;
+    // std::string strResult = jresult.dump();
+    // PLOGD("strResult %s", strResult.c_str());
+
+    // if (strResult.size() > static_cast<size_t>(solutionTextSize_ - 1))
+    // {
+    //     PLOGE("solution text size is larger than solutionTextSize_");
+    //     return false;
+    // }
+
+    auto meta = pMemoryListener->getResult();
+
+    memcpy((char *)buffer.start, meta.c_str(), meta.size() + 1);
+    return true;
 }
 
 // deprecated
@@ -202,28 +327,10 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, int size, in
 // deprecated
 DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 {
-    PSHMEM_HANDLE h_shm_posix = nullptr;
-    SHMEM_HANDLE h_shm        = nullptr;
-
-    bool isPosixShm = (str_memtype_ == kMemtypePosixshm);
-
-    if (isPosixShm)
+    if (!shmem_)
     {
-        h_shm_posix = h_shmposix_;
-        if (h_shm_posix == nullptr)
-        {
-            PLOGE("posix shared memory handle is null");
-            return DEVICE_ERROR_UNKNOWN;
-        }
-    }
-    else
-    {
-        h_shm = h_shmsystem_;
-        if (h_shm == nullptr)
-        {
-            PLOGE("shared memory handle is null");
-            return DEVICE_ERROR_UNKNOWN;
-        }
+        PLOGE("Shared memory does not exist");
+        return DEVICE_ERROR_UNKNOWN;
     }
 
     buffer_t frame_buffer = {0};
@@ -231,7 +338,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
     int write_index       = -1;
     int nCaptured         = 0;
 
-    DEVICE_RETURN_CODE_T ret;
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
 
     const unsigned int sleep_us       = 10000; // 10ms
     const unsigned int max_iterations = 1000;
@@ -242,9 +349,8 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
 
         while (cnt < max_iterations) // 10s
         {
-            write_index = isPosixShm
-                              ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm_posix)
-                              : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
+            write_index = shmem_->getWriteIndex();
+
             if (read_index != write_index)
             {
                 break;
@@ -256,21 +362,10 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount) const
         {
             PLOGE("same write_index=%d", write_index);
         }
-        read_index = write_index;
+        read_index = (write_index - 1 + FRAME_COUNT) % FRAME_COUNT;
 
-        int len                    = 0;
-        unsigned char *sh_mem_addr = NULL;
-        if (isPosixShm)
-        {
-            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm_posix, &sh_mem_addr, &len);
-        }
-        else
-        {
-            IPCSharedMemory::getInstance().ReadShmem(h_shm, &sh_mem_addr, &len);
-        }
-
-        frame_buffer.start  = sh_mem_addr;
-        frame_buffer.length = (len > 0) ? len : 0;
+        frame_buffer.start  = shmDataBuffers[read_index].start;
+        frame_buffer.length = shmDataBuffers[read_index].length;
 
         PLOGD("buffer start : %p \n", frame_buffer.start);
         PLOGD("buffer length : %lu \n", frame_buffer.length);
@@ -332,28 +427,10 @@ DEVICE_RETURN_CODE_T DeviceControl::writeImageToFile(const void *p, unsigned lon
 DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
                                                  std::vector<std::string> &capturedFiles) const
 {
-    PSHMEM_HANDLE h_shm_posix = nullptr;
-    SHMEM_HANDLE h_shm        = nullptr;
-
-    bool isPosixShm = (str_memtype_ == kMemtypePosixshm);
-
-    if (isPosixShm)
+    if (!shmem_)
     {
-        h_shm_posix = h_shmposix_;
-        if (h_shm_posix == nullptr)
-        {
-            PLOGE("posix shared memory handle is null");
-            return DEVICE_ERROR_UNKNOWN;
-        }
-    }
-    else
-    {
-        h_shm = h_shmsystem_;
-        if (h_shm == nullptr)
-        {
-            PLOGE("shared memory handle is null");
-            return DEVICE_ERROR_UNKNOWN;
-        }
+        PLOGE("Shared memory does not exist");
+        return DEVICE_ERROR_UNKNOWN;
     }
 
     buffer_t frame_buffer = {0};
@@ -361,7 +438,7 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
     int write_index       = -1;
     int nCaptured         = 0;
 
-    DEVICE_RETURN_CODE_T ret;
+    DEVICE_RETURN_CODE_T ret = DEVICE_OK;
 
     const unsigned int sleep_us       = 10000; // 10ms
     const unsigned int max_iterations = 1000;
@@ -372,9 +449,8 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
 
         while (cnt < max_iterations) // 10s
         {
-            write_index = isPosixShm
-                              ? IPCPosixSharedMemory::getInstance().GetWriteIndex(h_shm_posix)
-                              : IPCSharedMemory::getInstance().GetWriteIndex(h_shm);
+            write_index = shmem_->getWriteIndex();
+
             if (read_index != write_index)
             {
                 break;
@@ -386,21 +462,10 @@ DEVICE_RETURN_CODE_T DeviceControl::saveShmemory(int ncount,
         {
             PLOGE("same write_index=%d", write_index);
         }
-        read_index = write_index;
+        read_index = (write_index - 1 + FRAME_COUNT) % FRAME_COUNT;
 
-        int len                    = 0;
-        unsigned char *sh_mem_addr = NULL;
-        if (isPosixShm)
-        {
-            IPCPosixSharedMemory::getInstance().ReadShmemory(h_shm_posix, &sh_mem_addr, &len);
-        }
-        else
-        {
-            IPCSharedMemory::getInstance().ReadShmem(h_shm, &sh_mem_addr, &len);
-        }
-
-        frame_buffer.start  = sh_mem_addr;
-        frame_buffer.length = (len > 0) ? len : 0;
+        frame_buffer.start  = shmDataBuffers[read_index].start;
+        frame_buffer.length = shmDataBuffers[read_index].length;
 
         PLOGD("buffer start : %p \n", frame_buffer.start);
         PLOGD("buffer length : %lu \n", frame_buffer.length);
@@ -479,11 +544,9 @@ void DeviceControl::previewThread()
     while (b_isstreamon_)
     {
         // keep writing data to shared memory
-        unsigned int timestamp = 0;
+        buffer_t buffer = {0};
 
-        buffer_t frame_buffer = {0};
-
-        auto retval = p_cam_hal->getBuffer(&frame_buffer);
+        auto retval = p_cam_hal->getBuffer(&buffer);
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("getBuffer failed");
@@ -491,7 +554,7 @@ void DeviceControl::previewThread()
             break;
         }
 
-        if (frame_buffer.start == nullptr)
+        if (buffer.start == nullptr)
         {
             PLOGE("no valid frame buffer obtained");
             notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
@@ -501,52 +564,35 @@ void DeviceControl::previewThread()
         //[Camera Solution Manager] process for preview
         if (pCameraSolution != nullptr)
         {
-            pCameraSolution->processPreview(frame_buffer);
+            pCameraSolution->processPreview(buffer);
         }
 
-        auto meta = pMemoryListener->getResult();
-        if (str_memtype_ == kMemtypeShmem)
+        if (!shmem_)
         {
-            IPCSharedMemory::getInstance().WriteHeader(h_shmsystem_, frame_buffer.index,
-                                                       frame_buffer.length);
-
-            IPCSharedMemory::getInstance().WriteMeta(h_shmsystem_, meta.c_str(), meta.size() + 1);
-
-            // Time stamp is currently not used actually.
-            IPCSharedMemory::getInstance().WriteExtra(h_shmsystem_, (unsigned char *)&timestamp,
-                                                      sizeof(timestamp));
-
-            IPCSharedMemory::getInstance().IncrementWriteIndex(h_shmsystem_);
-        }
-        else if (str_memtype_ == kMemtypeShmemMmap)
-        {
-            auto retshmem = IPCSharedMemory::getInstance().WriteShmemory(
-                h_shmsystem_, (unsigned char *)frame_buffer.start, frame_buffer.length,
-                meta.c_str(), meta.size() + 1, (unsigned char *)&timestamp, sizeof(timestamp));
-
-            if (retshmem != SHMEM_IS_OK)
-            {
-                PLOGE("Write Shared memory error %d \n", retshmem);
-            }
-        }
-        else // str_memtype_ == kMemtypePosixshm
-        {
-            IPCPosixSharedMemory::getInstance().WriteHeader(h_shmposix_, frame_buffer.index,
-                                                            frame_buffer.length);
-
-            IPCPosixSharedMemory::getInstance().WriteMeta(h_shmposix_, meta.c_str(),
-                                                          meta.size() + 1);
-
-            // Time stamp is currently not used actually.
-            IPCPosixSharedMemory::getInstance().WriteExtra(h_shmposix_, (unsigned char *)&timestamp,
-                                                           sizeof(timestamp));
-
-            IPCPosixSharedMemory::getInstance().IncrementWriteIndex(h_shmposix_);
+            PLOGE("Shared memory does not exist");
+            notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
+            break;
         }
 
-        broadcast_();
+        PLOGD("buffer: start(%p) index(%zu) length(%lu)", buffer.start, buffer.index,
+              buffer.length);
 
-        retval = p_cam_hal->releaseBuffer(&frame_buffer);
+        // shared memory index
+        int shm_index = buffer.index;
+
+        shmDataBuffers[buffer.index].start  = buffer.start;
+        shmDataBuffers[buffer.index].length = buffer.length;
+
+        // Create meta_data
+        updateMetaBuffer(shmMetaBuffers_[shm_index], nullptr, nullptr);
+        updateSolutionBuffer(shmSolutionBuffers_[shm_index]);
+
+        shmem_->writeHeader(buffer.index, buffer.length);
+        shmem_->incrementWriteIndex();
+
+        shmem_->notifySignal();
+
+        retval = p_cam_hal->releaseBuffer(&buffer);
         if (retval != CAMERA_ERROR_NONE)
         {
             PLOGE("releaseBuffer failed");
@@ -558,8 +604,8 @@ void DeviceControl::previewThread()
         {
             auto toc = std::chrono::steady_clock::now();
             auto us  = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-            PLOGI("previewThread p_cam_hal(%p) : fps(%3.2f), clients(%zu)", p_cam_hal,
-                  debug_interval * 1000000.0f / us, client_pool_.size());
+            PLOGI("previewThread p_cam_hal(%p) : fps(%3.2f)", p_cam_hal,
+                  debug_interval * 1000000.0f / us);
             tic           = toc;
             debug_counter = 0;
         }
@@ -602,80 +648,61 @@ DEVICE_RETURN_CODE_T DeviceControl::close()
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey, LSHandle *sh,
-                                                 const char *subskey)
+DEVICE_RETURN_CODE_T DeviceControl::startPreview(LSHandle *sh, const char *subskey)
 {
     PLOGI("started !\n");
 
-    str_memtype_ = memtype;
-    sh_          = sh;
-    subskey_     = subskey ? subskey : "";
+    sh_      = sh;
+    subskey_ = subskey ? subskey : "";
 
     // get current saved format for device
     stream_format_t streamformat;
-    auto retval = p_cam_hal->getFormat(&streamformat);
-    if (retval != CAMERA_ERROR_NONE)
+    auto retValue = p_cam_hal->getFormat(&streamformat);
+    if (retValue != CAMERA_ERROR_NONE)
     {
         PLOGE("getFormat failed");
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    PLOGI("Driver set width : %d height : %d", streamformat.stream_width,
-          streamformat.stream_height);
+    PLOGI("Driver set width : %d height : %d fps : %d", streamformat.stream_width,
+          streamformat.stream_height, streamformat.stream_fps);
 
-    if (streamformat.buffer_size < INT_MAX - extra_buffer)
-    {
-        buf_size_ = streamformat.buffer_size + extra_buffer;
-    }
-    PLOGI("buf_size : %d = %d + %d", buf_size_, streamformat.buffer_size, extra_buffer);
+    solutionTextSize_   = 0;
+    solutionBinarySize_ = 0;
 
-    int32_t meta_size = 0;
     if (pCameraSolution != nullptr)
     {
-        meta_size = pCameraSolution->getMetaSizeHint();
+        solutionTextSize_ = pCameraSolution->getMetaSizeHint();
     }
 
-    // user pointer buffer set-up.
-    if (memtype != kMemtypeShmemMmap)
+    size_t shmDataSize     = streamformat.buffer_size + extra_buffer;
+    size_t shmMetaSize     = extra_buffer; // 1024
+    size_t shmExtraSize    = sizeof(unsigned int);
+    size_t shmSolutionSize = solutionTextSize_;
+
+    shmDataBuffers = nullptr;
+    std::string shmemName;
+    shmem_ = std::make_unique<CameraSharedMemoryEx>();
+    if (!shmem_)
     {
-        usrpbufs_ = (buffer_t *)calloc(FRAME_COUNT, sizeof(buffer_t));
-        if (!usrpbufs_)
-        {
-            PLOGE("USERPTR buffer allocation failed \n");
-            return DEVICE_ERROR_UNKNOWN;
-        }
+        PLOGE("Fail to create CameraSharedMemoryEx");
+        return DEVICE_ERROR_UNKNOWN;
     }
 
-    if (memtype == kMemtypePosixshm)
+    shmemName    = std::string("/camera.shm.") + std::to_string(getpid());
+    shmBufferFd_ = shmem_->create(shmemName, shmDataSize, shmMetaSize, shmExtraSize,
+                                  shmSolutionSize, FRAME_COUNT);
+    if (shmBufferFd_ < 0)
     {
-        std::string shmname = "";
-
-        auto retshmem = IPCPosixSharedMemory::getInstance().CreateShmemory(
-            &h_shmposix_, buf_size_, meta_size, FRAME_COUNT, sizeof(unsigned int), pkey, &shmname);
-        if (retshmem != PSHMEM_IS_OK)
-        {
-            PLOGE("CreatePosixShmemory error %d \n", retshmem);
-            return DEVICE_ERROR_UNKNOWN;
-        }
-
-        shmemfd_       = *pkey;
-        str_shmemname_ = std::move(shmname);
-    }
-    else
-    {
-        auto retshmem = IPCSharedMemory::getInstance().CreateShmemory(
-            &h_shmsystem_, pkey, buf_size_, meta_size, FRAME_COUNT, sizeof(unsigned int));
-        if (retshmem != SHMEM_IS_OK)
-        {
-            PLOGE("CreateShmemory error %d \n", retshmem);
-            return DEVICE_ERROR_UNKNOWN;
-        }
+        PLOGE("Fail to create CameraSharedMemory : invalid FD");
+        closeShmemoryIfNeeded();
+        return DEVICE_ERROR_UNKNOWN;
     }
 
     //[Camera Solution Manager] initialization
     if (pCameraSolution != nullptr)
     {
-        pCameraSolution->initialize(streamformat, *pkey, sh);
+        pCameraSolution->initialize(streamformat, shmemName, sh);
     }
 
     if (b_isstreamon_)
@@ -684,65 +711,62 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
         return DEVICE_OK;
     }
 
-    if (memtype == kMemtypeShmem)
+    // user pointer buffer set-up.
+    shmDataBuffers = (buffer_t *)calloc(FRAME_COUNT, sizeof(buffer_t));
+    if (!shmDataBuffers)
     {
-        IPCSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmsystem_, FRAME_COUNT, usrpbufs_,
-                                                             nullptr);
-
-        auto retval = p_cam_hal->setBuffer(FRAME_COUNT, IOMODE_USERPTR, (void **)&usrpbufs_);
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("setBuffer failed");
-            closeShmemoryIfNeeded(meta_size);
-            return DEVICE_ERROR_UNKNOWN;
-        }
-
-        retval = p_cam_hal->startCapture();
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("startCapture failed");
-            closeShmemoryIfNeeded(meta_size);
-            return DEVICE_ERROR_UNKNOWN;
-        }
+        PLOGE("USERPTR buffer allocation failed");
+        closeShmemoryIfNeeded();
+        return DEVICE_ERROR_UNKNOWN;
     }
-    else if (memtype == kMemtypeShmemMmap)
-    {
-        auto retval = p_cam_hal->setBuffer(4, IOMODE_MMAP, nullptr);
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("setBuffer failed");
-            closeShmemoryIfNeeded(meta_size);
-            return DEVICE_ERROR_UNKNOWN;
-        }
 
-        retval = p_cam_hal->startCapture();
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("startCapture failed");
-            closeShmemoryIfNeeded(meta_size);
-            return DEVICE_ERROR_UNKNOWN;
-        }
+    shmMetaBuffers_.resize(FRAME_COUNT);
+    shmExtraBuffers_.resize(FRAME_COUNT);
+    shmSolutionBuffers_.resize(FRAME_COUNT);
+
+    std::vector<void *> dataList, metaList, extraList, solutionList;
+    shmem_->getBufferList(&dataList, &metaList, &extraList, &solutionList);
+    if (dataList.size() != FRAME_COUNT || metaList.size() != FRAME_COUNT ||
+        extraList.size() != FRAME_COUNT)
+    {
+        PLOGE("buffer size error!");
+        closeShmemoryIfNeeded();
+        return DEVICE_ERROR_UNKNOWN;
     }
-    else // memtype == kMemtypePosixshm
+
+    size_t dataSize, metaSize, extraSize, solutionSize;
+    shmem_->getBufferInfo(nullptr, &dataSize, &metaSize, &extraSize, &solutionSize);
+    for (size_t i = 0; i < FRAME_COUNT; i++)
     {
-        IPCPosixSharedMemory::getInstance().GetShmemoryBufferInfo(h_shmposix_, FRAME_COUNT,
-                                                                  usrpbufs_, nullptr);
+        shmDataBuffers[i].start       = dataList[i];
+        shmDataBuffers[i].length      = dataSize;
+        shmMetaBuffers_[i].start      = metaList[i];
+        shmMetaBuffers_[i].length     = metaSize;
+        shmExtraBuffers_[i].start     = extraList[i];
+        shmExtraBuffers_[i].length    = extraSize;
+        shmSolutionBuffers_[i].start  = solutionList[i];
+        shmSolutionBuffers_[i].length = solutionSize;
+    }
 
-        auto retval = p_cam_hal->setBuffer(FRAME_COUNT, IOMODE_USERPTR, (void **)&usrpbufs_);
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("setBuffer failed");
-            closeShmemoryIfNeeded(meta_size);
-            return DEVICE_ERROR_UNKNOWN;
-        }
+    // [TODO][WRR-15621] Need support for mmap internally.
+    // Handle cases where user pointer is not used.
+    // In device_control, branch based on conditions other than memtype.
+    // The shared memory implementation class must support writedata() for memcpy
 
-        retval = p_cam_hal->startCapture();
-        if (retval != CAMERA_ERROR_NONE)
-        {
-            PLOGE("startCapture failed");
-            closeShmemoryIfNeeded(meta_size);
-            return DEVICE_ERROR_UNKNOWN;
-        }
+    auto retval = p_cam_hal->setBuffer(FRAME_COUNT, IOMODE_USERPTR, (void **)&shmDataBuffers);
+    if (retval != CAMERA_ERROR_NONE)
+    {
+        PLOGE("setBuffer failed");
+        closeShmemoryIfNeeded();
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    retval = p_cam_hal->startCapture();
+    if (retval != CAMERA_ERROR_NONE)
+    {
+        PLOGE("startCapture failed");
+        closeShmemoryIfNeeded();
+        return DEVICE_ERROR_UNKNOWN;
     }
 
     b_isstreamon_ = true;
@@ -755,7 +779,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(std::string memtype, int *pkey,
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
+DEVICE_RETURN_CODE_T DeviceControl::stopPreview(bool forceComplete)
 {
     PLOGI("started !\n");
 
@@ -781,7 +805,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
         PLOGI("Thread Closed");
     }
 
-    if (cancel_preview_ == true)
+    if (forceComplete)
     {
         p_cam_hal->stopCapture();
         p_cam_hal->destroyBuffer();
@@ -803,44 +827,15 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
         }
     }
 
-    if (str_memtype_ == kMemtypePosixshm)
+    if (shmem_)
     {
-        int32_t meta_size = 0;
-        if (pCameraSolution != nullptr)
-        {
-            meta_size = pCameraSolution->getMetaSizeHint();
-        }
-
-        if (h_shmposix_ != nullptr)
-        {
-            auto retshmem = IPCPosixSharedMemory::getInstance().CloseShmemory(
-                &h_shmposix_, FRAME_COUNT, buf_size_, meta_size, sizeof(unsigned int),
-                str_shmemname_, shmemfd_);
-            if (retshmem != PSHMEM_IS_OK)
-            {
-                PLOGE("ClosePosixShmemory error %d \n", retshmem);
-            }
-            h_shmposix_ = nullptr;
-        }
-    }
-    else
-    {
-        if (h_shmsystem_ != nullptr)
-        {
-            auto retshmem = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-            if (retshmem != SHMEM_IS_OK)
-            {
-                PLOGE("CloseShmemory error %d \n", retshmem);
-            }
-            h_shmsystem_ = nullptr;
-        }
+        shmem_.reset();
+        shmBufferFd_ = -1;
+        shmSignalFdMap_.clear();
     }
 
-    if (usrpbufs_ != nullptr)
-    {
-        free(usrpbufs_);
-        usrpbufs_ = nullptr;
-    }
+    shmMetaBuffers_.clear();
+    shmExtraBuffers_.clear();
 
     return DEVICE_OK;
 }
@@ -1105,15 +1100,73 @@ DEVICE_RETURN_CODE_T DeviceControl::getFormat(CAMERA_FORMAT *pformat)
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getFd(int *posix_shm_fd)
+DEVICE_RETURN_CODE_T DeviceControl::addClient(int id)
 {
-    if (h_shmposix_ == nullptr)
+    PLOGI("id %d", id);
+
+    if (shmSignalFdMap_.count(id) > 0)
     {
-        PLOGE("POSIX Shmemory is not used for this session");
-        *posix_shm_fd = -1;
+        PLOGE("Already registered client %d", id);
+        return DEVICE_OK;
+    }
+
+    if (!shmem_)
+    {
+        PLOGE("unable status to add client");
         return DEVICE_ERROR_UNKNOWN;
     }
-    *posix_shm_fd = shmemfd_;
+
+    std::string name = std::string("signal.") + std::to_string(getpid()) + "." + std::to_string(id);
+    int signalFd     = shmem_->createSignal(name);
+    if (signalFd < 0)
+    {
+        PLOGE("Fail to create Signal for client %d", id);
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    shmSignalFdMap_[id] = signalFd;
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::removeClient(int id)
+{
+    PLOGI("id %d", id);
+    if (shmSignalFdMap_.count(id) > 0)
+    {
+        if (shmem_)
+        {
+            std::string name =
+                std::string("signal.") + std::to_string(getpid()) + "." + std::to_string(id);
+            shmem_->detachSignal(name);
+        }
+        shmSignalFdMap_.erase(id);
+    }
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::getShmBufferFd(int *fd)
+{
+    if (shmBufferFd_ == -1)
+    {
+        PLOGE("Shmemory is not used for this session");
+        *fd = -1;
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    *fd = shmBufferFd_;
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::getShmSignalFd(int id, int *fd)
+{
+    PLOGI("id %d", id);
+    if (shmSignalFdMap_.count(id) == 0)
+    {
+        PLOGE("unregistered id");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    *fd = shmSignalFdMap_[id];
     return DEVICE_OK;
 }
 
@@ -1135,110 +1188,6 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
     // error case
     return CAMERA_FORMAT_UNDEFINED;
 }
-
-DEVICE_RETURN_CODE_T DeviceControl::registerClient(pid_t pid, int sig, int devhandle,
-                                                   std::string &outmsg)
-{
-    std::lock_guard<std::mutex> mlock(client_pool_mutex_);
-    {
-        auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                               [=](const CLIENT_INFO_T &p) { return p.pid == pid; });
-
-        if (it == client_pool_.end())
-        {
-            CLIENT_INFO_T p = {pid, sig, devhandle};
-            client_pool_.push_back(p);
-            outmsg = "The client of pid " + std::to_string(pid) + " registered with sig " +
-                     std::to_string(sig) + " :: OK";
-            return DEVICE_OK;
-        }
-        else
-        {
-            outmsg =
-                "The client of pid " + std::to_string(pid) + " is already registered :: ignored";
-            PLOGI("%s", outmsg.c_str());
-            return DEVICE_ERROR_UNKNOWN;
-        }
-    }
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::unregisterClient(pid_t pid, std::string &outmsg)
-{
-    std::lock_guard<std::mutex> mlock(client_pool_mutex_);
-    {
-        auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                               [=](const CLIENT_INFO_T &p) { return p.pid == pid; });
-
-        if (it != client_pool_.end())
-        {
-            client_pool_.erase(it);
-            outmsg = "The client of pid " + std::to_string(pid) + " unregistered :: OK";
-            PLOGI("%s", outmsg.c_str());
-            return DEVICE_OK;
-        }
-        else
-        {
-            outmsg = "No client of pid " + std::to_string(pid) + " exists :: ignored";
-            PLOGI("%s", outmsg.c_str());
-            return DEVICE_ERROR_UNKNOWN;
-        }
-    }
-}
-
-bool DeviceControl::isRegisteredClient(int devhandle)
-{
-    auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                           [=](const CLIENT_INFO_T &p) { return p.handle == devhandle; });
-    if (it == client_pool_.end())
-    {
-        return false;
-    }
-    return true;
-}
-
-void DeviceControl::broadcast_()
-{
-    std::lock_guard<std::mutex> mlock(client_pool_mutex_);
-    {
-        PLOGD("Broadcasting to %zu clients\n", client_pool_.size());
-
-        auto it = client_pool_.begin();
-        while (it != client_pool_.end())
-        {
-
-            PLOGD("About to send a signal %d to the client of pid %d ...\n", it->sig, it->pid);
-            int errid = kill(it->pid, it->sig);
-            if (errid == -1)
-            {
-                switch (errno)
-                {
-                case ESRCH:
-                    PLOGE("The client of pid %d does not exist and will be removed from the pool!!",
-                          it->pid);
-                    // remove this pid from the client pool to make ensure no zombie process exists.
-                    it = client_pool_.erase(it);
-                    break;
-                case EINVAL:
-                    PLOGE("The client of pid %d was given an invalid signal "
-                          "%d and will be be removed from the pool!!",
-                          it->pid, it->sig);
-                    it = client_pool_.erase(it);
-                    break;
-                default: // case errno = EPERM
-                    PLOGE("Unexpected error in sending the signal to the client of pid %d\n",
-                          it->pid);
-                    break;
-                }
-            }
-            else
-            {
-                ++it;
-            }
-        }
-    }
-}
-
-void DeviceControl::requestPreviewCancel() { cancel_preview_ = true; }
 
 void DeviceControl::notifyDeviceFault_(EventType eventType, DEVICE_RETURN_CODE_T error)
 {
@@ -1380,24 +1329,22 @@ std::string DeviceControl::createCaptureFileName(int cnt) const
     return path;
 }
 
-void DeviceControl::closeShmemoryIfNeeded(int meta_size)
+void DeviceControl::closeShmemoryIfNeeded()
 {
-    if (usrpbufs_)
+    if (shmDataBuffers)
     {
-        free(usrpbufs_);
-        usrpbufs_ = nullptr;
+        free(shmDataBuffers);
+        shmDataBuffers = nullptr;
     }
 
-    if (str_memtype_ == kMemtypeShmem)
+    shmMetaBuffers_.clear();
+    shmExtraBuffers_.clear();
+
+    if (shmem_)
     {
-        SHMEM_STATUS_T status = IPCSharedMemory::getInstance().CloseShmemory(&h_shmsystem_);
-        PLOGI("CloseShmemory %d", status);
+        shmem_.reset();
+        shmBufferFd_ = -1;
     }
-    else if (str_memtype_ == kMemtypePosixshm)
-    {
-        PSHMEM_STATUS_T status = IPCPosixSharedMemory::getInstance().CloseShmemory(
-            &h_shmposix_, FRAME_COUNT, buf_size_, meta_size, sizeof(unsigned int), str_shmemname_,
-            shmemfd_);
-        PLOGI("Close Posix Shmemory %d", status);
-    }
+
+    PLOGI("closed Shmemory !");
 }

@@ -15,8 +15,8 @@
 
 #define LOG_TAG "CameraSolutionAsync"
 #include "camera_solution_async.h"
+#include "camera_shared_memory_ex.h"
 #include "camera_types.h"
-#include "ipc_shared_memory.h"
 #include <list>
 #include <numeric>
 #include <system_error>
@@ -147,33 +147,83 @@ void CameraSolutionAsync::run(void)
 {
     PerformanceControl oPC;
     oPC.targetFPS(1.0f);
+    int shmBufferFd = -1;
+    PLOGI("[%s] shmName(%s)", name_.c_str(), shmName_.c_str());
 
     pthread_setname_np(pthread_self(), "solution_async");
 
-    SHMEM_HANDLE hShm  = nullptr;
-    SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().OpenShmem(&hShm, shm_key);
-    PLOGI("OpenShem %d", ret);
-
-    if (ret != SHMEM_IS_OK)
+    camShmem_ = std::make_unique<CameraSharedMemoryEx>();
+    if (!camShmem_)
     {
-        PLOGE("Fail : OpenShmem RET => %d\n", ret);
+        PLOGE("Fail to create CameraSharedMemroyEx");
         return;
     }
 
+    shmBufferFd = camShmem_->open(shmName_);
+    PLOGI("[%s] camShmem_->open() fd(%d)", name_.c_str(), shmBufferFd);
+
+    if (shmBufferFd < 0)
+    {
+        PLOGE("Fail to open CameraSharedMemory");
+
+        if (camShmem_)
+            camShmem_.reset();
+        return;
+    }
+
+    // [TODO][WRR-15623] Apply sync operation to the solution
+    // It is necessary to register a solution signal FD in a half process.
+    // After adding this, the skipsignal of open() should be erased.
+
+    // shmSignalFd_ = camShmem_->createSignal();
+    // PLOGI("[%s] camShmem_->createSignal() fd(%d)", name_.c_str(), shmSignalFd_);
+
+    // if (shmSignalFd_ < 0)
+    // {
+    //     PLOGE("[%s] Fail to create Signal in CameraSharedMemory", name_.c_str());
+
+    //     if (camShmem_)
+    //         camShmem_.reset();
+    //     return;
+    // }
+
     while (checkAlive())
     {
-        int len                    = 0;
-        unsigned char *sh_mem_addr = NULL;
-        IPCSharedMemory::getInstance().ReadShmem(hShm, &sh_mem_addr, &len);
-        if (len == 0)
+        size_t data_len           = 0;
+        size_t extra_len          = 0;
+        size_t meta_len           = 0;
+        unsigned char *data_addr  = NULL;
+        unsigned char *extra_addr = NULL;
+        unsigned char *meta_addr  = NULL;
+
+        // Read Shared memory
+        if (!camShmem_)
+        {
+            PLOGE("[%s] camShmem_ fail", name_.c_str());
+            break;
+        }
+
+        bool status = camShmem_->read(&data_addr, &data_len, &meta_addr, &meta_len, &extra_addr,
+                                      &extra_len, nullptr, nullptr, 1000, true);
+
+        PLOGD("[%s] camShmem_->read() data_len(%zu) meta_len(%zu) extra_len(%zu)", name_.c_str(),
+              data_len, meta_len, extra_len);
+
+        if (status == false)
+        {
+            PLOGE("[%s] shared memory read fail", name_.c_str());
+            break;
+        }
+
+        if (data_len == 0)
         {
             g_usleep(1000);
             continue;
         }
 
         buffer_t inBuf;
-        inBuf.start  = sh_mem_addr;
-        inBuf.length = len;
+        inBuf.start  = data_addr;
+        inBuf.length = data_len;
         pushJob(inBuf);
 
         if (checkAlive())
@@ -186,12 +236,11 @@ void CameraSolutionAsync::run(void)
     }
     postProcessing();
 
-    if (hShm)
+    if (camShmem_)
     {
-        SHMEM_STATUS_T ret = IPCSharedMemory::getInstance().CloseShmemory(&hShm);
-        PLOGI("CloseShmemory %d", ret);
-        if (ret != SHMEM_IS_OK)
-            PLOGE("CloseShmemory error %d \n", ret);
+        PLOGI("[%s] camShmem_.close", name_.c_str());
+        camShmem_->close();
+        camShmem_.reset();
     }
 }
 

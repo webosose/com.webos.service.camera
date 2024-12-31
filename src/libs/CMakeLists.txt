@@ -14,4 +14,5 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory(lib)
+add_subdirectory(camera_shared_memory)
+add_subdirectory(luna_client)

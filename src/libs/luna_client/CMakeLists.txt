@@ -14,43 +14,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(solution-facedetection-aif CXX)
+project(luna_client CXX)
+
+pkg_check_modules(LS2++ REQUIRED luna-service2++>=3)
+include_directories(${LS2++_INCLUDE_DIRS})
+webos_add_compiler_flags(ALL ${LS2++_CFLAGS})
+
+include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# find needed packages
-find_package(PkgConfig)
-pkg_check_modules(OPENCV REQUIRED opencv4)
-
-# include directories
-include_directories(
-    ${OPENCV_INCLUDE_DIRS}
-)
-
-# link directories
-link_directories(
-    ${OPENCV_LIBRARY_DIRS}
-)
-
-set(SRC ${CMAKE_CURRENT_SOURCE_DIR}/face_detection_aif.cpp)
+set(SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/luna_client.cpp
+    )
 
 add_library(${PROJECT_NAME} SHARED ${SRC})
 
 target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
-                      camera_solution
-                      luna_client
-                      camera_shared_memory
-                      ${JPEG_LDFLAGS}
-                      ${OPENCV_LIBRARIES}
-                      edgeai-vision
+                      ${GLIB2_LDFLAGS}
                       ${LS2++_LDFLAGS}
-                      )
+                     )
 
 set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR}/camera)
-
-if(${WEBOS_TARGET_MACHINE} MATCHES "o22")
-    add_definitions(-DPLATFORM_O22)
-endif()
+webos_build_library(NAME ${PROJECT_NAME})

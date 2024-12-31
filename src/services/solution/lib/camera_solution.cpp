@@ -17,11 +17,15 @@
 #include "camera_solution.h"
 #include "camera_types.h"
 
-void CameraSolution::initialize(const void *streamFormat, int shmKey, void *lsHandle)
+void CameraSolution::initialize(const void *streamFormat, const std::string &shmName,
+                                void *lsHandle)
 {
-    PLOGI("%s", getSolutionStr().c_str());
+    name_ = getSolutionStr().c_str();
+
+    PLOGI("%s", name_.c_str());
+
     streamFormat_ = *static_cast<const stream_format_t *>(streamFormat);
-    shm_key       = shmKey;
+    shmName_      = shmName;
     sh_           = static_cast<LSHandle *>(lsHandle);
 
     if (pEvent_)

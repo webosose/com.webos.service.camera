@@ -42,7 +42,7 @@ public:
     // To process
     void setEventListener(CameraSolutionEvent *pEvent);
     int32_t getMetaSizeHint(void);
-    void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
+    void initialize(stream_format_t streamFormat, const std::string &shmName, LSHandle *sh);
     void release(void);
     void processCapture(buffer_t frame_buffer);
     void processPreview(buffer_t frame_buffer);

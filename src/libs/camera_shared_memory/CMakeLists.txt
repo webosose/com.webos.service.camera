@@ -1,4 +1,4 @@
-# Copyright (c) 2023 LG Electronics, Inc.
+# Copyright (c) 2024 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,21 +14,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera_common CXX)
+project(camera_shared_memory CXX)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-set(SRC 
-    ipc_shared_memory.cpp
-    ipc_posix_shared_memory.cpp
-    luna_client.cpp
+set(SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/camera_shared_memory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/camera_shared_memory_ex.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/camera_shared_memory_impl.cpp
     )
 
 add_library(${PROJECT_NAME} SHARED ${SRC})
 
 target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
-                      ${LS2++_LDFLAGS}
+                      ${GLIB2_LDFLAGS}
                      )
 
 set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
