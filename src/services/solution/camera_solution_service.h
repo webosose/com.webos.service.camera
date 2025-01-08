@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "ipc_shared_memory.h"
+#include "camera/ipc_shared_memory.h"
 #include "luna-service2/lunaservice.hpp"
 #include "plugin_factory.hpp"
 #include <glib.h>

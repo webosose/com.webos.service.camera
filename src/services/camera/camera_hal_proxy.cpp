@@ -16,11 +16,11 @@
 
 #define LOG_TAG "CameraHalProxy"
 #include "camera_hal_proxy.h"
+#include "camera/luna_client.h"
 #include "command_manager.h"
 #include "generate_unique_id.h"
 #include "json_utils.h"
 #include "luna-service2/lunaservice.hpp"
-#include "luna_client.h"
 #include "process.h"
 #include <ios>
 #include <system_error>

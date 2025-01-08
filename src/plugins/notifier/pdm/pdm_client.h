@@ -16,8 +16,8 @@
 
 #pragma once
 
+#include "camera/luna_client.h"
 #include "plugin_interface.hpp"
-#include <luna_client.h>
 
 class PDMClient : public INotifier
 {

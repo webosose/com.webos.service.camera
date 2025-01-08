@@ -15,8 +15,8 @@
 
 #define LOG_TAG "CameraSolutionAsync"
 #include "camera_solution_async.h"
+#include "camera/ipc_shared_memory.h"
 #include "camera_types.h"
-#include "ipc_shared_memory.h"
 #include <list>
 #include <numeric>
 #include <system_error>

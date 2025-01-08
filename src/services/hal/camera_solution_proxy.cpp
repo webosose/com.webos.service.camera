@@ -16,11 +16,11 @@
 
 #define LOG_TAG "CameraSolutionProxy"
 #include "camera_solution_proxy.h"
+#include "camera/luna_client.h"
 #include "camera_constants.h"
 #include "camera_log.h"
 #include "generate_unique_id.h"
 #include "json_utils.h"
-#include "luna_client.h"
 #include "process.h"
 #include <nlohmann/json.hpp>
 #include <system_error>
