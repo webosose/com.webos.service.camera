@@ -14,4 +14,24 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+cmake_minimum_required(VERSION 3.14)
+
+include(webOS/webOS)
+webos_modules_init(1 6 3)
+webos_component(1 0 0)
+
+set(CMAKE_CXX_STANDARD 17)
+
+include(FindPkgConfig)
+
+pkg_check_modules(GLIB2 REQUIRED glib-2.0)
+include_directories(${GLIB2_INCLUDE_DIRS}) # glib.h
+webos_add_compiler_flags(ALL ${GLIB2_CFLAGS_OTHER})
+
+include_directories(../../include/public/camera)
+include_directories(../../include/public/camera/hal) # camera_hal_types.h
+include_directories(../../include/private)
+
+include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)
+
 add_subdirectory(lib)
