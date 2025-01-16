@@ -221,6 +221,8 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(obj_reply.bGetReturnValue()));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MEDIA_ID),
+                    jstring_create(getMediaIdValue().c_str()));
     }
     else
     {

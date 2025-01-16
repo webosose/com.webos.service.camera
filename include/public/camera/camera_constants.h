@@ -131,6 +131,7 @@
 #define CONST_PARAM_NAME_ENABLE "enable"
 #define CONST_PARAM_NAME_METASIZE_HINT "metaSizeHint"
 #define CONST_PARAM_NAME_WINDOW_ID "windowId"
+#define CONST_PARAM_NAME_MEDIA_ID "mediaId"
 #define CONST_PARAM_NAME_FORCE_COMPLETE "forceComplete"
 
 const int n_invalid_id = -1;

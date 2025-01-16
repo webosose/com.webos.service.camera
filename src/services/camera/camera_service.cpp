@@ -353,10 +353,11 @@ bool CameraService::startPreview(LSMessage &message)
     if (err_id == DEVICE_OK)
     {
         // start preview here
+        std::string media_id;
         dispType = obj_startpreview.rGetDpyParams();
 
         err_id = CommandManager::getInstance().startPreview(ndevhandle, dispType.str_window_id,
-                                                            this->get());
+                                                            &media_id, this->get());
 
         if (DEVICE_OK != err_id)
         {
@@ -365,6 +366,7 @@ bool CameraService::startPreview(LSMessage &message)
         else
         {
             PLOGI("err_id == DEVICE_OK\n");
+            obj_startpreview.setMediaIdValue(std::move(media_id));
         }
     }
 

@@ -74,7 +74,7 @@ public:
     DEVICE_RETURN_CODE_T close(int);
     DEVICE_RETURN_CODE_T startCamera(int, LSHandle *);
     DEVICE_RETURN_CODE_T stopCamera(int, bool forceComplete = false);
-    DEVICE_RETURN_CODE_T startPreview(int, std::string, LSHandle *);
+    DEVICE_RETURN_CODE_T startPreview(int, std::string, std::string *, LSHandle *);
     DEVICE_RETURN_CODE_T stopPreview(int, bool forceComplete = false);
     DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                       int);
