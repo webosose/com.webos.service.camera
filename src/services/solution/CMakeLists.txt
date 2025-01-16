@@ -53,7 +53,6 @@ target_link_libraries(${PROJECT_NAME}
                         ${CMAKE_DL_LIBS}
                         pthread
                         camera_common
-                        luna_client
                         )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})

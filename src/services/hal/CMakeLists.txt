@@ -67,7 +67,6 @@ target_link_libraries(${PROJECT_NAME}
                       ${GST_LIBRARIES}
                       ${CMAKE_DL_LIBS}
                       camera_common
-                      luna_client
                       pthread
                       )
 
