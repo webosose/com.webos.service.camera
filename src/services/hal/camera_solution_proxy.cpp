@@ -16,11 +16,11 @@
 
 #define LOG_TAG "CameraSolutionProxy"
 #include "camera_solution_proxy.h"
+#include "camera/luna_client.h"
 #include "camera_constants.h"
 #include "camera_log.h"
 #include "generate_unique_id.h"
 #include "json_utils.h"
-#include "luna_client.h"
 #include "process.h"
 #include <nlohmann/json.hpp>
 #include <system_error>
@@ -56,7 +56,7 @@ static bool cameraSolutionServiceCb(const char *msg, void *data)
 }
 
 CameraSolutionProxy::CameraSolutionProxy(const std::string &solution_name)
-    : solution_name_(solution_name), shmName_("")
+    : solution_name_(solution_name)
 {
     PLOGI("%s", solution_name_.c_str());
 }
@@ -96,14 +96,13 @@ int32_t CameraSolutionProxy::getMetaSizeHint(void)
     return metaSizeHint;
 }
 
-void CameraSolutionProxy::initialize(stream_format_t streamFormat, const std::string &shmName,
-                                     LSHandle *sh)
+void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
 {
-    PLOGI("shmName : %s", shmName.c_str());
+    PLOGI("shmKey : %d", shmKey);
 
     // keep informations
     streamFormat_ = streamFormat;
-    shmName_      = shmName;
+    shmKey_       = shmKey;
     sh_           = sh;
 
     startThread();
@@ -134,9 +133,9 @@ void CameraSolutionProxy::processing(bool enableValue)
         return;
     }
 
-    if (shmName_.empty())
+    if (shmKey_ == 0)
     {
-        PLOGI("shared memory is not ready");
+        PLOGI("shared memory key is not ready");
         return;
     }
 
@@ -180,8 +179,6 @@ void CameraSolutionProxy::release()
     stopThread();
     processing(false);
     unsubscribe();
-
-    shmName_.clear();
 }
 
 bool CameraSolutionProxy::startProcess()
@@ -267,7 +264,7 @@ bool CameraSolutionProxy::init()
     jin[CONST_PARAM_NAME_HEIGHT]     = streamFormat_.stream_height;
     jin[CONST_PARAM_NAME_FPS]        = streamFormat_.stream_fps;
     jin[CONST_PARAM_NAME_BUFFERSIZE] = streamFormat_.buffer_size;
-    jin[CONST_PARAM_NAME_SHMNAME]    = shmName_;
+    jin[CONST_PARAM_NAME_SHMKEY]     = shmKey_;
 
     return luna_call_sync(__func__, to_string(jin));
 }
@@ -334,7 +331,7 @@ bool CameraSolutionProxy::unsubscribe()
     return ret;
 }
 
-bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload, int *fd)
+bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &payload)
 {
     if (process_ == nullptr)
     {
@@ -354,14 +351,12 @@ bool CameraSolutionProxy::luna_call_sync(const char *func, const std::string &pa
 
     std::string resp;
     int64_t startClk = g_get_monotonic_time();
-    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT, fd);
+    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, COMMAND_TIMEOUT);
     int64_t endClk = g_get_monotonic_time();
 
     (startClk > endClk) ? PLOGE("diffClk is error")
                         : PLOGI("response %s, runtime %lld", resp.c_str(),
                                 (long long int)((endClk - startClk) / 1000));
-    if (fd)
-        PLOGI("fd %d", *fd);
 
     json j = json::parse(resp);
     if (j.is_discarded())

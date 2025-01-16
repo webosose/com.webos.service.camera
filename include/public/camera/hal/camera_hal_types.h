@@ -122,7 +122,7 @@ struct camera_resolution_t
     camera_format_t e_format;
 
     camera_resolution_t(std::vector<std::string> res, camera_format_t format)
-        : c_res(move(res)), e_format(format)
+        : c_res(std::move(res)), e_format(format)
     {
     }
 };

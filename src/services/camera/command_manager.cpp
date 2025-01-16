@@ -201,7 +201,8 @@ DEVICE_RETURN_CODE_T CommandManager::setFormat(int devhandle, CAMERA_FORMAT ofor
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, LSHandle *sh)
+DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, std::string memtype, int *pkey,
+                                                 LSHandle *sh, const char *subskey)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -211,12 +212,12 @@ DEVICE_RETURN_CODE_T CommandManager::startCamera(int devhandle, LSHandle *sh)
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // start preview
-        return ptr->startCamera(devhandle, sh);
+        return ptr->startCamera(devhandle, std::move(memtype), pkey, sh, subskey);
     else
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::stopCamera(int devhandle, bool forceComplete)
+DEVICE_RETURN_CODE_T CommandManager::stopCamera(int devhandle)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -226,12 +227,14 @@ DEVICE_RETURN_CODE_T CommandManager::stopCamera(int devhandle, bool forceComplet
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // stop preview
-        return ptr->stopCamera(devhandle, forceComplete);
+        return ptr->stopCamera(devhandle);
     else
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string disptype, LSHandle *sh)
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string memtype, int *pkey,
+                                                  std::string disptype, std::string *media_id,
+                                                  LSHandle *sh, const char *subskey)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -241,12 +244,13 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string dis
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // start preview
-        return ptr->startPreview(devhandle, std::move(disptype), sh);
+        return ptr->startPreview(devhandle, std::move(memtype), pkey, std::move(disptype), media_id,
+                                 sh, subskey);
     else
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle, bool forceComplete)
+DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -256,7 +260,7 @@ DEVICE_RETURN_CODE_T CommandManager::stopPreview(int devhandle, bool forceComple
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // stop preview
-        return ptr->stopPreview(devhandle, forceComplete);
+        return ptr->stopPreview(devhandle);
     else
         return DEVICE_ERROR_UNKNOWN;
 }
@@ -384,16 +388,56 @@ int CommandManager::getCameraHandle(int devid)
     return n_invalid_id;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, const std::string &type, int *shmfd)
+DEVICE_RETURN_CODE_T CommandManager::getFd(int devhandle, int *shmfd)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
     {
-        return ptr->getFd(devhandle, type, shmfd);
+        return ptr->getFd(devhandle, shmfd);
     }
     return DEVICE_ERROR_HANDLE_NOT_EXIST;
+}
+
+DEVICE_RETURN_CODE_T CommandManager::registerClientPid(int devhandle, int n_client_pid,
+                                                       int n_client_sig, std::string &outmsg)
+{
+    PLOGI("n_client_pid : %d\n", n_client_pid);
+
+    std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
+    if (nullptr != ptr)
+    {
+        return ptr->registerClient(n_client_pid, n_client_sig, devhandle, outmsg);
+    }
+    outmsg = "No virtual device manager available for registering the client of pid " +
+             std::to_string(n_client_pid);
+    return DEVICE_ERROR_UNKNOWN;
+}
+
+DEVICE_RETURN_CODE_T CommandManager::unregisterClientPid(int devhandle, int n_client_pid,
+                                                         std::string &outmsg)
+{
+    PLOGI("n_client_pid : %d\n", n_client_pid);
+
+    std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
+    if (nullptr != ptr)
+    {
+        return ptr->unregisterClient(n_client_pid, outmsg);
+    }
+    outmsg = "No virtual device manager available for unregistering the client of pid " +
+             std::to_string(n_client_pid);
+    return DEVICE_ERROR_UNKNOWN;
+}
+
+bool CommandManager::isRegisteredClientPid(int devhandle)
+{
+    std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
+    if (nullptr != ptr)
+    {
+        return ptr->isRegisteredClient(devhandle);
+    }
+    return false;
 }
 
 bool CommandManager::setClientDevice(int devhandle, std::string clientName)
@@ -487,7 +531,10 @@ void CommandManager::release(int deviceid)
         Device &device = it->second;
         if (deviceid == device.deviceid)
         {
+            device.ptr->requestPreviewCancel();
+
             stopAndCloseDevice(device);
+
             it = virtualdevmgrobj_map_.erase(it);
         }
         else
@@ -583,11 +630,11 @@ void CommandManager::stopAndCloseDevice(Device &device)
     CameraDeviceState state = getDeviceState(device.devicehandle);
     if (state == CameraDeviceState::CAM_DEVICE_STATE_STREAMING)
     {
-        stopCamera(device.devicehandle, true);
+        stopCamera(device.devicehandle);
     }
     else if (state == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
     {
-        stopPreview(device.devicehandle, true);
+        stopPreview(device.devicehandle);
     }
 
     device.ptr->close(device.devicehandle);

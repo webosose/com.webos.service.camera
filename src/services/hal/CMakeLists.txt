@@ -66,8 +66,7 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       ${GST_LIBRARIES}
                       ${CMAKE_DL_LIBS}
-                      camera_shared_memory
-                      luna_client
+                      camera_common
                       pthread
                       )
 

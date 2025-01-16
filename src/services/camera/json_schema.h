@@ -90,6 +90,16 @@ const char *openSchema = "{ \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
     }, \
+    \"pid\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Client Process Id Schema\", \
+      \"default\": -1 \
+    }, \
+    \"sig\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Signal Number\", \
+      \"default\": 10 \
+    }, \
     \"appId\": { \
       \"type\": \"string\", \
       \"title\": \"Application Id of The Client Application\", \
@@ -254,13 +264,34 @@ const char *startCameraSchema = "{ \
   \"type\": \"object\", \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
-    \"handle\" \
+    \"handle\", \
+    \"params\" \
   ], \
   \"properties\": { \
     \"handle\": { \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
+    }, \
+    \"params\": { \
+      \"type\": \"object\", \
+      \"title\": \"The Params Schema\", \
+      \"required\": [ \
+        \"type\", \
+        \"source\" \
+      ], \
+      \"properties\": { \
+        \"type\": { \
+          \"type\": \"string\", \
+          \"title\": \"The Type Schema\", \
+          \"pattern\": \"^(.*)$\" \
+        }, \
+        \"source\": { \
+          \"type\": \"string\", \
+          \"title\": \"The Source Schema\", \
+          \"pattern\": \"^(.*)$\" \
+        } \
+      } \
     } \
   } \
 }";
@@ -270,6 +301,7 @@ const char *startPreviewSchema = "{ \
   \"title\": \"The Root Schema\", \
   \"required\": [ \
     \"handle\", \
+    \"params\", \
     \"windowId\" \
   ], \
   \"properties\": { \
@@ -277,6 +309,26 @@ const char *startPreviewSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
+    }, \
+    \"params\": { \
+      \"type\": \"object\", \
+      \"title\": \"The Params Schema\", \
+      \"required\": [ \
+        \"type\", \
+        \"source\" \
+      ], \
+      \"properties\": { \
+        \"type\": { \
+          \"type\": \"string\", \
+          \"title\": \"The Type Schema\", \
+          \"pattern\": \"^(.*)$\" \
+        }, \
+        \"source\": { \
+          \"type\": \"string\", \
+          \"title\": \"The Source Schema\", \
+          \"pattern\": \"^(.*)$\" \
+        } \
+      } \
     }, \
     \"windowId\": { \
       \"type\": \"string\", \
@@ -297,6 +349,11 @@ const char *stopCaptureCameraPreviewCloseSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
+    }, \
+    \"pid\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Client Id Schema\", \
+      \"default\": -1 \
     } \
   } \
 }";
@@ -327,12 +384,6 @@ const char *getFdSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
-    }, \
-    \"type\": { \
-      \"type\": \"string\", \
-      \"title\": \"The FD type Schema\", \
-      \"default\": \"\", \
-      \"pattern\": \"^(.*)$\" \
     } \
   } \
 }";

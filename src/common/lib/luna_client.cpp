@@ -9,7 +9,6 @@
 //
 // LICENSE@@@
 
-#define LOG_CONTEXT "libs"
 #define LOG_TAG "LunaClient"
 #include "luna_client.h"
 #include <camera_log.h>
@@ -108,8 +107,7 @@ LunaClient::~LunaClient(void)
     }
 }
 
-bool LunaClient::callSync(const char *uri, const char *param, std::string *result, int timeout,
-                          int *fd)
+bool LunaClient::callSync(const char *uri, const char *param, std::string *result, int timeout)
 {
     AutoLSError error  = {};
     error.message      = nullptr;
@@ -118,12 +116,11 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
 
     struct Ctx
     {
-        Ctx(std::string *pstrResult, int *fd) : pstrResult_(pstrResult), pFd_(fd) {}
+        Ctx(std::string *pstrResult) : pstrResult_(pstrResult) {}
         bool bRet_{false};
         std::string *pstrResult_{nullptr};
         bool bDone_{false};
-        int *pFd_{nullptr};
-    } ctx(result, fd);
+    } ctx(result);
 
     PLOGD("[%p] uri=%s, param=%s, timeout=%d", g_thread_self(), uri, param, timeout);
     ret = LSCallOneReply(
@@ -140,13 +137,6 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
                 pCtx->pstrResult_->assign(payload);
             // 3. Notify
             pCtx->bDone_ = true;
-            // 4. getFd
-            if (pCtx->pFd_)
-            {
-                int fd      = LSPayloadGetFd(LSMessageAccessPayload(m));
-                *pCtx->pFd_ = dup(fd);
-                PLOGI("fd(%d) dup(%d)", fd, *pCtx->pFd_);
-            }
             PLOGD("[%p] reply\n", g_thread_self());
             return pCtx->bRet_;
         },
@@ -159,7 +149,7 @@ bool LunaClient::callSync(const char *uri, const char *param, std::string *resul
 
     if (ret == true)
     {
-        ret = LSCallSetTimeout(pHandle_, tok, timeout, nullptr);
+        ret = LSCallSetTimeout(pHandle_, tok, timeout, &error);
     }
 
     if (ret == true)
@@ -253,7 +243,7 @@ bool LunaClient::registerToService(const char *serviceName, RegisterHandler hand
 }
 
 bool LunaClient::subscribe(const char *uri, const char *param, unsigned long *subscribeKey,
-                           Handler handler, void *data, const char *appId)
+                           Handler handler, void *data)
 {
     AutoLSError error       = {};
     error.message           = nullptr;
@@ -262,23 +252,16 @@ bool LunaClient::subscribe(const char *uri, const char *param, unsigned long *su
     wrapper->callback       = handler;
     wrapper->data           = data;
 
-    PLOGD("uri=%s, param=%s, appId=%s", uri, param, appId);
-    auto cb = +[](LSHandle *h, LSMessage *m, void *d)
-    {
-        HandlerWrapper *wrapper = (HandlerWrapper *)d;
-        wrapper->callback(LSMessageGetPayload(m), wrapper->data);
-        return true;
-    };
-
-    if (appId)
-    {
-        ret = LSCallFromApplication(pHandle_, uri, param, appId, cb, (void *)wrapper, subscribeKey,
-                                    &error);
-    }
-    else
-    {
-        ret = LSCall(pHandle_, uri, param, cb, (void *)wrapper, subscribeKey, &error);
-    }
+    PLOGD("uri=%s, param=%s", uri, param);
+    ret = LSCall(
+        pHandle_, uri, param,
+        +[](LSHandle *h, LSMessage *m, void *d)
+        {
+            HandlerWrapper *wrapper = (HandlerWrapper *)d;
+            wrapper->callback(LSMessageGetPayload(m), wrapper->data);
+            return true;
+        },
+        (void *)wrapper, subscribeKey, &error);
 
     if (!ret)
     {

@@ -39,8 +39,7 @@ add_library(${PROJECT_NAME} SHARED ${SRC})
 target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       camera_solution
-                      luna_client
-                      camera_shared_memory
+                      camera_common
                       ${JPEG_LDFLAGS}
                       ${OPENCV_LIBRARIES}
                       edgeai-vision

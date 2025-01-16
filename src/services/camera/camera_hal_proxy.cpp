@@ -16,10 +16,11 @@
 
 #define LOG_TAG "CameraHalProxy"
 #include "camera_hal_proxy.h"
+#include "camera/luna_client.h"
 #include "command_manager.h"
 #include "generate_unique_id.h"
 #include "json_utils.h"
-#include "luna_client.h"
+#include "luna-service2/lunaservice.hpp"
 #include "process.h"
 #include <ios>
 #include <system_error>
@@ -47,7 +48,7 @@ static bool cameraHalServiceCb(const char *msg, void *data)
 
     if (event_type == getEventNotificationString(EventType::EVENT_TYPE_PREVIEW_FAULT))
     {
-        event_key = CONST_EVENT_KEY_STREAMING_FAULT;
+        event_key = client->subsKey_;
     }
     else if (event_type == getEventNotificationString(EventType::EVENT_TYPE_CAPTURE_FAULT))
     {
@@ -170,21 +171,31 @@ DEVICE_RETURN_CODE_T CameraHalProxy::close()
     return luna_call_sync(__func__, "{}");
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(LSHandle *sh)
+DEVICE_RETURN_CODE_T CameraHalProxy::startPreview(std::string memtype, int *pkey, LSHandle *sh,
+                                                  const char *subskey)
 {
     PLOGI("");
-    sh_ = sh;
-    return luna_call_sync(__func__, "{}", COMMAND_TIMEOUT_LONG);
-}
 
-DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview(bool forceComplete)
-{
-    PLOGI("");
+    sh_      = sh;
+    subsKey_ = subskey ? subskey : "";
 
     json jin;
-    jin[CONST_PARAM_NAME_FORCE_COMPLETE] = forceComplete;
+    jin[CONST_PARAM_NAME_MEMTYPE] = memtype;
 
-    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT_LONG);
+
+    if (ret == DEVICE_OK)
+    {
+        *pkey = get_optional<int>(jOut, CONST_PARAM_NAME_SHMKEY).value_or(0);
+    }
+
+    return ret;
+}
+
+DEVICE_RETURN_CODE_T CameraHalProxy::stopPreview()
+{
+    PLOGI("");
+    return luna_call_sync(__func__, "{}", COMMAND_TIMEOUT_LONG);
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::startCapture(CAMERA_FORMAT sformat,
@@ -444,34 +455,121 @@ DEVICE_RETURN_CODE_T CameraHalProxy::getFormat(CAMERA_FORMAT *pformat)
     return ret;
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::addClient(int id)
+DEVICE_RETURN_CODE_T CameraHalProxy::getFd(int *shmfd)
 {
     PLOGI("");
+    LSMessageToken tok = 0;
+    LSError lserror;
+    LSErrorInit(&lserror);
+    GMainContext *context = g_main_loop_get_context(loop_);
+    std::string uri       = service_uri_ + __func__;
+    struct FdTaker
+    {
+        const char *response;
+        int fd;
+        bool done;
+    } worker{"", 0, false};
+    bool ret = false;
 
-    json jin;
-    jin[CONST_PARAM_NAME_ID] = id;
+    ret = LSCall(
+        luna_client->get(), uri.c_str(), "{}",
+        +[](LSHandle *sh, LSMessage *msg, void *data)
+        {
+            FdTaker *taker  = (FdTaker *)data;
+            taker->response = LSMessageGetPayload(msg);
+            LS::Message ls_message(msg);
+            LS::PayloadRef payload_ref = ls_message.accessPayload();
+            int fd                     = payload_ref.getFd();
+            if (fd)
+            {
+                taker->fd = dup(fd);
+            }
+            taker->done = true;
+            return true;
+        },
+        &worker, &tok, &lserror);
 
-    return luna_call_sync(__func__, to_string(jin));
+    if (ret == true)
+    {
+        ret = LSCallSetTimeout(luna_client->get(), tok, 30, &lserror);
+        if (ret == true)
+        {
+            while (!worker.done)
+            {
+                g_main_context_iteration(context, false);
+                usleep(500);
+            }
+
+            if (get_optional<bool>(jOut, CONST_PARAM_NAME_RETURNVALUE).value_or(false))
+            {
+                *shmfd = worker.fd;
+                return DEVICE_OK;
+            }
+            else
+            {
+                *shmfd = -1;
+                return get_optional<DEVICE_RETURN_CODE_T>(jOut, CONST_PARAM_NAME_ERROR_CODE)
+                    .value_or(DEVICE_RETURN_UNDEFINED);
+            }
+        }
+
+        *shmfd = -1;
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    LSErrorPrint(&lserror, stderr);
+    LSErrorFree(&lserror);
+    *shmfd = -1;
+    return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::removeClient(int id)
+DEVICE_RETURN_CODE_T CameraHalProxy::registerClient(pid_t pid, int sig, int devhandle,
+                                                    std::string &outmsg)
 {
     PLOGI("");
 
     json jin;
-    jin[CONST_PARAM_NAME_ID] = id;
+    jin[CONST_CLIENT_PROCESS_ID]    = pid;
+    jin[CONST_CLIENT_SIGNAL_NUM]    = sig;
+    jin[CONST_PARAM_NAME_DEVHANDLE] = devhandle;
 
-    return luna_call_sync(__func__, to_string(jin));
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin));
+
+    outmsg = get_optional<std::string>(jOut, CONST_PARAM_NAME_OUTMSG).value_or("");
+
+    return ret;
 }
 
-DEVICE_RETURN_CODE_T CameraHalProxy::getFd(const std::string &type, int id, int *fd)
+DEVICE_RETURN_CODE_T CameraHalProxy::unregisterClient(pid_t pid, std::string &outmsg)
 {
     PLOGI("");
 
     json jin;
-    jin[CONST_PARAM_NAME_TYPE] = type;
-    jin[CONST_PARAM_NAME_ID]   = id;
-    return luna_call_sync(__func__, to_string(jin), COMMAND_TIMEOUT, fd);
+    jin[CONST_CLIENT_PROCESS_ID] = pid;
+
+    DEVICE_RETURN_CODE_T ret = luna_call_sync(__func__, to_string(jin));
+
+    outmsg = get_optional<std::string>(jOut, CONST_PARAM_NAME_OUTMSG).value_or("");
+
+    return ret;
+}
+
+bool CameraHalProxy::isRegisteredClient(int devhandle)
+{
+    PLOGI("handle %d", devhandle);
+
+    json jin;
+    jin[CONST_PARAM_NAME_DEVHANDLE] = devhandle;
+
+    luna_call_sync(__func__, to_string(jin));
+
+    return get_optional<bool>(jOut, CONST_PARAM_NAME_REGISTER).value_or(false);
+}
+
+void CameraHalProxy::requestPreviewCancel()
+{
+    PLOGI("");
+    luna_call_sync(__func__, "{}");
 }
 
 //[Camera Solution Manager] interfaces start
@@ -615,7 +713,7 @@ bool CameraHalProxy::unsubscribe()
 }
 
 DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std::string &payload,
-                                                    int timeout, int *fd)
+                                                    int timeout)
 {
     if (process_ == nullptr)
     {
@@ -635,7 +733,7 @@ DEVICE_RETURN_CODE_T CameraHalProxy::luna_call_sync(const char *func, const std:
 
     std::string resp;
     int64_t startClk = g_get_monotonic_time();
-    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, timeout, fd);
+    luna_client->callSync(uri.c_str(), payload.c_str(), &resp, timeout);
     int64_t endClk = g_get_monotonic_time();
 
     (startClk > endClk) ? PLOGE("diffClk is error")

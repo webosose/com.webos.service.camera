@@ -71,8 +71,7 @@ target_link_libraries(${PROJECT_NAME}
                       ${PMLOGLIB_LDFLAGS}
                       pthread
                       ${CMAKE_DL_LIBS}
-                      camera_shared_memory
-                      luna_client
+                      camera_common
                       )
 
 install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_SBINDIR})

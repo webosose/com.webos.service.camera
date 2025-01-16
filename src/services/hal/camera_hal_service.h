@@ -48,9 +48,11 @@ public:
     bool setFormat(LSMessage &message);
     bool getFormat(LSMessage &message);
     bool getDeviceInfo(LSMessage &message);
-    bool addClient(LSMessage &message);
-    bool removeClient(LSMessage &message);
     bool getFd(LSMessage &message);
+    bool registerClient(LSMessage &message);
+    bool unregisterClient(LSMessage &message);
+    bool isRegisteredClient(LSMessage &message);
+    bool requestPreviewCancel(LSMessage &message);
     bool getSupportedCameraSolutionInfo(LSMessage &message);
     bool getEnabledCameraSolutionInfo(LSMessage &message);
     bool enableCameraSolution(LSMessage &message);

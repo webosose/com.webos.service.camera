@@ -40,13 +40,12 @@ public:
     LunaClient(const char *serviceName, GMainContext *ctx = nullptr);
     virtual ~LunaClient(void);
 
-    bool callSync(const char *uri, const char *param, std::string *result, int timeout = 30,
-                  int *fd = nullptr);
+    bool callSync(const char *uri, const char *param, std::string *result, int timeout = 30);
 
     bool callAsync(const char *uri, const char *param, Handler handler, void *data);
 
     bool subscribe(const char *uri, const char *param, unsigned long *subscribeKey, Handler handler,
-                   void *data, const char *appId = nullptr);
+                   void *data);
 
     bool unsubscribe(unsigned long subscribeKey);
 

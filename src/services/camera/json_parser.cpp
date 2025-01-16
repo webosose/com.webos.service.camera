@@ -104,10 +104,37 @@ void OpenMethod::getOpenObject(const char *input, const char *schemapath)
         {
             setCameraId(cstr_invaliddeviceid);
         }
+
+        int n_client_pid = n_invalid_pid;
+        jvalue_ref jnum  = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_CLIENT_PROCESS_ID));
+        jnumber_get_i32(jnum, &n_client_pid);
+        if (n_client_pid > 0)
+        {
+            setClientProcessId(n_client_pid);
+
+            int n_client_sig = n_invalid_sig;
+            jnum             = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_CLIENT_SIGNAL_NUM));
+            jnumber_get_i32(jnum, &n_client_sig);
+            if ((SIGHUP <= n_client_sig && n_client_sig <= SIGSYS) &&
+                (n_client_sig != SIGKILL && n_client_sig != SIGSTOP))
+
+            {
+                setClientSignal(n_client_sig);
+            }
+            else
+            {
+                setClientSignal(n_invalid_sig);
+            }
+        }
+        else
+        {
+            setClientProcessId(n_invalid_pid);
+        }
     }
     else
     {
         setCameraId(cstr_invaliddeviceid);
+        setClientProcessId(n_invalid_pid);
     }
     j_release(&j_obj);
 }
@@ -125,6 +152,20 @@ std::string OpenMethod::createOpenObjectJsonString() const
                     jboolean_create(obj_reply.bGetReturnValue()));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_DEVICE_HANDLE),
                     jnumber_create_i32(getDeviceHandle()));
+
+        int n_client_pid = getClientProcessId();
+        if (n_client_pid > 0)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_CLIENT_PROCESS_ID),
+                        jnumber_create_i32(n_client_pid));
+
+            int n_client_sig = getClientSignal();
+            if (n_client_sig != -1)
+            {
+                jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_CLIENT_SIGNAL_NUM),
+                            jnumber_create_i32(n_client_sig));
+            }
+        }
     }
     else
     {
@@ -150,6 +191,19 @@ void StartCameraMethod::getStartCameraObject(const char *input, const char *sche
         jvalue_ref jnum    = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
         jnumber_get_i32(jnum, &n_devicehandle);
         setDeviceHandle(n_devicehandle);
+
+        jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
+        raw_buffer type =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TYPE)));
+        raw_buffer source =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
+
+        camera_memory_source_t r_cams_source;
+        if (source.m_str)
+            r_cams_source.str_memorysource = source.m_str;
+        if (type.m_str)
+            r_cams_source.str_memorytype = type.m_str;
+        setMemParams(std::move(r_cams_source));
     }
     else
     {
@@ -169,6 +223,8 @@ std::string StartCameraMethod::createStartCameraObjectJsonString() const
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(obj_reply.bGetReturnValue()));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_DEVICE_KEY),
+                    jnumber_create_i32(getKeyValue()));
     }
     else
     {
@@ -195,8 +251,19 @@ void StartPreviewMethod::getStartPreviewObject(const char *input, const char *sc
         jnumber_get_i32(jnum, &n_devicehandle);
         setDeviceHandle(n_devicehandle);
 
+        jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
+        raw_buffer type =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TYPE)));
+        raw_buffer source =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
         raw_buffer display =
             jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_WINDOW_ID)));
+        camera_memory_source_t r_cams_source;
+        if (source.m_str)
+            r_cams_source.str_memorysource = source.m_str;
+        if (type.m_str)
+            r_cams_source.str_memorytype = type.m_str;
+        setMemParams(std::move(r_cams_source));
 
         camera_display_source_t r_dpy_source;
         if (display.m_str)
@@ -221,6 +288,10 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(obj_reply.bGetReturnValue()));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_DEVICE_KEY),
+                    jnumber_create_i32(getKeyValue()));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MEDIA_ID),
+                    jstring_create(getMediaIdValue().c_str()));
     }
     else
     {
@@ -238,17 +309,22 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
 void StopCameraPreviewCaptureCloseMethod::getObject(const char *input, const char *schemapath)
 {
     jvalue_ref j_obj;
-    int retVal = deSerialize(input, schemapath, j_obj);
+    int retVal       = deSerialize(input, schemapath, j_obj);
+    int n_client_pid = n_invalid_pid;
 
     if (0 == retVal)
     {
         int n_devicehandle = n_invalid_id;
         jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &n_devicehandle);
         setDeviceHandle(n_devicehandle);
+
+        jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_CLIENT_PROCESS_ID)), &n_client_pid);
+        setClientProcessId(n_client_pid);
     }
     else
     {
         setDeviceHandle(n_invalid_id);
+        setClientProcessId(n_client_pid);
     }
     j_release(&j_obj);
 }
@@ -264,6 +340,13 @@ std::string StopCameraPreviewCaptureCloseMethod::createObjectJsonString() const
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(objreply.bGetReturnValue()));
+
+        int n_client_id = getClientProcessId();
+        if (n_client_id > 0)
+        {
+            jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_CLIENT_PROCESS_ID),
+                        jnumber_create_i32(n_client_id));
+        }
     }
     else
     {
@@ -812,10 +895,6 @@ void GetFdMethod::getObject(const char *input, const char *schemapath)
         int devicehandle = n_invalid_id;
         jnumber_get_i32(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE)), &devicehandle);
         setDeviceHandle(devicehandle);
-
-        raw_buffer str_type =
-            jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_TYPE)));
-        setType(str_type.m_str);
     }
     else
     {

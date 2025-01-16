@@ -15,7 +15,6 @@
 
 #define LOG_TAG "CameraSolutionService"
 #include "camera_solution_service.h"
-#include "camera_shared_memory_ex.h"
 #include "camera_solution_async.h"
 #include "camera_types.h"
 #include "error_manager.h"
@@ -108,7 +107,7 @@ bool CameraSolutionService::init(LSMessage &message)
 {
     bool ret = true;
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
-    std::string shmName;
+    key_t shmkey           = 0;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
@@ -144,14 +143,14 @@ bool CameraSolutionService::init(LSMessage &message)
         streamFormat_.buffer_size = (sz_buf > 0) ? sz_buf : 0;
     }
 
-    if (parsed.hasKey(CONST_PARAM_NAME_SHMNAME))
+    if (parsed.hasKey(CONST_PARAM_NAME_SHMKEY))
     {
-        shmName = parsed[CONST_PARAM_NAME_SHMNAME].asString();
-        PLOGI("shmName %s", shmName.c_str());
+        shmkey = parsed[CONST_PARAM_NAME_SHMKEY].asNumber<int>();
+        PLOGI("shmkey %d", shmkey);
     }
 
     if (pSolution_)
-        pSolution_->initialize(&streamFormat_, shmName, this->get());
+        pSolution_->initialize(&streamFormat_, shmkey, this->get());
 
     jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE), jboolean_create(ret));
 

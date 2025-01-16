@@ -59,16 +59,17 @@ public:
     DEVICE_RETURN_CODE_T getProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setProperty(int, CAMERA_PROPERTIES_T *);
     DEVICE_RETURN_CODE_T setFormat(int, CAMERA_FORMAT);
-    DEVICE_RETURN_CODE_T startCamera(int, LSHandle *);
-    DEVICE_RETURN_CODE_T stopCamera(int, bool = false);
-    DEVICE_RETURN_CODE_T startPreview(int, std::string, LSHandle *);
-    DEVICE_RETURN_CODE_T stopPreview(int, bool = false);
+    DEVICE_RETURN_CODE_T startCamera(int, std::string, int *, LSHandle *, const char *);
+    DEVICE_RETURN_CODE_T stopCamera(int);
+    DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, std::string, std::string *,
+                                      LSHandle *, const char *);
+    DEVICE_RETURN_CODE_T stopPreview(int);
     DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                       int, int);
     DEVICE_RETURN_CODE_T stopCapture(int, bool request = true);
     DEVICE_RETURN_CODE_T capture(int, int, const std::string &, std::vector<std::string> &, int);
     DEVICE_RETURN_CODE_T getFormat(int, CAMERA_FORMAT *);
-    DEVICE_RETURN_CODE_T getFd(int, const std::string &, int *);
+    DEVICE_RETURN_CODE_T getFd(int, int *);
     DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(int, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T getEnabledCameraSolutionInfo(int, std::vector<std::string> &);
     DEVICE_RETURN_CODE_T enableCameraSolution(int, const std::vector<std::string> &);
@@ -76,6 +77,10 @@ public:
 
     int getCameraId(int);
     int getCameraHandle(int);
+
+    DEVICE_RETURN_CODE_T registerClientPid(int, int, int, std::string &);
+    DEVICE_RETURN_CODE_T unregisterClientPid(int, int, std::string &);
+    bool isRegisteredClientPid(int);
 
     bool setClientDevice(int, std::string);
     DEVICE_RETURN_CODE_T checkDeviceClient(int, std::string);

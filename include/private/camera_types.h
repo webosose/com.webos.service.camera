@@ -29,6 +29,10 @@
 #define MEMORY_SPACE_THRESHOLD 10UL
 #define MAX_NO_OF_IMAGES_IN_BURST_MODE 10
 
+const std::string kMemtypeShmemMmap = "sharedmemory_mmap";
+const std::string kMemtypeShmem     = "sharedmemory";
+const std::string kMemtypePosixshm  = "posixshm";
+
 /*-----------------------------------------------------------------------------
  (Type Definitions)
  ----------------------------------------------------------------------------*/

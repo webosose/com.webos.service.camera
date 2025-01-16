@@ -111,6 +111,8 @@
 #define CONST_PARAM_NAME_IMAGE_PATH "path"
 #define CONST_PARAM_NAME_DEVICE_PATH "devPath"
 #define CONST_PARAM_NAME_CAPABILITIES "capabilities"
+#define CONST_CLIENT_PROCESS_ID "pid"
+#define CONST_CLIENT_SIGNAL_NUM "sig"
 #define CONST_PARAM_NAME_MAX "max"
 #define CONST_PARAM_NAME_MIN "min"
 #define CONST_PARAM_NAME_STEP "step"
@@ -126,15 +128,18 @@
 #define CONST_PARAM_NAME_SUBSYSTEM "subSystem"
 #define CONST_PARAM_NAME_DEVHANDLE "devHandle"
 #define CONST_PARAM_NAME_OUTMSG "outMsg"
-#define CONST_PARAM_NAME_SHMNAME "shmName"
+#define CONST_PARAM_NAME_SHMKEY "shmKey"
 #define CONST_PARAM_NAME_BUFFERSIZE "bufferSize"
 #define CONST_PARAM_NAME_ENABLE "enable"
 #define CONST_PARAM_NAME_METASIZE_HINT "metaSizeHint"
+#define CONST_PARAM_NAME_REGISTER "register"
 #define CONST_PARAM_NAME_WINDOW_ID "windowId"
-#define CONST_PARAM_NAME_FORCE_COMPLETE "forceComplete"
+#define CONST_PARAM_NAME_MEDIA_ID "mediaId"
 
-const int n_invalid_id = -1;
-const int extra_buffer = 1024;
+const int n_invalid_id  = -1;
+const int extra_buffer  = 1024;
+const int n_invalid_pid = -1;
+const int n_invalid_sig = -1;
 
 const std::string cstr_empty           = "";
 const std::string cstr_invaliddeviceid = "-1";
