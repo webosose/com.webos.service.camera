@@ -67,7 +67,7 @@ public:
                        size_t *pExtraSize, size_t *pSolutionSize);
     bool read(unsigned char **ppData, size_t *pDataSize, unsigned char **ppMeta, size_t *pMetaSize,
               unsigned char **ppExtra, size_t *pExtraSize, unsigned char **ppSolution,
-              size_t *pSolutionSize, int timeoutMs, bool skipSignal);
+              size_t *pSolutionSize, int timeoutMs);
     bool write(const unsigned char *pData, size_t dataSize, const unsigned char *pMeta,
                size_t metaSize, const unsigned char *pExtra, size_t extraSize,
                const unsigned char *pSolution, size_t solutionSize);

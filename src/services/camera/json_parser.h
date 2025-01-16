@@ -104,7 +104,12 @@ private:
 class OpenMethod
 {
 public:
-    OpenMethod() { n_devicehandle_ = -1; }
+    OpenMethod()
+    {
+        n_devicehandle_ = -1;
+        n_client_pid_   = -1;
+        n_client_sig_   = -1;
+    }
     ~OpenMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
@@ -118,6 +123,12 @@ public:
 
     void setAppPriority(const std::string &priority) { str_priority_ = priority; }
     std::string getAppPriority() const { return str_priority_; }
+
+    void setClientProcessId(int pid) { n_client_pid_ = pid; }
+    int getClientProcessId() const { return n_client_pid_; }
+
+    void setClientSignal(int sig) { n_client_sig_ = sig; }
+    int getClientSignal() const { return n_client_sig_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -135,6 +146,8 @@ private:
     std::string str_devid_;
     std::string str_appid_;
     std::string str_priority_;
+    int n_client_pid_;
+    int n_client_sig_;
     MethodReply objreply_;
 };
 
@@ -285,11 +298,18 @@ private:
 class StopCameraPreviewCaptureCloseMethod
 {
 public:
-    StopCameraPreviewCaptureCloseMethod() { n_devicehandle_ = -1; }
+    StopCameraPreviewCaptureCloseMethod()
+    {
+        n_devicehandle_ = -1;
+        n_client_pid_   = -1;
+    }
     ~StopCameraPreviewCaptureCloseMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
+
+    void setClientProcessId(int pid) { n_client_pid_ = pid; }
+    int getClientProcessId() const { return n_client_pid_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -304,6 +324,7 @@ public:
 
 private:
     int n_devicehandle_;
+    int n_client_pid_;
     MethodReply objreply_;
 };
 
@@ -448,9 +469,6 @@ public:
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
 
-    void setType(const std::string &type) { str_type_ = type; }
-    std::string getType() const { return str_type_; }
-
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
         objreply_.setReturnValue(returnvalue);
@@ -464,7 +482,6 @@ public:
 
 private:
     int n_devicehandle_;
-    std::string str_type_;
     MethodReply objreply_;
 };
 

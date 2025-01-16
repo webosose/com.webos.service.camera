@@ -20,10 +20,7 @@
 void CameraSolution::initialize(const void *streamFormat, const std::string &shmName,
                                 void *lsHandle)
 {
-    name_ = getSolutionStr().c_str();
-
-    PLOGI("%s", name_.c_str());
-
+    PLOGI("%s", getSolutionStr().c_str());
     streamFormat_ = *static_cast<const stream_format_t *>(streamFormat);
     shmName_      = shmName;
     sh_           = static_cast<LSHandle *>(lsHandle);

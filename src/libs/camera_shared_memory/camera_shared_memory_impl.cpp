@@ -359,18 +359,14 @@ bool CameraSharedMemoryImpl::getBufferInfo(size_t *pBufferCount, size_t *pDataSi
 
 bool CameraSharedMemoryImpl::read(unsigned char **ppData, size_t *pDataSize, unsigned char **ppMeta,
                                   size_t *pMetaSize, unsigned char **ppExtra, size_t *pExtraSize,
-                                  unsigned char **ppSolution, size_t *pSolutionSize, int timeoutMs,
-                                  bool skipSignal)
+                                  unsigned char **ppSolution, size_t *pSolutionSize, int timeoutMs)
 {
     PLOGD("timeout %d ms", timeoutMs);
 
-    if (!skipSignal)
+    if (!waitForSignal(timeoutMs))
     {
-        if (!waitForSignal(timeoutMs))
-        {
-            PLOGE("waitForSignal() fail");
-            return false;
-        }
+        PLOGE("waitForSignal() fail");
+        return false;
     }
 
     const int maxRetries = 100;
@@ -572,8 +568,6 @@ bool CameraSharedMemoryImpl::waitForSignal(int timeoutMs, const std::string &nam
 {
     std::unique_lock<std::mutex> lock(m_);
 
-    PLOGD("name(%s) (timeout %d ms)", name.c_str(), timeoutMs);
-
     if (signalFdMap_.find(name) == signalFdMap_.end())
     {
         PLOGE("unknown signal name(%s)", name.c_str());
@@ -583,7 +577,7 @@ bool CameraSharedMemoryImpl::waitForSignal(int timeoutMs, const std::string &nam
 
     struct pollfd fds = {efd, POLLIN, 0};
 
-    PLOGD("name(%s) start waiting for eventfd (%d) (timeout %d ms)", name.c_str(), efd, timeoutMs);
+    PLOGD("start waiting for eventfd (timeout %d ms)", timeoutMs);
     int ret = poll(&fds, 1, timeoutMs);
     if (ret == -1)
     {
@@ -609,7 +603,7 @@ bool CameraSharedMemoryImpl::waitForSignal(int timeoutMs, const std::string &nam
     {
         if (::read(efd, &value, sizeof(value)) == sizeof(value))
         {
-            PLOGD("Read %llu from eventfd (%d)", (unsigned long long)value, efd);
+            PLOGD("Read %llu from eventfd", (unsigned long long)value);
             return true;
         }
         PLOGE("Read failure, retrying...");

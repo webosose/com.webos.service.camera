@@ -53,7 +53,7 @@ bool CameraSharedMemory::read(unsigned char **ppData, size_t *pDataSize, unsigne
 {
     PLOGD("timeout %d ms", timeoutMs);
     return pImpl_->read(ppData, pDataSize, ppMeta, pMetaSize, ppExtra, pExtraSize, ppSolution,
-                        pSolutionSize, timeoutMs, false);
+                        pSolutionSize, timeoutMs);
 }
 
 void CameraSharedMemory::close(void)

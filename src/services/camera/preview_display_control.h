@@ -18,6 +18,7 @@ private:
     int done_;
     std::unique_ptr<Process> pipeline_process{nullptr};
     std::string pipeline_uri;
+    int pid    = -1;
     int handle = -1;
 
     bool acquireLSConnection(const std::string &wid);
@@ -34,6 +35,7 @@ public:
     bool start(std::string camera_id, std::string windowId, CAMERA_FORMAT cameraFormat, int handle,
                bool primary);
     bool stop();
+    int getPid() const { return pid; }
     int getHandle() const { return handle; }
 };
 

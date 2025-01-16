@@ -90,6 +90,16 @@ const char *openSchema = "{ \
       \"default\": \"\", \
       \"pattern\": \"^(.*)$\" \
     }, \
+    \"pid\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Client Process Id Schema\", \
+      \"default\": -1 \
+    }, \
+    \"sig\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Signal Number\", \
+      \"default\": 10 \
+    }, \
     \"appId\": { \
       \"type\": \"string\", \
       \"title\": \"Application Id of The Client Application\", \
@@ -297,6 +307,11 @@ const char *stopCaptureCameraPreviewCloseSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
+    }, \
+    \"pid\": { \
+      \"type\": \"integer\", \
+      \"title\": \"The Client Id Schema\", \
+      \"default\": -1 \
     } \
   } \
 }";
@@ -327,12 +342,6 @@ const char *getFdSchema = "{ \
       \"type\": \"integer\", \
       \"title\": \"The Handle Schema\", \
       \"default\": 0 \
-    }, \
-    \"type\": { \
-      \"type\": \"string\", \
-      \"title\": \"The FD type Schema\", \
-      \"default\": \"\", \
-      \"pattern\": \"^(.*)$\" \
     } \
   } \
 }";

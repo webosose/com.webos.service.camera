@@ -243,6 +243,8 @@ bool PreviewDisplayControl::start(std::string camera_id, std::string windowId,
         return false;
     }
 
+    pid = parsed["pid"].asNumber<int32_t>();
+    PLOGI("pid = %d", pid);
     handle = handle_;
 
     return true;
