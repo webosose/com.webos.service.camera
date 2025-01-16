@@ -31,8 +31,10 @@ class DeviceStateMap
 {
 public:
     int ndeviceid_;
+    std::string shmemtype;
     CameraDeviceState ecamstate_;
-    DeviceStateMap() : ndeviceid_(0), ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE){};
+    DeviceStateMap()
+        : ndeviceid_(0), shmemtype(""), ecamstate_(CameraDeviceState::CAM_DEVICE_STATE_CLOSE){};
 };
 
 class PreviewDisplayControl;
@@ -42,6 +44,7 @@ private:
     std::map<int, DeviceStateMap> virtualhandle_map_;
     std::map<int, std::string> handlepriority_map_;
     bool bcaptureinprogress_;
+    int shmkey_;
     std::vector<int> nstreaminghandle_;
     std::vector<int> ncapturehandle_;
     CAMERA_FORMAT sformat_;
@@ -64,17 +67,23 @@ private:
     DEVICE_RETURN_CODE_T singleCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                        int);
     DEVICE_RETURN_CODE_T continuousCapture(int, CAMERA_FORMAT, const std::string &);
-    bool startPreviewDisplay(int, std::string);
+    bool startPreviewDisplay(int, std::string, std::string, int);
     bool stopPreviewDisplay(int);
+    inline bool isValidMemtype(const std::string &memtype)
+    {
+        return (memtype == kMemtypeShmemMmap || memtype == kMemtypeShmem ||
+                memtype == kMemtypePosixshm);
+    }
 
 public:
     VirtualDeviceManager();
     ~VirtualDeviceManager();
     DEVICE_RETURN_CODE_T open(int, int *, std::string, std::string);
     DEVICE_RETURN_CODE_T close(int);
-    DEVICE_RETURN_CODE_T startCamera(int, LSHandle *);
+    DEVICE_RETURN_CODE_T startCamera(int, std::string, int *, LSHandle *, const char *);
     DEVICE_RETURN_CODE_T stopCamera(int);
-    DEVICE_RETURN_CODE_T startPreview(int, std::string, std::string *, LSHandle *);
+    DEVICE_RETURN_CODE_T startPreview(int, std::string, int *, std::string, std::string *,
+                                      LSHandle *, const char *);
     DEVICE_RETURN_CODE_T stopPreview(int);
     DEVICE_RETURN_CODE_T startCapture(int, CAMERA_FORMAT, const std::string &, const std::string &,
                                       int);

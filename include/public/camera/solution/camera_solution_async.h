@@ -25,7 +25,6 @@
 
 const char *const SOL_SUBSCRIPTION_KEY = "cameraSolution";
 
-class CameraSharedMemoryEx;
 class CameraSolutionAsync : public CameraSolution
 {
 public:
@@ -69,6 +68,4 @@ protected:
     Queue queueJob_;
     Thread threadJob_;
     std::atomic<bool> bAlive_{false};
-
-    std::unique_ptr<CameraSharedMemoryEx> camShmem_;
 };

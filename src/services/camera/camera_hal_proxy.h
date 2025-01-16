@@ -49,7 +49,7 @@ class CameraHalProxy
     } state_;
 
     DEVICE_RETURN_CODE_T luna_call_sync(const char *func, const std::string &payload,
-                                        int timeout = COMMAND_TIMEOUT, int *fd = nullptr);
+                                        int timeout = COMMAND_TIMEOUT);
 
 public:
     CameraHalProxy();
@@ -57,7 +57,8 @@ public:
 
     DEVICE_RETURN_CODE_T open(std::string devicenode, int ndev_id, std::string payload);
     DEVICE_RETURN_CODE_T close();
-    DEVICE_RETURN_CODE_T startPreview(LSHandle *sh);
+    DEVICE_RETURN_CODE_T startPreview(std::string memtype, int *pkey, LSHandle *sh,
+                                      const char *subskey);
     DEVICE_RETURN_CODE_T stopPreview();
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT sformat, const std::string &imagepath,
                                       const std::string &mode, int ncount, const int devHandle = 0);
@@ -72,7 +73,7 @@ public:
     DEVICE_RETURN_CODE_T setDeviceProperty(CAMERA_PROPERTIES_T *inparams);
     DEVICE_RETURN_CODE_T setFormat(CAMERA_FORMAT sformat);
     DEVICE_RETURN_CODE_T getFormat(CAMERA_FORMAT *pformat);
-    DEVICE_RETURN_CODE_T getFd(int *fd);
+    DEVICE_RETURN_CODE_T getFd(int *posix_shm_fd);
 
     DEVICE_RETURN_CODE_T registerClient(pid_t, int, int, std::string &outmsg);
     DEVICE_RETURN_CODE_T unregisterClient(pid_t, std::string &outmsg);
@@ -90,5 +91,6 @@ public:
     bool subscribe();
     bool unsubscribe();
     LSHandle *sh_{nullptr};
+    std::string subsKey_;
     std::vector<int> devHandles_; /* used to stop capture from callback */
 };

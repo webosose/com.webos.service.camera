@@ -78,7 +78,6 @@ public:
     bool attachSignal(int fd, const std::string &name = std::string("default"));
     bool detachSignal(const std::string &name = std::string("default"));
     void releaseAllSignals(void);
-    int getWriteIndex(void);
 
 private:
     bool initShmem(int fd);

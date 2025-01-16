@@ -329,6 +329,7 @@ bool CameraService::startCamera(LSMessage &message)
     auto *payload = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    camera_memory_source_t memType;
 
     StartCameraMethod obj_startcamera;
     obj_startcamera.getStartCameraObject(payload, startCameraSchema);
@@ -340,14 +341,31 @@ bool CameraService::startCamera(LSMessage &message)
     if (err_id == DEVICE_OK)
     {
         // start preview here
-        err_id = CommandManager::getInstance().startCamera(ndevhandle, this->get());
-        if (DEVICE_OK != err_id)
+        int key = 0;
+
+        memType = obj_startcamera.rGetMemParams();
+        if (memType.str_memorytype == kMemtypeShmem ||
+            memType.str_memorytype == kMemtypeShmemMmap ||
+            memType.str_memorytype == kMemtypePosixshm)
         {
-            PLOGE("err_id != DEVICE_OK\n");
+            err_id = CommandManager::getInstance().startCamera(ndevhandle, memType.str_memorytype,
+                                                               &key, this->get(),
+                                                               CONST_EVENT_KEY_STREAMING_FAULT);
+
+            if (DEVICE_OK != err_id)
+            {
+                PLOGD("err_id != DEVICE_OK\n");
+            }
+            else
+            {
+                PLOGD("err_id == DEVICE_OK\n");
+                obj_startcamera.setKeyValue(key);
+            }
         }
         else
         {
-            PLOGI("err_id == DEVICE_OK\n");
+            PLOGI("startCamera() memory type is not supported\n");
+            err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
         }
     }
 
@@ -406,6 +424,7 @@ bool CameraService::startPreview(LSMessage &message)
     auto *payload = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
+    camera_memory_source_t memType;
     camera_display_source_t dispType;
 
     StartPreviewMethod obj_startpreview;
@@ -418,20 +437,34 @@ bool CameraService::startPreview(LSMessage &message)
     if (err_id == DEVICE_OK)
     {
         // start preview here
+        int key = 0;
         std::string media_id;
+
+        memType  = obj_startpreview.rGetMemParams();
         dispType = obj_startpreview.rGetDpyParams();
-
-        err_id = CommandManager::getInstance().startPreview(ndevhandle, dispType.str_window_id,
-                                                            &media_id, this->get());
-
-        if (DEVICE_OK != err_id)
+        if (memType.str_memorytype == kMemtypeShmem ||
+            memType.str_memorytype == kMemtypeShmemMmap ||
+            memType.str_memorytype == kMemtypePosixshm)
         {
-            PLOGE("err_id != DEVICE_OK\n");
+            err_id = CommandManager::getInstance().startPreview(
+                ndevhandle, memType.str_memorytype, &key, dispType.str_window_id, &media_id,
+                this->get(), CONST_EVENT_KEY_STREAMING_FAULT);
+
+            if (DEVICE_OK != err_id)
+            {
+                PLOGD("err_id != DEVICE_OK\n");
+            }
+            else
+            {
+                PLOGD("err_id == DEVICE_OK\n");
+                obj_startpreview.setKeyValue(key);
+                obj_startpreview.setMediaIdValue(std::move(media_id));
+            }
         }
         else
         {
-            PLOGI("err_id == DEVICE_OK\n");
-            obj_startpreview.setMediaIdValue(std::move(media_id));
+            PLOGI("startPreview() memory type is not supported\n");
+            err_id = DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
         }
     }
 

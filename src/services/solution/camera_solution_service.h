@@ -15,12 +15,12 @@
 
 #pragma once
 
+#include "ipc_shared_memory.h"
 #include "luna-service2/lunaservice.hpp"
 #include "plugin_factory.hpp"
 #include <glib.h>
 
 class CameraSolution;
-class CameraSharedMemoryEx;
 class CameraSolutionService : public LS::Handle
 {
     using mainloop          = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
@@ -45,7 +45,7 @@ public:
     bool subscribe(LSMessage &);
 
 private:
-    std::unique_ptr<CameraSharedMemoryEx> camShmem_;
+    SHMEM_HANDLE hShm{nullptr};
 };
 
 std::string parseSolutionServiceName(int argc, char *argv[]) noexcept;

@@ -43,7 +43,7 @@ class CameraSolutionProxy
     std::unique_ptr<std::thread> loopThread_;
     unsigned long subscribeKey_{0};
 
-    std::string shmName_;
+    int shmKey_{0};
     LSHandle *sh_{nullptr};
     void *cookie{nullptr};
     std::string uid_;
@@ -83,7 +83,7 @@ public:
 
     void setEventListener(CameraSolutionEvent *pEvent) { pEvent_ = pEvent; }
     int32_t getMetaSizeHint(void);
-    void initialize(stream_format_t streamFormat, const std::string &shmName, LSHandle *sh);
+    void initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh);
     void setEnableValue(bool enableValue);
     int getProperty(void) { return solutionProperty_; }
     bool isEnabled(void) { return bAlive_ ? enableStatus_ : preRun_; };

@@ -14,23 +14,4 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera_solution CXX)
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-set(SRC
-    camera_solution.cpp
-    camera_solution_async.cpp)
-
-add_library(${PROJECT_NAME} SHARED ${SRC})
-
-target_link_libraries(${PROJECT_NAME}
-                      ${PMLOGLIB_LDFLAGS}
-                      ${PBNJSON_CPP_LDFLAGS}
-                      camera_common
-                      luna_client
-                      )
-
-set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
-
-install(TARGETS ${PROJECT_NAME} DESTINATION ${WEBOS_INSTALL_LIBDIR})
+add_subdirectory(lib)

@@ -56,7 +56,7 @@ static bool cameraSolutionServiceCb(const char *msg, void *data)
 }
 
 CameraSolutionProxy::CameraSolutionProxy(const std::string &solution_name)
-    : solution_name_(solution_name), shmName_("")
+    : solution_name_(solution_name)
 {
     PLOGI("%s", solution_name_.c_str());
 }
@@ -96,14 +96,13 @@ int32_t CameraSolutionProxy::getMetaSizeHint(void)
     return metaSizeHint;
 }
 
-void CameraSolutionProxy::initialize(stream_format_t streamFormat, const std::string &shmName,
-                                     LSHandle *sh)
+void CameraSolutionProxy::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
 {
-    PLOGI("shmName : %s", shmName.c_str());
+    PLOGI("shmKey : %d", shmKey);
 
     // keep informations
     streamFormat_ = streamFormat;
-    shmName_      = shmName;
+    shmKey_       = shmKey;
     sh_           = sh;
 
     startThread();
@@ -134,9 +133,9 @@ void CameraSolutionProxy::processing(bool enableValue)
         return;
     }
 
-    if (shmName_.empty())
+    if (shmKey_ == 0)
     {
-        PLOGI("shared memory is not ready");
+        PLOGI("shared memory key is not ready");
         return;
     }
 
@@ -265,7 +264,7 @@ bool CameraSolutionProxy::init()
     jin[CONST_PARAM_NAME_HEIGHT]     = streamFormat_.stream_height;
     jin[CONST_PARAM_NAME_FPS]        = streamFormat_.stream_fps;
     jin[CONST_PARAM_NAME_BUFFERSIZE] = streamFormat_.buffer_size;
-    jin[CONST_PARAM_NAME_SHMNAME]    = shmName_;
+    jin[CONST_PARAM_NAME_SHMKEY]     = shmKey_;
 
     return luna_call_sync(__func__, to_string(jin));
 }

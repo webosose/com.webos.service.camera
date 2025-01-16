@@ -191,6 +191,19 @@ void StartCameraMethod::getStartCameraObject(const char *input, const char *sche
         jvalue_ref jnum    = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_DEVICE_HANDLE));
         jnumber_get_i32(jnum, &n_devicehandle);
         setDeviceHandle(n_devicehandle);
+
+        jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
+        raw_buffer type =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TYPE)));
+        raw_buffer source =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
+
+        camera_memory_source_t r_cams_source;
+        if (source.m_str)
+            r_cams_source.str_memorysource = source.m_str;
+        if (type.m_str)
+            r_cams_source.str_memorytype = type.m_str;
+        setMemParams(std::move(r_cams_source));
     }
     else
     {
@@ -210,6 +223,8 @@ std::string StartCameraMethod::createStartCameraObjectJsonString() const
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(obj_reply.bGetReturnValue()));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_DEVICE_KEY),
+                    jnumber_create_i32(getKeyValue()));
     }
     else
     {
@@ -236,8 +251,19 @@ void StartPreviewMethod::getStartPreviewObject(const char *input, const char *sc
         jnumber_get_i32(jnum, &n_devicehandle);
         setDeviceHandle(n_devicehandle);
 
+        jvalue_ref jobj_params = jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_PARAMS));
+        raw_buffer type =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_TYPE)));
+        raw_buffer source =
+            jstring_get_fast(jobject_get(jobj_params, J_CSTR_TO_BUF(CONST_PARAM_NAME_SOURCE)));
         raw_buffer display =
             jstring_get_fast(jobject_get(j_obj, J_CSTR_TO_BUF(CONST_PARAM_NAME_WINDOW_ID)));
+        camera_memory_source_t r_cams_source;
+        if (source.m_str)
+            r_cams_source.str_memorysource = source.m_str;
+        if (type.m_str)
+            r_cams_source.str_memorytype = type.m_str;
+        setMemParams(std::move(r_cams_source));
 
         camera_display_source_t r_dpy_source;
         if (display.m_str)
@@ -262,6 +288,8 @@ std::string StartPreviewMethod::createStartPreviewObjectJsonString() const
     {
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(obj_reply.bGetReturnValue()));
+        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_DEVICE_KEY),
+                    jnumber_create_i32(getKeyValue()));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_MEDIA_ID),
                     jstring_create(getMediaIdValue().c_str()));
     }

@@ -52,7 +52,7 @@ target_link_libraries(${PROJECT_NAME}
                         ${PMLOGLIB_LDFLAGS}
                         ${CMAKE_DL_LIBS}
                         pthread
-                        camera_shared_memory
+                        camera_common
                         luna_client
                         )
 

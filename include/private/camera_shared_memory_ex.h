@@ -52,7 +52,6 @@ public:
     bool attachSignal(int fd, const std::string &name = std::string("default"));
     bool detachSignal(const std::string &name);
     void releaseAllSignals(void);
-    int getWriteIndex(void);
 
 private:
     std::unique_ptr<CameraSharedMemoryImpl> pImpl_;
