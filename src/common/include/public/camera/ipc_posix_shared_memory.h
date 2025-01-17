@@ -17,10 +17,20 @@
 #ifndef CAMPOSHM_H_
 #define CAMPOSHM_H_
 
-#include "camera_hal_types.h"
 #include <stddef.h>
 #include <string>
 #include <sys/shm.h>
+
+/* Do not change this struct without updating its counterpart
+ * in include/public/camera/hal/camera_hal_types_common.h!
+ */
+typedef struct
+{
+    void *start;
+    unsigned long length;
+    size_t index;
+    int fd;
+} buffer_t;
 
 typedef enum
 {

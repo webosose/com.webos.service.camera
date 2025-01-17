@@ -17,9 +17,19 @@
 #ifndef CAMSHM_H_
 #define CAMSHM_H_
 
-#include "camera_hal_types.h" // buffer_t
-#include <stddef.h>           // size_t
+#include <stddef.h> // size_t
 #include <sys/shm.h>
+
+/* Do not change this struct without updating its counterpart
+ * in include/public/camera/hal/camera_hal_types_common.h!
+ */
+typedef struct
+{
+    void *start;
+    unsigned long length;
+    size_t index;
+    int fd;
+} buffer_t;
 
 typedef enum
 {

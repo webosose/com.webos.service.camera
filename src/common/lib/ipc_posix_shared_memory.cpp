@@ -17,8 +17,7 @@
 #define LOG_TAG "IPCPosixSharedMemory"
 #include "ipc_posix_shared_memory.h"
 #include "PmLogLib.h"
-#include "camera_constants.h"
-#include "camera_types.h"
+#include "camera_utils_log.h"
 #include "luna-service2/lunaservice.h"
 #include <errno.h>
 #include <fcntl.h>

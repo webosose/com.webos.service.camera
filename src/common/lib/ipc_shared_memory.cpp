@@ -16,11 +16,12 @@
 
 #define LOG_TAG "IPCSharedMemory"
 #include "ipc_shared_memory.h"
-#include "camera_types.h"
+#include "camera_utils_log.h"
 #include <algorithm>
 #include <errno.h>
 #include <fcntl.h>
 #include <iomanip>
+#include <limits.h>
 #include <random>
 #include <stdbool.h>
 #include <stdexcept>
