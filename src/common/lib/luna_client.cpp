@@ -11,7 +11,7 @@
 
 #define LOG_TAG "LunaClient"
 #include "luna_client.h"
-#include <camera_log.h>
+#include "camera_utils_log.h"
 #include <glib.h>
 #include <ios>
 #include <system_error>

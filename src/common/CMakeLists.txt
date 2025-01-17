@@ -28,10 +28,6 @@ pkg_check_modules(GLIB2 REQUIRED glib-2.0)
 include_directories(${GLIB2_INCLUDE_DIRS}) # glib.h
 webos_add_compiler_flags(ALL ${GLIB2_CFLAGS_OTHER})
 
-include_directories(../../include/public/camera)
-include_directories(../../include/public/camera/hal) # camera_hal_types.h
-include_directories(../../include/private)
-
 include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)
 
 add_subdirectory(lib)
