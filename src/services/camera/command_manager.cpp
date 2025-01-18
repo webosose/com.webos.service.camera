@@ -231,8 +231,7 @@ DEVICE_RETURN_CODE_T CommandManager::stopCamera(int devhandle, bool forceComplet
         return DEVICE_ERROR_UNKNOWN;
 }
 
-DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string disptype,
-                                                  std::string *media_id, LSHandle *sh)
+DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string disptype, LSHandle *sh)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
@@ -242,7 +241,7 @@ DEVICE_RETURN_CODE_T CommandManager::startPreview(int devhandle, std::string dis
     std::shared_ptr<VirtualDeviceManager> ptr = getVirtualDeviceMgrObj(devhandle);
     if (nullptr != ptr)
         // start preview
-        return ptr->startPreview(devhandle, std::move(disptype), media_id, sh);
+        return ptr->startPreview(devhandle, std::move(disptype), sh);
     else
         return DEVICE_ERROR_UNKNOWN;
 }
