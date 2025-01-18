@@ -137,17 +137,17 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const SolutionN
     std::lock_guard<std::mutex> lg(mtxApi_);
     PLOGI("");
     uint32_t candidateSolutionCnt = 0;
-    for (auto &s : names)
+    for (auto &name : names)
     {
         for (auto &i : lstSolution_)
         {
-            if (s == i->getSolutionStr())
+            if (name == i->getSolutionStr())
             {
                 if (candidateSolutionCnt < UINT32_MAX)
                 {
                     candidateSolutionCnt++;
                 }
-                PLOGI("candidate enabled solutionName %s", s.c_str());
+                PLOGI("candidate enabled solutionName %s", name.c_str());
             }
         }
     }
@@ -156,11 +156,11 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::enableCameraSolution(const SolutionN
     // and parameters number.
     if (names.size() == candidateSolutionCnt)
     {
-        for (auto &s : names)
+        for (auto &name : names)
         {
             for (auto &i : lstSolution_)
             {
-                if (s == i->getSolutionStr())
+                if (name == i->getSolutionStr())
                 {
                     i->setEnableValue(true);
                 }
@@ -185,17 +185,17 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::disableCameraSolution(const Solution
     PLOGI("");
     uint32_t candidateSolutionCnt = 0;
 
-    for (auto &s : names)
+    for (auto &name : names)
     {
         for (auto &i : lstSolution_)
         {
-            if (s == i->getSolutionStr())
+            if (name == i->getSolutionStr())
             {
                 if (candidateSolutionCnt < UINT_MAX)
                 {
                     candidateSolutionCnt++;
                 }
-                PLOGI("candidate disabled solutionName %s", s.c_str());
+                PLOGI("candidate disabled solutionName %s", name.c_str());
             }
         }
     }
@@ -203,11 +203,11 @@ DEVICE_RETURN_CODE_T CameraSolutionManager::disableCameraSolution(const Solution
     // and parameters number.
     if (names.size() == candidateSolutionCnt)
     {
-        for (auto &s : names)
+        for (auto &name : names)
         {
             for (auto &i : lstSolution_)
             {
-                if (s == i->getSolutionStr())
+                if (name == i->getSolutionStr())
                 {
                     i->setEnableValue(false);
                 }

@@ -202,42 +202,6 @@ bool CameraService::open(LSMessage &message)
             open.setDeviceHandle(ndevice_handle);
 
             addClientWatcher(this->get(), &message, ndevice_handle);
-
-            // add the client process Id to client pid pool if the pid is valid
-            int n_client_pid = open.getClientProcessId();
-            if (n_client_pid > 0)
-            {
-                int n_client_sig = open.getClientSignal();
-                if (n_client_sig != -1)
-                {
-                    PLOGI("Try register client process Id %d with signal number %d ...",
-                          n_client_pid, n_client_sig);
-                    std::string outmsg;
-                    DEVICE_RETURN_CODE_T retVal = CommandManager::getInstance().registerClientPid(
-                        ndevice_handle, n_client_pid, n_client_sig, outmsg);
-                    if (retVal == DEVICE_OK)
-                    {
-                        PLOGI("%s", outmsg.c_str());
-                        open.setMethodReply(CONST_PARAM_VALUE_TRUE, (int)err_id,
-                                            getErrorString(err_id) + "\n<pid, sig> ::" + outmsg);
-                    }
-                    else // opened camera itself is valid, but close policy is applied.
-                    {
-                        PLOGE("%s", outmsg.c_str());
-                        err_id = DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL;
-                        CommandManager::getInstance().close(ndevice_handle);
-                        open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                            getErrorString(err_id) + "\n<pid, sig> :: " + outmsg);
-                    }
-                }
-                else // opened camera itself is valid, but close policy is applied.
-                {
-                    err_id = DEVICE_ERROR_FAIL_TO_REGISTER_SIGNAL;
-                    CommandManager::getInstance().close(ndevice_handle);
-                    open.setMethodReply(CONST_PARAM_VALUE_FALSE, (int)err_id,
-                                        getErrorString(err_id));
-                }
-            }
         }
     }
 
@@ -262,36 +226,9 @@ bool CameraService::close(LSMessage &message)
 
     DEVICE_RETURN_CODE_T err_id = DEVICE_OK;
 
-    std::string pid_msg;
-
     int ndevhandle = obj_close.getDeviceHandle();
 
     err_id = validateClient(&message, ndevhandle);
-
-    if (err_id == DEVICE_OK)
-    {
-        int n_client_pid = obj_close.getClientProcessId();
-        if (n_client_pid > 0)
-        {
-            PLOGI("Try to unregister the client of pid %d\n", n_client_pid);
-
-            // First try remove the client pid from the client pid pool if the pid is valid.
-            DEVICE_RETURN_CODE_T ret = CommandManager::getInstance().unregisterClientPid(
-                ndevhandle, n_client_pid, pid_msg);
-            PLOGI("%s, ret = %d", pid_msg.c_str(), ret);
-
-            // Even if pid unregistration failed, however, there is no problem in order to proceed
-            // to close()!
-        }
-        else // handles the exception in which the pid is not input but the pid has been registered
-             // when open.
-        {
-            if (CommandManager::getInstance().isRegisteredClientPid(ndevhandle))
-            {
-                err_id = DEVICE_ERROR_CLIENT_PID_IS_MISSING;
-            }
-        }
-    }
 
     // close the device if there is no error on previous checks
     if (err_id == DEVICE_OK)
@@ -310,8 +247,6 @@ bool CameraService::close(LSMessage &message)
     }
 
     std::string errorMsg = getErrorString(err_id);
-    if (pid_msg.length() > 0)
-        errorMsg = errorMsg + "\n pid :: " + pid_msg;
     obj_close.setMethodReply(err_id == DEVICE_OK, (int)err_id, std::move(errorMsg));
 
     // create json string now for reply
@@ -1000,11 +935,15 @@ bool CameraService::getFd(LSMessage &message)
 
     int ndevhandle = obj_getfd.getDeviceHandle();
 
-    err_id = validateClient(&message, ndevhandle);
+    // handle validation check
+    if (ndevhandle == n_invalid_id)
+        err_id = DEVICE_ERROR_JSON_PARSING;
 
     if (err_id == DEVICE_OK)
     {
-        err_id = CommandManager::getInstance().getFd(ndevhandle, &shmfd);
+        std::string type = obj_getfd.getType();
+        PLOGI("ndevhandle %d type %s", ndevhandle, type.c_str());
+        err_id = CommandManager::getInstance().getFd(ndevhandle, type, &shmfd);
 
         if (err_id == DEVICE_OK)
         {

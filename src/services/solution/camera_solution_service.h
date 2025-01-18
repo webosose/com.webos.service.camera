@@ -20,7 +20,6 @@
 #include <glib.h>
 
 class CameraSolution;
-class CameraSharedMemoryEx;
 class CameraSolutionService : public LS::Handle
 {
     using mainloop          = std::unique_ptr<GMainLoop, void (*)(GMainLoop *)>;
@@ -43,9 +42,6 @@ public:
     bool enable(LSMessage &message);
     bool release(LSMessage &message);
     bool subscribe(LSMessage &);
-
-private:
-    std::unique_ptr<CameraSharedMemoryEx> camShmem_;
 };
 
 std::string parseSolutionServiceName(int argc, char *argv[]) noexcept;

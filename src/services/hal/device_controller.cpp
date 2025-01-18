@@ -81,8 +81,8 @@ struct MemoryListener : public CameraSolutionEvent
 
 DeviceControl::DeviceControl()
     : b_iscontinuous_capture_(false), b_isstreamon_(false), p_cam_hal(nullptr), capture_format_(),
-      tMutex(), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), cancel_preview_(false),
-      sh_(nullptr), subskey_(""), camera_id_(-1), shmDataBuffers(nullptr)
+      tMutex(), str_imagepath_(cstr_empty), str_capturemode_(cstr_oneshot), sh_(nullptr),
+      subskey_(""), camera_id_(-1), shmDataBuffers(nullptr)
 {
     pCameraSolution = std::make_shared<CameraSolutionManager>();
     pMemoryListener = std::make_shared<MemoryListener>();
@@ -90,6 +90,133 @@ DeviceControl::DeviceControl()
     {
         pCameraSolution->setEventListener(pMemoryListener.get());
     }
+}
+
+/* If necessary, use this according to the layout below */
+/* Currently, don't use this */
+/* meta json
+{
+    "video":
+    {
+        "timestamp": 123,
+        "orientation": 270,
+    },
+    "extra":
+    {
+        "buffer" : {
+            "colorspace" : 123123,
+            "width" : 1280,
+            "height" : 720,
+            "planes" : 1,
+            "stride" : 1280,
+            "size" : 123123,
+            "timestamp" : 123123
+        }
+    }
+}
+*/
+bool DeviceControl::updateMetaBuffer(const buffer_t &buffer, const json &videoMeta,
+                                     const json &extraMeta)
+{
+    PLOGD("start(%p), length(%ld)", buffer.start, buffer.length);
+
+    json jmeta     = json::object();
+    jmeta["video"] = videoMeta;
+    jmeta["extra"] = extraMeta;
+
+    std::string strMeta = jmeta.dump();
+    PLOGD("meta string : %s", strMeta.c_str());
+
+    if (strMeta.size() > 4096 - 1)
+    {
+        PLOGE("meta size is larger than buffer size");
+        return false;
+    }
+
+    memcpy((char *)buffer.start, strMeta.c_str(), strMeta.size() + 1);
+    return true;
+}
+
+/* If necessary, use this according to the layout below */
+/* Currently, don't use this */
+/* Currnetly use it : Solution Result:
+ * {"faces":[{"confidence":96,"h":287,"w":191,"x":141,"y":97}],"subscribed":true}
+ */
+/*
+{
+    "solutions":[
+        {
+            "name":"Solution1",
+            "data": {},
+            "binary": {
+                "offset":123,
+                "size":100
+            },
+            "timestamp":123
+        },
+        {
+            "name":"Solution2",
+            "data": {},
+            "timestamp" : 123
+        }
+    ]
+}
+*/
+bool DeviceControl::updateSolutionBuffer(const buffer_t &buffer)
+{
+    // std::lock_guard<std::mutex> lg(mtxResult_);
+
+    PLOGD("start(%p), length(%ld), txtSize(%d), binSize(%d)", buffer.start, buffer.length,
+          solutionTextSize_, solutionBinarySize_);
+
+    if (!buffer.start || !buffer.length)
+    {
+        PLOGE("buffer error! buffer.start(%p), buffer.length(%ld)", buffer.start, buffer.length);
+        return false;
+    }
+
+    // int cur_offset  = solutionTextSize_;
+    // int buffer_size = solutionTextSize_ + solutionBinarySize_;
+    // json jresult    = json::object();
+    // json jsolutions = json::array();
+    // for (const auto &[key, solution] : result_map_)
+    // {
+    //     json cur_json = solution.jResult_;
+    //     if (solution.nResult_ && cur_offset + solution.nResult_ <= buffer_size)
+    //     {
+    //         json jbinary      = json::object();
+    //         jbinary["offset"] = cur_offset;
+    //         jbinary["size"]   = solution.nResult_;
+
+    //         memcpy((char *)buffer.start + cur_offset, solution.pbResult_, solution.nResult_);
+    //         PLOGI("dest %p, src %p, nResult %d", (char *)buffer.start + cur_offset,
+    //               solution.pbResult_, solution.nResult_);
+    //         cur_offset += solution.nResult_;
+
+    //         cur_json["binary"] = jbinary;
+    //         PLOGI("binary = %s", jbinary.dump().c_str());
+    //     }
+
+    //     PLOGD("<timestamp> %u, solution %s",
+    //           get_optional<unsigned int>(cur_json, "timestamp").value_or(0),
+    //           (get_optional<std::string>(cur_json, "name").value_or("")).c_str());
+
+    //     jsolutions.push_back(cur_json);
+    // }
+    // jresult["solutions"]  = jsolutions;
+    // std::string strResult = jresult.dump();
+    // PLOGD("strResult %s", strResult.c_str());
+
+    // if (strResult.size() > static_cast<size_t>(solutionTextSize_ - 1))
+    // {
+    //     PLOGE("solution text size is larger than solutionTextSize_");
+    //     return false;
+    // }
+
+    auto meta = pMemoryListener->getResult();
+
+    memcpy((char *)buffer.start, meta.c_str(), meta.size() + 1);
+    return true;
 }
 
 // deprecated
@@ -446,14 +573,24 @@ void DeviceControl::previewThread()
             notifyDeviceFault_(EventType::EVENT_TYPE_PREVIEW_FAULT);
             break;
         }
-        PLOGD("buffer: start(%p) index(%zu)", buffer.start, buffer.index);
 
-        auto meta = pMemoryListener->getResult();
+        PLOGD("buffer: start(%p) index(%zu) length(%lu)", buffer.start, buffer.index,
+              buffer.length);
+
+        // shared memory index
+        int shm_index = buffer.index;
+
+        shmDataBuffers[buffer.index].start  = buffer.start;
+        shmDataBuffers[buffer.index].length = buffer.length;
+
+        // Create meta_data
+        updateMetaBuffer(shmMetaBuffers_[shm_index], nullptr, nullptr);
+        updateSolutionBuffer(shmSolutionBuffers_[shm_index]);
 
         shmem_->writeHeader(buffer.index, buffer.length);
         shmem_->incrementWriteIndex();
 
-        broadcast_();
+        shmem_->notifySignal();
 
         retval = p_cam_hal->releaseBuffer(&buffer);
         if (retval != CAMERA_ERROR_NONE)
@@ -467,8 +604,8 @@ void DeviceControl::previewThread()
         {
             auto toc = std::chrono::steady_clock::now();
             auto us  = std::chrono::duration_cast<std::chrono::microseconds>(toc - tic).count();
-            PLOGI("previewThread p_cam_hal(%p) : fps(%3.2f), clients(%zu)", p_cam_hal,
-                  debug_interval * 1000000.0f / us, client_pool_.size());
+            PLOGI("previewThread p_cam_hal(%p) : fps(%3.2f)", p_cam_hal,
+                  debug_interval * 1000000.0f / us);
             tic           = toc;
             debug_counter = 0;
         }
@@ -527,22 +664,21 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(LSHandle *sh, const char *subsk
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    PLOGI("Driver set width : %d height : %d", streamformat.stream_width,
-          streamformat.stream_height);
+    PLOGI("Driver set width : %d height : %d fps : %d", streamformat.stream_width,
+          streamformat.stream_height, streamformat.stream_fps);
 
     solutionTextSize_   = 0;
     solutionBinarySize_ = 0;
 
-    int32_t meta_size = 0;
     if (pCameraSolution != nullptr)
     {
-        meta_size = pCameraSolution->getMetaSizeHint();
+        solutionTextSize_ = pCameraSolution->getMetaSizeHint();
     }
 
     size_t shmDataSize     = streamformat.buffer_size + extra_buffer;
     size_t shmMetaSize     = extra_buffer; // 1024
     size_t shmExtraSize    = sizeof(unsigned int);
-    size_t shmSolutionSize = meta_size; // solutionTextSize_ + solutionBinarySize_;
+    size_t shmSolutionSize = solutionTextSize_;
 
     shmDataBuffers = nullptr;
     std::string shmemName;
@@ -553,10 +689,10 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(LSHandle *sh, const char *subsk
         return DEVICE_ERROR_UNKNOWN;
     }
 
-    shmemName = std::string("/camera.shm.") + std::to_string(getpid());
-    shmemFd_  = shmem_->create(shmemName, shmDataSize, shmMetaSize, shmExtraSize, shmSolutionSize,
-                               FRAME_COUNT);
-    if (shmemFd_ < 0)
+    shmemName    = std::string("/camera.shm.") + std::to_string(getpid());
+    shmBufferFd_ = shmem_->create(shmemName, shmDataSize, shmMetaSize, shmExtraSize,
+                                  shmSolutionSize, FRAME_COUNT);
+    if (shmBufferFd_ < 0)
     {
         PLOGE("Fail to create CameraSharedMemory : invalid FD");
         closeShmemoryIfNeeded();
@@ -600,7 +736,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(LSHandle *sh, const char *subsk
 
     size_t dataSize, metaSize, extraSize, solutionSize;
     shmem_->getBufferInfo(nullptr, &dataSize, &metaSize, &extraSize, &solutionSize);
-    for (unsigned int i = 0; i < FRAME_COUNT; i++)
+    for (size_t i = 0; i < FRAME_COUNT; i++)
     {
         shmDataBuffers[i].start       = dataList[i];
         shmDataBuffers[i].length      = dataSize;
@@ -643,7 +779,7 @@ DEVICE_RETURN_CODE_T DeviceControl::startPreview(LSHandle *sh, const char *subsk
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
+DEVICE_RETURN_CODE_T DeviceControl::stopPreview(bool forceComplete)
 {
     PLOGI("started !\n");
 
@@ -669,7 +805,7 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
         PLOGI("Thread Closed");
     }
 
-    if (cancel_preview_ == true)
+    if (forceComplete)
     {
         p_cam_hal->stopCapture();
         p_cam_hal->destroyBuffer();
@@ -690,7 +826,16 @@ DEVICE_RETURN_CODE_T DeviceControl::stopPreview()
             return DEVICE_ERROR_UNKNOWN;
         }
     }
-    closeShmemoryIfNeeded();
+
+    if (shmem_)
+    {
+        shmem_.reset();
+        shmBufferFd_ = -1;
+        shmSignalFdMap_.clear();
+    }
+
+    shmMetaBuffers_.clear();
+    shmExtraBuffers_.clear();
 
     return DEVICE_OK;
 }
@@ -955,15 +1100,73 @@ DEVICE_RETURN_CODE_T DeviceControl::getFormat(CAMERA_FORMAT *pformat)
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T DeviceControl::getFd(int *fd)
+DEVICE_RETURN_CODE_T DeviceControl::addClient(int id)
 {
-    if (shmemFd_ == -1)
+    PLOGI("id %d", id);
+
+    if (shmSignalFdMap_.count(id) > 0)
+    {
+        PLOGE("Already registered client %d", id);
+        return DEVICE_OK;
+    }
+
+    if (!shmem_)
+    {
+        PLOGE("unable status to add client");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    std::string name = std::string("signal.") + std::to_string(getpid()) + "." + std::to_string(id);
+    int signalFd     = shmem_->createSignal(name);
+    if (signalFd < 0)
+    {
+        PLOGE("Fail to create Signal for client %d", id);
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    shmSignalFdMap_[id] = signalFd;
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::removeClient(int id)
+{
+    PLOGI("id %d", id);
+    if (shmSignalFdMap_.count(id) > 0)
+    {
+        if (shmem_)
+        {
+            std::string name =
+                std::string("signal.") + std::to_string(getpid()) + "." + std::to_string(id);
+            shmem_->detachSignal(name);
+        }
+        shmSignalFdMap_.erase(id);
+    }
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::getShmBufferFd(int *fd)
+{
+    if (shmBufferFd_ == -1)
     {
         PLOGE("Shmemory is not used for this session");
         *fd = -1;
         return DEVICE_ERROR_UNKNOWN;
     }
-    *fd = shmemFd_;
+
+    *fd = shmBufferFd_;
+    return DEVICE_OK;
+}
+
+DEVICE_RETURN_CODE_T DeviceControl::getShmSignalFd(int id, int *fd)
+{
+    PLOGI("id %d", id);
+    if (shmSignalFdMap_.count(id) == 0)
+    {
+        PLOGE("unregistered id");
+        return DEVICE_ERROR_UNKNOWN;
+    }
+
+    *fd = shmSignalFdMap_[id];
     return DEVICE_OK;
 }
 
@@ -985,110 +1188,6 @@ camera_format_t DeviceControl::getCameraFormat(camera_pixel_format_t eformat)
     // error case
     return CAMERA_FORMAT_UNDEFINED;
 }
-
-DEVICE_RETURN_CODE_T DeviceControl::registerClient(pid_t pid, int sig, int devhandle,
-                                                   std::string &outmsg)
-{
-    std::lock_guard<std::mutex> mlock(client_pool_mutex_);
-    {
-        auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                               [=](const CLIENT_INFO_T &p) { return p.pid == pid; });
-
-        if (it == client_pool_.end())
-        {
-            CLIENT_INFO_T p = {pid, sig, devhandle};
-            client_pool_.push_back(p);
-            outmsg = "The client of pid " + std::to_string(pid) + " registered with sig " +
-                     std::to_string(sig) + " :: OK";
-            return DEVICE_OK;
-        }
-        else
-        {
-            outmsg =
-                "The client of pid " + std::to_string(pid) + " is already registered :: ignored";
-            PLOGI("%s", outmsg.c_str());
-            return DEVICE_ERROR_UNKNOWN;
-        }
-    }
-}
-
-DEVICE_RETURN_CODE_T DeviceControl::unregisterClient(pid_t pid, std::string &outmsg)
-{
-    std::lock_guard<std::mutex> mlock(client_pool_mutex_);
-    {
-        auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                               [=](const CLIENT_INFO_T &p) { return p.pid == pid; });
-
-        if (it != client_pool_.end())
-        {
-            client_pool_.erase(it);
-            outmsg = "The client of pid " + std::to_string(pid) + " unregistered :: OK";
-            PLOGI("%s", outmsg.c_str());
-            return DEVICE_OK;
-        }
-        else
-        {
-            outmsg = "No client of pid " + std::to_string(pid) + " exists :: ignored";
-            PLOGI("%s", outmsg.c_str());
-            return DEVICE_ERROR_UNKNOWN;
-        }
-    }
-}
-
-bool DeviceControl::isRegisteredClient(int devhandle)
-{
-    auto it = std::find_if(client_pool_.begin(), client_pool_.end(),
-                           [=](const CLIENT_INFO_T &p) { return p.handle == devhandle; });
-    if (it == client_pool_.end())
-    {
-        return false;
-    }
-    return true;
-}
-
-void DeviceControl::broadcast_()
-{
-    std::lock_guard<std::mutex> mlock(client_pool_mutex_);
-    {
-        PLOGD("Broadcasting to %zu clients\n", client_pool_.size());
-
-        auto it = client_pool_.begin();
-        while (it != client_pool_.end())
-        {
-
-            PLOGD("About to send a signal %d to the client of pid %d ...\n", it->sig, it->pid);
-            int errid = kill(it->pid, it->sig);
-            if (errid == -1)
-            {
-                switch (errno)
-                {
-                case ESRCH:
-                    PLOGE("The client of pid %d does not exist and will be removed from the pool!!",
-                          it->pid);
-                    // remove this pid from the client pool to make ensure no zombie process exists.
-                    it = client_pool_.erase(it);
-                    break;
-                case EINVAL:
-                    PLOGE("The client of pid %d was given an invalid signal "
-                          "%d and will be be removed from the pool!!",
-                          it->pid, it->sig);
-                    it = client_pool_.erase(it);
-                    break;
-                default: // case errno = EPERM
-                    PLOGE("Unexpected error in sending the signal to the client of pid %d\n",
-                          it->pid);
-                    break;
-                }
-            }
-            else
-            {
-                ++it;
-            }
-        }
-    }
-}
-
-void DeviceControl::requestPreviewCancel() { cancel_preview_ = true; }
 
 void DeviceControl::notifyDeviceFault_(EventType eventType, DEVICE_RETURN_CODE_T error)
 {
@@ -1244,7 +1343,7 @@ void DeviceControl::closeShmemoryIfNeeded()
     if (shmem_)
     {
         shmem_.reset();
-        shmemFd_ = -1;
+        shmBufferFd_ = -1;
     }
 
     PLOGI("closed Shmemory !");

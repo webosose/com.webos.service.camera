@@ -58,7 +58,7 @@ public:
     DEVICE_RETURN_CODE_T open(std::string devicenode, int ndev_id, std::string payload);
     DEVICE_RETURN_CODE_T close();
     DEVICE_RETURN_CODE_T startPreview(LSHandle *sh);
-    DEVICE_RETURN_CODE_T stopPreview();
+    DEVICE_RETURN_CODE_T stopPreview(bool forceComplete);
     DEVICE_RETURN_CODE_T startCapture(CAMERA_FORMAT sformat, const std::string &imagepath,
                                       const std::string &mode, int ncount, const int devHandle = 0);
     DEVICE_RETURN_CODE_T stopCapture(const int devHandle);
@@ -72,13 +72,9 @@ public:
     DEVICE_RETURN_CODE_T setDeviceProperty(CAMERA_PROPERTIES_T *inparams);
     DEVICE_RETURN_CODE_T setFormat(CAMERA_FORMAT sformat);
     DEVICE_RETURN_CODE_T getFormat(CAMERA_FORMAT *pformat);
-    DEVICE_RETURN_CODE_T getFd(int *fd);
-
-    DEVICE_RETURN_CODE_T registerClient(pid_t, int, int, std::string &outmsg);
-    DEVICE_RETURN_CODE_T unregisterClient(pid_t, std::string &outmsg);
-    bool isRegisteredClient(int devhandle);
-
-    void requestPreviewCancel();
+    DEVICE_RETURN_CODE_T addClient(int id);
+    DEVICE_RETURN_CODE_T removeClient(int id);
+    DEVICE_RETURN_CODE_T getFd(const std::string &type, int id, int *fd);
 
     //[Camera Solution Manager] integration start
     DEVICE_RETURN_CODE_T getSupportedCameraSolutionInfo(std::vector<std::string> &);
