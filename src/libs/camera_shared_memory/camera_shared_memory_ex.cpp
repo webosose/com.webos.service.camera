@@ -100,3 +100,5 @@ bool CameraSharedMemoryEx::detachSignal(const std::string &name)
 }
 
 void CameraSharedMemoryEx::releaseAllSignals(void) { pImpl_->releaseAllSignals(); }
+
+int CameraSharedMemoryEx::getWriteIndex(void) { return pImpl_->getWriteIndex(); }

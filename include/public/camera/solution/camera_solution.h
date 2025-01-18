@@ -46,11 +46,11 @@ public:
     // interface - pre-defined (could be overridden)
     virtual void setEventListener(CameraSolutionEvent *pEvent) { pEvent_ = pEvent; }
     virtual int32_t getMetaSizeHint(void) { return 0; }
-    virtual void initialize(const void *streamFormat, int shmKey, void *lsHandle);
+    virtual void initialize(const void *streamFormat, const std::string &shmName, void *lsHandle);
     virtual void setEnableValue(bool enableValue) { enableStatus_ = enableValue; };
     virtual int getProperty() { return solutionProperty_; };
     virtual bool isEnabled(void) { return enableStatus_; };
-    // interfce - need to override
+    // interface - need to override
     virtual std::string getSolutionStr(void)           = 0;
     virtual void processForSnapshot(const void *inBuf) = 0;
     virtual void processForPreview(const void *inBuf)  = 0;
@@ -63,6 +63,6 @@ protected:
     stream_format_t streamFormat_{CAMERA_PIXEL_FORMAT_JPEG, 0, 0, 0, 0};
     std::atomic<CameraSolutionEvent *> pEvent_{nullptr};
 
-    int shm_key{0};
+    std::string shmName_;
     LSHandle *sh_{nullptr};
 };

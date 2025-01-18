@@ -109,16 +109,17 @@ struct CameraSolutionEvent
 
 struct ISolution : public IFeature
 {
-    virtual void setEventListener(CameraSolutionEvent *pEvent)                    = 0;
-    virtual int32_t getMetaSizeHint(void)                                         = 0;
-    virtual void initialize(const void *streamFormat, int shmKey, void *lsHandle) = 0;
-    virtual void setEnableValue(bool enableValue)                                 = 0;
-    virtual int getProperty()                                                     = 0;
-    virtual bool isEnabled(void)                                                  = 0;
-    virtual std::string getSolutionStr(void)                                      = 0;
-    virtual void processForSnapshot(const void *inBuf)                            = 0;
-    virtual void processForPreview(const void *inBuf)                             = 0;
-    virtual void release(void)                                                    = 0;
+    virtual void setEventListener(CameraSolutionEvent *pEvent) = 0;
+    virtual int32_t getMetaSizeHint(void)                      = 0;
+    virtual void initialize(const void *streamFormat, const std::string &shmName,
+                            void *lsHandle)                    = 0;
+    virtual void setEnableValue(bool enableValue)              = 0;
+    virtual int getProperty()                                  = 0;
+    virtual bool isEnabled(void)                               = 0;
+    virtual std::string getSolutionStr(void)                   = 0;
+    virtual void processForSnapshot(const void *inBuf)         = 0;
+    virtual void processForPreview(const void *inBuf)          = 0;
+    virtual void release(void)                                 = 0;
 };
 
 /**

@@ -64,10 +64,11 @@ int32_t CameraSolutionManager::getMetaSizeHint(void)
     return size;
 }
 
-void CameraSolutionManager::initialize(stream_format_t streamFormat, int shmKey, LSHandle *sh)
+void CameraSolutionManager::initialize(stream_format_t streamFormat, const std::string &shmName,
+                                       LSHandle *sh)
 {
     for (auto &i : lstSolution_)
-        i->initialize(streamFormat, shmKey, sh);
+        i->initialize(streamFormat, shmName, sh);
 }
 
 void CameraSolutionManager::release(void)

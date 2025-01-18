@@ -32,8 +32,8 @@ private:
 public:
     PreviewDisplayControl(const std::string &wid);
     ~PreviewDisplayControl();
-    bool start(std::string camera_id, std::string windowId, CAMERA_FORMAT cameraFormat,
-               std::string memType, int key, int handle, bool primary);
+    bool start(std::string camera_id, std::string windowId, CAMERA_FORMAT cameraFormat, int handle,
+               bool primary);
     bool stop();
     int getPid() const { return pid; }
     int getHandle() const { return handle; }

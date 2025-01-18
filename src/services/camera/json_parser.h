@@ -154,25 +154,11 @@ private:
 class StartCameraMethod
 {
 public:
-    StartCameraMethod()
-    {
-        n_devicehandle_ = -1;
-        n_keyvalue_     = 0;
-    }
+    StartCameraMethod() { n_devicehandle_ = -1; }
     ~StartCameraMethod() {}
 
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
-
-    void setMemParams(camera_memory_source_t rin_params)
-    {
-        ro_mem_params_.str_memorysource = rin_params.str_memorysource;
-        ro_mem_params_.str_memorytype   = rin_params.str_memorytype;
-    }
-    camera_memory_source_t rGetMemParams() const { return ro_mem_params_; }
-
-    void setKeyValue(int key) { n_keyvalue_ = key; }
-    int getKeyValue() const { return n_keyvalue_; }
 
     void setMethodReply(bool returnvalue, int errorcode, std::string errortext)
     {
@@ -187,8 +173,6 @@ public:
 
 private:
     int n_devicehandle_;
-    camera_memory_source_t ro_mem_params_;
-    int n_keyvalue_;
     MethodReply objreply_;
 };
 
@@ -198,7 +182,6 @@ public:
     StartPreviewMethod()
     {
         n_devicehandle_ = -1;
-        n_keyvalue_     = 0;
         window_id_      = "";
         media_id_       = "";
     }
@@ -207,21 +190,11 @@ public:
     void setDeviceHandle(int devhandle) { n_devicehandle_ = devhandle; }
     int getDeviceHandle() const { return n_devicehandle_; }
 
-    void setMemParams(camera_memory_source_t rin_params)
-    {
-        ro_mem_params_.str_memorysource = rin_params.str_memorysource;
-        ro_mem_params_.str_memorytype   = rin_params.str_memorytype;
-    }
-    camera_memory_source_t rGetMemParams() const { return ro_mem_params_; }
-
     void setDpyParams(camera_display_source_t rin_params)
     {
         ro_dpy_params_.str_window_id = rin_params.str_window_id;
     }
     camera_display_source_t rGetDpyParams() const { return ro_dpy_params_; }
-
-    void setKeyValue(int key) { n_keyvalue_ = key; }
-    int getKeyValue() const { return n_keyvalue_; }
 
     void setMediaIdValue(std::string media_id) { media_id_ = std::move(media_id); }
     std::string getMediaIdValue() const { return media_id_; }
@@ -239,9 +212,7 @@ public:
 
 private:
     int n_devicehandle_;
-    camera_memory_source_t ro_mem_params_;
     camera_display_source_t ro_dpy_params_;
-    int n_keyvalue_;
     std::string window_id_;
     std::string media_id_;
     MethodReply objreply_;

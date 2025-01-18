@@ -217,25 +217,15 @@ bool CameraHalService::close(LSMessage &message)
 
 bool CameraHalService::startPreview(LSMessage &message)
 {
-    int pkey               = 0;
     jvalue_ref json_outobj = jobject_create();
     auto *payload          = LSMessageGetPayload(&message);
     PLOGI("payload %s", payload);
 
     pbnjson::JValue parsed = pbnjson::JDomParser::fromString(payload);
 
-    std::string memtype;
-    if (parsed.hasKey(CONST_PARAM_NAME_MEMTYPE))
-    {
-        memtype = parsed[CONST_PARAM_NAME_MEMTYPE].asString();
-    }
-    PLOGI("memtype(%s)", memtype.c_str());
-
-    DEVICE_RETURN_CODE_T ret =
-        pDeviceControl->startPreview(std::move(memtype), &pkey, this->get(), SUBSCRIPTION_KEY);
+    DEVICE_RETURN_CODE_T ret = pDeviceControl->startPreview(this->get(), SUBSCRIPTION_KEY);
     if (ret == DEVICE_OK)
     {
-        jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_SHMKEY), jnumber_create_i32(pkey));
         jobject_put(json_outobj, J_CSTR_TO_JVAL(CONST_PARAM_NAME_RETURNVALUE),
                     jboolean_create(true));
     }

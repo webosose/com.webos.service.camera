@@ -616,3 +616,17 @@ bool CameraSharedMemoryImpl::waitForSignal(int timeoutMs, const std::string &nam
     PLOGE("Read retry failed!");
     return false;
 }
+
+int CameraSharedMemoryImpl::getWriteIndex(void)
+{
+    std::lock_guard<std::mutex> lock(m_);
+
+    if (!shmHeader_)
+    {
+        PLOGE("shmHeader_ is NULL");
+        return false;
+    }
+
+    PLOGD("writeIndex(%d)", shmHeader_->writeIndex);
+    return shmHeader_->writeIndex;
+}

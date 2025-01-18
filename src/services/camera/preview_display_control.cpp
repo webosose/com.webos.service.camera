@@ -189,19 +189,12 @@ bool PreviewDisplayControl::cbHandleResponseMsg(LSHandle *sh, LSMessage *msg, vo
 }
 
 bool PreviewDisplayControl::start(std::string camera_id, std::string windowId,
-                                  CAMERA_FORMAT cameraFormat, std::string memType, int key,
-                                  int handle_, bool primary)
+                                  CAMERA_FORMAT cameraFormat, int handle_, bool primary)
 {
     if (!isValidWindowId(windowId))
     {
         PLOGE("Invalid windowId value");
         return false;
-    }
-
-    std::string mem_type = "shmem";
-    if (memType == kMemtypePosixshm)
-    {
-        mem_type = "posixshm";
     }
 
     std::string informat = getFormatStringFromCode(cameraFormat.eFormat);
@@ -225,14 +218,9 @@ bool PreviewDisplayControl::start(std::string camera_id, std::string windowId,
         LOAD_PAYLOAD_HEAD + windowId +
         "\", \"videoDisplayMode\":\"Textured\",\"width\":" + std::to_string(cameraFormat.nWidth) +
         ",\"height\":" + std::to_string(cameraFormat.nHeight) + ",\"format\":\"" + outformat +
-        "\",\"frameRate\":" + std::to_string(cameraFormat.nFps) + ",\"memType\":\"" + mem_type +
-        "\",\"memSrc\":\"" + std::to_string(key) + "\",";
+        "\",\"frameRate\":" + std::to_string(cameraFormat.nFps) + ",";
 
-    if (memType == kMemtypePosixshm)
-    {
-        payload += "\"handle\":" + std::to_string(handle_) + ",";
-    }
-
+    payload += "\"handle\":" + std::to_string(handle_) + ",";
     payload += "\"primary\":" + std::string(primary ? "true" : "false") + ",";
     payload += "\"cameraId\":\"" + camera_id + "\"}";
 
