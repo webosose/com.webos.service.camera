@@ -20,6 +20,7 @@
 #include <stddef.h> // size_t
 #include <sys/shm.h>
 
+#ifndef BUFFER_T_DEFINED
 /* Do not change this struct without updating its counterpart
  * in include/public/camera/hal/camera_hal_types_common.h!
  */
@@ -30,6 +31,8 @@ typedef struct
     size_t index;
     int fd;
 } buffer_t;
+#define BUFFER_T_DEFINED
+#endif // BUFFER_T_DEFINED
 
 typedef enum
 {
