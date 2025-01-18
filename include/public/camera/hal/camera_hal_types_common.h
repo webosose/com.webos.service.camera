@@ -64,6 +64,7 @@ typedef struct
     const char *userdata;
 } stream_format_t;
 
+#ifndef BUFFER_T_DEFINED
 typedef struct
 {
     void *start;
@@ -71,5 +72,7 @@ typedef struct
     size_t index;
     int fd;
 } buffer_t;
+#define BUFFER_T_DEFINED
+#endif // BUFFER_T_DEFINED
 
 #endif
