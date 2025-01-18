@@ -19,7 +19,6 @@ project(camera_common CXX)
 set(SRC
     ipc_shared_memory.cpp
     ipc_posix_shared_memory.cpp
-    luna_client.cpp
     )
 
 add_library(${PROJECT_NAME} SHARED ${SRC})

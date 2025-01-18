@@ -28,3 +28,4 @@ include_directories(${CMAKE_SOURCE_DIR}/include/private)
 include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)
 
 add_subdirectory(camera_shared_memory)
+add_subdirectory(luna_client)
