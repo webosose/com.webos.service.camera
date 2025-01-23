@@ -46,7 +46,8 @@ int32_t FaceDetectionAIF::getMetaSizeHint(void)
 
 std::string FaceDetectionAIF::getSolutionStr(void) { return SOLUTION_FACEDETECTION; }
 
-void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *lsHandle)
+void FaceDetectionAIF::initialize(const void *streamFormat, const std::string &shmName,
+                                  void *lsHandle)
 {
     PLOGI("");
     solutionProperty_ = LG_SOLUTION_PREVIEW | LG_SOLUTION_SNAPSHOT;
@@ -113,7 +114,7 @@ void FaceDetectionAIF::initialize(const void *streamFormat, int shmKey, void *ls
     PLOGI("aif_param = %s", param.c_str());
     EdgeAIVision::getInstance().createDetector(type, param);
 
-    CameraSolution::initialize(streamFormat, shmKey, lsHandle);
+    CameraSolution::initialize(streamFormat, shmName, lsHandle);
     PLOGI("");
 }
 

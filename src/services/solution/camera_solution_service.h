@@ -15,7 +15,6 @@
 
 #pragma once
 
-#include "camera/ipc_shared_memory.h"
 #include "luna-service2/lunaservice.hpp"
 #include "plugin_factory.hpp"
 #include <glib.h>
@@ -43,9 +42,6 @@ public:
     bool enable(LSMessage &message);
     bool release(LSMessage &message);
     bool subscribe(LSMessage &);
-
-private:
-    SHMEM_HANDLE hShm{nullptr};
 };
 
 std::string parseSolutionServiceName(int argc, char *argv[]) noexcept;

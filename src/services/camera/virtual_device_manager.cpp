@@ -26,8 +26,7 @@
 #include "preview_display_control.h"
 
 VirtualDeviceManager::VirtualDeviceManager()
-    : virtualhandle_map_(), handlepriority_map_(), bcaptureinprogress_(false), shmkey_(0),
-      sformat_()
+    : virtualhandle_map_(), handlepriority_map_(), bcaptureinprogress_(false), sformat_()
 {
     PLOGI("");
 }
@@ -257,15 +256,8 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::close(int devhandle)
     return ret;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::string memtype,
-                                                       int *pkey, LSHandle *sh, const char *subskey)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, LSHandle *sh)
 {
-    if (isValidMemtype(memtype) == false)
-    {
-        PLOGE("Invalid memtype : %s", memtype.c_str());
-        return DEVICE_ERROR_UNSUPPORTED_MEMORYTYPE;
-    }
-
     PLOGI("devhandle : %d \n", devhandle);
 
     // Get device id for virtual device handle
@@ -293,10 +285,19 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::strin
     if (streaming_handle_size == 0) // Primary
     {
         // start preview
-        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.startPreview(memtype, &shmkey_, sh, subskey);
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.startPreview(sh);
         if (DEVICE_OK != ret)
         {
             PLOGE("startPreview error : %d", ret);
+            return ret;
+        }
+
+        // add client
+        ret = objcamerahalproxy_.addClient(devhandle);
+
+        if (DEVICE_OK != ret)
+        {
+            PLOGE("addClient error : %d", ret);
             return ret;
         }
 
@@ -314,6 +315,17 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::strin
     else
     {
         PLOGI("streaming or preview already started by other app \n");
+
+        DEVICE_RETURN_CODE_T ret = DEVICE_OK;
+
+        // add client
+        ret = objcamerahalproxy_.addClient(devhandle);
+
+        if (DEVICE_OK != ret)
+        {
+            PLOGE("addClient error : %d", ret);
+            return ret;
+        }
     }
 
     // Add to the device handle vector that accesses shared memory
@@ -321,14 +333,12 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startCamera(int devhandle, std::strin
 
     // update state of device to preview
     obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_STREAMING;
-    obj_devstate.shmemtype        = memtype;
     virtualhandle_map_[devhandle] = obj_devstate;
 
-    *pkey = shmkey_;
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle, bool forceComplete)
 {
     PLOGI("devhandle : %d \n", devhandle);
 
@@ -371,13 +381,33 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
     DEVICE_RETURN_CODE_T ret = DEVICE_OK;
     if (1 == streaming_handle_size) // Primary
     {
+        // remove client
+        ret = objcamerahalproxy_.removeClient(devhandle);
+
+        if (DEVICE_OK != ret)
+        {
+            PLOGE("removeClient error : %d", ret);
+            return ret;
+        }
+
         // stop preview
-        ret = objcamerahalproxy_.stopPreview();
+        ret = objcamerahalproxy_.stopPreview(forceComplete);
         objcamerahalproxy_.unsubscribe();
 
         if (DEVICE_OK != ret)
         {
             PLOGE("stopPreview error : %d", ret);
+            return ret;
+        }
+    }
+    else
+    {
+        // remove client
+        ret = objcamerahalproxy_.removeClient(devhandle);
+
+        if (DEVICE_OK != ret)
+        {
+            PLOGE("removeClient error : %d", ret);
             return ret;
         }
     }
@@ -387,19 +417,14 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopCamera(int devhandle)
 
     // update state of device to open
     obj_devstate.ecamstate_       = CameraDeviceState::CAM_DEVICE_STATE_OPEN;
-    obj_devstate.shmemtype        = "";
     virtualhandle_map_[devhandle] = obj_devstate;
-
-    shmkey_ = 0;
 
     PLOGI("ok");
     return ret;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::string memtype,
-                                                        int *pkey, std::string windowid,
-                                                        std::string *pmedia, LSHandle *sh,
-                                                        const char *subskey)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::string windowid,
+                                                        LSHandle *sh)
 {
     if (windowid.empty())
     {
@@ -409,21 +434,20 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
 
     PLOGI("devhandle : %d \n", devhandle);
 
-    DEVICE_RETURN_CODE_T ret = startCamera(devhandle, memtype, pkey, sh, subskey);
+    DEVICE_RETURN_CODE_T ret = startCamera(devhandle, sh);
     if (DEVICE_OK != ret)
     {
         PLOGE("startCamera error : %d", ret);
         return ret;
     }
 
-    bool result = startPreviewDisplay(devhandle, std::move(windowid), std::move(memtype), shmkey_);
+    bool result = startPreviewDisplay(devhandle, std::move(windowid));
     if (!result)
     {
         stopCamera(devhandle);
         PLOGE("Fail to preview due to invalid windowId\n");
         return DEVICE_ERROR_INVALID_WINDOW_ID;
     }
-    *pmedia = "undefined";
 
     // update state of device to preview
     DeviceStateMap obj_devstate   = virtualhandle_map_[devhandle];
@@ -434,7 +458,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::startPreview(int devhandle, std::stri
     return DEVICE_OK;
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle, bool forceComplete)
 {
     PLOGI("devhandle : %d \n", devhandle);
 
@@ -444,7 +468,7 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::stopPreview(int devhandle)
         return DEVICE_ERROR_INVALID_STATE;
     }
 
-    DEVICE_RETURN_CODE_T ret = stopCamera(devhandle);
+    DEVICE_RETURN_CODE_T ret = stopCamera(devhandle, forceComplete);
     if (DEVICE_OK != ret)
     {
         PLOGE("stopCamera error : %d", ret);
@@ -774,29 +798,20 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFormat(int devhandle, CAMERA_FORMA
     }
 }
 
-DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
+DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, const std::string &type, int *shmfd)
 {
     PLOGI("devhandle : %d\n", devhandle);
 
     DeviceStateMap obj_devstate = virtualhandle_map_[devhandle];
 
-    if (obj_devstate.ecamstate_ == CameraDeviceState::CAM_DEVICE_STATE_STREAMING ||
-        obj_devstate.ecamstate_ == CameraDeviceState::CAM_DEVICE_STATE_PREVIEW)
+    if (obj_devstate.ecamstate_ >= CameraDeviceState::CAM_DEVICE_STATE_OPEN)
     {
-        if (obj_devstate.shmemtype == kMemtypePosixshm)
+        DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getFd(type, devhandle, shmfd);
+        if (ret == DEVICE_OK)
         {
-            DEVICE_RETURN_CODE_T ret = objcamerahalproxy_.getFd(shmfd);
-            if (ret == DEVICE_OK)
-            {
-                PLOGI("posix shared memory fd is : %d\n", *shmfd);
-            }
-            return ret;
+            PLOGI("shared memory fd is : %d\n", *shmfd);
         }
-        else
-        {
-            PLOGI("handle is not posix shared memory \n");
-            return DEVICE_ERROR_NOT_POSIXSHM;
-        }
+        return ret;
     }
     else
     {
@@ -805,24 +820,6 @@ DEVICE_RETURN_CODE_T VirtualDeviceManager::getFd(int devhandle, int *shmfd)
     }
     return DEVICE_OK;
 }
-
-DEVICE_RETURN_CODE_T VirtualDeviceManager::registerClient(int n_client_pid, int n_client_sig,
-                                                          int devhandle, std::string &outmsg)
-{
-    return objcamerahalproxy_.registerClient((pid_t)n_client_pid, n_client_sig, devhandle, outmsg);
-}
-
-DEVICE_RETURN_CODE_T VirtualDeviceManager::unregisterClient(int n_client_pid, std::string &outmsg)
-{
-    return objcamerahalproxy_.unregisterClient((pid_t)n_client_pid, outmsg);
-}
-
-bool VirtualDeviceManager::isRegisteredClient(int devhandle)
-{
-    return objcamerahalproxy_.isRegisteredClient(devhandle);
-}
-
-void VirtualDeviceManager::requestPreviewCancel() { objcamerahalproxy_.requestPreviewCancel(); }
 
 DEVICE_RETURN_CODE_T
 VirtualDeviceManager::getSupportedCameraSolutionInfo(int devhandle,
@@ -938,8 +935,7 @@ VirtualDeviceManager::disableCameraSolution(int devhandle,
     }
 }
 
-bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id,
-                                               std::string mem_type, int key)
+bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id)
 {
     std::string priority = getAppPriority(handle);
     PLOGI("priority : %s", priority.c_str());
@@ -950,14 +946,10 @@ bool VirtualDeviceManager::startPreviewDisplay(int handle, std::string window_id
         "camera" + std::to_string(CommandManager::getInstance().getCameraId(handle));
     CAMERA_FORMAT camera_format;
     getFormat(handle, &camera_format);
-    bool ret = pdc->start(std::move(camera_id), std::move(window_id), camera_format,
-                          std::move(mem_type), key, handle, (cstr_primary == priority));
+    bool ret = pdc->start(std::move(camera_id), std::move(window_id), camera_format, handle,
+                          (cstr_primary == priority));
     if (ret)
     {
-        std::string outmsg;
-        registerClient(pdc->getPid(), 10, handle, outmsg);
-        PLOGI("outmsg : %s", outmsg.c_str());
-
         previewDisplayControls.push_back(std::move(pdc));
     }
     return ret;
@@ -970,11 +962,6 @@ bool VirtualDeviceManager::stopPreviewDisplay(int handle)
         if ((*it)->getHandle() == handle)
         {
             bool ret = (*it)->stop();
-
-            std::string outmsg;
-            unregisterClient((*it)->getPid(), outmsg);
-            PLOGI("outmsg : %s", outmsg.c_str());
-
             previewDisplayControls.erase(it);
             return ret;
         }

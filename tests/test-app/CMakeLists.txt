@@ -17,5 +17,3 @@
 add_subdirectory(camera-plugin-inspect)
 add_subdirectory(cameraservice)
 add_subdirectory(hal)
-add_subdirectory(test_smsync)
-add_subdirectory(test_sync_read)

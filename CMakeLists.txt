@@ -60,6 +60,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include/public/camera/hal)
 include_directories(${CMAKE_SOURCE_DIR}/include/public/camera/notifier)
 include_directories(${CMAKE_SOURCE_DIR}/include/public/camera/solution)
 include_directories(${CMAKE_SOURCE_DIR}/include/private)
+include_directories(${CMAKE_SOURCE_DIR}/src/libs/include/private)
 
 webos_use_gtest()
 

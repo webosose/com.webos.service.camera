@@ -1,4 +1,4 @@
-# Copyright (c) 2023 LG Electronics, Inc.
+# Copyright (c) 2024 LG Electronics, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,21 +14,18 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-project(camera_common CXX)
+cmake_minimum_required(VERSION 3.14)
 
-set(SRC
-    ipc_shared_memory.cpp
-    ipc_posix_shared_memory.cpp
-    luna_client.cpp
-    )
+include(webOS/webOS)
+webos_modules_init(1 6 3)
+webos_component(1 0 0)
 
-add_library(${PROJECT_NAME} SHARED ${SRC})
+set(CMAKE_CXX_STANDARD 17)
 
-target_link_libraries(${PROJECT_NAME}
-                      ${PMLOGLIB_LDFLAGS}
-                      ${LS2++_LDFLAGS}
-                     )
+include(FindPkgConfig)
 
-set_target_properties (${PROJECT_NAME} PROPERTIES VERSION 1.0 SOVERSION 1)
+include_directories(${CMAKE_SOURCE_DIR}/include/private)
+include_directories(${CMAKE_SOURCE_DIR}/include/public/camera)
 
-webos_build_library(NAME ${PROJECT_NAME})
+add_subdirectory(camera_shared_memory)
+add_subdirectory(luna_client)
