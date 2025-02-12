@@ -41,14 +41,14 @@ public:
     bool read(unsigned char **ppData, size_t *pDataSize, unsigned char **ppMeta = nullptr,
               size_t *pMetaSize = nullptr, unsigned char **ppExtra = nullptr,
               size_t *pExtraSize = nullptr, unsigned char **ppSolution = nullptr,
-              size_t *pSolutionSize = nullptr, int timeoutMs = 1000, bool skipSignal = false);
+              size_t *pSolutionSize = nullptr, int timeoutMs = 10000, bool skipSignal = false);
     bool write(const unsigned char *pData, size_t dataSize, const unsigned char *pMeta,
                size_t metaSize, const unsigned char *pExtra, size_t extraSize,
                const unsigned char *pSolution, size_t solutionSize);
 
     int createSignal(const std::string &name = std::string("default"));
     bool notifySignal(void);
-    bool waitForSignal(int timeoutMs = 1000, const std::string &name = std::string("default"));
+    bool waitForSignal(int timeoutMs = 10000, const std::string &name = std::string("default"));
     bool attachSignal(int fd, const std::string &name = std::string("default"));
     bool detachSignal(const std::string &name);
     void releaseAllSignals(void);

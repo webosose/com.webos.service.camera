@@ -74,7 +74,7 @@ public:
 
     int createSignal(const std::string &name = std::string("default"));
     bool notifySignal(void);
-    bool waitForSignal(int timeoutMs = 1000, const std::string &name = std::string("default"));
+    bool waitForSignal(int timeoutMs = 10000, const std::string &name = std::string("default"));
     bool attachSignal(int fd, const std::string &name = std::string("default"));
     bool detachSignal(const std::string &name = std::string("default"));
     void releaseAllSignals(void);

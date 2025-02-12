@@ -28,7 +28,7 @@ public:
     bool open(int bufferFd, int signalFd);
     bool read(unsigned char **ppData, size_t *pDataSize, unsigned char **ppMeta, size_t *pMetaSize,
               unsigned char **ppExtra, size_t *pExtraSize, unsigned char **ppSolution,
-              size_t *pSolutionSize, int timeoutMs = 1000);
+              size_t *pSolutionSize, int timeoutMs = 10000);
     void close(void);
 
 private:
